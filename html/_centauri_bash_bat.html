@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_bat</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='reference.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_cgi.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_bat' class='item-module'>
+<span>Module</span><span> - </span><span>_centauri_bash_bat</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Batch Support</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>. <b>_centauri_bash_bat</b> [<b>-b</b>|<b>-l</b>|<b>-n</b>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  enable batch only
+<b>-l</b>  enable logfile only
+<b>-n</b>  disable all (batch and logfile), no module init</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This module adds the <b>--batch</b> and <b>--logfile</b> options to a script, depending on the module options described above. The module load options are relevant for command line option parsing and <b>--help</b> output only. Manual initialization via <a href="#batchmode">batchmode()</a> and <a href="#logfile">logfile()</a> is always possible.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <a href="_centauri_bash_lib.html#main">main()</a> function will automatically invoke the <a href="#batchmode">batchmode()</a> function to run a script in batch mode.  This behaviour can be overriden, see <a href="#batchmode">batchmode()</a> or the <b>CEN_BAT_STATE</b> variable.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>By default, when no module options are given, the variables <b>CEN_BAT_BATCH</b> (enable batch) and <b>CEN_BAT_LOGFILE</b> (enable logfile) are set. These can be used or set by a script as needed.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Modes:</div>
+<div class='def-text'>The command line option <b>--batch</b> controls the run mode:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>--batch</b>=echo        # don&apos;t run, just print command
+<b>--batch</b>=none        # (default) run in foreground
+<b>--batch</b>=nohup       # run using the &apos;nohup&apos; program
+<b>--batch</b>=batch       # run using the &apos;batch&apos; program</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Logging:</div>
+<div class='def-text'>The batch output is controlled by the <b>--logfile</b> option:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>--logfile</b>=<i>file</i>      # log to &lt;file&gt;
+<b>--logfile</b>=<b>-</b>         # no logging at all
+<b>--logfile</b>=<b>+</b>         # (default) use $CEN_NAME.log as &lt;file&gt;</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2017-2019</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='batchmode' class='item-function'>
+<span>Function</span><span> - </span><span>batchmode</span><span> - </span><span>handle batch processing</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>batchmode</b> <b>-c</b>|<b>-i</b>|<b>-r</b> <i>arg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  explicitly set batch arguments
+<b>-i</b>  enable batch, used by <a href="_centauri_bash_dbg.html#optionsuser">options()</a> or <a href="_centauri_bash_dbg.html#actionsuser">actions()</a>
+<b>-r</b>  run it, used by <a href="_centauri_bash_lib.html#quit">quit()</a> hook</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variable:</div>
+<div class='def-text'><b>CEN_BAT_STATE</b>=          # no batch command queued
+<b>CEN_BAT_STATE</b>=<b>&quot;init&quot;</b>    # command queued
+<b>CEN_BAT_STATE</b>=<b>&quot;run&quot;</b>     # about to execute
+<b>CEN_BAT_STATE</b>=<b>&quot;done&quot;</b>    # command executed (or error)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Batches can be implicit (the user script does nothing) or explicit. For the later the user script must call <b>&quot;batchmode -c&quot;</b> with arguments at the end of option processing -or- start of action processing -or- set <b>CEN_BAT_STATE</b> to an non-empty value.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Batches are always run from the quit hook. When the user script did not call <b>&quot;batchmode -c&quot;</b> or set <b>CEN_BAT_STATE</b> before action processing starts (or <a href="_centauri_bash_dbg.html#runuser">run()</a> gets called), a <a href="_centauri_bash_lib.html#quit">quit()</a> call is made by this code.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The quit hook checks if commands where queued (via &quot;<b>batchmode -c</b> <i>cmd</i>&quot;). If not the original script call is added as command. The queue is then executed via <b>/usr/bin/nohup</b> or <b>/usr/bin/at</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Warning:</div>
+<div class='def-text'>Script options passed to <b>batchmode -c</b> must have long names and must use
+the <b>=</b> syntax for values (examples: <b>--hello</b> <b>--color=green</b>).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'>Registering explicit batch commands (using verb dispatching)<pre>options() {
+    case <b>&quot;$1&quot;</b> in
+
+    # end of option parsing, register batch commands
+    <b>&quot;&quot;</b>)
+        if [ <b>&quot;${CEN_OPT_BATCH:-none}&quot;</b> != <b>&quot;none&quot;</b> ] ; then
+            <b>batchmode</b> <b>-c</b> <b>--</b> <b>--number</b>=3 one 1
+            <b>batchmode</b> <b>-c</b> one 2 <b>--</b> two tick tack
+        fi ;;
+
+    # more options ...
+
+    esac
+}</pre></div>
+</div>
+</section>
+<section id='section-3'>
+<div id='logfile' class='item-function'>
+<span>Function</span><span> - </span><span>logfile</span><span> - </span><span>initialize a logfile to capture batch output</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>logfile</b> [<i>file</i>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Returns:</div>
+<div class='def-text'><b>true</b> on success, sets <b>CEN_OPT_LOGFILE</b> to path</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>This function implements the <b>--logfile</b> option and is usually called automatically by <a href="_centauri_bash_dbg.html#optionsuser">options()</a> or <a href="_centauri_bash_dbg.html#actionsuser">actions()</a>. It can be called explicitly to override the default behaviour.</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='reference.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_cgi.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

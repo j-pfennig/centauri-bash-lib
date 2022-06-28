@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_iom</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_ins.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_lib.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_iom' class='item-module'>
+<span>Module</span><span> - </span><span>_centauri_bash_iom</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Input/Output and Caching Support</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>. <b>_centauri_bash_iom</b> [<b>-e</b>] [<b>-i</b>|<b>-r</b>] [<b>-o</b>|<b>-w</b>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-e</b>  allow empty input file(s)
+<b>-i</b>  add command line option: <b>-i</b> <b>--input</b>   get input file
+<b>-o</b>  add command line option: <b>-o</b> <b>--output</b>  get output file
+<b>-r</b>  add command line option: <b>-r</b> <b>--read</b>    get input file
+<b>-w</b>  add command line option: <b>-w</b> <b>--write</b>   get output file</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>General:</div>
+<div class='def-text'>The following public functions are implemented in this module:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  <a href="#inpdata">inpdata()</a>    - Read from an input file into an array
+  <a href="#inpfile">inpfile()</a>    - Get an input file or folder
+  <a href="#outdata">outdata()</a>    - Write a data array into an output file
+  <a href="#outfile">outfile()</a>    - Get an output file or folder
+  <a href="#cachefile">cachefile()</a>  - Caching of global or local configuration files
+  <a href="#configfile">configfile()</a> - Read and parse a configuration file
+  <a href="#serialize">serialize()</a>  - Serialization support for bash variables</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This module is loaded automatically by <a href="_centauri_bash_lib.html#optarg">optarg()</a> when optarg is used with options <b>-d</b>, <b>-r</b> or <b>-w</b>. In this case no module options are set and the optarg arguments specify the variable that will receive the file path.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When loaded explicitly the module can add command line options  to a script, see module options above. The module options <b>-i</b> and <b>-r</b> provide the same functionality but add different command line options. The same is true for <b>-o</b> and <b>-w</b>. In this case paths will be stored in <b>CEN_INPFILE</b> and <b>CEN_OUTFILE</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Prompting for a path and checking the path is done by <a href="#inpfile">inpfile()</a> and <a href="#outfile">outfile()</a>. By default empty input files are rejected, see module option <b>-e</b>. An URL <b>&quot;file://&quot;</b> prefix will be stripped.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>In order to add options to a script, the <b>_centauri_bash_iom</b> module must be loaded before <a href="_centauri_bash_lib.html#main">main()</a> is called.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>Add command line option <b>--input</b> and allow an empty input file:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>embed <b>-m</b> <b>_centauri_bash_iom</b> <b>-e</b> <b>-i</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Add command line option <b>--read</b> and allow an empty input file:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>embed <b>-m</b> <b>_centauri_bash_iom</b> <b>-e</b> <b>-r</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>The follwing calls can be made from inside <a href="_centauri_bash_dbg.html#optionsuser">options()</a>:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>optarg <b>&quot;outdir&quot;</b>  -   <b>-d</b>     # get output folder (must exist)
+optarg <b>&quot;inpdir&quot;</b>  -   <b>-d</b>     # get input folder (must exist)</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>optarg <b>&quot;logfile&quot;</b> -   <b>-a</b>     # open to append (will create file)
+optarg <b>&quot;outfile&quot;</b> -   <b>-r</b>     # get input file (must exist)
+optarg <b>&quot;outfile&quot;</b> -   <b>-w</b>     # get output file, prompt for overwrite
+                            # unless --force option was seen</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2019-2022</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='inpdata' class='item-function'>
+<span>Function</span><span> - </span><span>inpdata</span><span> - </span><span>Read from an input file into an array</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-r</b> <i>func</i>] [<b>-q</b>] <b>--</b> <i>file</i>
+(2) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-r</b> <i>func</i>] <b>-l</b> [<b>-q</b>] [<b>-x</b> <i>ext</i>] <b>--</b> <i>file</i>|<b>+</b>|-
+(3) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-r</b> <i>func</i>] [<b>-q</b>] <b>-h</b> <i>hndl</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  data array to reaad into
+<b>-f</b>  errors are fatal
+<b>-h</b>  use a handle for input, see <a href="_centauri_bash_ext.html#redirect">redirect()</a>
+<b>-l</b>  enable prompt mode, loop mode, see <a href="#inpfile">inpfile()</a>
+<b>-q</b>  quiet, no error messages
+<b>-r</b>  reader call function
+<b>-x</b>  use <i>ext</i> argument as default for extension</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>dest</i>  name of an array variable
+<i>ext</i>   an extension
+<i>file</i>  a file path
+<i>hndl</i>  a file handle used for input
+<i>func</i>  function called to each line read</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Form (1) reads the given file, form (2) can prompt for a file, see <a href="#inpfile">inpfile()</a>. Form (3) reads from a file handle, see <a href="_centauri_bash_ext.html#redirect">redirect()</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>At least <b>-a</b> or <b>-r</b> must be specified. These two options can be used at the same time. If <i>func</i> returns 0 the line is added to <i>dest</i>. Reading stops if <i>func</i> returns 2, a return value of 1 is ignored.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>Read data into an array, prompt for input:<pre>local data
+<b>inpdata</b> <b>-a</b> data <b>-l</b> <b>-x</b> &apos;gpx&apos; <b>--</b> +</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Call a reader function, save non-empty lines to array:<pre>reader() {
+    [ <b>&quot;$1&quot;</b> = <b>&quot;END&quot;</b> ] &amp;&amp; return 2    # stop reading
+    [ <b>-n</b> <b>&quot;$1&quot;</b> ]                     # return status
+}
+local data
+<b>inpdata</b> <b>-a</b> data <b>-r</b> reader <b>--</b> <b>&quot;my-file&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Read /dev/stdin into an array:<pre>local data
+<b>inpdata</b> <b>-a</b> data</pre></div>
+</div>
+</section>
+<section id='section-3'>
+<div id='inpfile' class='item-function'>
+<span>Function</span><span> - </span><span>inpfile</span><span> - </span><span>Get an input file or folder</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>inpfile</b> [<b>-o</b>] [<b>-s</b> <i>var</i>]  [<b>-x</b> <i>ext</i>] [<b>--</b>] <i>file</i>|<b>-</b>|<b>+</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  expect a block-device as argument/input
+<b>-c</b>  canonicalize path (e.g return full path)
+<b>-d</b>  accept folder argument/input
+<b>-e</b>  accept empty input file
+<b>-f</b>  accept file argument (default if <b>-b</b>|<b>-d</b> not given)
+<b>-l</b>  loop until valid input is provided
+<b>-o</b>  allow empty/missing argument/input
+<b>-q</b>  quiet, no error messages
+<b>-s</b>  save path to variable (default is <b>CEN_INPFILE</b>)
+<b>-x</b>  use <i>ext</i> argument as default for extension</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This function can validate input passed via <i>file</i> or can optionally prompt for input (GUI support via <a href="_centauri_bash_win.html">_centauri_bash_win</a>).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <i>file</i> argument has two special values: <b>-</b> gets replaced by <b>&quot;/dev/stdin&quot;</b> and <b>+</b> will cause the user to be prompted. An URL <b>&quot;file://&quot;</b> prefix will be stripped.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For option <b>-b</b> also files with <b>.iso</b> extension and samba shared files are accepted (but cannot be probed for block-device).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>open file, error message if missing:<pre><b>inpfile</b> <b>-c</b> <b>-s</b> myfile <b>--</b> <b>&quot;file-to-try&quot;</b> || quit</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>prompt for a GPX input file:<pre><b>inpfile</b> <b>-l</b> <b>-s</b> myfile <b>-x</b> &apos;gpx&apos; + || quit</pre></div>
+</div>
+</section>
+<section id='section-4'>
+<div id='outdata' class='item-function'>
+<span>Function</span><span> - </span><span>outdata</span><span> - </span><span>Write a data array into an output file</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>outdata</b> <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-t</b>] <b>--</b> <i>file</i>
+(2) <b>outdata</b> <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] <b>-l</b> [<b>-t</b>] [<b>-x</b> <i>ext</i>] <b>--</b> <i>file</i>|<b>+</b>|-
+(3) <b>outdata</b> [<b>-a</b>|<b>-i</b>] <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-t</b>] <b>-h</b> <i>hndl</i>
+(4) <b>outdata</b> [<b>-a</b>|<b>-i</b>] <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  auto-indent, see <a href="_centauri_bash_lib.html#message">message()</a>
+<b>-f</b>  errors are fatal
+<b>-h</b>  use a handle for output, see <a href="_centauri_bash_ext.html#redirect">redirect()</a>
+<b>-i</b>  indent output, see <a href="_centauri_bash_lib.html#message">message()</a>
+<b>-l</b>  enable prompt mode, loop mode, see <a href="#outfile">outfile()</a>
+<b>-o</b>  data array
+<b>-q</b>  quiet, no error messages
+<b>-t</b>  truncate an exiting file
+<b>-x</b>  use <i>ext</i> argument as default for extension</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>data</i>  name of an array variable
+<i>ext</i>   an extension
+<i>file</i>  a file path
+<i>hndl</i>  a file handle used for ouput</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Form (1) writes to a given file, whereas form (3) writes to a handle. Form (2) will prompt the user for a file if <i>file</i> has a value of <b>+</b>. Form (4) simply writes to <b>&quot;/dev/stderr&quot;</b>. Form (3) also writes to <b>&quot;/dev/stderr&quot;</b> if <i>file</i> has a value of <b>-</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Although the <b>-a</b> and <b>-i</b> behave like their <a href="_centauri_bash_lib.html#message">message()</a> counterparts, this function does not call message but writes output directly. Option <b>-a</b> and <b>-i</b> are ignored for file output.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>Append to an existing file:<pre>data=(<b>&quot;ding&quot;</b> <b>&quot;dong&quot;</b>)
+<b>outdata</b> <b>-o</b> data <b>--</b> <b>&quot;my-file&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Create or truncate before writing:<pre><b>outdata</b> <b>-o</b> data <b>-t</b> <b>--</b> <b>&quot;my-file&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Ask for a file and create or truncate:<pre><b>outdata</b> <b>-o</b> data <b>-t</b> <b>-l</b> <b>--</b> +</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Write data line to stderr and indent like message:<pre><b>outdata</b> <b>-o</b> data <b>-a</b></pre></div>
+</div>
+</section>
+<section id='section-5'>
+<div id='outfile' class='item-function'>
+<span>Function</span><span> - </span><span>outfile</span><span> - </span><span>Get an output file or folder</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>outfile</b> [<b>-a</b>] [<b>-d</b>] [<b>-f</b>] [<b>-e</b>] [<b>-o</b>] [<b>-s</b> <i>var</i>]  [<b>-x</b> <i>ext</i>] [<b>--</b>] <i>file</i>|<b>-</b>|<b>+</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  allow to overwrite or to append to an existing file
+<b>-c</b>  canonicalize path (e.g return full path)
+<b>-d</b>  accept a folder as argument/input
+<b>-f</b>  accept a file argument (default if <b>-d</b> not given)
+<b>-e</b>  the output file must exist
+<b>-l</b>  loop until valid input is provided by the user (for <i>file</i> arg <b>+</b>)
+<b>-o</b>  no error message for empty argument or input
+<b>-q</b>  quiet, no error messages at all
+<b>-s</b>  save path to variable (default is <b>CEN_OUTFILE</b>)
+<b>-t</b>  create new file or truncate an existing file
+<b>-x</b>  use <i>ext</i> argument as default for extension</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>0</b> at success, <b>1</b> on error or <b>2</b> for no file.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This function can validate input passed via <i>file</i> or can optionally prompt for input (GUI support via <a href="_centauri_bash_win.html">_centauri_bash_win</a>).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <i>file</i> argument has two special values: <b>-</b> gets replaced by <b>&quot;/dev/stdout&quot;</b> and <b>+</b> will call <a href="_centauri_bash_lib.html#confirm">confirm()</a> to prompt the user. An URL <b>&quot;file://&quot;</b> prefix will be stripped. The <b>-x</b> option calls <a href="_centauri_bash_ext.html#suffixpath">suffixpath()</a> to add a default suffix.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If <i>file</i> exists and option <b>-e</b> is not specified, confirm is called to prompt for overwrite permission. If denied, the function returns with status <b>2</b>. Unless option <b>-t</b> is used an existing file is not modified, so it can be used for appending. Whereas <b>-t</b> will cause the file to be re-created (not only truncated).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>Create outputfile, ask before overwriting:<pre><b>outfile</b> <b>-t</b> <b>--</b> <b>&quot;$1&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Create outputfile, overwrite without asking:<pre><b>outfile</b> <b>-a</b> <b>-t</b> <b>-c</b> <b>-s</b> file <b>--</b> <b>&quot;$1&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Enter dialog loop mode for <i>file</i> argument &apos;+&apos;:<pre><b>outfile</b> <b>-l</b> <b>-t</b> <b>-x</b> &apos;mp3&apos; <b>--</b> <b>&quot;${1:-+}&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Open an existing file for appending:<pre><b>outfile</b> <b>-e</b> <b>--</b> <b>&quot;$1&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-6'>
+<div id='cachefile' class='item-function'>
+<span>Function</span><span> - </span><span>cachefile</span><span> - </span><span>Caching of global or local configuration files</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) # get cache path, check if cache exists
+    <b>cachefile</b> [<b>-f</b>|<b>-q</b>] [<b>-d</b>] [<b>-g</b>|<b>-p</b>] [<b>-r</b>] [<b>--</b>] [<i>name</i>]
+(2) # return write path
+    <b>cachefile</b> [<b>-f</b>|<b>-q</b>] [<b>-d</b>] [<b>-g</b>|<b>-p</b>] <b>-w</b>   [<b>--</b>] [<i>name</i>]
+(3) # check for up-to-date cache
+    <b>cachefile</b> [<b>-f</b>|<b>-q</b>] [<b>-d</b>] [<b>-g</b>|<b>-p</b>] [<b>-r</b>] [<b>--</b>] <i>name</i> <i>conf</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b>  use only the global config folder (see <b>&quot;$CEN_ROOT/default&quot;</b>)
+<b>-f</b>  make errors fatal
+<b>-g</b>  try global cache folders only
+<b>-p</b>  try private cache folders only
+<b>-q</b>  quiet, no error messages
+<b>-r</b>  cache file must exist or return <b>false</b>
+<b>-s</b>  source (deserialize) cache file if it has non-zero size
+<b>-w</b>  get a writetable path if cache does not exist</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>name</i>  name of the cache file, a full path or <b>&quot;-&quot;</b> for <b>&quot;$CEN_NAME.dat&quot;</b>
+<i>conf</i>  name of a configuration file or a full path</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-text'><b>CEN_CACHEFILE</b>   set to the resulting cache file (empty on error)
+<b>CEN_CONFIGFILE</b>  set to the config file (form [3] only)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Private cache folders are:   <b>~/.cache</b>, *<b>~/.config</b>, <b>~/.local</b> and <b>~</b> The global cache folder is:  $<b>CEN_ROOT</b>/persistent</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) check cache and source (deserialize) it<pre><b>cachefile</b> <b>-r</b> <b>-s</b> <b>--</b> <b>&quot;my-cache&quot;</b> || message <b>&quot;missing:&quot;</b> <b>&quot;$CEN_CACHEFILE&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) check if an up-to-date <b>cachefile</b> exists (sets <b>CEN_CONFIGFILE</b>)<pre><b>cachefile</b> <b>--</b> - <b>&quot;$CEN_NAME.conf&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) simple caching example<pre>local data
+if ! <b>cachefile</b> <b>-s</b> <b>-w</b> - &apos;centauri-bash-lib&apos; ; then
+   configfile <b>-r</b> data <b>-v</b> <b>-c</b> <b>-n</b> <b>&quot;$CEN_CONFIGFILE&quot;</b> &apos;launcher&apos; &apos;terminal&apos;
+   serialize <b>-w</b> <b>--</b> data
+fi</pre></div>
+</div>
+</section>
+<section id='section-7'>
+<div id='configfile' class='item-function'>
+<span>Function</span><span> - </span><span>configfile</span><span> - </span><span>Read and parse a configuration file</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>configfile</b> [<b>-q</b>] [<b>-i</b> <i>init</i>] [<b>-n</b> <i>name</i>]                 # get file path</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) <b>configfile</b> [<b>-q</b>] <b>-a</b>|<b>-r</b> <i>reader</i> [<b>-c</b>] [<b>-i</b> <i>init</i>] [<b>-m</b>] [<b>-n</b> <i>name</i>] [<b>--</b>] <i>sect</i>...
+    <b>configfile</b> [<b>-q</b>] <b>-l</b> <i>reader</i> [<b>-c</b>] [<b>-i</b> <i>init</i>] [<b>-n</b> <i>name</i>]
+    <b>configfile</b> [<b>-q</b>] <b>-l</b> . [<b>-i</b> <i>init</i>] [<b>-n</b> <i>name</i>]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) <b>configfile</b> [<b>-q</b>] <b>-v</b> <b>-r</b> <i>array</i> [<b>-c</b>] [<b>-i</b> <i>init</i>] [<b>-m</b>] [<b>-n</b> <i>name</i>] [<b>--</b>] <i>sect</i>...
+    <b>configfile</b> [<b>-q</b>] <b>-v</b> <b>-l</b> <i>array</i> [<b>-c</b>] [<b>-i</b> <i>init</i>] [<b>-n</b> <i>name</i>]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(4) <b>configfile</b> [<b>-e</b>|<b>-f</b>|<b>-w</b>] <i>origin</i> <i>min</i> <i>max</i> <i>argc</i>         # arg count check
+    <b>configfile</b> [<b>-e</b>|<b>-f</b>|<b>-w</b>] [<i>origin</i> [<i>mesg</i>...]]          # error reporting</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  multi argument callback (see below)
+<b>-c</b>  simplify white space
+<b>-i</b>  callback if config was not found
+<b>-l</b>  line-by-line callback
+<b>-m</b>  call reader also for section lines (option <b>-a</b> and <b>-r</b>)
+<b>-n</b>  file name or a path containing <b>&quot;/&quot;</b>, see remark below
+<b>-p</b>  try private file 1st in <b>~/.config</b>, <b>~/.local</b> then *<b>~.&lt;name&gt;</b>
+<b>-q</b>  quiet, no error messages
+<b>-r</b>  read callback             (use &apos;.&apos; to source the file)
+<b>-s</b>  silent, no trace messages
+<b>-v</b>  save data to an array variable (no reader callback)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-e</b>  generate error message    (from <i>reader</i> callback only)
+<b>-f</b>  generate fatal error      (from <i>reader</i> callback only)
+<b>-w</b>  generate warning message  (from <i>reader</i> callback only)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>name</i>    name or path of the configuration file to be parsed
+<i>init</i>    callback to catch missing file
+<i>reader</i>  data callback
+<i>sect</i>    section filter. Section is a line containing the name of
+        the section enclosed in [] braces. Example: <b>[hello]</b>.
+        Use <b>&quot;*&quot;</b> to read all sections, see <b>CEN_CONFIGFILE</b>[3].
+<i>origin</i>  describes to origin of an error (use - for <b>&quot;configfile&quot;</b>)
+<i>min|max</i> minimum or maximum arg count (use -  for no check)
+<i>argc</i>    argument count (<i>min</i> <i>max</i> and <i>argc</i> must be numeric)
+<i>mesg</i>    extra error output (default: <b>&quot;Invalid statement:&quot;</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'><b>true</b> on success or <b>false</b> otherwise. Returning a non-zero status from a callback will stop parsing and return the status. After a successfull open the variable <b>CEN_CONFIGFILE</b> contains the canonicalized file path.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>General:</div>
+<div class='def-block'>Form (1) is used to get a config file path into <b>CEN_CONFIGFILE</b>, form (2) reads a config file using a callback, form (3) saves data to an array and form (4) is used for error reporting.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <i>name</i> argument can be a file system path (containing a <b>&quot;/&quot;</b>) or it can be a file name. Whithout option <b>-p</b>  a file name is searched at <b>$CEN_ROOT/default</b> (which may be a distribution specific symlink). With option <b>-p</b> the locations <b>~/.config</b>, <b>~/.local</b> then *<b>~.&lt;name&gt;</b> are checked before that.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Form (2) and (3) report section lines only if option <b>-m</b> is used or with
+option <b>-l</b> (literal mode). If one or more section filters are specified
+only matching sections are processed.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Callbacks:</div>
+<div class='def-block'>The <i>init</i> function gets called when the file cannot not be found. Without an <i>init</i> function an error would be reported.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <i>reader</i> function is called with the read data as argument(s). These elements of the <b>CEN_CONFIGFILE</b> variable are set at callback:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>    <b>CEN_CONFIGFILE</b>[0]       # path of the configuration file
+    <b>CEN_CONFIGFILE</b>[1]       # current data line (not parsed)
+    <b>CEN_CONFIGFILE</b>[2]       # current line number
+    <b>CEN_CONFIGFILE</b>[3]       # current section</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A special error handler can be called from the <i>reader</i>. The argument count check has the same logic as <a href="_centauri_bash_lib.html#invoke">invoke()</a>. Examples:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>configfile</b> <b>-e</b> <b>&quot;MyName&quot;</b> 1 2 <b>&quot;$#&quot;</b>     # 1 or 2 args allowed
+<b>configfile</b> <b>-f</b> - 3 - $#              # needs exactly 3 args
+<b>configfile</b> <b>-e</b> <b>&quot;MyName&quot;</b> <b>&quot;Something is wrong:&quot;</b> <b>&quot;$*&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When invoked with option <b>-l</b> (literal mode) the <i>reader</i> is called for each line, including white-space. Sections are not interpreted. Option <b>-r</b> (read mode) and <b>-a</b> (multiple argument mode) honor sections, trim each line and ignore empty lines and comments (<b>&quot;# ...&quot;</b>).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Option <b>-a</b> runs bash <b>eval</b> on each line seen (some bash replacements like variables, tilde expansion and line continuation do work). The line is split into words and the callback receives these as argument list.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Here an example of parsing a line for option <b>-r</b> or <b>-l</b>. This is basically what option <b>-a</b> does:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>set <b>-f</b> ; eval set <b>--</b> $1 ; set +f    # break into fields (no glob)
+local _skey=<b>&quot;$1&quot;</b> ; shift            # save keyword, shift it away</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When <i>reader</i> returns a non-zero value reading stops and the returned value becomes the return value of <b>configfile</b> itself.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) Just source $<b>CEN_ROOT</b>/default/$<b>CEN_NAME</b>, call <b>___</b>init if not present:<pre><b>DAT_EXAMPLE</b>=
+___init() {  <b>DAT_EXAMPLE</b>=42 ; return 0 ; }
+<b>configfile</b> <b>-i</b> ___init <b>-r</b> .</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) Use a reader callback for section <b>&quot;&quot;</b> (empty) and <b>&quot;test&quot;</b>:<pre>___reader() { echo <b>&quot;Count $#, Args: $*&quot;</b> ; return 0 ; }
+<b>configfile</b> <b>-a</b> ___reader <b>-f</b> <b>&quot;&quot;</b> <b>-f</b> <b>&quot;test&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) Read the <b>&quot;~/hello.world&quot;</b> file line-by-line, no error if missing:<pre>___reader() { echo <b>&quot;Line ${CEN_CONFIGFILE[2]}: $1&quot;</b>; return 0 ; }
+<b>configfile</b> <b>-l</b> ___reader <b>-c</b> <b>-i</b> true <b>-n</b> ~/hello.world</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(4) Read two sections into array and list:<pre>local data
+<b>configfile</b> <b>-r</b> -data <b>-v</b> <b>-c</b> <b>--</b> &apos;one&apos; &apos;two&apos; || quit
+splitjoin <b>-i</b> data</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(5) Get file, try private file 1st (before $<b>CEN_ROOT</b>/default):<pre><b>configfile</b> <b>-p</b> &amp;&amp; message <b>&quot;Config file: $CEN_CONFIGFILE&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-8'>
+<div id='serialize' class='item-function'>
+<span>Function</span><span> - </span><span>serialize</span><span> - </span><span>Serialization support for bash variables</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>serialize</b> [<b>-f</b>|<b>-q</b>] [<b>-n</b> <i>name</i>] <b>-w</b>
+                  [<b>-m</b> <i>mode</i>] [<b>-x</b>] [<b>-z</b>] <i>var</i>...      # serialize
+<b>serialize</b> [<b>-f</b>|<b>-q</b>] [<b>-n</b> <i>name</i>] <b>-r</b> [<b>-d</b>]               # deserialize
+<b>serialize</b> [<b>-f</b>|<b>-q</b>] [<b>-n</b> <i>name</i>] <b>-d</b>                    # delete file
+<b>serialize</b> [<b>-f</b>|<b>-q</b>] [<b>-n</b> <i>name</i>] <b>-z</b> <i>var</i>...             # zero data
+<b>serialize</b> [<b>-f</b>|<b>-q</b>] [<b>-n</b> <i>name</i>] <b>-t</b> <i>file</i> <b>-w</b> ...        # update</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b>  delete file (can be used with <b>-r</b> or stand-alone)
+<b>-f</b>  make errors fatal
+<b>-m</b>  specify file creation mode, otherwise umask is used
+<b>-n</b>  specify file to use, see below
+<b>-q</b>  quiet, no error messages
+<b>-r</b>  read data from file (deserialize)
+<b>-s</b>  do not generate trace messages
+<b>-t</b>  reference file, <b>serialize</b> if <i>file</i> is newer than <i>name</i>
+<b>-w</b>  write data to file (serialize)
+<b>-x</b>  also write <b>declare</b> statements, see below
+<b>-z</b>  zero data (can be used with <b>-w</b> or stand-alone)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>file</i>  a file path
+<i>mode</i>  octal file or folder mode, lower 9 bits only
+<i>name</i>  a path if it contains a <b>/</b> or a name in cache the folder
+<i>var</i>   name of a variable to be serialized</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'><b>true</b> at success or <b>false</b> otherwise. After a successfull open the variable <b>CEN_SERIALIZE</b> is set to the full path of <i>name</i>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) <b>serialize</b> some variables, zero data<pre><b>DAT_VERSION</b>=27
+<b>DAT_ARRAY</b>=(<b>&quot;north&quot;</b> <b>&quot;east&quot;</b> <b>&quot;south&quot;</b> <b>&quot;west&quot;</b>)
+<b>serialize</b> <b>-w</b> <b>-m</b> 664 <b>-z</b> <b>DAT_VERSION</b> <b>DAT_ARRAY</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) deserialize data from (1), delete file<pre><b>serialize</b> <b>-r</b> <b>-d</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) just get the path<pre><b>serialize</b> ; message <b>&quot;Path: $CEN_SERIALIZE&quot;</b></pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The default for <i>name</i> is <b>&quot;$CEN_NAME.dat&quot;</b>. If the path contains no <b>&quot;/&quot;</b> it is prefixed with the 1st existing folder from: <b>&quot;~/.cache&quot;</b> <b>&quot;~/.config&quot;</b> <b>&quot;~&quot;</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>By default the serialized data will not contain <b>declare</b> statements. This allows the data to be deserialized by this function. This will not work for dictionaries with <b>declare -A</b> statements (but in a typical script data will be declared before deserialization). The <b>-x</b> option will add <b>declare</b> statements to the serialized data, but as stated before such data must be deserialized manually.</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_ins.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_lib.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

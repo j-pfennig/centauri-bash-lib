@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ centaurihelp</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='centauricreate.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='index.html#top'>[Library]</a></div>
+<div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
+<div class='nav-right'><a href='centaurilauncher.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='centaurihelp' class='item-script'>
+<span>Script</span><span> - </span><span>centaurihelp</span><span> - </span><span>Documentation generator for centauri-bash-lib and centauritools</span></div>
+<div class='def-row'>
+<div class='def-label'>Usage:</div>
+<div class='def-text'><b>centaurihelp</b> [<b>-A</b>] [<b>-C</b>] [<b>-I</b>] [<b>-M</b>] [<b>-R</b>] [<b>-H</b> <i>folder</i>] [<b>-N</b>] [<b>-U</b> <i>file</i>] ...
+<b>centaurihelp</b> <b>-T</b> [<b>-H</b> <i>folder</i>] [<b>-N</b>] [<b>-U</b> <i>file</i>] ...
+<b>centaurihelp</b> <b>-G</b> <i>what</i> [<b>-H</b> <i>folder</i>] ...
+<b>centaurihelp</b> <b>-D</b> ...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Documentation generator for centauri-bash-lib and centauritools.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>This tool can generate documentation in HTML format or can be used at
+the command line in text mode (like the linux <b>&quot;man&quot;</b> program).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b> <b>--dryrun</b>          show what would be done, make no changes
+<b>-f</b> <b>--force</b>           override prudent default behaviours
+<b>-h</b> <b>--help</b>            show this text
+<b>-i</b> <b>--include</b> <i>expr</i>    include only items matching the expression
+<b>-n</b> <b>--no</b>              do not prompt for confirmation, assume &apos;no&apos;
+<b>-q</b> <b>--quiet</b>           report errors only
+<b>-v</b> <b>--verbose</b>         be verbose (use twice for debug)
+<b>-x</b> <b>--exclude</b> <i>expr</i>    exclude the items matching the expression
+<b>-y</b> <b>--yes</b>             do not prompt for confirmation, assume &apos;yes&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>   <b>--embed</b>   <i>name</i>    use <i>name</i> instead of script name
+   <b>--info</b>            print full path and version
+   <b>--pager</b>   <i>prog</i>    pipe output thru pager, use &apos;none&apos; to disable
+   <b>--trace</b>           trace actions() or run()
+   <b>--wait</b>            prompt before exit</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-D</b> <b>--delete</b>          delete caches
+<b>-G</b> <b>--generate</b> <i>what</i>   generate HTML documentation
+<b>-H</b> <b>--html</b>   <i>folder</i>   create HTML output in folder     (implies <b>--all</b>)
+   <b>--file</b>            text only: output file names     (implies <b>--lines</b>)
+   <b>--lines</b>           text only: output line numbers
+<b>-L</b> <b>--library</b>         process library documentation (default)
+<b>-T</b> <b>--tools</b>           process the usage output of tools
+<b>-U</b> <b>--use</b>      <i>file</i>   process a single file, <b>&quot;-U .&quot;</b> for &apos;centaurihelp&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-A</b> <b>--all</b>             (re)create missing index/modules/content/reference
+<b>-C</b> <b>--content</b>         produce table-of-content
+<b>-I</b> <b>--index</b>           html only: create &apos;index.html&apos;
+<b>-M</b> <b>--modules</b>         produce table of modules
+<b>-R</b> <b>--reference</b>       produce function/topic reference</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>what</i>       selection: all | tools | library | dummy
+<i>folder</i>     output folder (- for /dev/stdout, + to prompt)
+<i>file</i>       any tool or library file</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Filters:</div>
+<div class='def-text'>All extra command line arguments work as output filters. Any number of
+filters can be used and are cumulative. Tree selectors are provided to
+restrict output to functions &apos;-&apos; or topics &apos;+&apos; or modules &apos;=&apos;.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'># select generated output
+<b>centaurihelp</b> <b>--content</b>   # output table-of-content
+<b>centaurihelp</b> <b>--all</b>       # also output index/modules/content/reference
+<b>centaurihelp</b> <b>-i</b> ext      # only output _centauri_bash_ext documentation
+<b>centaurihelp</b> folder att  # filter for &apos;*folder*&apos; or &apos;*att*&apos;
+<b>centaurihelp</b> <b>-M</b> move     # in which module is &apos;move&apos;
+<b>centaurihelp</b> <b>-C</b> <b>-i</b> _sys  # what is in module _centauri_bash_sys
+<b>centaurihelp</b> - sys       # restrict output to functions</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'># create the documentation as HTML (&apos;doc&apos; is the destination folder)
+<b>centaurihelp</b> <b>--delete</b> <b>--all</b> <b>--html</b> doc</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'># create/view the documentation as file (<b>--force</b> enables ANSI escapes)
+<b>centaurihelp</b> <b>--all</b> <b>--force</b> &gt; doc.txt
+less -FRX doc.txt</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'># generate HTML documentation
+<b>centaurihelp</b> <b>--generate</b>=tools <b>-H</b> mydir      # tool docs to custom location
+<b>centaurihelp</b> <b>--delete</b> <b>--generate</b>=all        # clear cache, docs to default</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='centauricreate.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
+<div class='nav-right'><a href='centaurilauncher.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>
