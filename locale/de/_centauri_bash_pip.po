@@ -1,0 +1,29 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+#: /var/centauri/library/_centauri_bash_pip:121
+msgid "server already initialized"
+msgstr "Server schon initialisiert"
+
+#: /var/centauri/library/_centauri_bash_pip:129
+msgid "server not initialized"
+msgstr "Server nicht initialisiert"
+
+#: /var/centauri/library/_centauri_bash_pip:193
+msgid "Pager not found:"
+msgstr "Pager nicht gefunden:"
+
+#: /var/centauri/library/_centauri_bash_pip:385
+msgid "command failed (status %s): %s"
+msgstr "Kommando fehlgeschlagen (Fehler %s): %s"
+
+#: /var/centauri/library/_centauri_bash_pip:387
+msgid "command failed (%s): %s"
+msgstr "Kommando fehlgeschlagen (%s): %s"
+
+#: /var/centauri/library/_centauri_bash_pip:419
+msgid "coproc already in use"
+msgstr "coproc läuft bereits"
+
+#~ msgid "not allowed in subshell"
+#~ msgstr "In Sub-Shell nicht erlaubt"

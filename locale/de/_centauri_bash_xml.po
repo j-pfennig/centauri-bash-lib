@@ -1,0 +1,20 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+#: /var/centauri/library/_centauri_bash_xml:272
+msgid "Conflicting options"
+msgstr "Widersprüchliche Optionen"
+
+#: /var/centauri/library/_centauri_bash_xml:412
+#: /var/centauri/library/_centauri_bash_xml:794
+msgid "Missing tag"
+msgstr "Fehlendes Tag"
+
+#: /var/centauri/library/_centauri_bash_xml:632
+#: /var/centauri/library/_centauri_bash_xml:700
+msgid "Missing type"
+msgstr "Fehlender Typ"
+
+#: /var/centauri/library/_centauri_bash_xml:633
+msgid "Missing name"
+msgstr "Fehlender Name"

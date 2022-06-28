@@ -1,0 +1,130 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+#: /var/centauri/tools/centauricreate:4
+msgid "Create a centauri-bash-lib user script from a template"
+msgstr "Ein centauri-bash-lib Benutzerskript aus Vorlage erstellen"
+
+#: /var/centauri/tools/centauricreate:117
+msgid "anonymous"
+msgstr "anonym"
+
+#: /var/centauri/tools/centauricreate:119
+msgid "all rights reserved"
+msgstr "Alle Rechte vorbehalten"
+
+#: /var/centauri/tools/centauricreate:122
+msgid "<copy from input>"
+msgstr "<Eingabe übernehmen>"
+
+#: /var/centauri/tools/centauricreate:124
+msgid "Selected template:"
+msgstr "Benutzte Vorlage:"
+
+#: /var/centauri/tools/centauricreate:125
+msgid "Short description:"
+msgstr "Kurzbeschreibung:"
+
+#: /var/centauri/tools/centauricreate:126
+msgid "Author           :"
+msgstr "Autor(in)       :"
+
+#: /var/centauri/tools/centauricreate:127
+msgid "License          :"
+msgstr "Lizenz          :"
+
+#: /var/centauri/tools/centauricreate:128
+msgid "Interpreter      :"
+msgstr "Interpreter     :"
+
+#: /var/centauri/tools/centauricreate:129
+msgid "Output path      :"
+msgstr "Ausgabe Datei   :"
+
+#: /var/centauri/tools/centauricreate:130
+msgid "Do you want to continue"
+msgstr "Ausführung fortsetzen"
+
+#: /var/centauri/tools/centauricreate:139
+msgid "Script created"
+msgstr "Skript erstellt"
+
+#: /var/centauri/tools/centauricreate:170
+msgid "create a script"
+msgstr "Ein Skript erstellen"
+
+#: /var/centauri/tools/centauricreate:171
+msgid "show cached options"
+msgstr "Zeige Optionscache"
+
+#: /var/centauri/tools/centauricreate:176
+msgid "set script author"
+msgstr "Setze den Skript Author"
+
+#: /var/centauri/tools/centauricreate:177
+msgid "short description of script"
+msgstr "Kurzbeschreibung des Skripts"
+
+#: /var/centauri/tools/centauricreate:178
+msgid "set script license"
+msgstr "Setze die Skipt Lizenz"
+
+#: /var/centauri/tools/centauricreate:179
+msgid "don't modify config file"
+msgstr "Konfigurationsdatei nicht ändern"
+
+#: /var/centauri/tools/centauricreate:180
+msgid "select template option (repeatable)"
+msgstr "Setze Option in Vorlage (wiederholbar)"
+
+#: /var/centauri/tools/centauricreate:181
+msgid "override interpreter path (shebang)"
+msgstr "Interpreter überschreiben (shebang)"
+
+#: /var/centauri/tools/centauricreate:182
+msgid "choose template (default: $DAT_NAME_DEF)"
+msgstr "Vorlage wählen (Voreinstellung: $DAT_NAME_DEF)"
+
+#: /var/centauri/tools/centauricreate:184
+msgid "The values of --author and --license are cached."
+msgstr "Die Werte von --author und --license werden gecached."
+
+#: /var/centauri/tools/centauricreate:186
+msgid "arguments"
+msgstr "Argumente"
+
+#: /var/centauri/tools/centauricreate:187
+msgid "any path, for example:"
+msgstr "Ein Pfad, zum Beispiel:"
+
+#: /var/centauri/tools/centauricreate:188
+msgid "option name, gets converted to uppercase"
+msgstr "Optionsname, wird in Grosschreibung konvertiert"
+
+#: /var/centauri/tools/centauricreate:189
+msgid "any text not containing \\\";\\\" or \\\"-\\\" to reset"
+msgstr "Text der kein Semikolon enthält, \\\"-\\\" für Vorgabe"
+
+#: /var/centauri/tools/centauricreate:190
+msgid "name of a template, see below"
+msgstr "Name einer Vorlage, siehe unten"
+
+#: /var/centauri/tools/centauricreate:192
+msgid "templates"
+msgstr "Vorlagen"
+
+#: /var/centauri/tools/centauricreate:194
+msgid "examples"
+msgstr "Beispiele"
+
+#: /var/centauri/tools/centauricreate:195
+msgid "create script without 'main()' from centauriHello template"
+msgstr "Von Vorlage 'centauriHello' Skript ohne 'main()' erstellen"
+
+#: /var/centauri/tools/centauricreate:198
+msgid "create script with 'action' syntax"
+msgstr "Erstelle Skript mit 'action' Syntax"
+
+#: /var/centauri/tools/centauricreate:201
+msgid "create script without demo code"
+msgstr "Erstelle Skript ohne Demo Code"
