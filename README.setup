@@ -57,7 +57,7 @@ fi 1>&2
 cd "$ROOT" || exit $?
 # path to find centauricreate and to load the bootstrap proxy
 PORG="$ROOT/tools:$PATH"
-# path to find CEN_LIBRARY for ugily optimization
+# path to find CEN_LIBRARY for uglify optimization
 PDES="$DEST/tools:$PATH"
 
 # setup/update installation destination
@@ -74,6 +74,7 @@ PATH="$PDES" $DEST/library/uglify --embed="$SELF:a" -
 # create an example library config file
 # ------------------------------------------------------------------------------
 
+[ "$EUID" != 0 ] && mkdir "$DEST/default"
 if [ -d "$DEST/default" ] && [ ! -e "$DEST/default/centauri-bash-lib" ] ; then  
 cat >"$DEST/default/centauri-bash-lib" <<!EOF
 # This is configuration data for centauriXXXX --info install|uninstall|update
