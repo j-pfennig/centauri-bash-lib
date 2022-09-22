@@ -72,7 +72,7 @@ msgstr "... warten auf"
 
 #: /var/centauri/library/_centauri_bash_mnt:278
 msgid "by #L '#A' "
-msgstr "mit #L '#A'"
+msgstr "mit #L '#A' "
 
 #: /var/centauri/library/_centauri_bash_mnt:288
 msgid " (#L '#A' device '#D')"

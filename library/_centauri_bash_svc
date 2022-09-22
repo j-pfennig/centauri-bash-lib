@@ -157,15 +157,16 @@ isfunction -y progress
 # ------------------------------------------------------------------------------
 # background - Run a script in background, redirect input/output
 #
-# Call:      background [-m <suff>] [-n] [-o <file>|-s] <script> <arg>...
+# Call:      background [-m <suff>] [-n] [-o <file>|-s] [-w] <script> <arg>...
 #
 # Options:  -m  move non-empty output-file (overrides previous backup)
 #           -n  don't background, just redirect input/output
 #           -i  input from file (redirects **stdin**)
 #           -o  output to file (redirects **stdout** and **stderr**)
 #           -s  output to **syslog** (via [[message()]] et al)
+#           -w  no disown, simple subshell, set CEN_QUIT_WSUB for [[quit()]]
 #
-# variable: CEN_BACKGROUND  PID of the background process
+# variable: CEN_BACKGROUND  PID of the ''background'' process
 #
 #+Warning:  If this function is used by a systemd service, it will not prevent systemd
 #           from terminating the background thread when the service **cgroup** is closed.
@@ -182,19 +183,26 @@ isfunction -y progress
 #.          background -s run_bgnd                  # to syslog
 #.          background -o "$CEN_NAME.log" run_bgnd  # to file
 #.          background -n -o x.log -m old run_bgng  # logfile only
+#.          background -w -o - run_bgnd             # keep output, no disown
 #
-#+Uses in/out redirection and bash's **disown** command. In contrast to
-# **/usr/bin/nohup** this function does not start a new shell. This allows
-# to run a subroutine of a script in background.  The background thread
-# will not terminate when the caller exits.
+#+Uses in/out redirection and bash's **disown** command by default. In contrast to
+# **/usr/bin/nohup** this function does not start a new shell. This can be used to run
+# a subroutine of a script in ''background''.  The ''background'' process will not be
+# terminated when the main shell exits. Option -w disables using **disown** but sets
+# CEN_QUIT_WSUB to make [[quit()]] wait for all subshells to terminate.
 #
 #+The function is in module [[_centauri_bash_svc]] because it optionally uses
 # **syslog** output. This will cause a conflict with the [[_centauri_bash_con]] or
 # the [[_centauri_bash_win]] module.
+#
+#+When running ''background'' process (subshell) the CEN_QUIT_WSUB is set, causing
+# [[quit()]] to wait for all subshells to terminate before running the quit
+# hook. This will prevent the main shell to delete files created by [[tmpfile()]]
+# from a subshell.
 # ------------------------------------------------------------------------------
 CEN_BACKGROUND=
 background() {
-    local _fmov _fnot _finp _fout _slog="$CEN_SVC_SYSLOG" _mesg="<none>"
+    local _fmov _fnot _finp _fout _fwai _slog="$CEN_SVC_SYSLOG" _mesg="<none>"
     CEN_BACKGROUND=
 
     while [ "${1::1}" = "-" ] ; do
@@ -203,8 +211,9 @@ background() {
       -i)   shift ; _finp="$1" ;;
       -m)   shift ; _fmov="$1" ;;
       -n)   _fnot=1 ;;
-      -o)   shift ; _fout="$1" ; CEN_SVC_SYSLOG=0 ;;
+      -o)   shift ; _fout="${1:-}" ; CEN_SVC_SYSLOG=0 ;;
       -s)   _fout= ; CEN_SVC_SYSLOG=2 ;;
+      -w)   _fwai=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -212,7 +221,7 @@ background() {
     if [ -n "$_fmov" ] && [ -s "$_fout" ] ; then
         [ "${_fmov/./}" = "$_fmov" ] && _fmov="$_fout.$_fmov"
         $CEN_TRACE -a $"Renaming old output:" "$_fout  => $_fmov"
-        system -e -p -- mv -f "$_fout" "$_fmov"
+        move -- "$_fout" "$_fmov"
     fi
     [ "$CEN_SVC_SYSLOG" = 1 ] && CEN_SVC_SYSLOG=2       # syslog only -or- file
     [ "${CEN_SVC_SYSLOG:-0}" = 0 ] || _mesg="<syslog>"
@@ -220,11 +229,22 @@ background() {
     if [ -n "$_fnot" ] ; then
         $CEN_TRACE -a -p $"Run in foreground (output '%s'): %s" "${_fout:-$_mesg}" "$*"
         JOURNAL_STREAM= $@ <"${_finp:-/dev/null}" &>>"${_fout:-/dev/null}"
+    elif [ "$_fout" = '-' ] ; then
+        $CEN_TRACE -a $"Run in background:" "$*"
+        {   CEN_EXIT= ; $@
+            [ "$CEN_EXT_TPID" = "$BASHPID" ] && tmpfile -d
+            exit "${CEN_EXIT:-0}"
+        } <"${_finp:-/dev/null}" &
+        CEN_BACKGROUND=$!
+        [ -n "$_fwai" ] && CEN_QUIT_WSUB=1 || disown -h $!
     else
         $CEN_TRACE -a -p $"Run in background (output '%s'): %s" "${_fout:-$_mesg}" "$*"
-        { JOURNAL_STREAM= $@ ; exit "${CEN_EXIT:-0}" ; } <"${_finp:-/dev/null}" \
-                                                       &>>"${_fout:-/dev/null}" &
-        CEN_BACKGROUND=$! ; disown -h $!
+        {   CEN_EXIT= ; JOURNAL_STREAM= $@
+            [ "$CEN_EXT_TPID" = "$BASHPID" ] && tmpfile -d
+            exit "${CEN_EXIT:-0}" ;
+        } <"${_finp:-/dev/null}" &>>"${_fout:-/dev/null}" &
+        CEN_BACKGROUND=$!
+        [ -n "$_fwai" ] && CEN_QUIT_WSUB=1 || disown -h $!
     fi
     CEN_SVC_SYSLOG="$_slog" ; return 0                  # restore caller's syslog
 }
@@ -303,7 +323,7 @@ pidfile() {
 ### TODO try harder
             [ "/proc/$1/exe" -ef "$BASH" ] && return 0
             [ -r "/proc/$1/exe" ] || return 0           # no check
-            system -e -p -- unlink "$3" ; return 1 ;;   # failure
+            remove -- "$3" ; return 1 ;;                # failure
 
       *)    _cen_abort - "$1"
       esac ; shift
@@ -314,27 +334,36 @@ pidfile() {
     [ -w "$file" ] || file="$TMP"
     file+="/${name##*/}$_fext"
 
-    if [ -n "$_flgw" ] ; then
+    if [ -n "$_flgw" ] ; then                           # write pid file...
         if [ "$_flgw" != "-" ] ; then
             create -r -t -v _flgw -- "$file" 600 || return 1
         fi
         CEN_PIDFILE="$file" ; return 0
+    fi
 
-    elif [ -n "$_flgd" -o -n "$_flgs" ] ; then
-        [ -e "$file" ] || return 1                      # no PID file
-        [ -n "$_flgs" ] && read temp < "$file"
+    if ! [ -e "$file" ] ; then                          # no PID file
+        $CEN_TRACE "pidfile: no pid file:" "$file"
+        return 1
+    fi
+    if [ -z "$_flgd" -o -n "$_flgs" ] ; then            # read PID file
+        if ! read temp 2>/dev/null <"$file" ; then
+            $CEN_TRACE "pidfile: cannot read:" "$file"
+            return 1
+        fi
+    fi
+
+    if [ -n "$_flgd" -o -n "$_flgs" ] ; then
         pidfile -v "$temp" "$name" "$file" || return 3  # wrong process
-        [ -n "$_flgd" ] && system -e -p -r -- rm "$file"
+        [ -n "$_flgd" ] && remove -r -- "$file"
         [ "${temp:-0}" = 0 ] && return 0                # nothing to kill
         [ "${_flgs:--}" = "-" ] && _flgs="SIGTERM"
         kill -s $_flgs $temp 2>/dev/null ; return       # return status
     fi
 
-    read temp 2>/dev/null <"$file" || return 1
     [ -z "$temp" ] && return 1                          # no PID file
     if [ "$temp" != "0" ] ; then
         if ! kill -0 "$temp" 2>/dev/null ; then         # PID not valid
-            system -e -p -r -- rm "$file" ; return 2    # delete stale pid file
+            remove -r -- "$file" ; return 2             # delete stale pid file
         fi
         pidfile -v "$temp" "$name" "$file" || return 3  # wrong process
     fi
@@ -707,10 +736,10 @@ runservice() {
 
     status) [ "${#_slst[@]}" -gt 1 ] && _cen_abort "status allows only 1 arg"
             if [ -n "$CEN_SVC_SYSD" ] ; then
-                 system -n -r -s _info -q -- systemctl is-active "$_slst" || ((_serr |= 4))
+                 sysrun -n -r -q -a _info -- systemctl is-active "$_slst" || ((_serr |= 4))
                  _kind=$"Service (systemd)"
             else
-                if system -n -r -q -- "$CEN_SVC_SYSV/$_slst" "status" ; then
+                if sysrun -n -r -q -- "$CEN_SVC_SYSV/$_slst" "status" ; then
                    _info=$"active"
                 else
                    _info=$"inactive" ; ((_serr |= 4))
@@ -730,11 +759,11 @@ runservice() {
             embed -- "$_stmp" $_scmd --daemon=1 || _stat=$? ; _kind=$"Daemon"
         done
     elif [ -n "$CEN_SVC_SYSD" ] ; then
-        system $_rdry -n -p -- systemctl $_user "$_scmd" "${_slst[@]}"
+        sysrun $_rdry -n -p -- systemctl $_user "$_scmd" "${_slst[@]}"
         _stat=$? ; _kind=$"Service (systemd)"
     else
         for _stmp in "${_slst[@]}" ; do
-            system $_rdry -p -- "$CEN_SVC_SYSV/$_stmp" "$_scmd" || _stat=$?
+            sysrun $_rdry -p -- "$CEN_SVC_SYSV/$_stmp" "$_scmd" || _stat=$?
         done
         _kind=$"Service (SysV)"
     fi
@@ -1174,16 +1203,16 @@ _cen_svc_forking() {
     [ "$CEN_SVC_TYPE" = "simple" -o "$CEN_SVC_TYPE" = "daemon" ] || return
 
     local file="${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}"
-    [ "${file::1}" = "/" ] || system -f -p -s file -- readlink -f -s -- "$file"
+    [ "${file::1}" = "/" ] || sysrun -f -p -a file -- readlink -f -s -- "$file"
     $CEN_TRACE -a $"Starting as a daemon:" "$file"
     [ "$EUID" = "0" ] || PATH+=":$CEN_PATHS/sbin:$CEN_PATHS/usr/sbin"
 
     pidfile -n -r                               # get file path
-    system -f -p -- start-stop-daemon --start --background --oknodo \
+    sysrun -f -p -- start-stop-daemon --start --background --oknodo \
         --make-pidfile --pidfile="$CEN_PIDFILE" \
         --exec "$file" -- "${CEN_CMDOPTS[@]}" start-daemon
     [ -e "$CEN_PIDFILE" ] &&
-        system -q -- chmod 700 "$CEN_PIDFILE"   # to be sure
+        sysrun -q -- chmod 700 "$CEN_PIDFILE"   # to be sure
     exit 0                                      # don't call quit() here
 }
 
@@ -1236,6 +1265,8 @@ if [ "$1" != '-A' -o -n "CEN_SVC_TYPE" ] ; then
     CEN_HOOK_MESSAGE="_cen_svc_message"
 fi
 
+# the svc  module uses sysrun, remove etc
+embed -m "_centauri_bash_ext"
 :
 
 # end

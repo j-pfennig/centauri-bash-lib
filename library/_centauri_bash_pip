@@ -203,13 +203,14 @@ syspager() {
     # run with pager, add some options to pagers
     local _args _sane
     case "${CEN_OPT_PAGER##*/}" in
-        true)         _args=("$CEN_TOOLS/centaurihelp" --pager=no --force --tool "<pipe>") ;;
-# TODO fixme pager would hang ...
-##      true)         _args=($CEN_TOOLS/centaurihelp --force --tool "<pipe>") ;;
+        true)         _args=($CEN_TOOLS/centaurihelp --force --tool "<pipe>")
+                      ;;
         centaurihelp) _args=("$CEN_OPT_PAGER" --tool '<pipe>')
-                       [ -n "$CEN_FEATURE_T" ] && _args+=('--l10n')  ;;
-        less)         _args=("$CEN_OPT_PAGER" -R -F -X) ;;
-        *)            _args=("$CEN_OPT_PAGER") ;;
+                      [ -n "$CEN_FEATURE_T" ] && _args+=('--l10n')
+                      ;;
+        less)         _args=("$CEN_OPT_PAGER" -R -F -X)
+                      ;;
+        *)            _args=("$CEN_OPT_PAGER")
     esac
 
     # run pager via syspipe to avoid sub-shell by pipe problem
@@ -278,9 +279,6 @@ syspager() {
 #           used to capture <cmd> output, and the <consumer> reads input from this
 #           file.
 #
-#+          Fifos can be used in a sub-shell only if [[tmpfile()]] was initialized
-#           by the main process.
-#
 #+Errors:   Error handling in co-processes is challenging. If error handling is not
 #           disabled via "-e -" then syspipe registers and clears a handler for SIGPIPE.
 #           Because of this and the bash restrictions on **coproc**, this
@@ -301,7 +299,7 @@ syspager() {
 #
 # Examples: (1) fifo: send data through a pager
 #.          producer() {
-#.              for ((i=0 ; i<100i0; i++)) ; do
+#.              for ((i=0 ; i<100; i++)) ; do
 #.                 [ -z "$CEN_SYSPIPE" ] && break   # stop after SIGPIPE error
 #.                 echo "Hello $i"
 #.              done 2>/dev/null                    # hide SIGPIPE error message
@@ -322,10 +320,6 @@ syspager() {
 #.          output() {  local line ; while read -r line ; do echo "$line" ; done ; }
 #.          local farg="/etc/fstab"
 #.          syspipe -x -o input -d output -n -- worker
-#
-#+The implementation allows nested calles to coproc from sub-shells and calls
-# involving pipes from the master shell (otherwise pipes would not be removed
-# on termination). If these conditions are not met, the script is aborted.
 #
 #+Variable CEN_SYSPIPE contains the pipe handle(s). The variable can also serve
 # as a condition for the <producer> to stop (the error handler clears SIGPIPE).
@@ -410,6 +404,7 @@ syspipe() {
         eval exec "$_herr>&2 $_hstd>&1"                 # save stderr and stdout
         local _call="CEN_SYSPIPE=; $_ocal SIGPIPE - '$_acmd'; _ocal="
         trap "trap SIGPIPE; exec 1>&$_hstd 2>&$_herr; $_call" SIGPIPE
+        eval exec "$_herr>&- $_hstd>&-"
     fi
 
     # run command via coproc
@@ -444,8 +439,10 @@ syspipe() {
                [ -n "$_fcap" ] && exec 2>&1
                shift
                if isfunction -- "$_acmd" ; then
-                    "${_acmd[@]}"
+                    # a function may create subprocesses and temporary files
+                    "${_acmd[@]}" ; wait ; tmpfile -d
                else
+                    # exec is safe here as we are called as last cmd in subshell
                     exec "${_acmd[@]}"
                fi
             fi

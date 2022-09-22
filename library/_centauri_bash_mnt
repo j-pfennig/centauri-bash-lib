@@ -32,7 +32,7 @@ CEN_MOUNT_ARR=()        # find by type
 
 CEN_MOUNT_EXC=(cgroup cgroup2 proc \
                autofs configfs bpf debugfs devpts devtmpfs efivarfs fusectl hugetlbfs \
-               mqueue nfsd pstore rpc_pipefs securityfs sysfs tmpfs tracefs)
+               mqueue nfsd pstore ramfs rpc_pipefs securityfs sysfs tmpfs tracefs)
 
 CEN_MNT_OPT_D=          # automount ...
 CEN_MNT_OPT_M=

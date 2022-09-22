@@ -1335,10 +1335,19 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #.          PATH+=":~/centauritools"            # add this to your ~/.bashrc
 #
 #+Non-FHS:  Most Linux systems follow the FSH standard. For other implementations or
-#           to install into a non-root FS, the CEN_PATHS array varialbe is provided.
-#           It is initialized by the [[library proxy]] to FSH values:
+#           to install into a non-root FS, the CEN_PATHS array variable is provided.
+#           It is initialized by the [[library proxy]] to FSH values. The CEN_PREFIX
+#           variable can be set to point to a different root folder:
 #
-#.          # paths that can be installation dependent
+#.          # to alter the FS root folder (not required for termux, see below)
+#.          export CEN_PREFIX=/some/other/root
+#
+#+          When CEN_PREFIX is not set but **PREFIX** is non-empty and no "/var" folder
+#           is found, _centauri_bash_lib sets CEN_PREFIX="$PREFIX". This is used to
+#           support termux linux on android. CEN_PREFIX is automatically prepended to
+#           CEN_PATHS.
+#
+#.          # paths that can be installation dependent (don't use CEN_PREFIX here):
 #.          CEN_PATHS=("" "/usr/bin" "/etc" "/var" "/tmp")
 #
 #+          At **_centauri_bash_lib** load time, it checks "${CEN_PATHS[1]/bash}".

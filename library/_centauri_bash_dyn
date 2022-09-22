@@ -7,10 +7,11 @@
 # Call:     only via [[_centauri_bash_lib]] -a
 #
 #+This module is created by the **autoload** utility at installation time.
-# It contains proxy function definitions to dynamically load modules.
+# It contains proxy function definitions to dynamically load modules and to
+# enable loadable bash builtins.
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_dyn"]="0.12:1"
+CEN_MODULES["_centauri_bash_dyn"]="0.20:1"
 
 # ------------------------------------------------------------------------------
 # Dynamic loading + Dynamic loading of _centauri_bash_lib modules
@@ -61,39 +62,35 @@ CEN_MODULES["_centauri_bash_dyn"]="0.12:1"
 # ------------------------------------------------------------------------------
 # Builtin + Using loadable bash builtins
 #
-#+General:  The library tries to avoid calls to exernal (e.g. non-bash) tools
+#+General:  The library tries to avoid calls to external (e.g. non-builtin) tools
 #           whenever possible. Bash has a lot of builtins, see "help°enable". For
 #           your linux distribution some extra builtins (bash examples) may be
 #           provided (on a debian system use "apt°install°bash-builtins"). The
-#           library will use installed builtins for **mkdir**, **rmdir**, **unlink**
-#           and **ln** to speed-up filesystem operations. The builtin for **sleep**
-#           is also supported.
+#           library will use installed builtins for **mkdir**, **rmdir**, **rm**,
+#           **ln**, **unlink**, **mkfifo**,  **sleep** and **realpath**.
 #
 #+          The "$CEN_ROOT/library/autoload" tool can generate wrappers that
 #           attempt to autoload bash builtins, not causing harm if a builtin is
 #           not installed. See **autoload** option --builtin.
 #
-#+Warnings: (1) The builtins comming with debian have reduced functionality in
-#           comparison to GNU tools. [[_centauri_bash_lib]] is aware of this and
-#           uses builtins in a safe way. User scripts might want to prefix the
-#           tool's name with a path to prevent unsafe builtin usage:
+#+Warnings: (1) The builtins comming with bash have less functionality than the
+#           corresponding GNU tools. [[_centauri_bash_ext]] is aware of this and
+#           uses builtins in a safe way.
 #
-#.          # debian's builtin 'ln' does not support option '-r':
-#.          /usr/bin/ln -s -r something unsafe      # or better ...
-#.          system -- $CEN_COREBIN/ln -s -r something nice
-#.          sysrun -- $CEN_COREBIN/ln -s -r something nice
+#.          # For example builtin 'ln' does not support option '-r'
+#.                              # per default system does not use builtins ...
+#.          system -- ln -s -r something unsafe
+#.          °                   # but sysrun needs option -i ...
+#.          sysrun -i -- ln -s -r something unsafe
 #
-#           (2) Builtins are only enabled if [[_centauri_bash_dyn]] is loaded.
+#+          (2) Builtins are only loaded if [[_centauri_bash_dyn]] is enabled
+#               via CEN_FEATURE_A (library option -a).
 #
 #.          # add option '-a' to load _centauri_bash_dyn
 #.          PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r "$0" "0.00:1" || exit 2
 #
 #+          (3) Builtins are best used via [[sysrun()]] or by the library code
-#           itself. [[system()]] does not even run the extra builtins without
-#           option "-n". This is due to use of the "$(<cmd> <arg>...)" construct
-#           in order to capture output or error messages. In this case bash forks
-#           a subshell which consumes time. To capture output the [[sysrun()]]
-#           function uses a temporary file instead.
+#           itself, for example [[move()]], [[remove()]] or [[symlink()]].
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Preprocessing + Preprocessing modules sources to reduce startup time
@@ -160,12 +157,16 @@ _cen_dyn_load() {
 _cen_dyn_builtin() {
     local _stat=0 _path _func="$1" _user="$CEN_PATHS/usr" ; shift
     unset -f $_func # delete proxy
-    for _path in lib lib64 lib32 - ; do
-        [ "$_path" = '-' ] && return 1
-        _path="$_user/$_path/bash"
-        [ -r "$_path/$_func" ] || continue
-        enable -f "$_path/$_func" "$_func" &>/dev/null && break
-    done
+    # try to enable via BASH_LOADABLES_PATH 1st, then custom list...
+    if ! enable -a "$_func" &>/dev/null ; then
+        for _path in lib lib64 lib32 - ; do
+            [ "$_path" = '-' ] && return 1
+            _path="$_user/$_path/bash"
+            [ -r "$_path/$_func" ] || continue
+            [ -n "$CEN_DYN_NOLOADABLES" ] && break
+            enable -f "$_path/$_func" "$_func" &>/dev/null && break
+        done
+    fi
     # $CEN_DEBUG trace -a "load builtin '$_func'"
     [ $# = 0 ] && return $_stat
     $_func "$@" || _stat=$? # call real builtin
@@ -249,6 +250,8 @@ usagecat() { _cen_dyn_load use "$@" ; }
 usageset() { _cen_dyn_load use "$@" ; }
 usageopt() { _cen_dyn_load use "$@" ; }
 
+webapp() { _cen_dyn_load web "$@" ; }
+
 windows() { _cen_dyn_load win "$@" ; }
 windialog() { _cen_dyn_load win "$@" ; }
 
@@ -262,12 +265,5 @@ xml_list() { _cen_dyn_load xml "$@" ; }
 xml_sequence() { _cen_dyn_load xml "$@" ; }
 xml_table() { _cen_dyn_load xml "$@" ; }
 xml_text() { _cen_dyn_load xml "$@" ; }
-
-sleep() { _cen_dyn_builtin sleep "$@" ; }
-mkdir() { _cen_dyn_builtin mkdir "$@" ; }
-mkfifo() { _cen_dyn_builtin mkfifo "$@" ; }
-rmdir() { _cen_dyn_builtin rmdir "$@" ; }
-unlink() { _cen_dyn_builtin unlink "$@" ; }
-ln() { _cen_dyn_builtin ln "$@" ; }
 
 # End

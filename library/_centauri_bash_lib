@@ -63,9 +63,11 @@ CEN_NOCOLS=             # set for initial COLUMNS=0
 CEN_PAGER=              # set at 1st call to syspager if paging is on
 CEN_QUIT_SANE=          # run 'stty sane' in quit
 CEN_QUIT_TRAP=49        # default signal to enter 'quit -s 4'
-CEN_QUIT_WAIT=          # wait after quit
+CEN_QUIT_WSUB=          # must wait for subshell flag
+CEN_QUIT_WAIT=          # delay after quit
 CEN_RUNDRY=1            # make no changes
 CEN_STAGE='loading'     # what is going on
+CEN_STDERR=             # saved initial error handle, see 'exec 2>&$CEN_STDERR'
 CEN_TRACE=:             # call trace() for -v only
 CEN_TRACE2=:            # call trace() for -v -v only
 CEN_TRAPLVL=            # see context -t
@@ -346,14 +348,16 @@ fatal() {
 # Call:     quit
 #           quit -e|-t [--] [-] <msg>...
 #           quit [-a|-i] [-m|-n] [-p] [-r] [-s <code>] [--] <msg>...
+#           quit -h
 #
 # Options:  ... most [[message()]] options (the implementation calls **message**)
 #           -e  check for error, print "Terminated after error" if 1st arg is not '-'
+#           -h  just run ''quit'' hook and reset to default (save for subshell)
 #           -s  override the exit code (CEN_EXIT)
 #           -t  sets CEN_EXIT=4, print "Terminated" if 1st arg is not '-'
 #           -y  run "stty sane" to restore terminal defaults
 #
-#+Return:   This function does not return, it calls an optional quit hook function
+#+Return:   This function does not return, it calls an optional ''quit'' hook function
 #           and terminates the script with CEN_EXIT as exit code.
 #
 #.Examples: quit "Stop here:" "$FUNCNAME"   # stop with message
@@ -374,8 +378,11 @@ fatal() {
 # [[main()]] and [[error()]]. But it never uses EXIT, RETURN or DEBUG traps.
 #
 #+Scripts should not use the bash **exit** command directly unless they want
-# to skip quit hook processing. All other script termination paths will
+# to skip ''quit'' hook processing. All other script termination paths will
 # invoke CEN_HOOK_QUIT.
+#
+#+If variable CEN_QUIT_WSUB is non-empty the bash **wait** command is run to
+# wait until all subshells (child processes) terminate. See [[background()]].
 #
 #+A non-empty CEN_QUIT_WAIT variable is used (internally) for these purposes:
 #
@@ -389,18 +396,20 @@ fatal() {
 #+A non-empty value if CEN_QUIT_SANE will try to run "stty sane", see option -y.
 # The variable is also set by [[confirm()]] to cleanup after keyboard interrupts.
 #
-#+Calling quit from a subshell causes an abort, a subshell cannot safely run
-# any quit hooks. In such a case the program logic has to be fixed.
+#+Calling quit from a subshell causes an abort, a subshell cannot safely
+# terminate a script. In such a case the program logic has to be fixed.
 # ------------------------------------------------------------------------------
 quit() {
     # ignore non-library call to quit if application is sourced
     [ -n "$CEN_IS_SOURCED" -a -z "$CEN_STAGE" ] && return 0
+    exec 2>&$CEN_STDERR
 
     local _flgt _opts=()
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -e)   _flgt=2 ; _opts+=("$1") ;;
+      -h)   $CEN_HOOK_QUIT -h ; CEN_HOOK_QUIT=_cen_quit ; return 0 ;;
       -s)   CEN_EXIT="$2" ; shift ;;
       -t)   _flgt=1 ; CEN_EXIT=4 ;;
       -y)   CEN_QUIT_SANE=1 ;;
@@ -420,10 +429,11 @@ quit() {
             shift ; set -- $"Terminated after error""${1:+:}" "$@"
         fi
     fi || :
+    [ -n "$CEN_QUIT_WSUB" ] && wait
     $CEN_HOOK_QUIT "${_opts[@]}" ${1:+--} "$@" ; exit 2  # exit 2 on hook function failure
 }
 
-# called via CEN_HOOK_QUIT
+# called via CEN_HOOK_QUIT: [-h] <mesg>...
 _cen_quit() {
     [ $# = 1 -a "$1" = '-h' ] && return 0
     CEN_HOOK_QUIT=_cen_exit ; [ "$#" -gt 0 ] && message "$@" ; _cen_exit
@@ -458,7 +468,7 @@ _cen_trap() {
 
 # fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+ <arg>...
 _cen_abort() {
-    set +xeE ; IFS=$' \n\t'
+    set +xeE ; IFS=$' \n\t' ; exec 2>&$CEN_STDERR
     local _fnot _indx=1 _idnt="| " _mesg _temp
 
     while [ "${1::1}" = '-' -o "$1" = '+' ] ; do
@@ -885,7 +895,7 @@ _cen_getline() {
 #
 # Options:  -c  [*] rerun script in a console if neccessary
 #           -e  enable/disable 'abort on error' traps
-#           -g  init gui (0:noop  1:window  2:console)
+#           -g  init gui (0:off  1:window  2:console  -:auto)
 #           -h  window title **currently not implemented**
 #           -n  don't add --wait for console
 #           -q  [*] check if caller is running in a console
@@ -924,8 +934,8 @@ _cen_getline() {
 # The [[confirm()]] function uses **-t +**|**-** by default to capture keyboard
 # interrupts. The internal trap handler sanitizes input and calls [[quit()]].
 #
-#+Form (4): It the correct way of changing --verbose, see expample. **DO NOT** modify
-# CEN_VERB directly.
+#+Form (4): Is the correct way of changing the --verbose state, see expample. **DO°NOT**
+# modify CEN_VERB directly.
 #
 #+Form (5): Option -r (without -s) is used to stop a non-root user via [[fatal()]]. The
 #           -c and -x options re-run the script via [[terminal()]] if needed. And -s
@@ -1048,7 +1058,7 @@ context() {
     fi
 
     # initialize gui mode
-    if [ -n "$_mgui" ] ; then
+    if [ -n "$_mgui" -a -z "$CEN_CONSOLE" -a -z "$CEN_WINDOWS" ] ; then
         # auto-selection if no (or bad) --gui option was given
         case "$_mgui" in
         1)  [ -z "$CEN_DISPLAY" ] && _mgui=2 ;;
@@ -1058,7 +1068,7 @@ context() {
                 embed -r -q '_centauri_bash_run' && terminal -c
                 if [ "${CEN_IS_DESKTOP:0}" = 0 ] ; then # in cosole mode ...
                     _mgui=2
-                elif embed -r -m '_centauri_bash_win' && windows -i 1 ; then
+                elif embed -r -m '_centauri_bash_win' && windows -i 2 ; then
                     _mgui=0                             # windows mode ok
                 else
                     _mgui=0 ; _cons=1                   # fallback to terminal
@@ -1070,8 +1080,10 @@ context() {
         case "$_mgui" in
         1)      embed -r -m '_centauri_bash_win' && windows -i 1 ;;
         2)      embed -r -m '_centauri_bash_con' -i ; _cons=1 ;;
-        *)      CEN_OPT_GUI=0
         esac
+        CEN_OPT_GUI=0
+        [ "$CEN_WINDOWS" = 1 ] && CEN_OPT_GUI=1
+        [ "$CEN_CONSOLE" = 1 ] && CEN_OPT_GUI=2
         isfunction -z windows ; isfunction -z console ; isfunction -y progress
     fi
 
@@ -1208,10 +1220,16 @@ create() {
         [ "${2:--}" != '-' ] && _unew="-m $2"
         # don't fork a sub-shell, error output discarded, see below
         # mkdir path with trailing / will not set mode as intended
-        system $_frun -q -- mkdir $_unew -p -- "${_fout%/}" || _stat=$?
+        system $_frun -b -q -- mkdir $_unew -p -- "${_fout%/}" || _stat=$?
     else                                            # create file ...
         # explicitly truncate as we always append to output
-        [ -n "$_ftru" ] && [ -e "$_fout" ] && system $_frun -e -q -- unlink "$_fout"
+        if [ -z "$_ftru" ] ; then
+            :
+        elif [ -n "$CEN_FEATURE_A" ] ; then         # can use builtins...
+            remove $_frun -- "$_fout"
+        elif [ -e "$1" ] ; then
+            system $_frun -b -e -p -- rm -f -- "$_fout"
+        fi
         _cen_umask -s "$2"                          # set umask for <mode>
         {   [ -n "$_fhdr" ] && echo -e "# ${1##*/} - created by '$_fhdr' - do not edit!\n"
             [ -n "$_fvar" ] && { splitjoin -d "\n" -j - -l -i "$_fvar" ; _fcpy= ; }
@@ -1356,7 +1374,10 @@ _cen_compactify() {
 #           <deli>    element delimiters for result array
 #           <user>    a user name or **-** for **root**
 #
-# +<script> must implement some default options like --dryrun, --verbose,
+#+A <module> must be executable to be loaded. Packaged scripts can only use
+# modules attached to the script file, module loading will be simulated.
+#
+#+A <script> must implement some default options like --dryrun, --verbose,
 #  --quiet and --embed.
 #
 #+The --embed option passes the caller's name and an optional auto-indent
@@ -1408,7 +1429,7 @@ embed() {
     if [ -n "$_modu" ] ; then
         [ "${_snam:--}" = '-' ] && return 1             # empty name, silently return
         [ -n "${CEN_MODULES["$_snam"]}" ] && return 0   # is loaded
-        if [ -n "$CEN_PACKAGE" ] ; then
+        if [ -n "$CEN_PACKAGE" ] ; then                 # packaged: simulate loading
             if isfunction "_cen_bash_load_${_snam##*_}" ; then
                 [ "$_modu" = 3 ] && return 0            # module can be used
                 _cen_bash_load_${_snam##*_} "$@" || _sexi="$?"
@@ -2052,7 +2073,11 @@ splitjoin() {
     if [ "$_arr_" = '-' ] ; then
         local _lst_ _tmp_
         if [ -z "$_new_" ] ; then               # no empty lines
-            IFS=$'\n' read -r -d '' -a _lst_
+            if [ -z "$_del_" ] ; then
+                IFS=$'\n' read -r -d '' -a _lst_
+            else
+                IFS="$_del_" read -r -d '' -a _lst_
+            fi
         elif [ "$_spl_" != 2 -a "$_nam_" = '-' ] ; then
             while IFS= read -r _tmp_ ; do printf "%s\n" "$_tmp_" ; done
             return 0                            # fast path
@@ -2104,13 +2129,14 @@ splitjoin() {
 # ------------------------------------------------------------------------------
 # sysfind - check for commands and builtins
 #
-# Call:     sysfind [-b] [-c] [-d] [-e|-f|-w|-q] [-p <path>] [-s <var>] <cmd>...
+# Call:     sysfind [-b] [-c] [-d] [-i] [-e|-f|-w|-q] [-p <path>] [-s <var>] <cmd>...
 #
 # Options:  -b  allow <cmd> to be a bash builtin (builtins shadow commands)
 #           -c  cache the <cmd> result (used by [[system()]] and [[sysrun()]])
 #           -d  drop from cache (use -d -c to refresh cache entries)
 #           -e  print error message
 #           -f  call [[fatal()]] on error
+#           -i  ignore cached builtin, search external command
 #           -o  one match only, skip missing commands
 #           -p  overrides the **PATH** environment variable
 #           -s  save full command path(s) to <var>
@@ -2137,7 +2163,8 @@ splitjoin() {
 #
 #+When <cmd> is a plain name (without slashes) and if <cmd> is cached, the
 # cached result is returned. When <cmd> is a path no cache lookup is done
-# and not builtin will be used (overriding -b).
+# and no builtin will be used (overriding -b). The -i option ignores builtin
+# cache entries and instead searches for external commands.
 #
 #+For scripts that use external commands, it is recommended to validate the
 # command availability by calling "sysfind°-c°<cmd>..." early. The -c option
@@ -2147,15 +2174,19 @@ splitjoin() {
 #+Unless option -p is used, CEN_PATHS[1] (core binary path) is appended
 # to **PATH**.
 #
-#+Bash builtins are used only with option -b. Without -b builtins are ignored.
+#+Bash builtins are searched only with option -b. Without -b builtins are ignored.
 # When -b is used a builtin shadows an external command. If <cmd> is a path,
 # the -b option is disabled and no builtins are used.
+#
+#+Loadable builtins will not be autoloaded by this function, use "enable -a" to
+# do so. See the BASH_LOADABLES_PATH variable. The [[_cen_bash_dyn]] module uses
+# wrapper functions for autoload and uses "enbale -f" explicitly.
 #
 #+Bash script functions are never visible to sysfind. This is why [[system()]]
 # must be called like "system°-n°..." to run a function.
 # ------------------------------------------------------------------------------
 sysfind() {
-    local _ferr="$CEN_TRACE" _fblt _fcch _fdrp _fone _fset _psys _stat=0
+    local _ferr="$CEN_TRACE" _fblt _fcch _fdrp _fign _fone _fset _psys _stat=0
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -2164,6 +2195,7 @@ sysfind() {
       -d)   _fdrp=1 ;;
       -e)   _ferr='error -z' ;;
       -f)   _ferr='fatal' ;;
+      -i)   _fign=1 ;;
       -o)   _fone=1 ;;
       -p)   shift ; _psys="$1" ;;
       -q)   _ferr=':' ;;
@@ -2186,7 +2218,7 @@ sysfind() {
             if [ -n "$_fdrp" ] ; then                       # drop from cache
                 unset CEN_CMD_PATH["$_snam"]
                 [ -n "$_fcch" ] || continue                 # using -c -d to refresh
-            else
+            elif [ -z "$_fign" ] ; then
                 _scmd="${CEN_CMD_PATH["$_snam"]}"
                 [ "$_scmd" = '-' ] && _scmd="$_snam" || _scmd+="/$_snam"
                 _cen_sysfind "${_scmd/\/\//\/}" && break
@@ -2199,12 +2231,12 @@ sysfind() {
         /*)     _parr='/' ; _snam="${_snam:1}" ;;
         */*)    _parr="$PWD/${_snam%/*}" ; _snam="${_snam##*/}" ;;
         *)      if [ -n "$_fblt" ] ; then
-                    # check for builtin
-                    if enable -a "$_snam" &>/dev/null ; then
+                    # check for builtin, clear search path to disable autoload
+                    if BASH_LOADABLES_PATH= enable -a "$_snam" &>/dev/null ; then
                         _scmd="$_snam"
                     # if it's a shell function then try dynamic load
                     elif PATH= type -t -- "$_snam" >/dev/null ; then
-                        [ -n "${CEN_MODULES["_centauri_bash_dyn"]}" ] &&
+                        [ -n "$CEN_FEATURE_A" ] &&
                             _cen_dyn_builtin "$_snam" >/dev/null && _scmd="$_snam"
                     fi
                     if [ -n "$_scmd" ] ; then
@@ -2245,7 +2277,7 @@ sysfind() {
 # ------------------------------------------------------------------------------
 # system - run a command, builtin or function optinally capturing the output
 #
-# Call:     system [-e|-f] [-i] [-n] [-m|-p|-q|-v] [-x] <opt>... [--] <cmd> <arg>...
+# Call:     system [-e|-f] [-b] [-i] [-n] [-m|-p|-q|-v] [-x] <opt>... [--] <cmd> <arg>...
 #           system <opt>... -u <user> [--] <cmd> <arg>...
 #           system <opt>... -s <var> [--] <cmd> <arg>...
 #           system <opt>... -a <var> [-d <del>] [--] <cmd> <arg>...
@@ -2253,13 +2285,14 @@ sysfind() {
 #           system [-e|-f] -c [--] <cmd>...
 #
 # Options:  -a  [*] save **/dev/stdout** to array <var>
+#           -b  prefer bash builtins over external commands
 #           -c  check if exernal or builtin commands exist (do not run)
 #           -d  array item delimiters, use with -a, default "\t\n"
 #           -e  print error message on error
 #           -f  call [[fatal()]] on error
 #           -i  add -i option to [[message()]] call
 #           -m  message for all output (implies -s and -q)
-#           -n  do not check command (implied if <cmd> is **eval**)
+#           -n  do not check command (implied if <cmd> is **eval**), allow script calls
 #           -p  [*] pretty print errors (implies -s and -q)
 #           -q  redirect **/dev/stderr** and **/dev/stdout** (to **/dev/null** without -s)
 #           -r  ignore option --dryrun
@@ -2286,24 +2319,33 @@ sysfind() {
 #           return (and does not run quit hooks). On errors **false** is
 #           returned.
 #
-#+Commands: Unless option -n is used, system calls "sysfind°-b°-c°<cmd>" to
-#           find out if an external command or a builtin exists (script
-#           functions are ignored). External comands are prefixed with a
+#+Commands: The primary purpose of system is to run external commands. For
+#           bash builtins option -b must be used. A script function is executed
+#           only if option -n is used. In other words: by default builtins or
+#           functions are ignored and do not shadow external commands.
+#
+#+          On execution without option -n external comands are prefixed with a
 #           filesystem path and bash builtins are run as "builtin°<cmd>".
 #
-#+          When option -n is absent system will never run a script function.
-#           In other words: script functions do not shadow external programs
-#           or bash builtins.
+#+          Unless option -q is used, the execution takes place in a subshell
+#           via "$(<cmd> <args>)". The command output is captured (see -a and -s)
+#           and on error pretty formatted messages can be printed (see -e and -p).
+#           Subshells can be avoided using [[sysrun()]].
 #
-#+          Unless <cmd> contains slashes (is a path) or option -b is used,
-#           builtins shadow commands. Unfortunately most bash builtins do not
-#           have the full functionality of their coreutil equivalents.
+#+          Scripts that use external tools should use "system°-c°<cmd>..." early
+#           to check if the required tools are available.
 #
-#+          **Note:** It is not possible for a script to disable builtins via
-#           "enable°-n". Use the following techniques to bypass a builtin:
+#+Builtins: Loadable bash builtins are not automatically loaded, see module
+#           [[_centauri_bash_dyn]] and the [[autoload]] tool. The bash **enable**
+#           command options -a/-n have no effect for the system function.
 #
-#,          - pass a full path <cmd> to system (the path will be cached)
-#,          - explicitly call "sysfind°-c°<cmd>" before to seed the cache
+#+Caching:  Unless <cmd> contains a slash (is a path) the function [[sysfind()]]
+#           is used to locate a path or to check for a builtin. The result is
+#           cached and reused. Option -b can override a cached path, and option
+#           -n does not use caching at all.
+#
+#+          The cache can be seeded by calling sysfind explicitly before system.
+#           See also option -c.
 #
 #.Examples: system mycmd                            # no error/output handling
 #.          system -e -p -s rslt -- mycmd arg1      # formatted msg on error
@@ -2313,11 +2355,11 @@ sysfind() {
 #.          system -z -s emsg -- mycmd arg3         # capture errors only
 #.          system -c -f venus mars                 # check commands
 #
-#.          system sleep 1                          # run builtin or program
+#.          system -b sleep 1                       # run builtin or program
 #.          system rename "s/a/b/" *.tmp            # tool (/usr/bin/rename)
 #.          system -n rename one two                # call a script function
 #
-#.          @CEN_HOOK_QUIT -h                       # must run hooks ...
+#.          quit -h                                 # must run hooks ...
 #.          system -x -- shutdown                   # ... before using exec
 # ------------------------------------------------------------------------------
 
@@ -2331,11 +2373,12 @@ _cen_sudo() {
 
 system() {
     $CEN_NOTRACE set +x
-    local _ferr _mind _nout _val_ _vset _vdel _xcmd _stat=0 _sudo _cpro _rdry _zflg _temp
+    local _ferr _mind _nout _val_ _vset _vdel _xcmd _stat=0 _sudo _cpro _rdry _bflg _zflg _temp
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vset="$1" ; local -n _vaa_="$1" ; _vaa_=() ; unset _vaa_ ;;
+      -b)   _bflg='-b' ;;
       -c)   _cpro=1 ;;
       -d)   shift ; [ "$1" = '--' ] && _vdel=(-n) || _vdel=("-d" "$1") ;;
       -e)   _ferr="-e" ;;
@@ -2361,22 +2404,29 @@ system() {
       esac ; shift
     done
 
-    if [ -n "$_sudo" -a "$1" = "eval" ] ; then
-        shift ; _sudo+=("${CEN_PATHS[1]}/bash" -c)
+    if [ "$1" = "eval" ] ; then
+        [ -n "$_sudo" ] && { shift ; _sudo+=("${CEN_PATHS[1]}/bash" -c); }
     elif [ "$_cpro" = 1 ] ; then                        # option -c
-        sysfind -b -c $_ferr -- "$@" || _stat=127
+        sysfind -c $_bflg $_ferr -- "$@" || _stat=127
         $CEN_NOTRACE set -x ; return "$_stat"
     elif [ -z "$_cpro" ] ; then                         # no -n option
         _temp="${CEN_CMD_PATH["${1:-/}"]}"
         if [ -z "$_temp" ] ; then                       # not cached, try to add it
             [ "$_nout" = 1 ] && _temp= || _temp="${_ferr:--e}"
-            if ! sysfind -b -c $_temp -- "$1" ; then
+            if ! sysfind -c $_bflg $_temp -- "$1" ; then
                 $CEN_NOTRACE set -x ; return 127
             fi
             _temp="${CEN_CMD_PATH["$1"]}"
         fi
         if [ "$_temp" = '-' ] ; then                    # cached as builtin
-            [ -z "$_xcmd" ] && _xcmd="builtin"
+            if [ -z "$_bflg" ] ; then                   # run external...
+                [ "$_nout" = 1 ] && _temp= || _temp="${_ferr:--e}"
+                if ! sysfind -c -i -s _temp $_temp -- "$1" ; then
+                    $CEN_NOTRACE set -x ; return 127
+                fi
+            elif [ -z "$_xcmd" ] ; then
+                _xcmd="builtin"
+            fi
         elif [ -n "$_temp" ] ; then                     # cached as command
             _temp+="/$1"
             shift ; set -- "${_temp/\/\//\/}" "$@"
@@ -2508,8 +2558,7 @@ main() {
         -f|--force)
             _isok="$CEN_FEATURE_F" ; optarg "force" - ;;
         -g|--gui)
-            _isok="$CEN_FEATURE_G"
-            [ -n "$_isok" ] && optarg "gui" - -o "$CEN_OPT_GUI" ;;
+            _isok="$CEN_FEATURE_G" ; [ -n "$_isok" ] && optarg "gui" - -o ;;
         -h|--help)
             _help="-h" ;;
         -q|--quie*)
@@ -2654,7 +2703,8 @@ if [ ! -x "${CEN_PATHS[1]}/bash" ] ; then
     CEN_PATHS[4]="$CEN_PATHS/tmp" ; [ -d "${CEN_PATHS[4]}" ] || CEN_PATHS[4]="$CEN_PATHS/usr/tmp"
 fi
 
-# register error handlers
+# save stderr handle, register error handlers
+_cen_handle CEN_STDERR ; eval exec "$CEN_STDERR>&2"
 [ -n "$CEN_FEATURE_E" ] && context -e 3 || context -e 2
 
 # load modules

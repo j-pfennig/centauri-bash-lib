@@ -108,9 +108,9 @@ _cen_tra_folder() {
     for _item in . .. ../.. ../../..  ../../../.. - ; do
         [ -d "$_item" ] || return 1
         if [ -d "$_item/Deleted" ] ; then
-            resolve -f -s _fldr -- "$_item/Deleted" ; break
+            prettypath -f -s _fldr -- "$_item/Deleted" ; break
         elif [ -d "$_item/deleted" ] ; then
-            resolve -f -s _fldr -- "$_item/deleted" ; break
+            prettypath -f -s _fldr -- "$_item/deleted" ; break
         fi
     done
     [ -w "$_fldr" ] || return 1
@@ -209,7 +209,7 @@ _cen_tra_option() {
 
     # options added by this module
 
-    -t|--tra*)
+    -t|--tra|--tras|--trash)
         CEN_TRA_WARN=                               # disable 'rm' warning
         optarg "trash" - -o ;;
     esac

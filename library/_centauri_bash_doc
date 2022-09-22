@@ -381,7 +381,11 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #         CEN_LIBRARY        (set by proxy) short for "$CEN_ROOT/library"
 #         CEN_TOOLS          (set by proxy) short for "$CEN_ROOT/tools"
 #
-#         CEN_PATHS          filesystem prefix for non FSH-compatible install
+#         CEN_PATHS[0]       filesystem prefix for non FSH-compatible install
+#         CEN_PATHS[1]       GNU core binary path (usually **/usr/bin**)
+#         CEN_PATHS[2]       configuration folder (usually **/etc**)
+#         CEN_PATHS[3]       library persistent   (usually **/var/centauri/persistent**)
+#         CEN_PATHS[4]       library temporary    (usually **/var/centauri/transient**)
 #
 #         CEN_ACTARR         action argument array
 #         CEN_ACTION         current action, see [[actions()]]

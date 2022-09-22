@@ -212,7 +212,8 @@ usageparser() {
             local stxt
             for stxt in "${_body[@]}" ; do
                 printf '%s\n' "${stxt#*:-}"
-            done ; exit
+            done ;
+            return
         fi
         _cen_use_worker "0:B1" "0:S$_name" "${_body[@]}"
         _cen_use_worker "$_lcnt:E"
@@ -462,6 +463,8 @@ _cen_usage() {
     }
 
     if [ -z "$CEN_OPT_PAGER" ] ; then
+        # when no pager is set use centaurihelp for formatting. centaurihelp itself
+        # will run less as pager: usage -> centaurihelp -> less
         # use full path because CEN_TOOLS is required by syspager (see CEN_PACKAGE)
         if sysfind -c -p "$CEN_TOOLS:$PATH" -s CEN_OPT_PAGER -- 'centaurihelp' ; then
             embed -r -q '_centauri_bash_pip' && syspager

@@ -476,9 +476,9 @@ xml_element() {
             elif [ -z "$_optt" ] ; then
                 CEN_XML_BUFFER+="<$_etag$_satr>$1</$_etag>"
             else
-                _optz="${1//&/&amp;}"
-                _optz="${_optz//</&lt;}"
-                _optz="${_optz//>/&gt;}"
+                _optz="${1//&/\&amp;}"
+                _optz="${_optz//</\&lt;}"
+                _optz="${_optz//>/\&gt;}"
                 CEN_XML_BUFFER+="<$_etag$_satr>$_optz</$_etag>"
             fi
         elif [ -n "$_opte" ] ; then
@@ -992,11 +992,11 @@ _cen_xml_text() {
         _curr="${_curr#"${_curr%%[![:space:]]*}"}"
     fi
     if [ -z "$_optl" ] ; then
-        _curr="${_curr//&/&amp;}"
-        _curr="${_curr//</&lt;}"
-        _curr="${_curr//>/&gt;}"
-        _curr="${_curr//\'/&apos;}"
-        _curr="${_curr//\"/&quot;}"
+        _curr="${_curr//&/\&amp;}"
+        _curr="${_curr//</\&lt;}"
+        _curr="${_curr//>/\&gt;}"
+        _curr="${_curr//\'/\&apos;}"
+        _curr="${_curr//\"/\&quot;}"
     fi
     _line+="$_tpre$_curr$_tsuf"
 }

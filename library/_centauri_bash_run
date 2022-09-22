@@ -616,7 +616,7 @@ shortpath() {
             for _item in "${_parr[@]}" "" ; do      # loop over alternatives
                 [ -z "$_item" ] && continue
                 if [ "${_item::3}" = ".. " ] ; then
-                    resolve -s _item -- "${_item:3}" || continue
+                    prettypath -c -p -s _item -- "${_item:3}" || continue
                     _item="${_item%/*}"
                 elif [ "${_item::1}" = "~" ] ; then
                     _item="${_item// /\\ }"         # escape spaces
@@ -1021,7 +1021,7 @@ _cen_run_command() {
     case "$_mode${1::1}" in
     0/) system -n "${_opts[@]}" -- "$@" || _stat=$?
         ;;
-    1/) $CEN_HOOK_QUIT -h                       # must run hooks before exec
+    1/) quit -h                             # must run hooks before exec
         system $_oerr -n -q -x -- "$@" || _stat=$?
         ;;
     2/) system $_oerr -n -q -x -- "$@" & _stat=$?

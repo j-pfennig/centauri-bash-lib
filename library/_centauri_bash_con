@@ -584,7 +584,7 @@ _cen_con_mesg() {
       -f)   _args+=("$1") ; _stat="$CEN_EXIT" ; _verb=1 ; _fatl=1 ;;
       -i|-r|-w)
             _args+=("$1") ;;
-      -l)   _verb=1 ;;
+      -l)   _args+=("$1") ; _verb=1 ;;
       -m)   _fmul=1 ;;
       -n)   _args+=("$1") ; _fnnl=1 ; _fxnl= ;;
       -p)   _ffmt=1 ;;
@@ -697,13 +697,14 @@ _cen_con_prog() {
         [ -z "${_prog//[0-9]/}" ] && prog=      # skip number
     fi
 
-    local _mesg="$_prog${_prog:+ }$*" ; _cen_compactify _mesg
+#    local _mesg="$_prog${_prog:+ }$*" ; _cen_compactify _mesg
+    local _mesg="$_prog$*" ; _cen_compactify _mesg
     local _leng="${#_mesg}"
 
     # line output
     if [ -n "$_flin" ] ; then
         [ -n "$CEN_CONS_MSGLEN" ] || CEN_CONS_MSGLEN=0
-        _cen_con_mesg -n $_find -- "$_mesg"
+        _cen_con_mesg -l -n $_find -- "$_mesg"
         CEN_CONS_MSGLEN="$_leng" ; CEN_CONS_PROGLN=1
 
     # end progress mode, keep text
@@ -714,7 +715,7 @@ _cen_con_prog() {
     # incremental output (something like a sequence of dots)
     elif [ "$_leng" != 0 ] ; then
         if [ -n "$CEN_CONS_PROGLN" ] ; then     # exit line mode
-            [ "${CEN_CONS_MSGLEN:-0}" = 0 ] || _cen_con_mesg -n -i
+            [ "${CEN_CONS_MSGLEN:-0}" = 0 ] || _cen_con_mesg -l -n -i
             CEN_AUTOIND="$_aind" ; CEN_CONS_PROGLN= ; CEN_CONS_MSGTXT=
         fi
 
@@ -722,7 +723,7 @@ _cen_con_prog() {
             if [ -n "$CEN_CONS_MSGTXT" ] ; then
                 _mesg="$CEN_CONS_MSGTXT$_mesg" ; _leng="${#_mesg}"
             fi
-            _cen_con_mesg -n $_find -- "$_mesg"
+            _cen_con_mesg -l -n $_find -- "$_mesg"
             CEN_CONS_MSGLEN="$_leng" ; CEN_CONS_MSGTXT="$_mesg"
         else
             ((CEN_CONS_MSGLEN += _leng)) ; CEN_CONS_MSGTXT+="$_mesg"
@@ -731,7 +732,7 @@ _cen_con_prog() {
 
     # clear output
     elif [ -n "$CEN_CONS_MSGLEN" ] ; then
-        _cen_con_mesg -i -n ; CEN_CONS_PROGLN= ; CEN_CONS_MSGTXT=
+        _cen_con_mesg -l -i -n ; CEN_CONS_PROGLN= ; CEN_CONS_MSGTXT=
     fi
     CEN_AUTOIND="$_aind"
     [ -n "$_fdel" ] && sleep "$_fdel"

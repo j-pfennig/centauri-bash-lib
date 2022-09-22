@@ -7,7 +7,7 @@ PATH+=":$HOME/.centauri/centauri-bash-lib/tools"
 # here some aliases are set ...
 #
 # ccd               - list (library defined) path shortcuts
-# ccd <path>        - change working directore to shortcut
+# ccd <path>        - change working directory to shortcut
 #
 # clh               - library reference
 # clh [+-=] <key>   - show documentation for <key>

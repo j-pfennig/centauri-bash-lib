@@ -333,7 +333,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #           -r  register (used internally on module load)
 #           -t  turn bash trace on/off (replaces "set -x" or "set +x")
 #
-# Bitmask:  The --debug option (or CEN_OPT_DEBUG) use a bitmask to control the
+# Bitmask:  The --debug option (or CEN_OPT_DEBUG) uses a bitmask to control the
 #           output of debug:
 #
 #,              Bit 1: enable module reporting (main, quit, actions, options)

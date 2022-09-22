@@ -40,6 +40,9 @@
 #,      °         └── [[_centauri_bash_iom]]
 #,      °                 └── [[_centauri_bash_ext]]
 #
+#,      [[syssetup()]]
+#,      °  └── [[_centauri_bash_ext]]
+#
 # Copyright Dr. J. Pfennig (c) 2019-2022
 # ------------------------------------------------------------------------------
 
@@ -290,6 +293,8 @@ syssetup() {
             unset CEN_ROOT_DEF[5]
         fi
     fi
+
+    embed -m "_centauri_bash_ext"
     prettypath -s CEN_ROOT_DEF[0]
     prettypath -s CEN_ROOT_DEF[1]
     prettypath -s CEN_ROOT_DEF[2]

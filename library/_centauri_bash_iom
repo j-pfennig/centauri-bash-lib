@@ -90,16 +90,17 @@ _cen_iom_error() {
 # ------------------------------------------------------------------------------
 # inpdata - Read from an input file into an array
 #
-# Call:     (1) inpdata [-a <dest>] [-r <func>] [-q] -- <file>
-#           (2) inpdata [-a <dest>] [-r <func>] -l [-q] [-x <ext>] -- <file>|+|-
-#           (3) inpdata [-a <dest>] [-r <func>] [-q] -h <hndl>
+# Call:     (1) inpdata [-a <dest>] [-c <func>] [-q] [-r] -- <file>
+#           (2) inpdata [-a <dest>] [-c <func>] [-q] [-r] -l [-x <ext>] -- <file>|+|-
+#           (3) inpdata [-a <dest>] [-c <func>] [-q] [-r] -h <hndl>
 #
 # Options:  -a  data array to reaad into
+#           -c  reader call function
 #           -f  errors are fatal
 #           -h  use a handle for input, see [[redirect()]]
 #           -l  enable prompt mode, loop mode, see [[inpfile()]]
 #           -q  quiet, no error messages
-#           -r  reader call function
+#           -r  ignore --dryrun
 #           -x  use <ext> argument as default for extension
 #
 # Arguments:<dest>  name of an array variable
@@ -111,7 +112,7 @@ _cen_iom_error() {
 #+Form (1) reads the given file, form (2) can prompt for a file, see [[inpfile()]].
 # Form (3) reads from a file handle, see [[redirect()]].
 #
-#+At least -a or -r must be specified. These two options can be used at the same
+#+At least -a or -c must be specified. These two options can be used at the same
 # time. If <func> returns 0 the line is added to <dest>. Reading stops if <func>
 # returns 2, a return value of 1 is ignored.
 #
@@ -127,24 +128,25 @@ _cen_iom_error() {
 #.              [ -n "$1" ]                     # return status
 #.          }
 #.          local data
-#.          inpdata -a data -r reader -- "my-file"
+#.          inpdata -a data -c reader -- "my-file"
 #
 #           Read /dev/stdin into an array:
 #.          local data
 #.          inpdata -a data
 # ------------------------------------------------------------------------------
 inpdata() {
-    local _oerr='error -z' _anam _func _hndl _oinp _stat=0 _file _coun
+    local _oerr='error -z' _anam _func _hndl _oinp _orun _stat=0 _file _coun
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
         -)    break ;;
         -a)   shift ; _anam="$1" ;;
+        -c)   shift ; _func="$1" ;;
         -f)   _oerr='fatal' ;;
         -h)   shift ; _hndl="$1" ;;
         -l)   _oinp+=('-l') ;;
         -q)   _oerr="$CEN_TRACE" ;;
-        -r)   shift ; _func="$1" ;;
+        -r)   _orun='-r' ;;
         -x)   shift ; _oinp+=('-x' "$1") ;;
         *)    _cen_abort - "$1"
         esac ; shift
@@ -160,15 +162,15 @@ inpdata() {
     if [ "$_file" = '-' ] ; then
         _hndl=0
     elif [ "$_file" = '+' -a -n "$_oinp" ] ; then
-        inpfile -s _file "${_oinp[@]}" + || return 1
+        inpfile $_orun -s _file "${_oinp[@]}" + || return 1
     fi
 
     if [ -n "$_hndl" ] ; then
-        if ! dryrun "mapfile -u $_hndl $_anam" ; then
+        if ! dryrun $_orun "mapfile -u $_hndl $_anam" ; then
             _cen_iom_reader "$_hndl" - "$_oerr" "$_anam" "$_func" || _stat=$?
         fi
     elif [ -r "$_file" ] ; then
-        if ! dryrun "mapfile $_anam <$_file" ; then
+        if ! dryrun $_orun "mapfile $_anam <$_file" ; then
             _cen_iom_reader - "$_file" "$_oerr" "$_anam" "$_func" <"$_file" || _stat=$?
         fi
     else
@@ -355,10 +357,10 @@ inpfile() {
 # ------------------------------------------------------------------------------
 # outdata - Write a data array into an output file
 #
-# Call:     (1) outdata -o <data> [-f|-q] [-t] -- <file>
-#           (2) outdata -o <data> [-f|-q] -l [-t] [-x <ext>] -- <file>|+|-
-#           (3) outdata [-a|-i] -o <data> [-f|-q] [-t] -h <hndl>
-#           (4) outdata [-a|-i] -o <data> [-f|-q]
+# Call:     (1) outdata -o <data> [-f|-q] [-r] [-t] -- <file>
+#           (2) outdata -o <data> [-f|-q] [-r] -l [-t] [-x <ext>] -- <file>|+|-
+#           (3) outdata [-a|-i] -o <data> [-f|-q] [-r] [-t] -h <hndl>
+#           (4) outdata [-a|-i] -o <data> [-f|-q] [-r]
 #
 # Options:  -a  auto-indent, see [[message()]]
 #           -f  errors are fatal
@@ -367,6 +369,7 @@ inpfile() {
 #           -l  enable prompt mode, loop mode, see [[outfile()]]
 #           -o  data array
 #           -q  quiet, no error messages
+#           -r  ignore --dryrun
 #           -t  truncate an exiting file
 #           -x  use <ext> argument as default for extension
 #
@@ -400,7 +403,7 @@ inpfile() {
 #.          outdata -o data -a
 # ------------------------------------------------------------------------------
 outdata() {
-    local _oerr='error -z' _anam _hndl _oind _oloo='-a' _oout _stat=0 _file _line
+    local _oerr='error -z' _anam _hndl _oind _oloo='-a' _oout _orun _stat=0 _file _line
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -412,6 +415,7 @@ outdata() {
         -l)   _oloo+=' -l' ;;
         -o)   shift ; _anam="$1" ;;
         -q)   _oerr="$CEN_TRACE" ;;
+        -r)   _orun='-r' ;;
         -t)   _oout+=('-t') ;;
         -x)   shift ; _oout+=('-x' "$1") ;;
         *)    _cen_abort - "$1"
@@ -428,8 +432,10 @@ outdata() {
     ### if file exist and not -t error message
 
     elif [ -z "$_hndl" ] ; then                         # truncate file, no question
-        outfile -s _file $_oloo "${_oout[@]}" "$_file" || return 1
+        outfile $_orun -s _file $_oloo "${_oout[@]}" "$_file" || return 1
     fi
+
+    dryrun -s $_orun "outdata:" "$_file" && return 0
 
     local -n _vwrt="$_anam"
     [ "${#_vwrt[@]}" -gt 0 ] || return 0                # empty data list
@@ -467,7 +473,7 @@ outdata() {
 # ------------------------------------------------------------------------------
 # outfile - Get an output file or folder
 #
-# Call:    outfile [-a] [-d] [-f] [-e] [-o] [-s <var>]  [-x <ext>] [--] <file>|-|**+**
+# Call:    outfile [-a] [-d] [-f] [-e] [-o] [-r] [-s <var>]  [-x <ext>] [--] <file>|-|**+**
 #
 # Options: -a  allow to overwrite or to append to an existing file
 #          -c  canonicalize path (e.g return full path)
@@ -477,6 +483,7 @@ outdata() {
 #          -l  loop until valid input is provided by the user (for <file> arg **+**)
 #          -o  no error message for empty argument or input
 #          -q  quiet, no error messages at all
+#          -r  ignore --dryrun (effects -t option only)
 #          -s  save path to variable (default is CEN_OUTFILE)
 #          -t  create new file or truncate an existing file
 #          -x  use <ext> argument as default for extension
@@ -509,7 +516,8 @@ outdata() {
 # ------------------------------------------------------------------------------
 CEN_OUTFILE=
 outfile() {
-    local _fcan _fexi _ffil _fdir _floo _fopt _fext _fook _ftru _fset="CEN_OUTFILE" _oerr='error -z' _stat
+    local _fcan _fexi _ffil _fdir _floo _fopt _fext _fook _frun _ftru \
+          _fset="CEN_OUTFILE" _oerr='error -z' _stat
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -522,6 +530,7 @@ outfile() {
         -l)   _floo=1 ;;
         -o)   _fopt=1 ;;
         -q)   _oerr="$CEN_TRACE" ;;
+        -r)   _frun='-r' ;;
         -s)   shift ; _fset="$1" ;;
         -t)   _ftru=1 ;;
         -x)   shift ; _fext="$1" ;;
@@ -596,7 +605,7 @@ outfile() {
         fi
         if [ -w "$_ochk" ] ; then
             if [ -n "$_ftru" ] ; then
-                create -t -- "$_varg" || return 1
+                create $_frun -t -- "$_varg" || return 1
             fi
             _floo= ; return 0
         fi

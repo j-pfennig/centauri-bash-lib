@@ -189,6 +189,6 @@ msgstr "Sitzungstyp   :"
 msgid "No known KDE version found."
 msgstr "Keine bekannte KDE Version gefunden."
 
-#: /var/centauri/library/_centauri_bash_ins:1529
+#: /var/centauri/library/_centauri_bash_ins:1538
 msgid "install/uninstall without root rights"
 msgstr "Installation/Entfernen ohne 'root' Rechte"

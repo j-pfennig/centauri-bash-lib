@@ -1,185 +1,189 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_svc:214
+#: /var/centauri/library/_centauri_bash_svc:223
 msgid "Renaming old output:"
 msgstr "Alte Ausgabe umbenennen:"
 
-#: /var/centauri/library/_centauri_bash_svc:221
+#: /var/centauri/library/_centauri_bash_svc:230
 msgid "Run in foreground (output '%s'): %s"
 msgstr "Im Vordergrund ausführen (Ausgabe '%s'): %s"
 
-#: /var/centauri/library/_centauri_bash_svc:224
+#: /var/centauri/library/_centauri_bash_svc:233
+msgid "Run in background"
+msgstr "Im Hintergrund ausführen"
+
+#: /var/centauri/library/_centauri_bash_svc:241
 msgid "Run in background (output '%s'): %s"
 msgstr "Im Hintergrund ausführen (Ausgabe '%s'): %s"
 
-#: /var/centauri/library/_centauri_bash_svc:487
+#: /var/centauri/library/_centauri_bash_svc:516
 msgid "A 'oneshot' service needs an 'actions' function"
 msgstr "Ein 'oneshot' Dienst braucht eine 'actions' Funktion"
 
-#: /var/centauri/library/_centauri_bash_svc:489
+#: /var/centauri/library/_centauri_bash_svc:518
 msgid "A 'simple' service needs an 'actions' or 'run' function"
 msgstr "Ein 'simple' Dienst braucht eine 'actions' Funktion"
 
-#: /var/centauri/library/_centauri_bash_svc:618
+#: /var/centauri/library/_centauri_bash_svc:647
 msgid "Service command depends on 'systemd'"
 msgstr "Dienst Kommando erfordet 'systemd'"
 
-#: /var/centauri/library/_centauri_bash_svc:654
+#: /var/centauri/library/_centauri_bash_svc:683
 msgid "Not a daemon:"
 msgstr "Ist kein Dämon:"
 
-#: /var/centauri/library/_centauri_bash_svc:672
+#: /var/centauri/library/_centauri_bash_svc:701
 msgid "Service is masked:"
 msgstr "Dienst ist maskiert:"
 
-#: /var/centauri/library/_centauri_bash_svc:686
+#: /var/centauri/library/_centauri_bash_svc:715
 msgid "Not a service:"
 msgstr "Ist kein Dienst"
 
-#: /var/centauri/library/_centauri_bash_svc:694
+#: /var/centauri/library/_centauri_bash_svc:723
 msgid "No valid service found:"
 msgstr "Keinen gültigen Dienst gefunden"
 
-#: /var/centauri/library/_centauri_bash_svc:697
+#: /var/centauri/library/_centauri_bash_svc:726
 msgid "Invalid service(s) found"
 msgstr "Ungültige Dienste gefunden"
 
-#: /var/centauri/library/_centauri_bash_svc:704
+#: /var/centauri/library/_centauri_bash_svc:733
 msgid "started"
 msgstr "gestartet"
 
-#: /var/centauri/library/_centauri_bash_svc:705
+#: /var/centauri/library/_centauri_bash_svc:734
 msgid "stopped"
 msgstr "gestoppt"
 
-#: /var/centauri/library/_centauri_bash_svc:706
+#: /var/centauri/library/_centauri_bash_svc:735
 msgid "restarted"
 msgstr "neustart"
 
-#: /var/centauri/library/_centauri_bash_svc:711
-#: /var/centauri/library/_centauri_bash_svc:734
+#: /var/centauri/library/_centauri_bash_svc:740
+#: /var/centauri/library/_centauri_bash_svc:763
 msgid "Service (systemd)"
 msgstr "Dienst (systemd)"
 
-#: /var/centauri/library/_centauri_bash_svc:714
+#: /var/centauri/library/_centauri_bash_svc:743
 msgid "active"
 msgstr "activ"
 
-#: /var/centauri/library/_centauri_bash_svc:716
+#: /var/centauri/library/_centauri_bash_svc:745
 msgid "inactive"
 msgstr "inaktiv"
 
-#: /var/centauri/library/_centauri_bash_svc:718
-#: /var/centauri/library/_centauri_bash_svc:739
+#: /var/centauri/library/_centauri_bash_svc:747
+#: /var/centauri/library/_centauri_bash_svc:768
 msgid "Service (SysV)"
 msgstr "Dienst (SysV)"
 
-#: /var/centauri/library/_centauri_bash_svc:730
+#: /var/centauri/library/_centauri_bash_svc:759
 msgid "Daemon"
 msgstr "Dämon"
 
-#: /var/centauri/library/_centauri_bash_svc:745
+#: /var/centauri/library/_centauri_bash_svc:774
 msgid "[failed]"
 msgstr "[Fehlschlag]"
 
-#: /var/centauri/library/_centauri_bash_svc:799
+#: /var/centauri/library/_centauri_bash_svc:828
 msgid " ***ERROR***"
 msgstr " ***FEHLER***"
 
-#: /var/centauri/library/_centauri_bash_svc:801
+#: /var/centauri/library/_centauri_bash_svc:830
 msgid " ***FATAL ERROR***"
 msgstr " ***FATALER FEHLER***"
 
-#: /var/centauri/library/_centauri_bash_svc:809
+#: /var/centauri/library/_centauri_bash_svc:838
 msgid " ***WARNING***"
 msgstr " ***WARNUNG***"
 
-#: /var/centauri/library/_centauri_bash_svc:900
+#: /var/centauri/library/_centauri_bash_svc:929
 msgid "Invalid '%s' argument: %s"
 msgstr "Ungültiges '%s' Argument: %s"
 
-#: /var/centauri/library/_centauri_bash_svc:943
-#: /var/centauri/library/_centauri_bash_svc:945
+#: /var/centauri/library/_centauri_bash_svc:972
+#: /var/centauri/library/_centauri_bash_svc:974
 msgid "Status:"
 msgstr "Status:"
 
-#: /var/centauri/library/_centauri_bash_svc:943
+#: /var/centauri/library/_centauri_bash_svc:972
 msgid "not running"
 msgstr "Läuft nicht"
 
-#: /var/centauri/library/_centauri_bash_svc:957
+#: /var/centauri/library/_centauri_bash_svc:986
 msgid "Service start/stop/restart cannot have arguments"
 msgstr "Dienst start/stop/restart darf kein Argument haben"
 
-#: /var/centauri/library/_centauri_bash_svc:991
+#: /var/centauri/library/_centauri_bash_svc:1020
 msgid "Got a 'stop' signal"
 msgstr "Bekam ein 'stop' Signal"
 
-#: /var/centauri/library/_centauri_bash_svc:991
+#: /var/centauri/library/_centauri_bash_svc:1020
 msgid "running actionStop"
 msgstr "Führe 'actionStop' aus"
 
-#: /var/centauri/library/_centauri_bash_svc:1011
+#: /var/centauri/library/_centauri_bash_svc:1040
 msgid ""
 "Not starting, already running as a %s\\nUse '%s' to override or delete '%s'"
 msgstr ""
 "Starte nicht, läuft schon als %s\\nErzwingen mit '%s' oder '%s' löschen"
 
-#: /var/centauri/library/_centauri_bash_svc:1014
+#: /var/centauri/library/_centauri_bash_svc:1043
 msgid "Found no PID file, not stopping, use '%s' to override"
 msgstr "Stoppe nicht, habe keine PID Datei, erzwingen mit '%s'"
 
-#: /var/centauri/library/_centauri_bash_svc:1071
+#: /var/centauri/library/_centauri_bash_svc:1100
 msgid "running as service"
 msgstr "Läuft als Dienst"
 
-#: /var/centauri/library/_centauri_bash_svc:1072
+#: /var/centauri/library/_centauri_bash_svc:1101
 msgid "running as daemon"
 msgstr "Läuft als Dämon"
 
-#: /var/centauri/library/_centauri_bash_svc:1080
+#: /var/centauri/library/_centauri_bash_svc:1109
 msgid "Service '%s' is running as daemon, cannot stop"
 msgstr "Dienst '%s' läuft als Dämon, kann nicht stoppen"
 
-#: /var/centauri/library/_centauri_bash_svc:1083
+#: /var/centauri/library/_centauri_bash_svc:1112
 msgid "Daemon '%s' is running as service, cannot stop"
 msgstr "Dämon '%s' läuft als Dienst, kann nicht stoppen"
 
-#: /var/centauri/library/_centauri_bash_svc:1152
+#: /var/centauri/library/_centauri_bash_svc:1181
 msgid "run this tool daemonized (0:no 1:yes 2:auto)"
 msgstr "Programm als Dämon starten (0:nein 1:ja 2:auto)"
 
-#: /var/centauri/library/_centauri_bash_svc:1155
+#: /var/centauri/library/_centauri_bash_svc:1184
 msgid "control output to syslog (0:no 1:also 2:only)"
 msgstr "Syslog Ausgabe steuern (0:keine 1:beides 2:nur Syslog)"
 
-#: /var/centauri/library/_centauri_bash_svc:1178
+#: /var/centauri/library/_centauri_bash_svc:1207
 msgid "Starting as a daemon:"
 msgstr "Als Dämon starten:"
 
-#: /var/centauri/library/_centauri_bash_svc:1196
+#: /var/centauri/library/_centauri_bash_svc:1225
 msgid "start service"
 msgstr "Dienst starten"
 
-#: /var/centauri/library/_centauri_bash_svc:1197
+#: /var/centauri/library/_centauri_bash_svc:1226
 msgid "stop service"
 msgstr "Dienst anhalten"
 
-#: /var/centauri/library/_centauri_bash_svc:1198
+#: /var/centauri/library/_centauri_bash_svc:1227
 msgid "same as: stop -- start"
 msgstr "dasselbe wie: stop -- start"
 
-#: /var/centauri/library/_centauri_bash_svc:1200
+#: /var/centauri/library/_centauri_bash_svc:1229
 msgid "use with 'install', 'uninstall', 'status'"
 msgstr "Benutzung mit 'install, 'uninstall', 'status'"
 
-#: /var/centauri/library/_centauri_bash_svc:1202
+#: /var/centauri/library/_centauri_bash_svc:1231
 msgid "show status information"
 msgstr "Statusinformation anzeigen"
 
-#: /var/centauri/library/_centauri_bash_svc:1210
-#: /var/centauri/library/_centauri_bash_svc:1212
-#: /var/centauri/library/_centauri_bash_svc:1214
+#: /var/centauri/library/_centauri_bash_svc:1239
+#: /var/centauri/library/_centauri_bash_svc:1241
+#: /var/centauri/library/_centauri_bash_svc:1243
 msgid "module conflict:"
 msgstr "Modulkonflikt:"

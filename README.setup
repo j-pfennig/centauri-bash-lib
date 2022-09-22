@@ -12,7 +12,7 @@
 #       sudo centauri_bash_lib-NN/README.setup
 #
 # The default paths can be overridden by passing install info as argument.
-# The info argument is a string of up to 3 colon seperated fields:
+# The info argument is a string of up to 3 colon separated fields:
 #
 #       <base>:<tools>:<link>
 #
@@ -20,6 +20,9 @@
 #       <tools>     # a folder to symlink tools (/usr/local/bin)
 #       <links>     # symlink for tools folder  (/opt/centauritools)
 # ------------------------------------------------------------------------------
+
+# A root FS prefix can be set here (not needed for termux):
+# export CEN_PREFIX="/some/other/root"
 
 # Installation defaults for shared and private install - can be edited
 
@@ -33,7 +36,7 @@ fi
 # Run installation (no configuration parameters in this part)
 # ------------------------------------------------------------------------------
 
-# do not use predefined root, destination path
+# do not use predefined centauri-bash-lib root, get destination path
 CEN_ROOT= 
 INFO="${1:-$INFO}"                                      # cmd line override
 DEST="${INFO%%:*}"                                      # destination path
@@ -66,6 +69,9 @@ PATH="$PORG" centauricreate --embed="$SELF:a" --info setup "$INFO" || exit $?
 # run library installer (creates real poxy and bash completion)
 echo 1>&2
 PATH="$PORG" centauricreate --embed="$SELF" --info install "$INFO" || exit $?
+
+# run autoload to check for bash loadables
+PATH="$PDES" $DEST/library/autoload --builtin --embed="$SELF:a" -
 
 # create *.p files to optimize loading speed
 PATH="$PDES" $DEST/library/uglify --embed="$SELF:a" -
@@ -164,12 +170,11 @@ cat >"$DEST/default/centauri-bash-lib" <<!EOF
 [ -n "$PREFIX" ] && cat >>"$DEST/default/centauri-bash-lib" <<!EOF
    path "bin"       "\${CEN_PATHS[1]}"           "Linux Anwendungen"
    path "etc"       "\${CEN_PATHS[2]}"           "Linux Konfiguration"
-   path "docs"      "/share/doc|/usr/share/doc" "Linux Dokumentation"
+   path "docs"      "/share/doc|/usr/share/doc"  "Linux Dokumentation"
 !EOF
 
 [ -d "$HOME/storage" ] && cat >>"$DEST/default/centauri-bash-lib" <<!EOF
-   path "bin"       "\${CEN_PATHS[1]}"           "Linux Anwendungen"
-   path "android"   "$HOME/storage"             "Android gemeinsamer Speicer"
+   path "android"   "$HOME/storage"              "Android gemeinsamer Speicer"
 
    path "export"    "$HOME/storage/shared/export"         "Export Verzeichnis"
    path "bilder"    "$HOME/storage/shared/export/Bilder"  "Bilder (in export)"

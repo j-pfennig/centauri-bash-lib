@@ -70,7 +70,7 @@
 CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE=$"Documentation generator for centauri-bash-lib and centauritools"
 
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -f -i -r -t -y "$0" "0.13:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -f -i -r -t -y "$0" "0.14:1" || exit 2
 
 # Data
 CEN_RUN_MIN_ARGS=0              # min arg count, see arguments()
@@ -87,7 +87,6 @@ CEN_OPT_L10N=                   # see --l10n
 CEN_OPT_LIBRARY=                # see --library
 CEN_OPT_LINES=                  # see --lines
 CEN_OPT_MODULES=                # see --modules
-CEN_OPT_PAGER="yes"             # see --page, use pager by default
 CEN_OPT_REFERENCE=              # see --refence
 CEN_OPT_TOOLS=                  # see --tools
 CEN_OPT_USE=                    # see --use
@@ -1878,7 +1877,7 @@ processing() {
     }
 
     [ -n "$CEN_OPT_TOOLS" ] && dopt+=" -p usageparser"
-    documentation -s -l $dopt "$work" ___file || return # run list
+    documentation -s -l $dopt "$work" ___file || return 1   # run list
 }
 
 # ------------------------------------------------------------------------------
@@ -1942,7 +1941,7 @@ run() {
         elif [ "$1" = '<pipe>' -a -n "$CEN_OPT_TOOLS" ] ; then
             syspager documentation -p usageparser element '/dev/stdin'
             return
-        fi
+        fi || :
     fi
 
     # --- make file list ---

@@ -151,8 +151,8 @@ windows() {
         *)      context -q                              # console check ...
                 case $? in
                 1)  CEN_WINDOWS=1 ;;
-                2)  CEN_WINDOWS=1                    # x11 start, no xroot win?
-                    system -q -- xsetroot -gray ;;      # just try, dont worry on error
+                2)  CEN_WINDOWS=1                       # x11 start, no xroot win?
+                    sysrun -q -- xsetroot -gray ;;      # just try, dont worry on error
                 esac
         esac
     fi
@@ -187,7 +187,7 @@ windows() {
             [ -z "$CEN_WIN_HOOK_GETLINE" ] &&
                 _cen_win_hook                           # register hooks for in/out/quit
         else
-            CEN_WINDOWS=0                            # GUI not installed
+            CEN_WINDOWS=0                               # GUI not installed
             CEN_WIN_NAME='-' ; return 1
         fi
     fi
@@ -269,7 +269,8 @@ _cen_win_pdlg() {
 # called from progress() in _centauri_bash_pro
 # ------------------------------------------------------------------------------
 _cen_win_prog() {
-    [ "${CEN_WINDOWS:-0}" = '0' ] && return 1   # not in console mode
+    [ "${CEN_WINDOWS:-0}" = '0' ] && return 1   # not in windows mode
+#    _cen_windcheck || return 1   # not in windows mode
     local _prog="$1" _fdel="$2" _fend="$3" _flin="$4" _step="$5" _ftxt="$6"
     shift 6
     local _mesg
@@ -465,9 +466,9 @@ windialog() {
     # escapes for markup
     local _good _item _line=() _stat=0
     for _item in "$@" ; do
-        _item="${_item//&/&amp;}"
-        _item="${_item//</&lt;}"
-        _item="${_item//>/&gt;}"
+        _item="${_item//&/\&amp;}"
+        _item="${_item//</\&lt;}"
+        _item="${_item//>/\&gt;}"
         _line+=("$_item")
     done
 
@@ -594,11 +595,15 @@ _cen_win_dialog() {
     else
         [ "$_text" = '-' ] && _text="$1"
         [ "$_titl" != '-' ] && _text="*** $_titl ***  $_text"
-        system -r xmessage -geometry 640 -font -adobe-*-*-r-*--0-100-*-*-p-*-*-* -default okay -center "$_text"
+        sysrun -r xmessage -geometry 640 -font -adobe-*-*-r-*--0-100-*-*-p-*-*-* -default okay -center "$_text"
     fi
 
-    [ "$_varg" = '-' ] && _varg= || _varg="-s $_varg"
-    system -r -n $_varg "$CEN_WIN_PATH" "${_opts[@]}"   # return status
+    if [ "$_varg" = '-' ] ; then
+        sysrun -r -n "$CEN_WIN_PATH" "${_opts[@]}"
+    else
+        system -r -n -s $_varg "$CEN_WIN_PATH" "${_opts[@]}"
+    fi
+    # return status
 }
 
 # ------------------------------------------------------------------------------
@@ -608,7 +613,7 @@ _cen_win_txtjoin() {
     local _wide="$1" _frst="$2" _nout="$3" ; shift 3
     local _item _text _fill _larr _temp
     if [ "$CEN_WIN_NAME" = 'kdialog' ] ; then
-        _fill='&nbsp;'
+        _fill='\&nbsp;'
         if [ "${1:--}" != '-' ] ; then
             _cen_win_txtfold  "$_wide" "$_frst" "$_fill" '<br/>' "$1" _item
             _text="<h4>$_item</h4>" ; _fill=
@@ -695,7 +700,7 @@ _cen_windmesg() {
             [ "$1" = "-" ] && _flib=1
             [ "${1::1}" = "+" ] && _popw="${1:1}" ;;
       -i)   _argx+=("$1") ;;
-      -l)   _verb=1 ;;
+      -l)   _argx+=("$1") ; _verb=1 ;;
       -m)   _argx+=("$1") ;;
       -n)   _argx+=("$1") ;;
       -p)   _argx+=("$1") ; _sfmt=1 ;;
@@ -948,6 +953,8 @@ _cen_win_quit() {
     fatal $"module conflict:" "_centauri_bash_win/svc"
 
 [ "$1" = "-n" ] && return 0             # don't init
+
+embed -c _centauri_bash_ext             # required module
 
 # register hooks
 CEN_WIN_HOOK_OPTIONS="$CEN_HOOK_OPTIONS"
