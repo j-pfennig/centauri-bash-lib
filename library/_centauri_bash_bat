@@ -227,7 +227,7 @@ ${args[@]}
         [ "$CEN_BAT_STATE" = "init" ] && CEN_BAT_STATE="run"
 
     else
-        _cen_abort =                                # missing option
+        _cen_abort $"Missing option"
     fi
 
     # handle batch execution ...

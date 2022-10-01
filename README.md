@@ -1,0 +1,43 @@
+# centauri-bash-lib
+A versatile library to simplify the writing of Bash scripts
+
+**Currently not yet released**
+
+- CGI support not yet finished
+- webapp in an early state
+- zenity support incomplete. Try kdialog
+
+**Features**
+
+The `centauri-bash-lib` was written to simplify the creation of bash scripts that
+run fast and show GNU-coreutils-like command line behaviour. 
+
+- it is not a monster - happily runs even on a Raspberry Pi zero
+- not distribution dependent, also runs on android/termux
+- is self-contained, no tools except bash >= 4.1 and some GNU-coreutils are needed
+- no system-wide installation required, needs no installer tools
+- built-in documentation and a documentation system
+- built-in debug support and bash 'set -eE' and 'set -x' support
+- roughly 100 library functions
+- minimizing the use of external tools and sub-shells
+- the library is divided into modules
+- provides automatic module loading
+- has modules for: console, dialogs, batch, services, pipes, sort/grep, xml, CGI
+- supports some GUI dialogs via kdialog
+- supports some consoles like: konsole, gnome-terminal, xterm
+- supports systemd (and SysV) services including service file generation
+- will use extra bash built-ins: ln, mkdir, mkfifo, rmdir, unlink, sleep 
+- scripts can have GNU like options and arguments
+- scripts can have a --help feature
+- scripts can provide bash commandline completion
+- scripts can be localized
+- scripts have a built-in pager function (less or more)
+- a template based script creator
+- various templates including services and CGI
+- stand-alone scripts that can be distributed as a single file
+
+Modern bash shells provide string handling, arrays and dictionaries. Also a large
+collection of bash-builtins exist. As a result scripts need to make little use
+of external tools like sed, grep or cat. For many little tools `centauri-bash-lib`
+will execute faster than a python script.
+

@@ -18,78 +18,78 @@ msgstr "Fenster Modus nicht initialisierbar"
 msgid "Failed to init progress dialog"
 msgstr "Initialisierung der Fortschrittanzeige fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_win:256
-#: /var/centauri/library/_centauri_bash_win:760
+#: /var/centauri/library/_centauri_bash_win:255
+#: /var/centauri/library/_centauri_bash_win:757
 msgid "Cancelled by user"
 msgstr "Durch Benutzer abgebrochen"
 
-#: /var/centauri/library/_centauri_bash_win:416
+#: /var/centauri/library/_centauri_bash_win:415
 msgid "Error"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_win:417
-#: /var/centauri/library/_centauri_bash_win:457
+#: /var/centauri/library/_centauri_bash_win:416
+#: /var/centauri/library/_centauri_bash_win:456
 msgid "Fatal"
 msgstr "Fatal"
 
-#: /var/centauri/library/_centauri_bash_win:420
+#: /var/centauri/library/_centauri_bash_win:419
 msgid "Input"
 msgstr "Eingabe"
 
-#: /var/centauri/library/_centauri_bash_win:424
+#: /var/centauri/library/_centauri_bash_win:423
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: /var/centauri/library/_centauri_bash_win:426
+#: /var/centauri/library/_centauri_bash_win:425
 msgid "Password"
 msgstr "Passwort"
 
-#: /var/centauri/library/_centauri_bash_win:430
+#: /var/centauri/library/_centauri_bash_win:429
 msgid "Warning"
 msgstr "Warnung"
 
-#: /var/centauri/library/_centauri_bash_win:437
+#: /var/centauri/library/_centauri_bash_win:436
 msgid "Not available in console mode:"
 msgstr "Nicht im Konsolen-Modus verfügbar:"
 
-#: /var/centauri/library/_centauri_bash_win:442
+#: /var/centauri/library/_centauri_bash_win:441
 msgid "Message"
 msgstr "Nachricht"
 
-#: /var/centauri/library/_centauri_bash_win:456
+#: /var/centauri/library/_centauri_bash_win:455
 msgid "not supported, please install 'kdialog'"
 msgstr "nicht unterstuetzt, bitte 'kdialog' installieren"
 
-#: /var/centauri/library/_centauri_bash_win:494
-#: /var/centauri/library/_centauri_bash_win:809
+#: /var/centauri/library/_centauri_bash_win:493
+#: /var/centauri/library/_centauri_bash_win:806
 msgid "yes no cancel"
 msgstr "ja nein abbrechen"
 
-#: /var/centauri/library/_centauri_bash_win:758
+#: /var/centauri/library/_centauri_bash_win:755
 msgid "stop continue"
 msgstr "Abbrechen Weiter"
 
-#: /var/centauri/library/_centauri_bash_win:844
+#: /var/centauri/library/_centauri_bash_win:841
 msgid "Supported GUIs"
 msgstr "Unterstützte GUIs"
 
-#: /var/centauri/library/_centauri_bash_win:855
+#: /var/centauri/library/_centauri_bash_win:852
 msgid "Could not init window mode"
 msgstr "Fenster Modus nicht initialisierbar"
 
-#: /var/centauri/library/_centauri_bash_win:855
+#: /var/centauri/library/_centauri_bash_win:852
 msgid "(found neither 'kdialog' nor 'zenity')"
 msgstr "(weder 'kdialog' noch 'zenity' gefunden)"
 
-#: /var/centauri/library/_centauri_bash_win:893
+#: /var/centauri/library/_centauri_bash_win:890
 msgid "gui mode (off|on|auto) or (0|1|2)   (default: auto)"
 msgstr "GUI Modus (off|on|auto) od. (0|1|2) (Vorgabe: auto)"
 
-#: /var/centauri/library/_centauri_bash_win:954
-#: /var/centauri/library/_centauri_bash_win:956
+#: /var/centauri/library/_centauri_bash_win:951
+#: /var/centauri/library/_centauri_bash_win:953
 msgid "module conflict:"
 msgstr "Modulkonflikt:"
 
-#: /var/centauri/library/_centauri_bash_win:970
+#: /var/centauri/library/_centauri_bash_win:969
 msgid "output: not available with _centauri_bash_win"
 msgstr "output: nicht mit _centauri_bash_win verfügbar"

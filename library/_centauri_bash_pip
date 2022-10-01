@@ -160,7 +160,10 @@ sysbind() {
 
         _inst=(- - - - -)
         #fatal "not implemented"
-        context -h _cen_pip_quit CEN_PIP_QUIT
+        if [ -z "$CEN_PIP_QUIT" ] ; then
+            CEN_PIP_QUIT="$CEN_HOOK_QUIT"
+            CEN_HOOK_QUIT=_cen_pip_quit
+        fi
 
         # manage an array of instances
         #[ "${#CEN_SYSBIND[*]}" = 0 ] && CEN_SYSBIND=(- - - - -)
@@ -708,7 +711,11 @@ _cen_pip_ticker() {
         return 0
     elif [ $# -lt 3 ] ; then
         [ -n "${CEN_SYSLOOP[2]}" ] && return 1
-        context -t + -h _cen_pip_quit CEN_PIP_QUIT
+        if [ -z "$CEN_PIP_QUIT" ] ; then
+            CEN_PIP_QUIT="$CEN_HOOK_QUIT"
+            CEN_HOOK_QUIT=_cen_pip_quit
+        fi
+        context -t +
         _cen_pip_ticker "$1" "${2:-TICK}" "$$" &
         CEN_SYSLOOP[2]=$!
         trace "sysloop ticker started (PID=$!):" "$1" "${2:-TICK}"

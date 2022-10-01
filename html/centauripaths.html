@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ centauripaths</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='centaurilauncher.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='index.html#top'>[Library]</a></div>
+<div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
+<div class='nav-right'><a href='autoload.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='centauripaths' class='item-script'>
+<span>Script</span><span> - </span><span>centauripaths</span><span> - </span><span>Resolve/symlink path shortcuts to real filesystem paths</span></div>
+<div class='def-row'>
+<div class='def-label'>Usage:</div>
+<div class='def-text'><b>centauripaths</b> <i>option</i>... [<i>name</i> | <i>name</i>/path | <i>path</i>]...
+<b>centauripaths</b> <b>--deleted</b> [<b>--table</b>] [<i>name</i> | <i>name</i>/path | <i>path</i>]...
+<b>centauripaths</b> <b>--list</b> [<b>--table</b>] [<b>--verbose</b>]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Resolve/symlink path shortcuts to real filesystem paths.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b> <b>--dryrun</b>          show what would be done, make no changes
+<b>-h</b> <b>--help</b>            show this text
+<b>-n</b> <b>--no</b>              do not prompt for confirmation, assume &apos;no&apos;
+<b>-q</b> <b>--quiet</b>           report errors only
+<b>-v</b> <b>--verbose</b>         be verbose (use twice for debug)
+<b>-y</b> <b>--yes</b>             do not prompt for confirmation, assume &apos;yes&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>   <b>--embed</b>   <i>name</i>    use <i>name</i> instead of script name
+   <b>--info</b>            print full path and version
+   <b>--pager</b>   <i>prog</i>    pipe output thru pager, use &apos;none&apos; to disable
+   <b>--trace</b>           trace actions() or run()
+   <b>--wait</b>            prompt before exit</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-A</b> <b>--abstract</b>        make an abstract (network) path
+<b>-D</b> <b>--deleted</b>         return trash folder(s)
+<b>-E</b> <b>--error</b>           unavaillable paths are errors
+<b>-F</b> <b>--fatal</b>           unavaillable paths are fatal
+<b>-I</b> <b>--list</b>            list known shortcut names
+<b>-K</b> <b>--symlink</b>         create symlink from cwd to folder
+<b>-L</b> <b>--logical</b>         returned paths should be logical names
+<b>-N</b> <b>--name</b>    <i>link</i>    link name, can be repeated
+<b>-P</b> <b>--physical</b>        returned paths should be physical
+<b>-S</b> <b>--style</b>   <i>mask</i>    modifies path output formatting
+<b>-T</b> <b>--tabular</b>         generate tabular output
+<b>-U</b> <b>--unique</b>          remove duplicated folders
+<b>-W</b> <b>--work</b>    <i>work</i>    set working folder</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>name</i>       shortcut name, to get a list run: <b>centauripaths</b> <b>--list</b>
+<i>path</i>       any path (must contain a &apos;/&apos; or follow &apos;<i>name</i>&apos;)
+<i>link</i>       link name, overrides short name if present
+<i>mask</i>       bit mask, 1 := print - if missing, 2 := quoted
+<i>work</i>       working folder, can be a short name</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-text'>The shortcut definitions are loaded from <b>&quot;centauri-bash-lib&quot;</b> which is
+searched at <b>&quot;~/.config&quot;</b> <b>&quot;~&quot;</b> <b>&quot;$CEN_ROOT/default&quot;</b> or <b>&quot;/etc/default&quot;</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><b>centauripaths</b> <b>--list</b> <b>--tabular</b> <b>--verbose</b>        # list all names/paths
+<b>centauripaths</b> temp                              # current user&apos;s TMPDIR
+<b>centauripaths</b> <b>--logical</b> automount/alpha4_work   # get a logical path
+<b>centauripaths</b> <b>--work</b>=/tmp <b>--symlink</b> disk data   # make symlinks ...
+<b>centauripaths</b> <b>--work</b>=/tmp disk <b>--name</b>=d1 data <b>--name</b>=d2</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='centaurilauncher.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
+<div class='nav-right'><a href='autoload.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

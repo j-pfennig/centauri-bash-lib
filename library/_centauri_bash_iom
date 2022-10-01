@@ -900,10 +900,10 @@ configfile() {
         if [ "$#" = 0 ] ; then
             [ -z "$_oqui" ] && set -- $"invalid statement:" "${CEN_CONFIGFILE[1]}"
         else
-            local _cen_configfile_mesg="$1$2$3"
-            if [ -z "${_cen_configfile_mesg//[-+0-9]/}" ] ; then
-                arguments -I _cen_configfile_mesg "${3:-0}" "${1:-0}" "${2:-+}" && return 0
-                set -- "$_cen_configfile_mesg:" "${CEN_CONFIGFILE[1]}"
+            local _mesg="$1$2$3"
+            if [ -z "${_mesg//[-+0-9]/}" ] ; then
+                arguments -I _mesg "${3:-0}" "${1:-0}" "${2:-+}" && return 0
+                set -- "$_mesg:" "${CEN_CONFIGFILE[1]}"
             fi
         fi
         if [ "${CEN_CONFIGFILE[2]:--}" = '-' ] ; then

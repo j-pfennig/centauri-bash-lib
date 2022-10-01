@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ uglify</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='autoload.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='index.html#top'>[Library]</a></div>
+<div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
+<div class='nav-right'><a href='l10n-tool.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='uglify' class='item-script'>
+<span>Script</span><span> - </span><span>uglify</span><span> - </span><span>Pack centauri-bash-lib sources, create packaged script</span></div>
+<div class='def-row'>
+<div class='def-label'>Usage:</div>
+<div class='def-text'>(1)  <b>uglify</b> <i>option</i>... -|<i>module</i>...
+(2)  <b>uglify</b> [<b>-N</b>] [<b>-X</b>] <b>--output</b> <i>packed</i> <i>script</i> [<i>module</i>...]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>This tool strips comments and extra spaces from bash sources. Modules
+with lots of comments load a little bit faster when stripped. The proxy
+of _centauri-bash-lib and the embed function load stripped sources if
+they are up to date:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Usage (1) creates packed <i>module</i>.p files. The recommended usage is:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>    $ <b>uglify</b> -             # use all modules</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>To generate <i>module</i>.p files for some modules only use:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>    $ <b>uglify</b> <i>module</i>...     # where &lt;module&gt; is a file name</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Usage (2) packs a script and the used modules (stripped) into a single
+file. Modules that are not auto-detected can be specified as arguments.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b> <b>--dryrun</b>          show what would be done, make no changes
+<b>-f</b> <b>--force</b>           override prudent default behaviours
+<b>-h</b> <b>--help</b>            show this text
+<b>-n</b> <b>--no</b>              do not prompt for confirmation, assume &apos;no&apos;
+<b>-o</b> <b>--output</b>  <i>file</i>    Open file for output
+<b>-q</b> <b>--quiet</b>           report errors only
+<b>-v</b> <b>--verbose</b>         be verbose (use twice for debug)
+<b>-y</b> <b>--yes</b>             do not prompt for confirmation, assume &apos;yes&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>   <b>--embed</b>   <i>name</i>    use <i>name</i> instead of script name
+   <b>--info</b>            print full path and version
+   <b>--pager</b>   <i>prog</i>    pipe output thru pager, use &apos;none&apos; to disable
+   <b>--trace</b>           trace actions() or run()
+   <b>--wait</b>            prompt before exit</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-C</b> <b>--config</b> <i>file</i>     (packaging) use a configuration file
+<b>-N</b> <b>--nodeps</b>          (packaging) ignore <b>&quot;embed -[cmq]&quot;</b> in library modules
+<b>-X</b> <b>--extractor</b>       (packaging) add self-extractor (_centauri_bash_xtr)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>module</i>               a module name (3 letter or full name)
+<i>packed</i>               generated packed script
+<i>script</i>               a script to be packaged with centauri-bash-lib</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Limits:</div>
+<div class='def-text'><b>uglify</b> does not understand full bash syntax. Here some of the limits:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>- multi-line strings are not supported
+- inline documents must use <b>&quot;!EOF&quot;</b> as senteniel
+- lines with nested strings will not be optimized</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Dependencies:</div>
+<div class='def-text'>Form (2) tries to detect module dendencies (see <b>--nodeps</b>). As only an
+exact match like &apos;embed <b>-c</b> _centauri_bash_iom&apos; gets processed, something
+like &apos;embed <b>-r</b> <b>-q</b> _centauri_bash_ext&apos; can be used to hide a module
+dependency. Custom modules are obviously always ignored.</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='autoload.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
+<div class='nav-right'><a href='l10n-tool.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

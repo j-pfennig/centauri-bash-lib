@@ -1,53 +1,53 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_doc:920
+#: /var/centauri/library/_centauri_bash_doc:916
 msgid "match '%s' in file '%s'"
 msgstr "Treffer '%s' in Datei '%s'"
 
-#: /var/centauri/library/_centauri_bash_doc:924
+#: /var/centauri/library/_centauri_bash_doc:920
 msgid "got %s match(es)"
 msgstr "Habe %s Treffer"
 
-#: /var/centauri/library/_centauri_bash_doc:947
+#: /var/centauri/library/_centauri_bash_doc:943
 msgid "file list cleared"
 msgstr "Dateiliste gelöscht"
 
-#: /var/centauri/library/_centauri_bash_doc:952
+#: /var/centauri/library/_centauri_bash_doc:948
 msgid "Missing arg(s)"
 msgstr "Fehlende Argumente"
 
-#: /var/centauri/library/_centauri_bash_doc:958
+#: /var/centauri/library/_centauri_bash_doc:954
 msgid "start file list"
 msgstr "Dateiliste anfangen"
 
-#: /var/centauri/library/_centauri_bash_doc:969
-#: /var/centauri/library/_centauri_bash_doc:976
-#: /var/centauri/library/_centauri_bash_doc:979
-#: /var/centauri/library/_centauri_bash_doc:982
+#: /var/centauri/library/_centauri_bash_doc:965
+#: /var/centauri/library/_centauri_bash_doc:972
+#: /var/centauri/library/_centauri_bash_doc:975
+#: /var/centauri/library/_centauri_bash_doc:978
 msgid "run file list:"
 msgstr "Dateiliste abarbeiten:"
 
-#: /var/centauri/library/_centauri_bash_doc:969
+#: /var/centauri/library/_centauri_bash_doc:965
 msgid "[skipped, filter]"
 msgstr "[auslassen, Filter]"
 
-#: /var/centauri/library/_centauri_bash_doc:979
+#: /var/centauri/library/_centauri_bash_doc:975
 msgid "[skipped, status 1]"
 msgstr "[auslassen, Status 1]"
 
-#: /var/centauri/library/_centauri_bash_doc:982
+#: /var/centauri/library/_centauri_bash_doc:978
 msgid "[stopped, status $_stat]"
 msgstr "[angehalten, status $_stat]"
 
-#: /var/centauri/library/_centauri_bash_doc:996
+#: /var/centauri/library/_centauri_bash_doc:992
 msgid "done file list"
 msgstr "Dateiliste fertig"
 
-#: /var/centauri/library/_centauri_bash_doc:1001
+#: /var/centauri/library/_centauri_bash_doc:997
 msgid "file list set [%s files]"
 msgstr "Dateiliste gesetzt [%s Dateien]"
 
-#: /var/centauri/library/_centauri_bash_doc:1006
+#: /var/centauri/library/_centauri_bash_doc:1002
 msgid "enable cache:"
 msgstr "Cache einschalten"

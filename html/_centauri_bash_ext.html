@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_ext</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_dyn.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_ins.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_ext' class='item-module'>
+<span>Module</span><span> - </span><span>_centauri_bash_ext</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Sort and IO Extension</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>. <b>_centauri_bash_ext</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'>-none-</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Some functions of this module call GNU coreutils like <b>ln</b>, <b>mv</b>, <b>rm</b> and others. Their installation folder is usually <b>&quot;/usr/bin&quot;</b> or <b>&quot;/bin&quot;</b>. In this documentation <b>&quot;/usr/bin&quot;</b> is used, although the <b>&quot;${CEN_PATHS[1]}&quot;</b> variable (corebin) is checked by <a href="_centauri_bash_lib.html#system">system()</a> and <a href="#sysrun">sysrun()</a> to find the real location of binaries. <b>CEN_PATHS[1]</b> can be set to any other folder, depending on the installation, see <a href="_centauri_bash_ins.html#libraryproxy">library proxy</a> and <a href="_centauri_bash_lib.html#folder">folder()</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>In many cases <b>ln</b>, <b>rm</b>, <b>rmdir</b>, <b>mkdir</b> bash builtins can be used to avoid starting extra processes for external commands. See the <a href="autoload.html">autoload</a> documentation. Most functions notably <a href="#move">move()</a>, <a href="#remove">remove()</a>, <a href="#rename">rename()</a> and <a href="#symlink">symlink()</a> are aware of these builtins.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2016-2022</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='attributes' class='item-function'>
+<span>Function</span><span> - </span><span>attributes</span><span> - </span><span>Create file/folder, set file/folder attributes</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>attributes</b> [<b>-o</b> <i>owner</i>|<b>-</b>] [<b>-m</b> <i>mode</i>|<b>-</b>] [<b>-c</b>|<b>-d</b>] [<b>-f</b>] [<b>-k</b>] [<b>-r</b>] [<b>-s</b>]
+           [<b>-x</b> <i>excl</i>]... [<b>--</b>] <i>item</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  create non-exsting items as files
+<b>-d</b>  create non-exsting itmes as directories
+<b>-f</b>  make errors fatal
+<b>-k</b>  keep existing items unchanged
+<b>-o</b>  set owner (use <b>-</b> for <b>&quot;$LOGNAME:&quot;</b>)
+<b>-m</b>  set mode  (use <b>-</b> for <b>664</b> or <b>775</b>)
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  recurse into sub-folders
+<b>-x</b>  exclude matching arguments, repeatable</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>mode</i>   item mode to be set in any <b>/usr/bin/chmod</b> syntax
+<i>owner</i>  item owner to be set in <b>/usr/bin/chown</b> syntax
+<i>excl</i>   exclude pattern for bash glob</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) Create file or folders<pre><b>attributes</b> <b>-c</b> <b>&quot;hallo&quot;</b>
+<b>attributes</b> <b>-c</b> <b>-o</b> root:staff <b>-m</b> 770 <b>&quot;/.hidden&quot;</b>
+<b>attributes</b> <b>-d</b> <b>-o</b> daemon <b>-m</b> - <b>&quot;/run/x1&quot;</b> <b>&quot;/run/x2&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) Set owner/mode recursively<pre><b>attributes</b> <b>-s</b> <b>-m</b> <b>&quot;o-w&quot;</b> <b>&quot;/etc&quot;</b>
+<b>attributes</b> <b>-d</b> <b>-s</b> <b>-m</b> 700 <b>-o</b> root <b>&quot;/etc/test&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) Exclude patterns<pre><b>attributes</b> <b>-x</b> <b>&quot;*.p&quot;</b> <b>-x</b> <b>&quot;*~&quot;</b> <b>-m</b> 664 library/_*</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>The <b>/usr/bin/chown</b> program uses a &apos;<i>user</i>:[<i>group</i>]&apos; notation for owner. With &apos;<i>user</i><b>:</b>&apos; (no group but trailing colon) the user&apos;s primary group is used.</div>
+</div>
+</section>
+<section id='section-3'>
+<div id='copy' class='item-function'>
+<span>Function</span><span> - </span><span>copy</span><span> - </span><span>Copy files/folders using coreutils /usr/bin/cp</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>copy</b> <i>opt</i>... <i>source</i>... <i>dest</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  recurse/archive (<b>/usr/bin/cp -a</b>)
+<b>-f</b>  make errors fatal
+<b>-o</b>  try copy-on-write (<b>/usr/bin/cp</b> <b>--reflink</b>=auto)
+<b>-q</b>  do not report errors
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  no trace messages
+<b>-u</b>  update (<b>/usr/bin/cp</b> <b>-u</b>)
+<b>-v</b>  generate messages (default is trace)
+<b>-x</b>  remove destination before copy (<b>/usr/bin/rm</b> <b>-r</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>This is a conviniency wrapper for coreutils <b>/usr/bin/cp</b> that provides some extra reporting and error handling.</div>
+</div>
+</section>
+<section id='section-4'>
+<div id='joinpath' class='item-function'>
+<span>Function</span><span> - </span><span>joinpath</span><span> - </span><span>Build a path name from components</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>joinpath</b> [<b>-s</b> <i>rslt</i>] [<b>-n</b>] [<b>-e</b> <i>extn</i>] <i>elem</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  canonicalize path (using <b>/usr/bin/readlink</b>)
+<b>-d</b>  add extension only as default
+<b>-e</b>  add extension (ignored if <b>&quot;.&quot;</b>), see <a href="#suffixpath">suffixpath()</a>
+<b>-p</b>  prettify path, see <a href="#prettypath">prettypath()</a>
+<b>-r</b>  all elements are relative
+<b>-s</b>  save result to <i>rslt</i> (default is <b>CEN_JOINPATH</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>joinpath</b>    /base more    # =&gt;  /base/more
+<b>joinpath</b>    /base /more   # =&gt;  /more
+<b>joinpath</b> <b>-r</b> /base /more   # =&gt;  /base/more</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>joinpath</b>    <b>-e</b> xml /dir file       # =&gt;  /dir/file.xml
+<b>joinpath</b>    <b>-e</b> xml /dir file.html  # =&gt;  /dir/file.html.xml
+<b>joinpath</b> <b>-d</b> <b>-e</b> xml /dir file.html  # =&gt;  /dir/file.html</pre></div>
+</div>
+</section>
+<section id='section-5'>
+<div id='listsearch' class='item-function'>
+<span>Function</span><span> - </span><span>listsearch</span><span> - </span><span>search a word in a list</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>listsearch</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b> <i>deli</i>] [<b>-m</b>|<b>-n</b> <i>vres</i>] [<b>-g</b>|<b>-u</b>|<b>-x</b>] [<b>--</b>] <i>what</i> <i>list</i>
+<b>listsearch</b> [<b>-b</b>] [<b>-c</b>] [<b>-m</b>|<b>-n</b> <i>vres</i>] [<b>-g</b>|<b>-u</b>|<b>-x</b>] [<b>--</b>] <i>what</i> <i>item</i>...
+<b>listsearch</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b> <i>deli</i>] [<b>-m</b>|<b>-n</b> <i>vres</i>] [<b>-g</b>|<b>-u</b>|<b>-x</b>] <b>-i</b> <i>vinp</i> [<b>--</b>] <i>what</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  do a binary search (list must be ordered lexically)
+<b>-c</b>  do a case sensitive search
+<b>-d</b>  list item separator(s), calls <a href="_centauri_bash_lib.html#splitjoin">splitjoin</a> on <i>list</i>
+<b>-g</b>  glob expression match (longest expression wins)
+<b>-i</b>  input from variable (string or array)
+<b>-m</b>  return matched word in <i>vres</i>
+<b>-n</b>  return match index in <i>vres</i>
+<b>-u</b>  partial word search, match must be unique
+<b>-x</b>  regular expression match (longest expression wins)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>deli</i>  word delimiters in list string
+<i>vres</i>  variable to receive the search result
+<i>vinp</i>  variable or array containing the list to be searched
+<i>item</i>  a list item
+<i>list</i>  a list string
+<i>what</i>  the word to be searched</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'>0   word found
+1   word not found
+2   no unique match</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre>set <b>--</b> <b>&quot;oTTO&quot;</b> <b>&quot;emil o* *TO O?* *&quot;</b>
+local valn valm
+<b>listsearch</b> <b>-g</b> <b>-d</b> &apos; &apos; <b>-n</b> valn <b>-m</b> valm <b>--</b> <b>&quot;$@&quot;</b> || quit <b>&quot;not found&quot;</b>
+message <b>&quot;Index $valn is &apos;$valm&apos;&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-6'>
+<div id='move' class='item-function'>
+<span>Function</span><span> - </span><span>move</span><span> - </span><span>Move (or rename) files or folders using /usr/bin/mv</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>move</b> [<b>-f</b>] [<b>-o</b>|<b>-x</b>] [<b>-q</b>|<b>-s</b>|<b>-v</b>] [<b>-r</b>] <i>src</i>... <i>dest</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-f</b>  make errors fatal
+<b>-o</b>  try to overwrite readonly <i>dest</i>
+<b>-q</b>  do not report errors
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  do not report via <a href="_centauri_bash_lib.html#message">message()</a> or <a href="_centauri_bash_lib.html#trace">trace()</a>
+<b>-v</b>  report via <a href="_centauri_bash_lib.html#message">message()</a> (default is <a href="_centauri_bash_lib.html#trace">trace()</a>)
+<b>-x</b>  remove destination before move (implies <b>-o</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This is a conviniency wrapper for <b>/usr/bin/mv</b> that provides some extra reporting and error handling. Unlike <a href="#rename">rename()</a> the <b>move</b> function accepts multiple <i>src</i> arguments if <i>dest</i> is a folder.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Option <b>-o</b> will try to remove a readonly <i>dest</i> and option <b>-x</b> will unconditionally try to remove <i>dest</i>. If more than two arguments are passed <i>dest</i> must be a folder. In this case <b>-o</b> and <b>-x</b> are disabled.</div>
+</div>
+</section>
+<section id='section-7'>
+<div id='optmake' class='item-function'>
+<span>Function</span><span> - </span><span>optmake</span><span> - </span><span>Build options string or array</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>optmake</b> <b>-s</b>|<b>-j</b>|<b>-a</b> <i>dest</i> [<b>-k</b>|<b>-n</b> <i>name</i>] [<b>-f</b>|<b>-v</b>|<b>-z</b>] <i>valu</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  add result to <i>dest</i> array
+<b>-f</b>  option is a flag, no value
+<b>-j</b>  add result to <i>dest</i> variable
+<b>-k</b>  key name (not an option)
+<b>-m</b>  do not treat &apos;-&apos; as empty value
+<b>-s</b>  save result in <i>dest</i> variable
+<b>-n</b>  option name (optionally starting with - or <b>--</b>)
+<b>-v</b>  option has a value (default is an option flag)
+<b>-z</b>  option has a value must must be non-zero</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>optmake</b> <b>-a</b> opts <b>-v</b> <b>&quot;$CEN_OPT_INPUT&quot;</b>                 # argument
+<b>optmake</b> <b>-a</b> opts <b>--</b> <b>&quot;-version&quot;</b>                       # constant
+<b>optmake</b> <b>-s</b> opts <b>-n</b> host <b>-m</b> <b>-v</b> <b>&quot;$CEN_OPT_HOST&quot;</b>       # text value
+<b>optmake</b> <b>-j</b> opts <b>-n</b> logical <b>-f</b> <b>&quot;$CEN_OPT_LOGICAL&quot;</b>    # flag
+<b>optmake</b> <b>-a</b> opts <b>-n</b> number  <b>-z</b> <b>&quot;$CEN_OPT_NUMBER&quot;</b>     # num. value
+<b>optmake</b> <b>-j</b> opts <b>-n</b> physical   <b>&quot;$CEN_OPT_PHYSICAL&quot;</b>   # flag</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>optmake</b> <b>-j</b> args        <b>-v</b> <b>&quot;$addr&quot;</b>       # add a value
+<b>optmake</b> <b>-j</b> args <b>-k</b> mtu <b>-v</b> <b>&quot;$vmtu&quot;</b>       # add key/value</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>If the option <i>name</i> starts with &apos;-&apos; or &apos;<b>--</b>&apos; the generated code for string output (option <b>-j</b> or <b>-s</b>) is:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  -           -&lt;name&gt;   or  -&lt;name&gt; &lt;valu&gt;     (one or two elements)
+  --          --&lt;name&gt;  or  --&lt;name&gt;=&lt;valu&gt;    (only one element)
+  default     --&lt;name&gt;  or  --&lt;name&gt; &lt;valu&gt;    (one or two elements)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When used with <b>-a</b> option <b>optmake</b> never generates a &apos;=&apos; separator but puts the <i>valu</i> into an extra array element. For string output only simple quoting is used, e.g. &apos;&quot;&apos; in <i>valu</i> are changed to &apos;\&quot;&apos;.</div>
+</div>
+</section>
+<section id='section-8'>
+<div id='pluralize' class='item-function'>
+<span>Function</span><span> - </span><span>pluralize</span><span> - </span><span>use singular or plural form depending on count</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>pluralize</b> <b>-s</b> <i>vnam</i> [<b>-c</b> <i>caps</i>] [<b>-n</b>] [<b>-z</b>] [<b>--</b>]
+              <i>count</i> <i>singular</i> [<i>plural</i> [<i>zero</i>|- [<i>one</i>|<b>-</b>]]]
+(2) <b>pluralize</b> [<b>-a</b>|<b>-i</b>] [<b>-e</b>|<b>-f</b>|<b>-w</b>] [<b>-p</b> <i>frmt</i> [<b>-c</b> <i>caps</i>] [<b>-n</b>] [<b>-z</b>] [<b>--</b>]
+              <i>count</i> <i>singular</i> [<i>plural</i> [<i>zero</i>|- [<i>one</i>|<b>-</b>]]]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (1) saves the singular/plural word to a variable, and form (2) behaves like <a href="_centauri_bash_lib.html#message">message()</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If no plural is given, the singular with an &apos;s&apos; appended is used. This feature does not make sense with l10n (localization) enabled.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  capitalize 1st letter of singular/plural and count 0/1
+<b>-n</b>  use numbers with count=0 and count=1
+<b>-p</b>  format using two arguments: count singular/plural
+<b>-s</b>  save result to variable (default is calling message)
+<b>-z</b>  use plural form for zero count</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>vnam</i>  a variable name
+<i>frmt</i>  a format string with two &apos;%s&apos; for count/word. The default
+      format is <b>&quot;%.0s%s&quot;</b>, so per default the count gets hidden
+<i>caps</i>  bit 1: capitalize singular/plural  bit 2: cap. count
+<i>zero</i>  optional count=0 text
+<i>one</i>   optional count=1 text</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre><b>pluralize</b> <b>-s</b> sout <b>-c</b> 3 <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$count&quot;</b> <b>&quot;file&quot;</b> <b>&quot;files&quot;</b>
+<b>pluralize</b> <b>-s</b> sout <b>-z</b> <b>--</b> <b>&quot;$count&quot;</b> <b>&quot;item&quot;</b> <b>&quot;items&quot;</b> <b>&quot;Zero&quot;</b> <b>&quot;Single&quot;</b>
+<b>pluralize</b> <b>-a</b> <b>-z</b> <b>-p</b> <b>&quot;Done, %s %s processed&quot;</b> <b>--</b> <b>&quot;$count&quot;</b> <b>&quot;file&quot;</b> <b>&quot;files&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-9'>
+<div id='prettypath' class='item-function'>
+<span>Function</span><span> - </span><span>prettypath</span><span> - </span><span>Get pretty path for file or folder</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>prettypath</b> [<b>-f</b>|<b>-q</b>|<b>-w</b>] [<b>-e</b>] [<b>-s</b> <i>var</i>] [<b>-t</b> <i>trm</i>]
+            [<b>-n</b>] [<b>-b</b>] [<b>-c</b>|<b>-p</b>] [<b>--</b>] [<i>path</i>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  get dirname of argument
+<b>-c</b>  canonicalize path (e.g return full path)
+<b>-e</b>  <i>path</i> must exist
+<b>-f</b>  errors are made fatal
+<b>-n</b>  network (abstract) path, see <b>repath</b> in <b>centauri-bash-lib</b>
+<b>-p</b>  get physical path (default is a logical path)
+<b>-q</b>  output no error messages
+<b>-s</b>  save path to <i>var</i> (default is <b>CEN_PRETTYPATH</b>)
+<b>-t</b>  trim prefix from result path
+<b>-w</b>  errors are reported as warnings</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>path</i>  the path name to be prettified
+<i>var</i>   prettified path  -or-  empty in failure
+<i>trm</i>   remove any leading <i>trm</i><b>/</b> from result <i>path</i>s</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>As indicated by it&apos;s name the function tries to return pretty path names by normalizing and by applying &apos;repath&apos; expressions. The later are part of the library and can be defined in the [library] section of the <b>&quot;centauri-bash-lib&quot;</b> configuration file. The data is compiled into the proxy at installation time.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Repath expressions are &apos;regular expressions&apos; that can replace matches in a path.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If option <b>-c</b> is given, the function first uses the <b>/usr/bin/readlink</b> to resolve any symlinks in the path. Otherwise the path is only normalized (which is faster than using <b>-c</b>). This may lead to different results:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><pre>ln <b>-s</b> /dev/shm /tmp
+<b>prettypath</b>       <b>--</b> /dev/shm/.      # result is: /tmp   (by repath)
+<b>prettypath</b> <b>-p</b>    <b>--</b> /dev/shm/.      # result is: /dev/shm
+<b>prettypath</b> <b>-b</b> <b>-c</b> <b>--</b> /tmp/..         # result is: /dev
+<b>prettypath</b> <b>-b</b>    <b>--</b> /tmp/..         # result is: /</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If option <b>-b</b>, <b>-c</b> or <b>-p</b> are given, the function uses the <b>/usr/bin/readlink</b> command. Otherwise the function applies some heuristics to prettify the result.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>prettify path, strip working folder path<pre><b>prettypath</b> <b>-t</b> <b>&quot;$PWD&quot;</b> <b>--</b> <b>&quot;$1&quot;</b>
+message <b>&quot;Path:&quot;</b> <b>&quot;$CEN_PRETTYPATH&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>prettify but do not apply repath expressions<pre>local path
+<b>prettypath</b> <b>-p</b> <b>-s</b> path <b>--</b> <b>&quot;$1&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-10'>
+<div id='redirect' class='item-function'>
+<span>Function</span><span> - </span><span>redirect</span><span> - </span><span>Open/close file handle for input/output</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>redirect</b> [<b>-q</b>] [<b>-h</b> <i>num</i> | <b>-v</b> <i>var</i>] <b>-o</b>|<b>-x</b> <i>file</i>          # for write
+<b>redirect</b> [<b>-q</b>] [<b>-h</b> <i>num</i> | <b>-v</b> <i>var</i>] <b>-a</b> <i>file</i>             # for append
+<b>redirect</b> [<b>-q</b>] [<b>-h</b> <i>num</i> | <b>-v</b> <i>var</i>] <b>-i</b> <i>file</i>             # for read
+<b>redirect</b> [<b>-q</b>] [<b>-h</b> <i>num</i> | <b>-v</b> <i>var</i>]                     # close
+<b>redirect</b> [<b>-q</b>] <b>-f</b> <i>var</i>                                # get free handle</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  append to output         (<i>file</i> <b>-</b> for stdout, <b>+</b> to prompt)
+<b>-f</b>  [*] save free handle to <i>var</i>
+<b>-h</b>  [*] use handle <i>num</i>
+<b>-i</b>  <b>redirect</b> input to file   (<i>file</i> <b>-</b> for stdin,  <b>+</b> to prompt)
+<b>-o</b>  <b>redirect</b> output to file  (<i>file</i> <b>-</b> for stdout, <b>+</b> to prompt)
+<b>-q</b>  quiet, no error messages
+<b>-s</b>  do not generate trace messages
+<b>-v</b>  [*] save/get handle to/from <i>var</i>
+<b>-x</b>  don&apos;t ask if output can be overridden</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>[*] these options are mutually exclusive</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-text'><i>file</i>   file path or <b>&quot;-&quot;</b> or <b>&quot;+&quot;</b>
+<i>num</i>    handle number
+<i>var</i>    variable to save handle</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'><b>true</b> at success or <b>false</b> otherwise. After a successfull open the variable <b>CEN_REDIRECT</b> contains the canonicalized file path.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>redirect</b> <b>-h</b> 4 <b>-i</b> /etc/fstab     # open handle 4 for read
+read <b>-u</b> 4 ...
+<b>redirect</b> <b>-h</b> 4                   # close handle 4</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>redirect</b> <b>-v</b> fhan <b>-o</b> +           # open for write, handle in fhan
+echo one &gt;&amp;$fhan                # always use &gt; (it appends)
+echo two &gt;&amp;$fhan                # second output line
+<b>redirect</b> <b>-v</b> fhan                # closes handle from fhan</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function can attempt to find a free file handle, but this is not thread-safe (bash subshell or co-process).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>&quot;&gt;&gt;&amp;&quot;</b> cannot be used with handle variables (syntax error). Open the handle for append (using <b>-a</b>) and always use the <b>&quot;&gt;&amp;&quot;</b> operator for write.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Options <b>-a</b>|<b>-i</b>|<b>-o</b> depend on module <a href="_centauri_bash_iom.html">_centauri_bash_iom</a> which is loaded on demand.</div>
+</div>
+</section>
+<section id='section-11'>
+<div id='remove' class='item-function'>
+<span>Function</span><span> - </span><span>remove</span><span> - </span><span>Remove files or folders using /usr/bin/ ... unlink, rm, rmdir</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>remove</b> [<b>-d</b>] [<b>-e</b>] [<b>-o</b>] [<b>-r</b>] [<b>-f</b>|<b>-q</b>] [<b>-s</b>|<b>-v</b>] <i>path</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b>  recurse folders (using <b>&quot;/usr/bin/rm -r&quot;</b>)
+<b>-e</b>  files/dirs must exist (default is <b>&quot;/usr/bin/rm -f&quot;</b>)
+<b>-f</b>  make errors fatal
+<b>-o</b>  add option <b>--one-file-system</b> to <b>rm</b> command
+<b>-q</b>  do not output error messages
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  do not report activity via <a href="_centauri_bash_lib.html#trace">trace()</a>
+<b>-v</b>  report via <a href="_centauri_bash_lib.html#message">message()</a> (default is <a href="_centauri_bash_lib.html#trace">trace()</a>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Notes:</div>
+<div class='def-block'>Does implicitly remove a folder (without <b>-d</b> option with a single argument that is a folder):</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>remove</b> &lt;dir&gt;        # (1 arg) will run &quot;/usr/bin/rmdir &lt;dir&gt;&quot;
+                    # resulting in error for non-empty dir.
+<b>remove</b> .. &lt;dir&gt; ..  # (n args) will generate an error by &quot;/usr/bin/rm&quot;</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>This is a conviniency wrapper for <b>unlink</b>, <b>rm</b> and <b>rmdir</b> that provides some extra reporting and error handling. The implementation is aware of simple cases so that the bash builtins <b>unlink</b> and <b>rmdir</b> can be used (if enabled via <a href="autoload.html">autoload</a>). If the number of arguments is &gt; 1 the function always calls <b>rm</b> without any further checks.</div>
+</div>
+</section>
+<section id='section-12'>
+<div id='rename' class='item-function'>
+<span>Function</span><span> - </span><span>rename</span><span> - </span><span>Rename (or move) a file or folder using /usr/bin/mv</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>rename</b> [<b>-f</b>] [<b>-o</b>|<b>-x</b>] [<b>-q</b>|<b>-s</b>|<b>-v</b>] [<b>-r</b>] <i>src</i> <i>des</i>
+(2) <b>rename</b> [<b>-b</b> <i>suf</i>] [<b>-f</b>] [<b>-q</b>|<b>-s</b>|<b>-v</b>] [<b>-r</b>] <i>src</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  make backup &apos;<i>src</i>.<i>suf</i>&apos; (no <i>des</i> argument allowed)
+<b>-f</b>  make errors fatal
+<b>-m</b>  source file/folder may be missing (no error message)
+<b>-o</b>  allow to replace an existing file
+<b>-q</b>  do not report errors
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  do not report via <a href="_centauri_bash_lib.html#message">message()</a> or <a href="_centauri_bash_lib.html#trace">trace()</a>
+<b>-v</b>  report via <a href="_centauri_bash_lib.html#message">message()</a> (default is <a href="_centauri_bash_lib.html#trace">trace()</a>)
+<b>-x</b>  allow to replace an existing folder (implies <b>-o</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>This is a conviniency wrapper for <b>/usr/bin/mv</b> that provides some extra reporting and error handling. Only one <i>src</i> argument is supported and the function fails if <i>des</i> exists and neither option <b>-o</b> or <b>-x</b> are given.</div>
+</div>
+</section>
+<section id='section-13'>
+<div id='resolve' class='item-function'>
+<span>Function</span><span> - </span><span>resolve</span><span> - </span><span>Resolve and prettify (multiple) file/dir paths</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>resolve</b> [<b>-a</b> <i>arr</i>|<b>-s</b> <i>var</i>] [<b>-t</b> <i>trm</i>] [<b>-e</b>] [<b>-f</b>|<b>-q</b>] [<b>-m</b>|<b>-p</b>] <i>path</i>...
+<b>resolve</b> [<b>-s</b> <i>var</i>] [<b>-e</b>] [<b>-f</b>] [<b>-m</b>|<b>-p</b>] <b>-x</b> <i>exe</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  save result to array <i>arr</i>
+<b>-e</b>  paths must exist, don&apos;t pass non-existing to readlink
+<b>-f</b>  make errors fatal
+<b>-m</b>  canonicalize only, missing ok (disabled by <b>-p</b>)
+<b>-s</b>  save result to <i>var</i>
+<b>-t</b>  trim prefix from result paths
+<b>-f</b>  make errors fatal
+<b>-p</b>  return pretty name (not for missing paths, disables <b>-m</b>)
+<b>-q</b>  do not report errors
+<b>-x</b>  locate an executable file using <b>BASH_ARGV</b>0
+<b>-y</b>  locate a file using <b>BASH_ARGV</b>0</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>path</i>  any symlink, file or folder. All <i>path</i> args are
+      resolved at once by a single call to <b>/usr/bin/readlink</b>
+<i>exe</i>   name of an executable file
+<i>arr</i>   result array
+<i>var</i>   result string (one line per <i>path</i>)
+<i>trm</i>   remove any leading <i>trm</i><b>/</b> from result <i>path</i>s</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>In contrast to <a href="#prettypath">prettypath()</a> this function calls <b>/usr/bin/readlink</b> (unlesss option <b>-p</b> is used). Also it can pass multiple <i>path</i> args at once.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If option <b>-p</b> is given, the function prettifies the result paths in the same way as <a href="#prettypath">prettypath()</a> does. This option overrides option <b>-m</b> and only existing paths will be returned.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># check a list and return pretty names (don&apos;t call readlink)
+<b>resolve</b> <b>-e</b> <b>-m</b> <b>-p</b> <b>--</b> here/* and/there*</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># check a list and return resolved paths
+<b>resolve</b> <b>-e</b> <b>-m</b> <b>--</b> here/* and/there*</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># generate error messages for missing items
+<b>resolve</b> <b>--</b> here/* and/there*    # readlink execution would fail
+<b>resolve</b> <b>-e</b> <b>--</b> here/* and/there* # error message per missing item</pre></div>
+</div>
+</section>
+<section id='section-14'>
+<div id='splitpath' class='item-function'>
+<span>Function</span><span> - </span><span>splitpath</span><span> - </span><span>Split path name into components</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>splitpath</b> <b>-a</b> <i>rslt</i> [<b>-e</b>] [<b>-f</b>] [<b>-g</b>|<b>-p</b>] [<b>-w</b>] <i>path</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  result array (parent, base, ext)
+<b>-f</b>  parent is 1st name part only
+<b>-e</b>  separate extension
+<b>-g</b>  separate extensions (greedy)
+<b>-p</b>  separate parent path (greedy)
+<b>-w</b>  try to strip <b>&quot;$PWD&quot;</b> from parent</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'>0: success  1: path is root (no parent)  2: readlink error</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function does a simple prettify of the path to remove redundant or trailing <b>&quot;/&quot;</b> chars or <b>&quot;./&quot;</b> and <b>&quot;/./&quot;</b> . Relative paths are made absolute and unnormalized paths like <b>&quot;weird/../path&quot;</b> need to invoke the <b>/usr/bin/readlink</b> command.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>None of path the components need to exist. Unless option <b>-w</b> is used, the returned field 0 (parent) always contains an absolute path otherwise it is empty when <b>&quot;$PWD&quot;</b> is the parent.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>results for path &apos;/&apos; &apos;/one&apos; &apos;/one/two&apos; :<pre><b>splitpath</b>    <b>-p</b> ...  #  =&gt;  (<b>&quot;&quot;</b> <b>&quot;/&quot;</b>)    # root has no parent
+<b>splitpath</b>    <b>-p</b> ...  #  =&gt;  (&quot;/one&quot; &quot;&quot;)
+<b>splitpath</b>    <b>-p</b> ...  #  =&gt;  (&quot;/one&quot; &quot;two&quot;)</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>results for path &apos;/example/base.text&apos; :<pre><b>splitpath</b> <b>-e</b> <b>-p</b> ...  #  =&gt;  (&quot;/example&quot; &quot;base&quot; &quot;text&quot;)
+<b>splitpath</b> <b>-e</b>    ...  #  =&gt;  (&quot;/example/base&quot; &quot;text&quot;)
+<b>splitpath</b>    <b>-p</b> ...  #  =&gt;  (&quot;/example&quot; &quot;base.text&quot;)</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>results (greedy) for path &apos;/one/two/a.b.c&apos; :<pre><b>splitpath</b> <b>-e</b> <b>-f</b> ...  #  =&gt;  (&quot;/one/two&quot; &quot;a.b&quot; &quot;c&quot;)
+<b>splitpath</b> <b>-g</b> <b>-f</b> ...  #  =&gt;  (&quot;/one/two&quot; &quot;a&quot; &quot;b.c&quot;)
+<b>splitpath</b>    <b>-f</b> ...  #  =&gt;  (&quot;/one/two&quot; &quot;a.b.c&quot;)</pre></div>
+</div>
+</section>
+<section id='section-15'>
+<div id='suffixpath' class='item-function'>
+<span>Function</span><span> - </span><span>suffixpath</span><span> - </span><span>add or remove a suffix to or from a file path</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>suffixpath</b> [<b>-s</b> <i>varname</i>] [<b>-d</b>] [<b>-l</b>] [<b>-c</b> <i>from</i>] [<b>--</b>] <i>suffix</i> [<i>path</i>]
+(2) <b>suffixpath</b> [<b>-s</b> <i>varname</i>] [<b>-r</b>] [<b>-l</b>] [<b>-c</b> <i>from</i>] [<b>--</b>] <i>suffix</i>|- [<i>path</i>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  change suffix
+<b>-d</b>  only append if path has no other suffix
+<b>-l</b>  lower case
+<b>-r</b>  remove one suffix (use - to match any suffix)
+<b>-s</b>  variable to be used (default is <b>CEN_SUFFIXPATH</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>varname</i>  a variable holding the path
+<i>suffix</i>   suffix to be append
+<i>path</i>     use this path or use current <i>varname</i> if missing</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success. If <i>path</i> is a folder or ends with a <b>&quot;/&quot;</b> or for an
+attempt to remove non-existing suffix <b>false</b> is returned.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function implements some logic to handle default suffixes. It is used by <a href="_centauri_bash_iom.html#inpfile">inpfile()</a> and <a href="_centauri_bash_iom.html#outfile">outfile()</a> for this purpose:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • If the path is empty or ends with <b>/</b> or is an existing folder, the
+    function does nothing and returns <b>false</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • A path ending on <b>.</b> causes the dot to be removed and no further action
+    to be taken. This can be used to prevent this function from addind any
+    default suffix to a path.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • If the suffix does not start with a <b>.</b> character it is prefixed with
+    one.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>simply adding a suffix:<pre><b>suffixpath</b> &apos;bak&apos; &apos;my-file.txt&apos;      # results in: my-file.txt.bak
+<b>suffixpath</b> &apos;dat&apos; &apos;/tmp/scratch&apos;     # results in: /tmp/scratch.dat
+<b>suffixpath</b> &apos;dat&apos; &apos;/tmp/scratch.&apos;    # results in: /tmp/scratch
+<b>suffixpath</b> &apos;dat&apos; &apos;/tmp/scratch/&apos;    # results in: /tmp/scratch/
+<b>suffixpath</b> &apos;dat&apos; &apos;/tmp&apos;             # results in: /tmp  (ignore folder)</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>adding a default suffix:<pre><b>suffixpath</b> <b>-d</b> &apos;gpx&apos;  &apos;my-track&apos;     # results in: my-track.gpx
+<b>suffixpath</b> <b>-d</b> &apos;gpx&apos;  &apos;my-track.tmp&apos; # results in: my-track.tmp
+<b>suffixpath</b> <b>-d</b> &apos;gpx&apos;  &apos;my-track.&apos;    # results in: my-track</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>removing a suffix:<pre>if ! <b>suffixpath</b> <b>-r</b> &apos;bak&apos; &apos;$1&apos; ; then
+    message <b>&quot;File &apos;$1&apos; has no &apos;bak&apos; suffix&quot;</b>
+fi
+case $? in
+1)  message <b>&quot;Got a folder:&quot;</b> <b>&quot;$1&quot;</b> ;;
+2)  message <b>&quot;File &apos;$1&apos; has no &apos;bak&apos; suffix&quot;</b> ;;
+esac</pre></div>
+</div>
+</section>
+<section id='section-16'>
+<div id='symlink' class='item-function'>
+<span>Function</span><span> - </span><span>symlink</span><span> - </span><span>Make a symlink to a target using /usr/bin/ln</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>symlink</b> [<b>-r</b>|<b>-q</b>] [<b>-m</b>] [<b>-s</b>] [<b>--</b>] <i>target</i> [<i>link</i>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  canonicalize target path
+<b>-d</b>  allow that <i>link</i> is a folder
+<b>-f</b>  make errors fatal
+<b>-i</b>  no error message for non-existing target
+<b>-m</b>  if link is a file/dir move it to &apos;<i>link</i>.$<b>CEN_NAME</b>&apos;
+<b>-n</b>  don&apos;t check <i>target</i> allowing stale <b>symlink</b>
+<b>-q</b>  do not report errors
+<b>-r</b>  make relative links
+<b>-s</b>  do not generate messages
+<b>-x</b>  if link is a file/dir delete it</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>0</b> := OK   <b>1</b> := no <i>target</i>   <b>2</b> := <i>link</i> is a file</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>This is a conveniency wrapper for <b>/usr/bin/ln</b> that provides some extra reporting and error handling. Without option <b>-n</b> the function refuses to create a symlink if <i>target</i> does not exist.</div>
+</div>
+</section>
+<section id='section-17'>
+<div id='sysrun' class='item-function'>
+<span>Function</span><span> - </span><span>sysrun</span><span> - </span><span>generate messages for errors, optionally run a command</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>sysrun</b> [<b>-f</b>] [<b>-m</b> <i>mesg</i>] <b>-c</b> <i>stat</i> [<b>--</b>] [<i>cmd</i> <i>arg</i>...]
+(2) <b>sysrun</b> [<b>-f</b>|<b>-q</b>] [<b>-a</b> <i>anam</i>] [<b>-m</b> <i>mesg</i>] [<b>-b</b>|<b>-n</b>]
+           [<b>-d</b>] [<b>-p</b>] [<b>-r</b>] [<b>-s</b>] [<b>--</b>] <i>cmd</i> <i>arg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  capture output into an array
+<b>-b</b>  do not run a script function, prefer builtin over command
+<b>-c</b>  error code for reporting (<i>cmd</i> is not executed)
+<b>-d</b>  use &apos;./&apos; prefix if 1st arg starts with a &apos;-&apos;
+<b>-e</b>  ignored for <a href="_centauri_bash_lib.html#system">system()</a> compatibility
+<b>-f</b>  make errors fatal
+<b>-m</b>  format string for error message
+<b>-n</b>  do no checks on <i>cmd</i> (implied if <i>cmd</i> is a path)
+<b>-p</b>  pretty-print error messages
+<b>-q</b>  do not output error messages
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  do not report activity via <a href="_centauri_bash_lib.html#trace">trace()</a>
+<b>-z</b>  don&apos;t capture <b>/dev/stdout</b>, but <b>-a</b> and <b>-p</b> capture <b>/dev/stderr</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>mesg</i>  printf format string with 2 string variables
+<i>stat</i>  status code to report (<b>0</b> reports nothing)
+<i>cmd</i>   a program name or path
+<i>arg</i>   program argument, at least one argument is required</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This function can be used (1) to create error messages or (2) to run a command - optionally reporting errors. It is much simpler than <a href="_centauri_bash_lib.html#system">system()</a> and uses a temporary file to catch the program output (or error messages).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The bash <b>&quot;$(&lt;cmd&gt; &lt;arg&gt;...)&quot;</b> construct as it is used by <a href="_centauri_bash_lib.html#system">system()</a> creates a subshell for each command, which is time consuming and spawns extra processes. On the other hand the temporary file used by <a href="#sysrun">sysrun()</a> has to be created on 1st use and later to be deleted in a quit hook.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>So this function is good especially when builtin commands like <b>mkdir</b>, <b>rmdir</b>, <b>unlink</b> or <b>ln</b> are to be executed (as some methods in <a href="_centauri_bash_ext.html">_centauri_bash_ext</a> do). User script code might prefer calls to <a href="_centauri_bash_lib.html#system">system()</a> unless high performance is of particular importance.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Option <b>-d</b> helps to solve the problem of some tools (bash builtins) that do not implement <b>--</b> to stop option parsing. This is done here by scanning for <b>--</b>, to remove it and to prefix the next argument with &apos;./&apos; if it starts with a &apos;-&apos;.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Option <b>-b</b> will always use an available builtin and will not run script functions. Without <b>-b</b> <b>sysrun</b> behaves like <a href="_centauri_bash_lib.html#system">system()</a> and honors cached paths.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Using a full path for <i>cmd</i> disables option <b>-b</b> and allows to bypass cached paths. This can be used for example to bypass a builtin. <b>Note:</b> It is not possible for a script to disable builtins via <b>&quot;enable -n&quot;</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A file created via <a href="#tmpfile">tmpfile()</a> is used to capture output (options <b>-a</b> or <b>-p</b>). Callers should set umask=66 to avoid a public readable file if <b>XDG_RUNTIME_DIR</b> is not available.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>It is possible to use <b>sysrun</b> from a subshell, but the main process must have set the tmpfile base folder (like <b>&quot;tmpfile -n&quot;</b>) before starting the subshell.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Using <b>sysrun</b> to call a script function is not recommended, use <b>&quot;system -n&quot;</b> instead. This is because <b>sysrun</b> uses only a single file to capture output which prevents recursive use.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># print an error message
+<b>sysrun</b> <b>-c</b> 127 <b>-m</b> <b>&quot;%s: failed to create &apos;%s&apos;&quot;</b> xmkdir /xxx
+    # xmkdir: failed to create &apos;/xxx&apos;: Program not found
+<b>sysrun</b> <b>-c</b> 1 <b>-m</b> <b>&quot;%s: failed to create &apos;%s&apos;&quot;</b> mkdir /xxx
+    # mkdir: failed to create &apos;/xxx&apos;
+<b>sysrun</b> <b>-c</b> 129 mytool
+    # &apos;mytool&apos; failed: Signal 1</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># run a program without capturing output:
+<b>sysrun</b> <b>-r</b> <b>-z</b> <b>--</b> diff f1 f2</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># run a program (or builtin) discarding stdout:
+<b>sysrun</b> <b>-d</b> <b>--</b> unlink <b>--</b> -this-is-a-file
+<b>sysrun</b> <b>-f</b> <b>-m</b> <b>&quot;%s: cannot remove folder &apos;%s&apos;&quot;</b> rmdir /xxx</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># capture output into an array:
+<b>sysrun</b> <b>-a</b> aout <b>-p</b> <b>--</b> ls <b>-l</b> &amp;&amp; splitjoin <b>-i</b> aout</pre></div>
+</div>
+</section>
+<section id='section-18'>
+<div id='tmpfile' class='item-function'>
+<span>Function</span><span> - </span><span>tmpfile</span><span> - </span><span>create temporary files that get deleted on program exit</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>tmpfile</b> <b>-t</b>|<b>-v</b>|<b>-b</b> <i>fldr</i>                    # set base folder
+(2) <b>tmpfile</b> [<b>-t</b>|<b>-v</b>|<b>-b</b> <i>fldr</i>] [<b>-p</b>]             # create file/pipe
+            [<b>-f</b>] [<b>-n</b>] [<b>-s</b> <i>name</i>] [<i>suff</i>]
+(3) <b>tmpfile</b> [<b>-t</b>|<b>-v</b>|<b>-b</b> <i>fldr</i>] <b>-d</b>               # delete created files</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>This documentation uses <b>&quot;/tmp&quot;</b> and <b>&quot;/var/tmp&quot;</b>, but at runtime these paths may differ, see $<b>CEN_PATHS</b> settings.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  set base folder to <i>fldr</i> (default is $<b>XDG_RUNTIME_DIR</b>)
+<b>-d</b>  delete all files created by <b>tmpfile</b> for this process
+<b>-f</b>  make errors fatal
+<b>-n</b>  do not actually create the file
+<b>-p</b>  create a pipe (fifo) instead of a file
+<b>-s</b>  use variable <i>name</i> to save result (default is <b>CEN_TMPFILE</b>)
+<b>-t</b>  set base folder to <b>&quot;/tmp/centauri-&lt;user&gt;&quot;</b>
+<b>-v</b>  set base folder to <b>&quot;/var/tmp/centauri-&lt;user&gt;&quot;</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>fldr</i>  folder path (use - for $<b>XDG_RUNTIME_DIR</b>)
+<i>name</i>  name of result variable
+<i>suff</i>  suffix to append to file name (default is a counter)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># create a temp file (might be in <b>XDG_RUNTIME_DIR</b>)
+<b>tmpfile</b> <b>-s</b> myfile test
+message <b>&quot;Base folder: $CEN_EXT_TEMP, temp file: $myfile&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># create a temp file in /tmp/centauri-&lt;user&gt;
+<b>tmpfile</b> <b>-t</b> <b>-s</b> myfile test</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># delete current files, switch base folder to /var/tmp/...
+<b>tmpfile</b> <b>-d</b> ; <b>tmpfile</b> <b>-v</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># create a spool file, then switch back to default base
+<b>tmpfile</b> <b>-b</b> <b>&quot;/var/spool/$CEN_NAME&quot;</b> <b>-s</b> myfile
+<b>tmpfile</b> <b>-b</b> -</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># delete a specific base folder (resets current base)
+<b>tmpfile</b> <b>&quot;/var/spool/$CEN_NAME&quot;</b> <b>-d</b></pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>If a <i>suff</i> string is used, it must not start with a digit. If <i>suff</i> is <b>-</b>, missing or empty an incrementing counter value is used instead.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Temp files are created inside a base folder (see <b>CEN_EXT_TEMP</b>). This folder is by default set and created at the 1st call. Changing the base folder via <b>-t</b>,<pre>
+v or <b>-b</b> does not automatically delete prevously created files.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Daemons or services should use <b>-v</b> or unset <b>XDG_RUNTIME_DIR</b>. Otherwise systemd might delete the base folder, which in turn may cause severe problems as new temp files cannot be create any more. The code in <a href="_cen_bash_svc.html">_cen_bash_svc</a> uses <b>-v</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For performance reasons the function does not set umask. Although temporary files are usually created in the private <b>XDG_RUNTIME_DIR</b> or a private folder in <b>&quot;/var/tmp&quot;</b>, any custom folder can be specified via <b>-b</b>. In the later case the caller&apos;s umask may lead to a temporary file that is public readable.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The function registers a quit hook to delete created files on exit. A bash glob with &apos;*&apos; appended to <b>CEN_EXT_TEMP</b> selects the files to be deleted. <b>Note:</b> only files and folders in the current base folder get deleted.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>To use <b>tmpfile</b> from a subshell, the parent shell must initialize the base folder (like <b>&quot;tmpfile -n&quot;</b>). Otherwise the function must abort because no quit hook can be registered in a subshell.</div>
+</div>
+</section>
+<section id='section-19'>
+<div id='trimjoin' class='item-function'>
+<span>Function</span><span> - </span><span>trimjoin</span><span> - </span><span>remove leading/trailing whitespace and optionally join</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>trimjoin</b> [<b>-s</b> <i>name</i>] [<b>-a</b>] [<b>-l</b>|<b>-t</b>] [<b>-m</b> <i>maxl</i>] [<b>-c</b>] [<b>-w</b>]
+(2) <b>trimjoin</b> [<b>-s</b> <i>name</i>] [<b>-a</b>] [<b>-l</b>|<b>-t</b>] [<b>-m</b> <i>maxl</i>] [<b>-c</b>] [<b>-w</b>] [<b>--</b>] <i>text</i>
+(3) <b>trimjoin</b> [<b>-s</b> <i>name</i>] [<b>-a</b>] [<b>-d</b> <i>deli</i>] [<b>-m</b> <i>maxl</i>] [<b>-l</b>|<b>-t</b>] [<b>-c</b>] [<b>-w</b>] [<b>--</b>] <i>text</i>...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Form (1) works inplace and form (3) does a join operation</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  append to output
+<b>-c</b>  replace all control chars with spaces
+<b>-d</b>  use <i>deli</i> to separate items (default is &apos; &apos;)
+<b>-l</b>  don&apos;t trim trailing (default is trim leading and trailing)
+<b>-m</b>  shorten string if <i>maxl</i> is exceeded
+<b>-t</b>  don&apos;t trim leading
+<b>-s</b>  use <i>name</i> to save result (default is <b>CEN_TRIMJOIN</b>)
+<b>-w</b>  simplify whitespace (<i>TAB</i>, <i>CR</i> and <i>LF</i> are whitspace)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>trimjoin</b> <b>--</b> <b>&quot;  hi  &quot;</b>                    # trim into CEN_TRIMJOIN
+<b>trimjoin</b> <b>-a</b> <b>--</b> <b>&quot;there&quot;</b>                  # append
+<b>trimjoin</b> <b>-a</b> <b>-t</b> <b>&quot; right trim only&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>local test ; printf <b>-v</b> test <b>&quot;  hello\t \aworld\a  \n\r&quot;</b>
+<b>trimjoin</b> <b>-c</b> <b>-w</b> <b>-s</b> text                  # inplace operation</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>trimjoin</b> <b>-d</b> <b>&quot;, &quot;</b> <b>&quot;one&quot;</b> <b>&quot;two&quot;</b> <b>&quot;three&quot;</b>    # comma separated list</pre></div>
+</div>
+</section>
+<section id='section-20'>
+<div id='walk' class='item-function'>
+<span>Function</span><span> - </span><span>walk</span><span> - </span><span>Iterate over files and folders</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>walk</b> [<b>-a</b>] [<b>-d</b> <i>fdir</i>] [<b>-f</b> <i>ffil</i>] [<b>-i</b>] [<b>-e</b> <i>extn</i>]
+     [<b>-r</b>] [<b>-l</b> <i>levl</i>] [<b>--</b>] <i>path</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  append to <b>CEN_WALK_xxx</b> arrays
+<b>-b</b>  include broken symlinks
+<b>-c</b>  case sensitive filter using <b>--include</b>|<b>--exclude</b>
+<b>-d</b>  callback for directories   (default: <b>false</b>)
+<b>-e</b>  filter files by extension, repeatable
+<b>-f</b>  callback for files         (default: <b>true</b>)
+<b>-h</b>  find hidden files and folders
+<b>-i</b>  case insensitive filter using <b>--include</b>|<b>--exclude</b>
+<b>-l</b>  limit for recursion levels (default: no limit)
+<b>-r</b>  recurse into folders</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>ffil</i>  command excuted for each file   (default <b>true</b>)
+<i>fdir</i>  command excuted for each folder (default <b>true</b>)
+<i>extn</i>  extension filter, example <b>&quot;-e xml -e html -e gpx&quot;</b>
+<i>levl</i>  max recursion depth, <b>0</b> to disable recursion
+<i>path</i>  any file or folder</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-text'><b>CEN_WALK_LEVEL</b>  current recursion level (in callbacks)
+<b>CEN_WALK_DIRS</b>   array of folders seen (canonicalized path)
+<b>CEN_WALK_FILES</b>  array of files seen   (relative path)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>0</b> := OK  <b>1</b> := empty  <b>2</b> := error  <b>3</b> := stopped</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The <b>walk</b> function is not reentrant. Folder names are canonicalized and kept in a map to prevent folders from being walked multiple times. Symlinks to folders are resolved and recursion is not restricted to a single filesystem.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Recursion uses bash globbing, which must not be turned off.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Recursion ignores file or folder names starting with a dot unless the <b>-h</b> option is used.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>--include</b> and <b>--exclude</b> filter (enabled by option <b>-c</b> or <b>-i</b>) is run before and <b>-d</b> or <b>-f</b> callback. See <a href="_centauri_bash_lib.html#filter">filter()</a> for details.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Callbacks:</div>
+<div class='def-block'>The optional caller supplied callback functions <i>fdir</i> and <i>ffil</i> can be used for processing or filtering:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  <i>fdir</i> <i>canonical</i> <i>item</i>          # 1st arg is full path
+  <i>ffil</i> <i>item</i>                    # &lt;item&gt; is a relative path</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>The return value controls further processing by <b>walk</b>:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  0  -  append item to <b>CEN_WALK_xxx</b> array
+  1  -  do not append to <b>CEN_WALK_xxx</b> array
+  2  -  skip current folder
+  3  -  stop <b>walk</b></div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_dyn.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_ins.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

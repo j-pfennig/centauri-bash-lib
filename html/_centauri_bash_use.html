@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_use</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_txt.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_win.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_use' class='item-module'>
+<span>Module</span><span> - </span><span>_centauri_bash_use</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> usage() and Completion</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>. <b>_centauri_bash_use</b> [<b>-h</b>|<b>-u</b>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-h</b>  behave as if a <b>--help</b> command line option was found
+<b>-u</b>  call <a href="#usageuser">usage()</a> and exit with status=1</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This module implements the <b>--help</b> option and is automatically loaded on demand. It also implements a helper for bash command completion.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The user script may implement a <a href="#usageuser">usage()</a> call-back function to generate a help text. If the script provides no <a href="#usageuser">usage()</a> function, a simple default implementation is used.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>It is possible but not recommended to call <a href="#usageuser">usage()</a> directly from inside a script. This situation is detected by <a href="#usagecat">usagecat()</a> or <a href="#usageset">usageset()</a> and causes a recursive call to <a href="#usageuser">usage()</a> in order to init variables or to run a pager.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The default pager is <a href="centaurihelp.html">centaurihelp</a> which will convert the <a href="#usageuser">usage()</a> output to the documentation format of <a href="_centauri_bash_doc.html">_centauri_bash_doc</a> in order to pretty-print the help text.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2016-2021</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='usageuser' class='item-function'>
+<span>Function</span><span> - </span><span>usage (user)</span><span> - </span><span>Display a Usage Message, Helper for Command Completion</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>usage                       # called from _centauri_bash_use
+_centauri_bash_use <b>-h</b>|<b>-u</b>    # invoke usage() via module load</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This user defined function is called from <a href="_centauri_bash_lib.html#main">main()</a> or via module load. If it is missing a very simple default implementation is used. The <a href="#usageuser">usage()</a> function should give a brief description of purpose, options and verbs of the containing script.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Calling the <a href="#usageuser">usage()</a> function directly is possible if this function uses <a href="#usageset">usageset()</a> or <a href="#usagecat">usagecat()</a>. The script will not return but call <a href="_centauri_bash_lib.html#quit">quit()</a> with <b>CEN_EXIT</b>=1.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>There are two preset variables provided by the library to simplify the call and option description. The <b>CEN_USE_HEADER</b> text is generated from <b>CEN_TITLE</b> and <b>CEN_USE_OPTIONS</b> is built from the default options.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>User defined options must be added manually. See <a href="#usageset">usageset()</a> on how to do this programmatically for a usage text that can be localized with standard GNU gettext tools.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>To support bash completion the <a href="#usageuser">usage()</a> function provides action or option information if <b>CEN_COMPLETION</b> has a value of <b>&quot;verb&quot;</b> or <b>&quot;opts&quot;</b>. This feature is implemented by parsing the <a href="_centauri_bash_dbg.html#actionsuser">actions()</a> and <a href="_centauri_bash_dbg.html#optionsuser">options()</a> function code for <a href="_centauri_bash_lib.html#invoke">invoke()</a> and <a href="_centauri_bash_lib.html#optarg">optarg()</a> statements.  The real bash completion script is <b>_centauri_bash_completion</b>, which gets installed automatically via <a href="_centauri_bash_sys.html">_centauri_bash_sys</a>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) using inline text - simple but cannot be localized<pre>usage() {
+    usagecat &lt;&lt; !EOF
+$<b>CEN_USE_HEADER</b>
+
+$<b>CEN_USE_OPTIONS</b>
+         <b>-X</b> <b>--extra</b>    this is a user option
+
+    Some text may go here...
+!EOF
+}</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) using usageset() for localization<pre>usage() {
+    # custom usage info (optional)
+    usageset <b>-u</b> <b>&quot;mytool &lt;option&gt;... &lt;text&gt;&quot;</b> \
+             <b>-u</b> - \
+             <b>-u</b> <b>&quot;$CEN_TITLE.&quot;</b>$<b>&quot; More text.&quot;</b> \
+             <b>-u</b> $<b>&quot;And one more line of text.&quot;</b>
+
+    # document an option (optional)
+    usageset <b>-o</b> - \
+             <b>-o</b> <b>&quot;-X --extra    &quot;</b>$<b>&quot;some option&quot;</b>
+
+    # document something else (optional)
+    usageset <b>-l</b> $<b>&quot;arguments&quot;</b> \
+             <b>-t</b> <b>&quot;&lt;text&gt;     &quot;</b>$<b>&quot;any text&quot;</b>
+}</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) mixing programmatical and and inline mode<pre>usage() {
+    # custom usage info (optional)
+    usageset <b>-u</b> <b>&quot;$CEN_NAME &lt;option&gt;... &lt;text&gt;&quot;</b> \
+             <b>-u</b> - \
+             <b>-u</b> <b>&quot;$CEN_TITLE.&quot;</b> \
+             <b>-o</b> - \
+             <b>-o</b> <b>&quot;-X --extra    &quot;</b>$<b>&quot;some option&quot;</b>
+    usagecat &lt;&lt; !EOF
+$<b>CEN_USE_HEADER</b>
+
+$<b>CEN_USE_OPTIONS</b>
+
+    Some text may go here...
+!EOF
+}</pre></div>
+</div>
+</section>
+<section id='section-3'>
+<div id='usagecat' class='item-function'>
+<span>Function</span><span> - </span><span>usagecat</span><span> - </span><span>copy usage() text from stdin to sddout</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>usagecat</b> [<b>-l</b>] &lt;&lt;!EOF
+...text...
+!EOF</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-l</b>  no formatting, literal output</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>The <b>-l</b> option is implied if the pager (<b>CEN_OPT_PAGER</b>) is <b>centaurihelp</b>, <b>usage</b> or <b>true</b>. Calling a tool with <b>--help</b> <b>--pager</b>=true can be used to inspect the data sent to <a href="_centauri_bash_doc.html">_centauri_bash_doc</a>.</div>
+</div>
+</section>
+<section id='section-4'>
+<div id='usageset' class='item-function'>
+<span>Function</span><span> - </span><span>usageset</span><span> - </span><span>generate usage() output text programmatically</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>usageset</b> [<b>-a</b>|<b>-h</b>|<b>-l</b>|<b>-o</b>|<b>-s</b>|<b>-t</b>|<b>-u</b> <i>text</i>|<b>-</b>]... [<b>-x</b>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  add an action   (adds to <b>CEN_USE_ACTIONS</b>)
+<b>-h</b>  add header text (adds to <b>CEN_USE_HEADER</b>)
+<b>-l</b>  add a label     (adds to <b>CEN_USE_OTHER</b>)
+<b>-o</b>  add an option   (adds to <b>CEN_USE_OPTIONS</b>)
+<b>-s</b>  add svc action  (adds to <b>CEN_USE_ACTIONS</b>)
+<b>-t</b>  add a text line (adds to <b>CEN_USE_OTHER</b>)
+<b>-u</b>  add usage line  (adds to <b>CEN_USE_HEADER</b>)
+<b>-x</b>  flush output, used internally</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>text</i>  a line of text or <b>&quot;-&quot;</b> for an empty line</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function helps to create <a href="#usageuser">usage()</a> output that can be localized using the standard GNU gettext Tools. See <a href="#usageuser">usage()</a> for an example.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Using option <b>-u</b> will add a &apos;usage:&apos; label to the 1st header line and override the default usage line. Option <b>-h</b> simply adds a line to the (default) header.</div>
+</div>
+</section>
+<section id='section-5'>
+<div id='usageopt' class='item-function'>
+<span>Function</span><span> - </span><span>usageopt</span><span> - </span><span>add an option info (mostly used by modules that add options)</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>usageset &lt;short-opt&gt; &lt;long-opt&gt; &lt;arg-val&gt; <i>text</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre># This function can only be called from inside options()
+set_usage() {
+    usageset <b>-h</b> <b>&quot;usageset can be used here&quot;</b>
+    <b>usageopt</b> &apos;X&apos; &apos;extra&apos;  -  $<b>&quot;some documentation&quot;</b>
+}
+
+options() {
+    case <b>&quot;$1&quot;</b> in
+        <b>--help</b>)
+            [ <b>&quot;$2&quot;</b> = &apos;opts&apos; ] &amp;&amp; set_usage ;;
+    esac
+}</pre></div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_txt.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_win.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_lib</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_iom.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_mnt.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_lib' class='item-module'>
+<span>Module</span><span> - </span><span><a href="index.html">_centauri_bash_lib</a></span><span> - </span><span><a href="index.html">Centauri Bash Library</a> (main module)</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>. _centauri_bash_lib</b> <i>opt</i>... [<b>-m</b> <i>name</i>]... [<b>--</b>] <b>&quot;$0&quot;</b> <i>vers</i> [<i>amin</i> [<i>amax</i>]]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Proxy:</div>
+<div class='def-block'>The main library module must not be called directly, instead a proxy should be used. This proxy sets the <b>CEN_ROOT</b> variable (installation folder). The proxy is generated at installation time and is located in the <b>$CEN_ROOT/tools</b> folder. The library modules are placed inside the <b>$CEN_LIBRARY</b> folder; this variable is also set by the proxy.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  autoload modules on demand
+<b>-d</b>  enable <b>--dryrun</b> option
+<b>-e</b>  quit on errors (see <a href="#context">context()</a> option <b>-e</b>)
+<b>-f</b>  enable <b>--force</b> option
+<b>-g</b>  enable <b>--gui</b> option (windows or console extension)
+<b>-i</b>  enable <b>--include</b> <b>--exclude</b> options
+<b>-m</b>  load an extension module (next argument is <i>name</i>)
+<b>-r</b>  do not dispatch action verbs, just call <a href="_centauri_bash_dbg.html#runuser">run()</a>
+<b>-s</b>  enable <b>--silent</b> option
+<b>-t</b>  enable text translations
+<b>-v</b>  enable <b>--syslog</b> option (optionally run as service)
+<b>-y</b>  enable <b>--yes</b> <b>--no</b> options</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>opt</i>   any option
+<i>name</i>  a 3 letter module name (no custom modules)
+<i>vers</i>  version and api level, see <a href="#apicheck">apicheck()</a>
+<i>amin</i>  <a href="#main">main()</a> minimum argument count
+<i>amax</i>  maximum argument count</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The <b>-m</b> option can be repeated to load multiple modules. See <a href="_centauri_bash_dbg.html">_centauri_bash_dbg</a> on how to use the library and <a href="autoload.html">autoload</a> on dynamic module loading.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>To locate GNU coreutils the variable <b>CEN_PATHS</b>[1] is append to <b>PATH</b>. For some coreutils bash builtins can be enabled. For more details see <a href="_centauri_bash_ext.html">_centauri_bash_ext</a> and <a href="_centauri_bash_dyn.html#builtin">builtin</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2007-2022</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='trace' class='item-function'>
+<span>Function</span><span> - </span><span>trace</span><span> - </span><span>output a debug message (with --verbose option)</span></div>
+<div id='message' class='item-function'>
+<span>Function</span><span> - </span><span>message</span><span> - </span><span>output a message</span></div>
+<div id='warning' class='item-function'>
+<span>Function</span><span> - </span><span>warning</span><span> - </span><span>output a warning message</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>&lt;msg_function&gt; [<i>cls</i>] [<b>-a</b>|<b>-i</b>] [<b>-l</b>] [<b>-m</b>|<b>-n</b>] [<b>-r</b>] <b>-p</b> [<b>--</b>] <i>fmt</i> <i>arg</i>...
+&lt;msg_function&gt; [<i>cls</i>] [<b>-a</b>|<b>-i</b>] [<b>-l</b>] [<b>-m</b>|<b>-n</b>] [<b>-r</b>] [<b>--</b>] <i>arg</i>...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>&lt;msg_function&gt; := trace | message | <b>warning</b> | error | fatal</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  print application name on 1st output, indent otherwise
+<b>-b</b>  used by console module, ignored here, see <a href="_centauri_bash_con.html#output">output()</a>
+<b>-d</b>  modules only, ignored here, see <a href="_centauri_bash_con.html#decorate">decorate()</a> and <a href="_centauri_bash_win.html">_centauri_bash_win</a>
+<b>-i</b>  indent (no program name)
+<b>-l</b>  be loud, overrides main&apos;s <b>--quiet</b> option
+<b>-m</b>  print multiple lines (new-line separated)
+<b>-n</b>  no new-line, control codes enabled
+<b>-p</b>  use printf formatting (1st arg is format)
+<b>-r</b>  output real script name (see <b>--embed</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>cls</i>   internal use: <b>-e</b>|<b>-f</b>|<b>-t</b>|<b>-w</b>. Do not use in own script code
+<i>fmt</i>   a printf format string
+<i>arg</i>   data to be output</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>error</b> returns the value of <b>CEN_EXIT</b>,
+<b>warning</b>, <b>message</b> and <b>trace</b> always return 0</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>These functions as well as <a href="#error">error()</a> and <a href="#fatal">fatal()</a> are wrapper functions that call an implementation helper. The default implementation sends all output to /dev/stderr, even for <a href="#message">message()</a> and <a href="#trace">trace()</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><pre>trace <b>&quot;Used with --verbose&quot;</b> # used to output extra information
+message Hello world         # outputs &quot;Hello world&quot;
+<b>warning</b> <b>&quot;Don&apos;t use&quot;</b> 42      # outputs &quot;**WARNING** Don&apos;t use 42&quot;
+error <b>-p</b> <b>&quot;%s sucks&quot;</b> 42      # outputs &quot;**ERROR** 42 sucks&quot;</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The default implementation always either prefixes output with the program name or indents the text (options <b>-a</b> and <b>-i</b>). For more flexibility the console module <a href="_centauri_bash_con.html">_centauri_bash_con</a> can be used. Other modules can display output in dialog windows or send it to the system log.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The command-line option <b>--quiet</b> disables <b>warning</b>() and error() messages. And to see trace() messages <b>--verbose</b> must be used. The commmd-line option <b>--quiet</b> can be overriden with <b>message -l</b> and <b>warning -l</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The hook <b>CEN_HOOK_MESSAGE</b> is used to call the implementation function. By default this is _cen_message() in _centauri_bash_lib. The <a href="_centauri_bash_con.html">_centauri_bash_con</a>, <a href="_centauri_bash_win.html">_centauri_bash_win</a> and <a href="_centauri_bash_svc.html">_centauri_bash_svc</a> modules alter <b>CEN_HOOK_MESSAGE</b> to provide own implementations.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>-e</b>|<b>-f</b>|<b>-t</b>|<b>-w</b> options are used by these implementation helpers and must not be used from user script code. Also user scripts must not call _cen_message() directly.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>With option <b>-m</b> (multiline output) the <b>\n</b> escape is recognized. Any substring <b>&quot; \n &quot;</b> is handled as <b>&quot;\n&quot;</b>. These forms are equivalent:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><pre>message <b>-m</b> <b>&quot;Line #1&quot;</b> <b>&quot;\n&quot;</b> <b>&quot;Line #2&quot;</b>
+message <b>-m</b> <b>&quot;Line #1&quot;</b> <b>&quot;\nLine #2&quot;</b>    # same as above
+message <b>-m</b> <b>&quot;Line #1 \n Line #2&quot;</b>     # same as above
+message <b>-m</b> <b>&quot;Line #1\nLine #2&quot;</b>       # same as above</pre></div>
+</div>
+</section>
+<section id='section-5'>
+<div id='error' class='item-function'>
+<span>Function</span><span> - </span><span>error</span><span> - </span><span>output error message, set/test error status</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>error</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>-x</b>] [<b>-z</b>] [<b>--</b>] <i>msg</i>...
+<b>error</b> <b>-s</b> <i>exit</i>
+<b>error</b> [<b>-c</b>|<b>-t</b>|<b>-x</b>]
+<b>error</b> <b>-q</b> <i>msg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'>... most <a href="#message">message()</a> options (the implementation calls <b>message -e</b>)
+<b>-c</b>  clear <b>error</b> state (resets <b>CEN_EXIT</b> and <b>CEN_DONE</b> from 2 to 1)
+<b>-s</b>  set exit code, saved as variable <b>CEN_EXIT</b>. The minimum value is 2,
+    lower values are stored as 2. Updates <b>CEN_DONE</b> from 1 to 2.
+<b>-t</b>  silently check for pending <b>error</b> termination. Returns <b>false</b> for
+    <b>CEN_DONE == 2</b> and <b>true</b> for all other cases.
+<b>-q</b>  call <a href="#quit">quit()</a> if a previous error has occurred
+<b>-x</b>  don&apos;t modify <b>CEN_DONE</b> on errors (sets <b>CEN_DONE=0</b>). This disables
+    <b>error</b> testing (<b>-t</b> and <b>-q</b>) and <b>error</b> termination by <a href="#main">main()</a>.
+<b>-z</b>  return 0 status</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'>The value of <b>CEN_EXIT</b> (unless <b>-t</b> or <b>-z</b> are used)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-text'><b>CEN_DONE</b>    termination flag (0:=ignore, 1:=default, 2:terminate)
+<b>CEN_EXIT</b>    <b>error</b> code, returned by <a href="#main">main()</a> on exit.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre>while <b>error</b> <b>-t</b> ; do                     # loop until error
+   ...
+   <b>error</b> <b>&quot;This will stop processing&quot;</b>    # error message
+   ...
+   <b>error</b> <b>-s</b> 4                           # or set exit code
+done
+<b>error</b> <b>-q</b> <b>&quot;Something went wrong&quot;</b>         # quit in case of error
+message <b>-a</b> <b>&quot;Success&quot;</b>                    # ... or continue</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This function sets <b>CEN_EXIT</b> and <b>CEN_DONE</b>=2 (if not <b>0</b>, see below). With <b>CEN_DONE</b>=2 <a href="#main">main()</a> stops <a href="#main">main()</a> to dispatch verbs, unless the script was started with option <b>--zombie</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A value of <b>CEN_DONE</b>=0 will prevent <b>error</b>() from setting <b>CEN_DONE</b>. In this case the options <b>-t</b> and <b>-q</b> will always return <b>true</b> and verb dispatching will continue. <b>CEN_DONE</b> controls error termination.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Every textual error message (see <i>msg</i> argument) sets <b>CEN_EXIT</b>=2 unless its value was already 2 or more. <b>CEN_EXIT</b> is the script exit code.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Other predefined exit codes are <b>CEN_EXIT</b>=1 (usage <b>error</b>), <b>CEN_EXIT</b>=3 (fatal <b>error</b>) and <b>CEN_EXIT</b>=4 (abort/quit). These codes are interpreted by <a href="#embed">embed()</a>.</div>
+</div>
+</section>
+<section id='section-6'>
+<div id='fatal' class='item-function'>
+<span>Function</span><span> - </span><span>fatal</span><span> - </span><span>fatal error message, terminate via quit()</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>fatal</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>--</b>] <i>msg</i>...
+<b>fatal</b> <b>-t</b> <i>msg</i>...                                 # call trace</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'>... most <a href="#message">message()</a> options (using <b>message -f</b>)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-t</b>  print call trace and quit (no other options allowed).
+    Output always goes to /dev/stderr, no quit hooks called.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This function never returns to the caller. If called with <b>-t</b> options it exits with status 4 and otherwise it sets <b>CEN_EXIT</b>=3 and invokes <a href="#quit">quit()</a> to terminate the script execution and run cleanup actions.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>In debug mode (command line options <b>--verbose</b> <b>--verbose</b>) the <b>-t</b> option is implied.</div>
+</div>
+</section>
+<section id='section-7'>
+<div id='quit' class='item-function'>
+<span>Function</span><span> - </span><span>quit</span><span> - </span><span>call CEN_HOOK_QUIT, terminate the script, optionally with message</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>quit</b>
+<b>quit</b> <b>-e</b>|<b>-t</b> [<b>--</b>] [<b>-</b>] <i>msg</i>...
+<b>quit</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>-s</b> <i>code</i>] [<b>--</b>] <i>msg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'>... most <a href="#message">message()</a> options (the implementation calls <b>message</b>)
+<b>-e</b>  check for error, print <b>&quot;Terminated after error&quot;</b> if 1st arg is not &apos;-&apos;
+<b>-s</b>  override the exit code (<b>CEN_EXIT</b>)
+<b>-t</b>  sets <b>CEN_EXIT</b>=4, print <b>&quot;Terminated&quot;</b> if 1st arg is not &apos;-&apos;
+<b>-y</b>  run <b>&quot;stty sane&quot;</b> to restore terminal defaults</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'>This function does not return, it calls an optional <b>quit</b> hook function and terminates the script with <b>CEN_EXIT</b> as exit code.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>quit</b> <b>&quot;Stop here:&quot;</b> <b>&quot;$FUNCNAME&quot;</b>   # stop with message
+<b>quit</b> <b>-e</b>                         # stop with error, default message
+<b>quit</b> <b>-e</b> - <b>&quot;sorry&quot;</b>               # ... extra info
+<b>quit</b> <b>-e</b> <b>&quot;sorry for&quot;</b> this        # ... custom message</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># using a <b>quit</b> hook function
+my_quit() {
+    message <b>&quot;hello&quot;</b>
+    $<b>DAT_QUIT_LIST</b> <b>&quot;$@&quot;</b>         # IMPORTANT: pass all args!
+}
+
+<b>DAT_QUIT_LIST</b>=<b>&quot;$CEN_HOOK_QUIT&quot;</b>  # save top of list
+<b>CEN_HOOK_QUIT</b>=my_quit ; <b>quit</b>    # register hook and call</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Internally <b>quit</b> gets called by some traps. See: <a href="#context">context()</a>, <a href="#fatal">fatal()</a>, <a href="#main">main()</a> and <a href="#error">error()</a>. But it never uses EXIT, RETURN or DEBUG traps.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Scripts should not use the bash <b>exit</b> command directly unless they want to skip <b>quit</b> hook processing. All other script termination paths will invoke <b>CEN_HOOK_QUIT</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A non-empty <b>CEN_QUIT_WAIT</b> variable is used (internally) for these purposes:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>    <b>CEN_QUIT_WAIT</b>=1   # prompt: Press any key to continue...
+    <b>CEN_QUIT_WAIT</b>=2   # prompt: Press any key to close the window...
+    <b>CEN_QUIT_WAIT</b>=3   # run &quot;sleep 3&quot;: after trap in console emulator</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>&quot;console -c&quot;</b> sets <b>&quot;CEN_QUIT_WAIT=&quot;</b>. You can disable prompting by clearing the variable before calling <b>quit</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A non-empty value if <b>CEN_QUIT_SANE</b> will try to run <b>&quot;stty sane&quot;</b>, see option <b>-y</b>. The variable is also set by <a href="#confirm">confirm()</a> to cleanup after keyboard interrupts.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Calling <b>quit</b> from a subshell causes an abort, a subshell cannot safely run any <b>quit</b> hooks. In such a case the program logic has to be fixed.</div>
+</div>
+</section>
+<section id='section-8'>
+<div id='apicheck' class='item-function'>
+<span>Function</span><span> - </span><span>apicheck</span><span> - </span><span>get/check api version</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>apicheck</b> [<b>-v</b> array] [<b>-c</b>|<b>-e</b>|<b>-f</b>] <b>-m</b> <i>module</i>
+<b>apicheck</b> [<b>-v</b> array] [<b>-c</b>|<b>-e</b>|<b>-f</b>] [<i>version</i>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  check and return status, don&apos;t report error
+<b>-e</b>  check and call <a href="#error">error()</a> for bad version
+<b>-f</b>  check and call <a href="#fatal">fatal()</a> for bad version
+<b>-m</b>  argument is a module name (default is a version string)
+<b>-v</b>  save version/api-level/api-min to <i>array</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>array</i>     parsed version string, 3 element array
+<i>module</i>    a module name like <b>&quot;_centauri_bash_ext&quot;</b>
+<i>version</i>   a version string <i>vers</i>[:<i>api</i>[:<i>min</i>]]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Return    <b>true</b> on successs and <b>false</b> on failure.</div>
+</div>
+</section>
+<section id='section-9'>
+<div id='arguments' class='item-function'>
+<span>Function</span><span> - </span><span>arguments</span><span> - </span><span>verb argument count checker</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>arguments</b> <i>min</i>|<b>-</b> <i>max</i>|<b>-</b>|<b>+</b> <i>arg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>min</i>     minimum argument count
+<i>max</i>     maximum argument count
+<i>arg</i>...  argument list to be checked</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Warning:</div>
+<div class='def-block'>After a previous error (<b>CEN_DONE</b>=2) the function returns <b>false</b> without further checking unless option <b>--zombie</b> is set (<b>CEN_OPT_ZOMBIE</b>).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>arguments</b> - - <b>&quot;$@&quot;</b>  # no checks
+<b>arguments</b> 0 3 <b>&quot;$@&quot;</b>  # 0 ... 3
+<b>arguments</b> 3 - <b>&quot;$@&quot;</b>  # must be 3
+<b>arguments</b> 2 + <b>&quot;$@&quot;</b>  # 2 or more</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function is usually called by <a href="#invoke">invoke()</a>. For an invalid argument count <a href="#error">error()</a> is called and <a href="#main">main()</a> will not invoke <a href="_centauri_bash_dbg.html#runuser">run()</a> or further verbs.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For a script that uses <a href="_centauri_bash_dbg.html#runuser">run()</a> the variables <b>CEN_RUN_MIN_ARGS</b> (default <b>-</b>) and <b>CEN_RUN_MAX_ARGS</b> (default <b>+</b>) are used for checking.</div>
+</div>
+</section>
+<section id='section-10'>
+<div id='confirm' class='item-function'>
+<span>Function</span><span> - </span><span>confirm</span><span> - </span><span>ask for confirmation, get text input</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>confirm</b> [<b>-i</b>|<b>-n</b>] [<b>-m</b>] [<b>-u</b>] [<b>-q</b>|<b>-y</b>|<b>-c</b> <i>cncl</i>] [<b>-d</b> <i>defl</i>] [<b>-v</b> <i>list</i>]
+        [<b>-p</b> <i>text</i>|<b>-</b>|<b>+</b>] [<b>-s</b> <i>name</i>] <i>msg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  print application name on 1st output, indent otherwise
+<b>-c</b>  cancel, <i>cncl</i> gets executed if not <b>&quot;-&quot;</b>
+<b>-d</b>  use <i>defl</i> as default reply
+<b>-i</b>  indent message (overrides <b>-n</b>)
+<b>-m</b>  multiline prompt (handles \n and \t escapes)
+<b>-n</b>  prefix with application name (overrides <b>-a</b>)
+<b>-p</b>  prompt text in <i>text</i> (<b>+</b> and <b>-</b> values have a special meaning)
+<b>-q</b>  short for: <b>-c quit -p &quot;[y/N/q] ?&quot; -v &quot;yes no quit&quot;</b>
+<b>-s</b>  save input to variable <i>name</i> instead of <b>CEN_CONFIRM</b>
+<b>-u</b>  allow uppercase in reply
+<b>-v</b>  check words, <i>list</i> are space separated words
+<b>-w</b>  warning
+<b>-y</b>  enable -<b>--yes</b>|<b>--no</b>, defaults: <b>-v &quot;yes no&quot; -p &quot; [yN]? &quot;</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>cncl</i>   command executed on cancel
+<i>defl</i>   default reply
+<i>text</i>   a prompt string (suffix to <i>msg</i>...)
+<i>list</i>   list of space separated check words
+<i>msg</i>... prompt text</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>History:</div>
+<div class='def-text'>The <b>CEN_HISTORY</b> variable enables the use of readline and history:
++      enable readline but don&apos;t touch history
+-      (re)initialize history from check words
+<i>file</i>   read history from file (on 1st call only) and set to &apos;+&apos;</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'>Any text result is saved to <b>CEN_CONFIRM</b>. Only if the 1st check word is matched or for free text input, <b>confirm</b> returns <b>0</b>. The 2nd word will return <b>1</b> and so on. Empty free text input also returns <b>1</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The <b>-y</b> option is implied if none of <b>-c</b>|<b>-d</b>|<b>-p</b>|<b>-v</b> are used.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>In windows mode only &apos;<b>-p</b> +&apos; is interpreted, others will be ignored. Also the <b>-d</b> option value is used to preset the input field. See <a href="_cen_bash_win.html">_cen_bash_win</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For &apos;<b>-p</b> -&apos; or &apos;<b>-p</b> +&apos; free text input is allowed (<b>+</b> is used for passwords). Any input is converted to lowercase unless <b>-u</b> is specified. Input that is not free text is compared against a list of check words (input can be abbreviated). If no check word (see <b>-v</b> option) is matched, an error message is printed and the prompt is repeated.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For non free text input a default can be given (see <b>-d</b> option). If no default is given, the 1st check word will be used as default (THIS IS INTENDED).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The order of check words must be: &apos;<i>yes</i> [<i>no</i>] [&lt;...&gt;] [<i>cancel</i>]&apos; to make return values and gui dialogs work (see <a href="_centauri_bash_win.html">_centauri_bash_win</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>-t</b> option of <a href="#context">context()</a> is used to catch ^C on input.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>confirm</b> <b>-y</b>    <b>&quot;yes or no question&quot;</b>
+<b>confirm</b> <b>-q</b>    <b>&quot;yes no quit&quot;</b>   # may call [[quit()]]
+<b>confirm</b> <b>-c</b> -  <b>&quot;yes no cancel&quot;</b>
+<b>confirm</b> <b>-u</b> <b>-p</b> - <b>&quot;any input&quot;</b>   # free text, -u allows uppercase
+<b>confirm</b> <b>-u</b> <b>-p</b> + <b>&quot;password&quot;</b>    # don&apos;t echo a password</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>CEN_HISTORY</b>=&apos;-&apos;
+until <b>confirm</b> <b>-n</b> <b>-v</b> <b>&quot;none left right both&quot;</b> <b>-d</b> <b>&quot;none&quot;</b> \
+     <b>-p</b> <b>&quot; [left|rigth|both]: &quot;</b> <b>&quot;Which file(s) to edit&quot;</b> ; do
+    case <b>&quot;$?&quot;</b> in
+        1) system editor <b>&quot;$1&quot;</b> ;;
+        2) system editor <b>&quot;$2&quot;</b> ;;
+        3) system editor <b>&quot;$1&quot;</b> <b>&quot;$2&quot;</b> ;;
+    esac
+done</pre></div>
+</div>
+</section>
+<section id='section-11'>
+<div id='context' class='item-function'>
+<span>Function</span><span> - </span><span>context</span><span> - </span><span>rerun in sudo or console, check root, set verbosity, error handling</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>context</b> <b>-e</b> <i>mask</i> ...
+(2) <b>context</b> <b>-g</b> <i>mode</i> ...
+(3) <b>context</b> <b>-t</b> [<i>trap</i>|<b>+</b>|<b>-</b>] ...
+(4) <b>context</b> <b>-v</b> [0-3] ...
+(5) <b>context</b> ... [<b>-h</b> <i>text</i>] [<b>-r</b>] [<b>-s</b>] [<b>-c</b>|<b>-q</b>|<b>-x</b>] [<b>--</b>] <i>arg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  [*] rerun script in a console if neccessary
+<b>-e</b>  enable/disable &apos;abort on error&apos; traps
+<b>-g</b>  init gui (0:noop  1:window  2:console)
+<b>-h</b>  window title <b>currently not implemented</b>
+<b>-n</b>  don&apos;t add <b>--wait</b> for console
+<b>-q</b>  [*] check if caller is running in a console
+<b>-r</b>  raise a fatal error if the caller is not root
+<b>-s</b>  rerun via <b>sudo</b> if neccessary
+<b>-t</b>  trap signals (<b>+</b>:incr  <b>-</b>:decr  <i>name</i>:callback)
+<b>-v</b>  set verbosity (0:=quiet 1:=normal 2:=verbose 3:=trace)
+<b>-x</b>  [*] execute command in console</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>[*] the options are mutually exclusive. All non-exclusive options
+    can be passed in a single call.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>mask</i>   abort bitmask (1:=errors, 2:=command not found)
+<i>mode</i>   gui mode
+<i>text</i>   window title text
+<i>trap</i>   callback for trapped signals
+<i>arg</i>... arguments passed to <b>sudo</b> or console</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'>Options <b>-c</b>|<b>-s</b> do not return when opening a console or running sudo (and do not run quit hooks it this case). Option <b>-x</b> returns <b>true</b> if a console was started and <b>false</b> otherwise.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Option <b>-q</b> returns 0: running in console, 1: GUI is running, 2: starting a GUI (no xroot window, no desktop).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>All other options return <b>true</b> on success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Form (1): option <b>-e</b>: (un)registers handlers for <b>&quot;set -eE&quot;</b> (bit 1) and bash&apos;s &apos;command not found&apos; function (bit 2). <b>DO NOT</b> run <b>&quot;set -eE&quot;</b> directly.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (2): The <b>-g</b> option will load the <a href="_centauri_bash_con.html">_centauri_bash_con</a> or <a href="_centauri_bash_win.html">_centauri_bash_win</a> module, depending on <i>mode</i>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (3): The <b>-t</b> option can catch signals 1, 2, 3 and 15.  An internal trap handler is provided for use with <b>-t +</b>|<b>-</b>. This feature allows trap handling to be nested. The <a href="#confirm">confirm()</a> function uses <b>-t +</b>|<b>-</b> by default to capture keyboard interrupts. The internal trap handler sanitizes input and calls <a href="#quit">quit()</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (4): It the correct way of changing <b>--verbose</b>, see expample. <b>DO NOT</b> modify <b>CEN_VERB</b> directly.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (5): Option <b>-r</b> (without <b>-s</b>) is used to stop a non-root user via <a href="#fatal">fatal()</a>. The <b>-c</b> and <b>-x</b> options re-run the script via <a href="_centauri_bash_run.html#terminal">terminal()</a> if needed. And <b>-s</b> may re-run the script via <b>&quot;sudo&quot;</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When <b>-c</b>|<b>-x</b>|<b>-s</b> are used without specifying <i>arg</i> values, the arguments are taken from <b>CEN_CMDARGS</b> (starting with the current action).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If not placing it in <a href="_centauri_bash_dbg.html#runuser">run()</a> a <b>&quot;context -c|-x|-s&quot;</b> call can be placed either in <a href="_centauri_bash_dbg.html#optionsuser">options()</a> or <a href="_centauri_bash_dbg.html#actionsuser">actions()</a>. Likewise <b>&quot;invoke -c|-s&quot;</b> can be used to call <b>context</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>reduce verbosity for a subroutine call:<pre>local verb=<b>&quot;$CEN_VERB&quot;</b>
+<b>context</b> <b>-v</b> 0
+    my_function
+<b>context</b> <b>-v</b> <b>&quot;$CEN_VERB&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>run something forcibly in an extra console window<pre><b>context</b> <b>-x</b> <b>--</b> &apos;top&apos;
+case $? in
+    0) message <b>&quot;No desktop&quot;</b> ;;
+    2) message <b>&quot;Started &apos;top&apos;, PID=$!&quot;</b> ;;
+    *) quit <b>-e</b> <b>&quot;Status:&quot;</b> $?
+esac
+message <b>&quot;waiting for window to close ...&quot;</b> ; wait $!
+quit <b>&quot;OK&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>re-execute in a console when launched from a GUI tool:<pre>run() {
+    <b>context</b> <b>-c</b>  # returns in console or launches one otherwise
+    message <b>&quot;running in a console&quot;</b>
+}</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>always re-execute in a new console (if running in a GUI):<pre>run() {
+    <b>context</b> <b>-x</b>  || quit <b>&quot;started new console&quot;</b>
+    message <b>&quot;running in a console&quot;</b>
+}</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>re-execute as root (at end of option parsing):<pre>options() {
+    case <b>&quot;$1&quot;</b> in
+        &apos;&apos;)     <b>context</b> <b>-s</b> ;;
+        # ...
+    esac
+}</pre></div>
+</div>
+</section>
+<section id='section-12'>
+<div id='create' class='item-function'>
+<span>Function</span><span> - </span><span>create</span><span> - </span><span>create file or folder</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>create</b> [<b>-s</b>] [<b>-f</b>|<b>-q</b>|<b>-w</b>] [<b>-o</b>] [<b>-a</b>|<b>-t</b>]                     # create file
+       [<b>-c</b>|<b>-h</b> <i>name</i>] [<i>path</i> [<i>mode</i> [<i>owner</i>]]]
+<b>create</b> [<b>-s</b>] [<b>-f</b>|<b>-q</b>|<b>-w</b>] [<b>-o</b>] [<b>-a</b>|<b>-t</b>]                     # from variable
+       <b>-v</b> <i>data</i> [<b>-h</b> <i>name</i>] <i>path</i> [<i>mode</i> [<i>owner</i>]]
+<b>create</b> [<b>-d</b>] [<b>-s</b>] [<b>-f</b>|<b>-q</b>|<b>-w</b>] <i>path</i> [<i>mode</i> [<i>owner</i>]]         # create folder</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  <b>create</b> new file or append to existing file
+<b>-c</b>  copy from /dev/stdin
+<b>-d</b>  create a folder (default is <b>create</b> file)
+<b>-f</b>  make errors fatal
+<b>-h</b>  like <b>-c</b> but add header/footer
+<b>-o</b>  write to /dev/stdout (overrides <i>path</i>)
+<b>-q</b>  quiet, no error messages
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  silent, no trace messages
+<b>-t</b>  truncate/replace existing file
+<b>-v</b>  create file and fill from variable (string or array)
+<b>-w</b>  make errors warnings</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>name</i>  creator&apos;s name in header, - uses $<b>CEN_NAME</b>
+<i>data</i>  name of a variable, can be an array
+<i>path</i>  path of file or folder (default: /dev/stdout)
+<i>mode</i>  octal file or folder mode, lower 9 bits only
+<i>owner</i> file/folder owner, passed to <b>/bin/chown</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> on successs and <b>false</b> on failure.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>When <i>path</i> exists and without <b>-t</b> (truncate) the function returns <b>true</b>. The <i>mode</i> of an existing folder will never be changed. An existing file will not be modified unless the <b>-t</b> option is used. See <a href="_centauri_bash_ext.html#attributes">attributes()</a> on how to change modes or owner of an existing file or folder.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>create</b> <b>-d</b> /etc/hello 750        # create folder with mode 0750
+<b>create</b> <b>&quot;myfile&quot;</b> 644 root:staff  # create file if non-existent</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>create</b> <b>-t</b> <b>-c</b> <b>-h</b> - <b>&quot;file&quot;</b> &lt;&lt;!EOF # create and copy to file
+    blabla
+!EOF</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>local data=(<b>&quot;Hello...&quot;</b> <b>&quot;This is&quot;</b>$&apos;\n&apos;<b>&quot;my file content&quot;</b>)
+<b>create</b> <b>-t</b> <b>-v</b> data <b>-h</b> - <b>&quot;file&quot;</b>   # create from variable or array</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>local text=<b>&quot;This is a short text&quot;</b>$&apos;\n&apos;<b>&quot;that spans two lines&quot;</b>
+<b>create</b> <b>-v</b> text                  # write to /dev/stdout</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>create</b> <b>-c</b>                       # echo /dev/stdin to /dev/stdout</pre></div>
+</div>
+</section>
+<section id='section-13'>
+<div id='dryrun' class='item-function'>
+<span>Function</span><span> - </span><span>dryrun</span><span> - </span><span>test for --dryrun option, output trace message</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>dryrun</b> [<b>-r</b>] [<b>-s</b>] [<i>mesg</i>...]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-r</b>  ignore the <b>--dryrun</b> option (e.g. always fail)
+<b>-s</b>  silent don&apos;t print <b>&quot;running&quot;</b> message</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>dryrun</b> &amp;&amp; return                    # test only, no message</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>if ! <b>dryrun</b> <b>&quot;Create file&quot;</b> ; then    # conditional with message
+    &gt; <b>&quot;file&quot;</b>
+fi</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Dryrun is called internally by <a href="#system">system()</a> and <a href="_centauri_bash_ext.html#sysrun">sysrun()</a> to trace commands before they are executed. Very long output is truncated; set or export the COLUMNS environment variable to control to maximum size (use 0 to disable).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The function prints a &apos;running&apos; message only if in debug mode (command line options <b>--verbose</b> <b>--verbose</b>) and a &apos;dryrun&apos; message only if in verbose mode (command line options <b>--verbose</b> <b>--dryrun</b>).</div>
+</div>
+</section>
+<section id='section-14'>
+<div id='embed' class='item-function'>
+<span>Function</span><span> - </span><span>embed</span><span> - </span><span>run another script like a sub-routine or load a module</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>embed</b> [<b>-g</b>] [<b>-i</b>] [<b>-n</b>] [<b>-r</b>|<b>-z</b>] [<b>-t</b>] [<b>-v</b>] [<b>-x</b>] [<b>-y</b>]    # ... options
+<b>embed</b> ... [<b>--</b>] <i>script</i> <i>arg</i>...                        # simply run
+<b>embed</b> ... [<b>-a</b>|<b>-s</b> <i>name</i>] [<b>-d</b> <i>deli</i>] [<b>--</b>] ...           # catch output
+<b>embed</b> ... <b>-u</b> <i>user</i> [<b>--</b>] <i>script</i> <i>arg</i>...                # run as user
+<b>embed</b> ... <b>-c</b>|<b>-m</b>|<b>-q</b> <i>module</i> <i>mopt</i>...                   # load module</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  [*] save stdout to array <i>name</i>
+<b>-c</b>  [*] check if module is loadable, load if autoload is off
+<b>-d</b>  delimiters, use with <b>-a</b>, default is <b>&quot;\t\n&quot;</b>
+<b>-g</b>  pass <b>--gui</b> option to <i>script</i>
+<b>-i</b>  set <b>CEN_AUTOIND</b> in <i>script</i>
+<b>-m</b>  [*] load extension <i>module</i>, errors are fatal
+<b>-n</b>  do not process errors, just return status
+<b>-q</b>  [*] load extension <i>module</i>, return error status
+<b>-r</b>  ignore <b>--dryrun</b> option
+<b>-s</b>  [*] save stdout to variable <i>name</i>
+<b>-t</b>  do not run <i>script</i> after previous error
+<b>-u</b>  run as <i>user</i> via sudo (use <b>&quot;-u -&quot;</b> for <b>root</b>)
+<b>-v</b>  pass <b>--verbose</b>|<b>--quiet</b> options to <i>script</i>
+<b>-x</b>  [*] invoke <i>script</i> via <b>exec</b>. Does not return
+<b>-y</b>  pass <b>--yes</b>|<b>--no</b> options to <i>script</i>
+<b>-z</b>  pass <b>--dryrun</b> option to <i>script</i>
+[*] these options are mutually exclusive</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>script</i>  a <b>_centauri_bash_lib</b> script to be embedded
+<i>module</i>  a <b>_centauri_bash_lib</b> module to be loaded
+<i>mopt</i>... options passed to the loaded module
+<i>arg</i>...  options and arguments passed to <i>script</i>
+<i>name</i>    variable or array name to return a result
+<i>deli</i>    element delimiters for result array
+<i>user</i>    a user name or <b>-</b> for <b>root</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'><i>script</i> must implement some default options like <b>--dryrun</b>, <b>--verbose</b>, <b>--quiet</b> and <b>--embed</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>--embed</b> option passes the caller&apos;s name and an optional auto-indent state flag to <i>script</i>. Syntax: <b>--embed</b>=<i>name</i>[:a]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If <i>script</i> does not start with <b>&quot;./&quot;</b> or <b>&quot;/&quot;</b> the value of <b>CEN_TOOLS</b> is prepended as path.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Unless option <b>-n</b> is used, a <i>script</i> exit code of 3 (fatal error) or 4 (abort / quit) results in a call to <a href="#quit">quit()</a>.</div>
+</div>
+</section>
+<section id='section-15'>
+<div id='filter' class='item-function'>
+<span>Function</span><span> - </span><span>filter</span><span> - </span><span>implement --include and --exclude for filtering</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>filter</b> [<b>-f</b>|<b>-s</b>] &lt;value_to_check&gt;</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-f</b>  return <b>false</b> if no expression was matched
+<b>-i</b>  case invariant matching
+<b>-s</b>  return <b>true</b> if no expression was matched</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'>Match status, see <b>-s</b>, <b>-f</b> and remarks</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function checks the passed value against <b>--include</b> and <b>--exclude</b> options in the order of their appearance until one condition is matched.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If only <b>--include</b> options are given and none is matched the default return value is <b>false</b> (use <b>-s</b> to override).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If only <b>--exclude</b> options are given and none is matched the default return value is <b>true</b> (use <b>-f</b> to override).</div>
+</div>
+</section>
+<section id='section-16'>
+<div id='folder' class='item-function'>
+<span>Function</span><span> - </span><span>folder</span><span> - </span><span>assert/create valid folder, change directory, get special path</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>folder</b> [<b>-c</b>|<b>-p</b>] [<b>-f</b>|<b>-q</b>|<b>-w</b>] [<b>-n</b>] [<b>-r</b>] [<b>-s</b> <i>vnam</i>] ...   # ... options
+<b>folder</b> ... [<b>-l</b>|<b>-t</b>|<b>-v</b>] <i>path</i>                          # check/cd
+<b>folder</b> ... [<b>-l</b>|<b>-t</b>|<b>-v</b>] <b>-m</b> <i>path</i> [<i>mode</i> [<i>owner</i>]]        # create folder
+<b>folder</b> ... [<b>-b</b>|<b>-u</b>] <i>name</i> [<i>path</i> <i>mode</i> [<i>owner</i>]]         # special folder</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  [*] special folder (<i>path</i> is prefixed with $<b>CEN_ROOT</b>)
+<b>-c</b>  change dir to <i>path</i>
+<b>-f</b>  make errors fatal
+<b>-g</b>  generate a path name only, don&apos;t check path
+<b>-m</b>  create <i>path</i>, see <a href="#create">create()</a>
+<b>-n</b>  normalize (use $<b>PWD</b> if possible, else remove <b>//</b>)
+<b>-p</b>  change dir to physical <i>path</i>
+<b>-q</b>  quiet, no error messages
+<b>-r</b>  ignore <b>--dryrun</b>
+<b>-s</b>  variable name to save path (default: <b>CEN_FOLDER</b>)
+<b>-t</b>  [*] <i>path</i> is used as a suffix to a temporary folder
+<b>-u</b>  [*] get user config folder prefix, <i>path</i> is a special name
+<b>-v</b>  [*] use <b>/var/tmp</b> for temporary folder (like <b>-t</b>)
+<b>-w</b>  make errors warnings</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>[*] these options are mutually exclusive</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>mode</i>  octal file or <b>folder</b> mode, lower 9 bits only
+<i>owner</i> folder owner, passed to <b>/bin/chown</b>
+<i>name</i>  a subfolder of $<b>CEN_ROOT</b> (option <b>-t</b>|<b>-v</b>),
+      system installation <b>folder</b> (option <b>-b</b>):
+        <b>prefix</b>     (the files system root if not /)
+        <b>corebin</b>    (core binaries, usually /usr/bin)
+        <b>etc</b>        (system confirmation, usally /etc)
+        <b>var</b>        (application data, usually /var)
+      a centauri-bash-lib <b>folder</b> (option <b>-b</b>):
+        <b>default</b>    (get $<b>CEN_ROOT</b>/default or /etc/default)
+        <b>persistent</b> (get $<b>CEN_ROOT</b>/persistent or /var/tmp)
+        <b>transient</b>  (get $<b>CEN_ROOT</b>/transient or /tmp)
+        <b>&lt;other&gt;</b>    (get $<b>CEN_ROOT</b>/<i>other</i>)
+      a config/cache <b>folder</b> (option <b>-u</b>):
+        <b>config</b>     (get ~/.config or ~/.local or ~),
+        <b>local</b>      (get ~/.local or ~/.config or ~) or
+        <b>cache</b>      (get ~/.cache ~/.config or ~/.local or ~)
+<i>path</i>  a (relative) file system path</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'>On successs the used path is saved (see option <b>-s</b>) and is <b>true</b> returned, otherwise the return value is <b>false</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>folder</b> <b>-c</b> <b>-m</b> <b>-f</b> /ding/dong   # create path and cd or fatal error
+<b>folder</b> <b>-m</b> <b>-t</b> xxx             # create in XDG_RUNTIME_DIR or /tmp
+<b>folder</b> <b>-m</b> <b>-v</b> xxx             # create in /var/tmp
+<b>folder</b> <b>-m</b> /etc/hello 660     # create folder with mode 0660
+<b>folder</b> <b>-m</b> <b>-b</b> transient xxx   # create in transient folder
+<b>folder</b> <b>-s</b> cfldr <b>-u</b> cache     # get path of cache folder</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># get a per-app temporary path (in <b>XDG_RUNTIME_DIR</b> or /tmp)
+<b>folder</b> <b>-g</b> <b>-t</b> <b>--</b> <b>&quot;-$$.log&quot;</b>
+message <b>&quot;Temporary path:&quot;</b> <b>&quot;$CEN_FOLDER&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># get a file path in user&apos;s cache <b>folder</b>
+local path stat
+<b>folder</b> <b>-s</b> path <b>-u</b> cache <b>--</b> <b>&quot;hello&quot;</b> &amp;&amp; stat=<b>&quot;exists&quot;</b> || stat=<b>&quot;misssing&quot;</b>
+message <b>-p</b> <b>&quot;Cache File: % (%s)&quot;</b> <b>&quot;$path&quot;</b> <b>&quot;$stat&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># create a (per user) config file
+local data=(<b>&quot;user=ford&quot;</b> <b>&quot;password=42&quot;</b>)
+<b>folder</b> <b>-g</b> <b>-u</b> config <b>&quot;$CEN_NAME&quot;</b> # use ~/.config or ~/.local or ~
+create <b>-t</b> <b>-v</b> <b>&quot;$data&quot;</b> <b>-h</b> - <b>&quot;$CEN_FOLDER&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-17'>
+<div id='invoke' class='item-function'>
+<span>Function</span><span> - </span><span>invoke</span><span> - </span><span>call the implementation of an action, print an error message</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>invoke</b> [<b>-c</b>|<b>-r</b>|<b>-s</b>] <i>name</i> <i>action</i> [<i>minarg</i>|<b>-</b> [<i>maxarg</i>|<b>-</b>|<b>+</b> [<i>arg</i>...]]]
+(2) <b>invoke</b> [<b>-e</b>|<b>-w</b>] [<i>frmt</i>] <i>text</i>...
+(3) <b>invoke</b> <b>-t</b></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (1) calls a function, form (2) outputs a warning or an error message. Form (3) trims previous actions from <b>CEN_CMDARGS</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>  rerun script in a console if neccessary, see <a href="#context">context()</a>
+<b>-e</b>  error message for action (like message <b>-e</b> <b>-p</b> ...)
+<b>-r</b>  check for root privilege
+<b>-s</b>  rerun via <b>&quot;sudo&quot;</b> if neccessary, see <a href="#context">context()</a>
+<b>-t</b>  trim <b>CEM_CMDARGS</b> (implied before <b>-c</b>|<b>-s</b> re-run the script)
+<b>-w</b>  warning message for action (like message <b>-w</b> <b>-p</b> ...)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>name</i>     a lower case action name -or- <b>-</b> for <b>CEN_ACTION</b>
+<i>action</i>   the action routine -or- <b>-</b> to auto-generate call
+<i>minarg</i>   min arg count, <b>-</b>:don&apos;t check
+<i>maxarg</i>   max arg count, <b>-</b>:use <i>minarg</i>, <b>+</b>:no limit
+<i>arg</i>...   arguments passed to the action routine</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><i>frmt</i>     a printf format string (containing one or more <b>&quot;%s&quot;</b>)
+<i>text</i>     error message text or arguments for printf)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function is usually called from <a href="_centauri_bash_dbg.html#actionsuser">actions()</a> to dispatch action verbs. The content of array <b>CEN_ACTARR</b> is passed to an action function. For a non-empty <i>arg</i> list, the <b>CEN_ARCTARR</b> array is replaced.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Action functions should be named like <b>action</b>Xxx where Xxx is the action <i>name</i> with the 1st letter in uppercase. For Undefined functions a &quot;Not yet implemented&quot; error message is generated.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>State:</div>
+<div class='def-block'>Options <b>-c</b> and <b>-s</b> may re-run the script in a new process, discarding the actual application state. The remaining arguments are passed to the new process. This includes the current action, which then intentionally is run in a console or as root.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-block'>The following arrays and indices are set by <a href="#main">main()</a> after option parsing:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • <b>CEN_CMDARGS</b>  array of script invokation arguments (without options)
+  • <b>CEN_CMDCURR</b>  index of the current action
+  • <b>CEN_CMDINDX</b>  index of the next action
+  • <b>CEN_ACTARR</b>   array containing the arguments of the current action</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) Inside <a href="_centauri_bash_dbg.html#actionsuser">actions()</a> - argument checking<pre>actions() {
+    case <b>&quot;$1&quot;</b> in
+    tic|tick)
+        <b>invoke</b>    &apos;tick&apos;   -            ;; # actionTick, any arg count
+    tac*)
+        <b>invoke</b> <b>-r</b> &apos;tack&apos;   -        1   ;; # exactly one arg, must be root
+    tock)
+        [ <b>&quot;${2:--}&quot;</b> = &apos;-&apos; ] &amp;&amp; <b>invoke</b> <b>-e</b> <b>&quot;Argument #1 must have a value&quot;</b>
+        <b>invoke</b> <b>-s</b>   -   actionTack  1 3 ;; # rerun as root, 1 .. 3 args
+    esac
+}</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) chain to another action function<pre>actionOther() {
+    message <b>&quot;$CEN_ACTION:&quot;</b> <b>&quot;$@&quot;</b>
+}
+
+<b>invoke</b> other -                  # current args, CEN_ACTION=&apos;other&apos;
+<b>invoke</b> other - - - my args      # sets CEN_ACTARR, passing args</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) call a function like an action<pre>worker() {
+    message <b>&quot;$CEN_ACTION:&quot;</b> <b>&quot;$@&quot;</b>
+}
+
+<b>invoke</b> - worker                 # current args, current CEN_ACTION
+<b>invoke</b> happy worker             # current args, CEN_ACTION=&apos;happy&apos;
+<b>invoke</b> - worker - - same game   # sets CEN_ARCTARR, current CEN_ACTION</pre></div>
+</div>
+</section>
+<section id='section-18'>
+<div id='isfunction' class='item-function'>
+<span>Function</span><span> - </span><span>isfunction</span><span> - </span><span>check wether a bash function, builtin or command exists</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>isfunction</b> [<b>-a</b>|<b>-f</b>|<b>-e</b>|<b>-t</b>|<b>-w</b>] [<b>-y</b>|<b>-z</b>] [<b>-x</b>] [<b>--</b>] <i>func</i>
+(2) <b>isfunction</b> [<b>-a</b>|<b>-f</b>|<b>-e</b>|<b>-t</b>|<b>-w</b>] [<b>-y</b>|<b>-z</b>] [<b>-x</b>] <b>-c</b> [<b>--</b>] <i>func</i> <i>arg</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  abort if function or executable is missing
+<b>-c</b>  finally call the function (not recommended for commands)
+<b>-e</b>  error if function, builtin or command is missing
+<b>-f</b>  fatal if function, builtin or command is missing
+<b>-t</b>  generate trace messages
+<b>-w</b>  warning if function, builtin or command is missing
+<b>-x</b>  also find builtin or command (default is bash-function only)
+<b>-y</b>  create a dummy function returning true (if missing)
+<b>-z</b>  create a dummy function returning false (if missing)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>isfunction</b> my_function          # check for function or builtin
+<b>isfunction</b> <b>-y</b> my_function       # create function if neccessary
+<b>isfunction</b> <b>-c</b> my_function       # call a function if it exists</pre></div>
+</div>
+</section>
+<section id='section-19'>
+<div id='optarg' class='item-function'>
+<span>Function</span><span> - </span><span>optarg</span><span> - </span><span>command line option checker</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>optarg</b> <i>optname</i> <i>varname</i> [<i>opt</i>|<i>check</i>|<b>-</b> [<i>value</i>]]
+<b>optarg</b> <i>optname</i> [<i>value</i>|<b>-</b>] <b>-e</b> <i>message</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-e</b>  helper to generate a &apos;<b>--xxx</b>=value&apos; error message
+<b>-f</b>  [default] simple flag, option has no value
+<b>-i</b>  add <b>--include</b> option, see <a href="#filter">filter()</a>
+<b>-m</b>  helper to generate a &apos;mutually exclusive&apos; error message
+<b>-n</b>  value must be a positive integer
+<b>-o</b>  ternary value, <i>val</i>:=off|0|on|1|auto|2
+<b>-t</b>  allow any text as value
+<b>-x</b>  add <b>--exclude</b> option, see <a href="#filter">filter()</a></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-a</b>  value must be a file path for writing or appending
+<b>-d</b>  value is an output directory path, normalize, must exist
+<b>-r</b>  value must be a file path for reading
+<b>-s</b>  value is an input directory path, normalize, must exist
+<b>-w</b>  value must be a file path for writing</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>optname</i>  option name (used for bash input completion)
+<i>varname</i>  variable to be set (auto-generated if -)
+<i>opt</i>      option to specify the an option argument type
+<i>check</i>    regular expression to check an option argument
+<i>value</i>    overrides <b>CEN_ACTARR</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-text'><b>CEN_ARGOPT</b>    [in] argument value (overrides <b>CEN_ACTARR</b>)
+<b>CEN_ACTARR</b>    [in] next argument, can be a value
+<b>CEN_CMDOPTS</b>   [out] array of processed options</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The functions checks an option (usually passed via command line to <a href="#main">main()</a>) and sets the given <i>varname</i>. If the option has a value, the value gets validated.  When using <i>varname</i><b>[]</b> the option value is added to an array.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For <i>varname</i> <b>&quot;-&quot;</b> or <b>&quot;[]&quot;</b> the name is auto-generated like <b>CEN_OPT_</b><i>XXXX</i>, where <i>XXXX</i> is the uppercase option name. If <i>varname</i> is empty, no assignment is made.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The options <b>-d</b> <b>-s</b> and <b>-a</b> <b>-r</b> <b>-w</b> implicitly load the module <a href="_centauri_bash_iom.html">_centauri_bash_iom</a> to prompt for a path and to perform the requested checks.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The function gets usually called from <a href="_centauri_bash_dbg.html#optionsuser">options()</a>. For invalid input <a href="#error">error()</a> is called and <a href="#main">main()</a> will not call <a href="_centauri_bash_dbg.html#runuser">run()</a> or invoke a verb.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) implementing <a href="_centauri_bash_dbg.html#optionsuser">options()</a><pre>options() {
+    case <b>&quot;$1&quot;</b> in
+    <b>-D</b>|<b>--des</b>*)
+        <b>optarg</b> <b>&quot;destination&quot;</b> <b>CEN_OPT_DEST</b> <b>-t</b> ;;
+    <b>-R</b>|<b>--rig</b>*)
+        <b>optarg</b> <b>&quot;direction&quot;</b>   - - <b>&quot;right&quot;</b> ;;
+    <b>-L</b>|<b>--lef</b>|<b>--left</b>)
+        <b>optarg</b> <b>&quot;direction&quot;</b>   - - <b>&quot;left&quot;</b> ;;
+    <b>-X</b>|<b>--ext</b>*)
+        <b>optarg</b> <b>&quot;extrafile&quot;</b>   [] <b>-r</b> ;;
+    esac
+}</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) error reporting for options() call:<pre>[ <b>&quot;$2&quot;</b> -gt 7 ] &amp;&amp; <b>optarg</b> <b>&quot;somename&quot;</b> <b>&quot;$2&quot;</b> <b>-e</b> <b>&quot;Bad value, max is 7&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(3) generate mutually exclusive error (1st arg non-zero and not 1):<pre><b>optarg</b> <b>&quot;$CEN_OPT_FLAG1$CEN_OPT_FLAG2&quot;</b> - <b>-m</b> <b>&quot;--flag1 --flag2&quot;</b>
+[ <b>-n</b> <b>&quot;$err&quot;</b> ] &amp;&amp; <b>optarg</b> - - <b>-m</b> <b>&quot;--left --right&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-20'>
+<div id='splitjoin' class='item-function'>
+<span>Function</span><span> - </span><span>splitjoin</span><span> - </span><span>split or join strings/arrays, enumerator</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>splitjoin</b> [<b>-l</b>] [<b>-s</b> <i>arr</i>|<b>-</b>] [<b>-j</b> <i>var</i>|<b>-</b>] [<b>-d</b> <i>del</i>|<b>-n</b>] [<b>--</b>] <i>arg</i>...
+<b>splitjoin</b> [<b>-l</b>] [<b>-s</b> <i>arr</i>|<b>-</b>] [<b>-j</b> <i>var</i>|<b>-</b>] [<b>-d</b> <i>del</i>|<b>-n</b>] <b>-i</b> <i>inp</i>|<b>-</b>
+<b>splitjoin</b> <b>-x</b> <i>exec</i> [<b>-d</b> <i>del</i>] [<b>-i</b> <i>inp</i>|<b>-</b>] | [[<b>--</b>] <i>arg</i>...]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b>  delimiters, default <b>&quot;\t\n&quot;</b> (<b>-s</b>) or <b>&quot;\t&quot;</b> (<b>-j</b>)
+<b>-i</b>  input from string/array    (<b>-</b> reads stdin)
+<b>-j</b>  run join, result is string (<b>-</b> writes stdout)
+<b>-l</b>  add <b>&quot;\n&quot;</b> to stdout (<b>&quot;-j -&quot;</b> and <b>&quot;-s -&quot;</b> only)
+<b>-n</b>  delimiter is new-line, keeps empty lines on split
+<b>-s</b>  run split, result is array (<b>-</b> writes stdout) [default]
+<b>-x</b>  run split, call <i>exec</i> for each element</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Omitting <b>-j</b> and <b>-s</b> is equivalent to: <b>splitjoin -s - -l -n</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>arg</i>...  list of arguments (follows optional <b>--</b>)
+<i>arr</i>     array to receive split result
+<i>del</i>     delimiter string, used to set IFS
+<i>var</i>     string variable to receive join result
+<i>inp</i>     input array (<i>arg</i>... will be ignored)
+<i>exec</i>    function or command, not checks made</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>It is explicitly allowed for <i>inp</i> and <i>arr</i> to be the same array.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The function uses bash word expansion in a for loop. Therefore splitting a string or an array element with <b>&quot; \t\n&quot;</b> as delimiters cannot create empty result elements. But using delimiters like <b>&quot;\a&quot;</b> or <b>&quot;\b&quot;</b> would work as expected.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A split with option <b>-n</b> uses a delimiter of <b>&quot;\x1E&quot;</b> (ASCII <i>RS</i>) and replaces all input <b>&quot;\n&quot;</b> with <b>&quot;\x1E&quot;</b>. As a result empty lines are kept. For a join <b>-n</b> is a shortcut for <b>-d</b> <b>&quot;\n&quot;</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>splitjoin</b> <b>-i</b> arrx                                # list array
+<b>splitjoin</b> <b>-i</b> - &lt;<b>&quot;/xxx/data&quot;</b>                      # list stdin
+<b>splitjoin</b> <b>-s</b> data <b>-i</b> - <b>-n</b> &lt;<b>&quot;/etc/motd&quot;</b>           # array from file
+<b>splitjoin</b> <b>-j</b> - <b>-l</b> <b>--</b> tick tack tock              # list with tabs
+<b>splitjoin</b> <b>--</b> red blue                            # list lines</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>splitjoin</b> <b>-j</b> name <b>-d</b> <b>&quot;:&quot;</b> <b>--</b> /bin /usr/bin /sbin  # join to string
+<b>splitjoin</b> <b>-s</b> list <b>-d</b> <b>&quot;\t&quot;</b> <b>-i</b> vstr                # variable to array</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>splitjoin</b> <b>-x</b> myfunc <b>-n</b> <b>-i</b> - &lt;<b>&quot;/xxx/data&quot;</b>         # split/read stdin
+<b>splitjoin</b> <b>-x</b> <b>&quot;message -a&quot;</b> <b>-i</b> arrx                # list an array
+<b>splitjoin</b> <b>-x</b> myprog <b>-d</b> : <b>--</b> /bin:/usr/bin:/sbin  # split and call</pre></div>
+</div>
+</section>
+<section id='section-21'>
+<div id='sysfind' class='item-function'>
+<span>Function</span><span> - </span><span>sysfind</span><span> - </span><span>check for commands and builtins</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>sysfind</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b>] [<b>-e</b>|<b>-f</b>|<b>-w</b>|<b>-q</b>] [<b>-p</b> <i>path</i>] [<b>-s</b> <i>var</i>] <i>cmd</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-b</b>  allow <i>cmd</i> to be a bash builtin (builtins shadow commands)
+<b>-c</b>  cache the <i>cmd</i> result (used by <a href="#system">system()</a> and <a href="_centauri_bash_ext.html#sysrun">sysrun()</a>)
+<b>-d</b>  drop from cache (use <b>-d</b> <b>-c</b> to refresh cache entries)
+<b>-e</b>  print error message
+<b>-f</b>  call <a href="#fatal">fatal()</a> on error
+<b>-o</b>  one match only, skip missing commands
+<b>-p</b>  overrides the <b>PATH</b> environment variable
+<b>-s</b>  save full command path(s) to <i>var</i>
+<b>-q</b>  no error message, even no trace message
+<b>-w</b>  call <a href="#warning">warning()</a> on error</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>path</i>  colon separated list of paths to check
+<i>var</i>   name of a string to receive full paths of <i>cmd</i>...
+<i>cmd</i>   a program name or path</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>Check availability of external commands:<pre><b>sysfind</b> <b>-f</b> <b>-c</b> <b>--</b> convert efiftool</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Get path of an external editor tool, and run it:<pre>local edit
+<b>sysfind</b> <b>-e</b> <b>-s</b> edit <b>-o</b> <b>--</b> &apos;editor&apos; &apos;nano&apos; &apos;vim&apos; || quit &apos;no editor&apos;
+system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;myfile.txt&apos;</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This function is used by <a href="#system">system()</a> and <a href="_centauri_bash_ext.html#sysrun">sysrun()</a>. A command cache is maintained in the <b>CEN_CMD_PATH</b> dictionary. The keys are command or builtin names; values are absolute paths for external commands or &apos;-&apos; for builtins.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When <i>cmd</i> is a plain name (without slashes) and if <i>cmd</i> is cached, the cached result is returned. When <i>cmd</i> is a path no cache lookup is done and not builtin will be used (overriding <b>-b</b>).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For scripts that use external commands, it is recommended to validate the command availability by calling <b>&quot;sysfind -c &lt;cmd&gt;...&quot;</b> early. The <b>-c</b> option will cause the full command paths to be cached. <a href="#system">system()</a> and <a href="_centauri_bash_ext.html#sysrun">sysrun()</a> automatically use the cached paths idependently of the actual PATH setting.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Unless option <b>-p</b> is used, <b>CEN_PATHS</b>[1] (core binary path) is appended to <b>PATH</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Bash builtins are used only with option <b>-b</b>. Without <b>-b</b> builtins are ignored. When <b>-b</b> is used a builtin shadows an external command. If <i>cmd</i> is a path, the <b>-b</b> option is disabled and no builtins are used.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Bash script functions are never visible to <b>sysfind</b>. This is why <a href="#system">system()</a> must be called like <b>&quot;system -n ...&quot;</b> to run a function.</div>
+</div>
+</section>
+<section id='section-22'>
+<div id='system' class='item-function'>
+<span>Function</span><span> - </span><span>system</span><span> - </span><span>run a command, builtin or function optinally capturing the output</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>system</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-p</b>|<b>-q</b>|<b>-v</b>] [<b>-x</b>] <i>opt</i>... [<b>--</b>] <i>cmd</i> <i>arg</i>...
+<b>system</b> <i>opt</i>... <b>-u</b> <i>user</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
+<b>system</b> <i>opt</i>... <b>-s</b> <i>var</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
+<b>system</b> <i>opt</i>... <b>-a</b> <i>var</i> [<b>-d</b> <i>del</i>] [<b>--</b>] <i>cmd</i> <i>arg</i>...
+<b>system</b> <i>opt</i>... <b>-b</b> <i>inp</i> <i>out</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
+<b>system</b> [<b>-e</b>|<b>-f</b>] <b>-c</b> [<b>--</b>] <i>cmd</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  [*] save <b>/dev/stdout</b> to array <i>var</i>
+<b>-c</b>  check if exernal or builtin commands exist (do not run)
+<b>-d</b>  array item delimiters, use with <b>-a</b>, default <b>&quot;\t\n&quot;</b>
+<b>-e</b>  print error message on error
+<b>-f</b>  call <a href="#fatal">fatal()</a> on error
+<b>-i</b>  add <b>-i</b> option to <a href="#message">message()</a> call
+<b>-m</b>  message for all output (implies <b>-s</b> and <b>-q</b>)
+<b>-n</b>  do not check command (implied if <i>cmd</i> is <b>eval</b>)
+<b>-p</b>  [*] pretty print errors (implies <b>-s</b> and <b>-q</b>)
+<b>-q</b>  redirect <b>/dev/stderr</b> and <b>/dev/stdout</b> (to <b>/dev/null</b> without <b>-s</b>)
+<b>-r</b>  ignore option <b>--dryrun</b>
+<b>-s</b>  [*] set <i>var</i> from <b>/dev/stdout</b>
+<b>-t</b>  do not run <i>cmd</i> after previous error
+<b>-u</b>  run as <i>user</i> via <b>sudo</b> (use <b>&quot;-u -&quot;</b> for <b>root</b>),
+    use <b>&quot;bash -c&quot;</b> if <i>cmd</i> is <b>eval</b>
+<b>-v</b>  be verbose/quiet (using <b>-m</b>|<b>-p</b>|<b>-q</b>)
+<b>-w</b>  call <a href="#warning">warning()</a> on error
+<b>-x</b>  [*] call via <b>exec</b>, no return, does not run quit hooks
+<b>-z</b>  pass-through <b>/dev/stdout</b>, capture <b>/dev/stderr</b> only</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>[*] these options are mutually exclusive</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>cmd</i>     command to be run
+<i>arg</i>...  options and arguments passed to <i>cmd</i>
+<i>inp</i>     command for input  (use &apos;:&apos; as noop)
+<i>out</i>     command for output (use &apos;:&apos; as noop)
+<i>var</i>     variable or array name to return a result
+<i>del</i>     element delimiters for result array
+<i>user</i>    a user name or <b>&quot;-&quot;</b> for <b>root</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'>Running a command returns the exit code, but option <b>-x</b> does not return (and does not run quit hooks). On errors <b>false</b> is returned.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Commands:</div>
+<div class='def-block'>Unless option <b>-n</b> is used, <b>system</b> calls <b>&quot;sysfind -b -c &lt;cmd&gt;&quot;</b> to find out if an external command or a builtin exists (script functions are ignored). External comands are prefixed with a filesystem path and bash builtins are run as <b>&quot;builtin &lt;cmd&gt;&quot;</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When option <b>-n</b> is absent <b>system</b> will never run a script function. In other words: script functions do not shadow external programs or bash builtins.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Unless <i>cmd</i> contains slashes (is a path) or option <b>-b</b> is used, builtins shadow commands. Unfortunately most bash builtins do not have the full functionality of their coreutil equivalents.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>Note:</b> It is not possible for a script to disable builtins via <b>&quot;enable -n&quot;</b>. Use the following techniques to bypass a builtin:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • pass a full path <i>cmd</i> to <b>system</b> (the path will be cached)
+  • explicitly call <b>&quot;sysfind -c &lt;cmd&gt;&quot;</b> before to seed the cache</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>system</b> mycmd                            # no error/output handling
+<b>system</b> <b>-e</b> <b>-p</b> <b>-s</b> rslt <b>--</b> mycmd arg1      # formatted msg on error
+<b>system</b> <b>-q</b> <b>-a</b> data <b>--</b> mycmd arg1         # no error output</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>system</b> <b>-m</b> <b>-s</b> rslt <b>--</b> mycmd arg2         # capture all, no msg
+<b>system</b> <b>-z</b> <b>-s</b> emsg <b>--</b> mycmd arg3         # capture errors only
+<b>system</b> <b>-c</b> <b>-f</b> venus mars                 # check commands</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>system</b> sleep 1                          # run builtin or program
+<b>system</b> rename <b>&quot;s/a/b/&quot;</b> *.tmp            # tool (/usr/bin/rename)
+<b>system</b> <b>-n</b> rename one two                # call a script function</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>@<b>CEN_HOOK_QUIT</b> <b>-h</b>                       # must run hooks ...
+<b>system</b> <b>-x</b> <b>--</b> shutdown                   # ... before using exec</pre></div>
+</div>
+</section>
+<section id='section-23'>
+<div id='main' class='item-function'>
+<span>Function</span><span> - </span><span>main</span><span> - </span><span>parse options dispatch action verbs or call run()</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>main &quot;$@&quot; ; quit</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This functions calls <a href="_centauri_bash_dbg.html#optionsuser">options()</a>, <a href="_centauri_bash_dbg.html#actionsuser">actions()</a>, <a href="_centauri_bash_dbg.html#runuser">run()</a> and <a href="_centauri_bash_use.html#usageuser">usage()</a> as needed. See <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> initialization for details.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The function implements some default options, see <a href="_centauri_bash_doc.html#defaultoptions">Default Options</a>. It also registers a &apos;command_not_found_handle&apos;; set <b>CEN_QUIT_TRAP</b>=0 to disable this.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>See <a href="#error">error()</a> for error handling and error termination and <a href="#quit">quit()</a> for script termination and exit code.</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_iom.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_mnt.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

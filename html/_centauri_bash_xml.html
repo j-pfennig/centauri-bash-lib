@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_xml</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_win.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_xtr.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_xml' class='item-module'>
+<span>Module</span><span> - </span><span>_centauri_bash_xml</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> XML/HTML Support</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>. <b>_centauri_bash_xml</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This module contains functions to create XML/HTML documents. HTML is used in it&apos;s XML variant, so when the documentations says XML, this usually also applies to HTML.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Some functions can load data from a file see <b>-r &lt;handle&gt;</b>.  Such a handle can be obtained from <a href="_centauri_bash_ext.html#redirect">redirect()</a> (module <a href="_centauri_bash_ext.html">_centauri_bash_ext</a>).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Variables:</div>
+<div class='def-text'><b>CEN_XML_FORMAT</b>  XML formatting: 0=none, 1=indent, 2=no comments
+<b>CEN_XML_INDENT</b>  string of spaces used  for indentation
+<b>CEN_XML_BUFFER</b>  output buffer, see <a href="#xml_flush">xml_flush()</a>
+<b>CEN_XML_OUTPUT</b>  default output file handle, see <a href="#xml_document">xml_document()</a></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Template:</div>
+<div class='def-text'>The <b>centauriCgiforms</b> template demonstrates the use of this module.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2016-2022</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='xml_anchor' class='item-function'>
+<span>Function</span><span> - </span><span>xml_anchor</span><span> - </span><span>create a hyperlink</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>xml_anchor</b> [<b>-a</b> <i>satr</i>] [<b>-v</b> <i>dest</i>] [<b>-n</b>] <b>-m</b> <i>mark</i> [<b>--</b>] <i>cont</i>...
+(2) <b>xml_anchor</b> [<b>-a</b> <i>satr</i>] [<b>-v</b> <i>dest</i>] [<b>-n</b>] <b>-u</b> <i>href</i> [<b>--</b>]  <i>cont</i>...
+(3) <b>xml_anchor</b> [<b>-a</b> <i>satr</i>] [<b>-v</b> <i>dest</i>] [<b>-n</b>] <b>-j</b> <i>func</i> [<b>-u</b> <i>href</i>] [<b>--</b>]  <i>cont</i>...
+(4) <b>xml_anchor</b> [<b>-a</b> <i>satr</i>] [<b>-v</b> <i>dest</i>] [<b>-n</b>] <b>-b</b> <i>mark</i></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (1) jumps to a bookmark (on the current page), (2) references a page and form (3) invokes a javascript function. If form (3) is used without <b>-u</b> then <i>func</i> must contain an argument. Form (4) sets a bookmark.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>If <i>href</i> is empty or - the output is empty.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string
+<b>-b</b>  create bookmark
+<b>-c</b>  class (class attribute)
+<b>-s</b>  css string (style attribute)
+<b>-j</b>  call javascript function (prefix &apos;javascript:&apos;)
+<b>-l</b>  literal, no xml escape
+<b>-m</b>  jump to a marker (prefix &apos;#&apos;)
+<b>-n</b>  append newline
+<b>-u</b>  destination URL
+<b>-v</b>  output to <i>dest</i> variable</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>cont</i>...   text content of anchor element
+<i>func</i>      javascript function to be called
+<i>href</i>      the link destination
+<i>mark</i>      a bookmark name</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>xml_anchor</b> <b>-b</b> &apos;hello&apos;               # set bookmark
+<b>xml_anchor</b> <b>-m</b> &apos;hello&apos; <b>--</b> <b>&quot;Go to hello&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>xml_anchor</b> <b>-n</b> <b>-u</b> <b>&quot;index.html&quot;</b> <b>--</b> <b>&quot;Show Content Table&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>xml_anchor</b> <b>-n</b> <b>-j</b> <b>&quot;whow(42)&quot;</b> <b>&quot;Get answer&quot;</b>
+<b>xml_anchor</b> <b>-n</b> <b>-j</b> <b>&quot;navigate&quot;</b> <b>-u</b> <b>&quot;dest.html&quot;</b> <b>--</b> <b>&quot;Show Result&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-3'>
+<div id='xml_comment' class='item-function'>
+<span>Function</span><span> - </span><span>xml_comment</span><span> - </span><span>Generate a comment</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_comment</b> [<b>-n</b>] [<b>-i</b>|<b>-l</b>] [<b>--</b>] <i>text</i>...
+<b>xml_comment</b> [<b>-n</b>] [<b>-i</b>|<b>-l</b>] [<b>--</b>] <i>array</i>
+<b>xml_comment</b> [<b>-n</b>] [<b>-i</b>|<b>-l</b>] <b>-r</b> <i>fhan</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-i</b>  indented mult-line, implies <b>-l</b>
+<b>-l</b>  multi-line comment (each argument in a line)
+<b>-n</b>  force new line at end of output string
+<b>-r</b>  read text from file handle <i>fhan</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>text</i>    any text
+<i>array</i>   array of texts
+<i>fhan</i>    a file handle or &apos;-&apos; for stdin</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre><b>xml_comment</b> <b>-l</b> <b>-n</b> <b>--</b> <b>&quot;line1&quot;</b> <b>&quot;--2--&quot;</b> <b>&quot;line3&quot;</b>  # multi-line comment</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>The function writes starting and closing comment tags, all occurences of <b>--</b> are replaced by <b>=</b>. No other substitutions are made.</div>
+</div>
+</section>
+<section id='section-4'>
+<div id='xml_document' class='item-function'>
+<span>Function</span><span> - </span><span>xml_document</span><span> - </span><span>Create an XML or HTML document</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'># create an xml document ...
+<b>xml_document</b> [<b>-b</b>|<b>-e</b>] [<b>-a</b> <i>text</i>] [<b>-d</b> <i>func</i>] [<b>-f</b> <i>func</i>] [<b>-i</b> 0|1|2] [<b>-n</b>]
+             [<b>-o</b> <i>outp</i>] [<b>-r</b> <i>text</i>] [<b>-y</b>] [<b>-w</b> <i>cont</i>] <i>attr</i>...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>#create a HTML document ...
+<b>xml_document</b> [<b>-b</b>|<b>-e</b>] [<b>-a</b> text] [<b>-d</b> func] [<b>-f</b> func] [<b>-i</b> 0|1|2] [<b>-n</b>]
+             [<b>-c</b> file] [<b>-h</b> func] [<b>-m</b> func] [<b>-s</b> file] [<b>-t</b> text] [<b>-w</b> <i>cont</i>] <i>attr</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b> author meta data
+<b>-b</b> start document
+<b>-d</b> declaration function (default xml/doctype)
+<b>-e</b> end document
+<b>-f</b> inner content function (use - to read from stdin)
+<b>-i</b> indenting, <b>0</b>: off <b>1</b>: on  (see <b>CEN_XML_FORMAT</b>)
+<b>-w</b> write after start document and before processing <b>-f</b>
+<b>-n</b> fragment (no header)
+<b>-o</b> output file or handle (default is <b>/dev/stdout</b>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'>(XML only)
+<b>-r</b> xml root node
+<b>-y</b> xml stand alone</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'>(HTML only)
+<b>-4</b> version 4 html
+<b>-5</b> version 5 html
+<b>-c</b> css style file
+<b>-h</b> header function
+<b>-m</b> metadata function
+<b>-s</b> java-script file
+<b>-t</b> title (text will be escaped)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>attr</i>  body/document attribute
+<i>cont</i>  document content, written literally
+<i>file</i>  a file (for CSS or java-script)
+<i>func</i>  a callback function
+<i>outp</i>  a file hanlde (if numeric) or an output file
+<i>text</i>  a text string</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>xml_document</b> <b>-r</b> root <b>-d</b> <b>&quot;xml_comment DTD&quot;</b> <b>-f</b> myfrag <b>&quot;attr=&apos;green&apos;&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>xml_document</b> <b>-h</b> <b>-f</b> <b>&quot;xml_comment Empty HTML&quot;</b> <b>&quot;lang=&apos;en&apos;&quot;</b> <b>&quot;dir=&apos;ltr&apos;&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>xml_document</b> <b>-b</b> <b>-s</b> <b>&quot;script.js&quot;</b> <b>-t</b> <b>&quot;An HTML Example&quot;</b>
+xml_comment <b>&quot;Content...&quot;</b>
+<b>xml_document</b> <b>-e</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>simple xml passing content via variable<pre>data=<b>&quot;&lt;data&gt;xml content&lt;more&gt;is here&lt;/more&gt;&lt;/data&gt;&quot;</b>
+<b>xml_document</b> <b>-i</b> 1 <b>-r</b> &apos;root&apos; <b>-w</b> <b>&quot;$data&quot;</b> <b>-y</b> <b>--</b> <b>&quot;version=&apos;1.0&apos;&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>simple xml with content from a here document<pre><b>xml_document</b> <b>-f</b> - <b>-r</b> &apos;root&apos; <b>-y</b> <b>-i</b> 1 <b>--</b> <b>&quot;version=&apos;2.0&apos;&quot;</b> &lt;&lt;!EOF
+&lt;data&gt;
+  xml content&lt;more&gt;is here&lt;/more&gt;
+&lt;/data&gt;
+!EOF</pre></div>
+</div>
+</section>
+<section id='section-5'>
+<div id='xml_element' class='item-function'>
+<span>Function</span><span> - </span><span>xml_element</span><span> - </span><span>create an element node</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_element</b> <i>tag</i>[#<i>id</i>] [<b>-b</b>|<b>-e</b>] [<b>-n</b>] [<b>-t</b>] [<b>-i</b>|<b>-u</b>] [<b>-x</b>] [<b>-v</b> <i>dest</i>]
+            [<b>-a</b> <i>satr</i>] [<b>-c</b> <i>scls</i>] [<b>-s</b> <i>scss</i>] [<b>--</b>] <i>cont</i>...
+<b>xml_element</b> <i>tag</i>[#<i>id</i>] [<b>-b</b>|<b>-e</b>] [<b>-n</b>] [<b>-i</b>] [<b>-v</b> <i>dest</i>] <b>-f</b> <i>func</i>
+            [<b>-a</b> <i>satr</i>] [<b>-c</b> <i>scls</i>] [<b>-s</b> <i>scss</i>] [<b>--</b>] <i>data</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>tag</i>  the tag. *<b> before options *</b>
+<i>id</i>   for <i>tag</i>#<i>id</i> an <b>&quot;id&quot;</b> attribute is added (HTML mode only)
+<i>cont</i> element content, multiple args repeat the element
+<i>data</i> data passed to the callback function
+<i>func</i> content callback function</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string
+<b>-b</b>  start element
+<b>-c</b>  class (class attribute)
+<b>-e</b>  end element
+<b>-f</b>  callback for inner content
+<b>-i</b>  indent (implies <b>-n</b>)
+<b>-n</b>  newline after element
+<b>-s</b>  css string (style attribute)
+<b>-t</b>  convert args using entities for apostroph, less and greater
+<b>-u</b>  unindent
+<b>-v</b>  output to <i>dest</i> variable
+<b>-x</b>  generate explicit end element (implied for HTML documents unless <i>br</i>)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># a simple repeated element
+<b>xml_element</b> <b>&quot;numbers&quot;</b> <b>-n</b> <b>&quot;zero / null&quot;</b> <b>&quot;one&quot;</b> <b>&quot;two&quot;</b> <b>&quot;three&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># using a content callback
+___colors() {
+    <b>xml_element</b> red <b>-n</b>
+    <b>xml_element</b> green <b>-n</b> <b>&quot;what a nice color!&quot;</b>
+    <b>xml_element</b> blue <b>-n</b>
+}
+<b>xml_element</b> <b>&quot;colors&quot;</b> <b>-n</b> <b>-f</b> ___colors</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># nesting elements explicitly
+<b>xml_element</b> <b>&quot;animals&quot;</b> <b>-b</b> <b>-n</b> <b>-i</b>
+    <b>xml_element</b> <b>&quot;dog&quot;</b> <b>&quot;his name is Bello&quot;</b>
+    <b>xml_element</b> <b>&quot;cat&quot;</b> <b>-n</b>
+<b>xml_element</b> <b>&quot;animals&quot;</b> <b>-e</b> <b>-u</b></pre></div>
+</div>
+</section>
+<section id='section-6'>
+<div id='xml_flush' class='item-function'>
+<span>Function</span><span> - </span><span>xml_flush</span><span> - </span><span>Send buffered XML data to a variable, file or stdout</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>xml_flush</b> [<b>-n</b>] [<b>-h</b> <i>fhan</i>]
+(2) <b>xml_flush</b> [<b>-n</b>] <b>-v</b> <i>name</i>
+(3) <b>xml_flush</b> <b>-r</b> [<b>-h</b> <i>fhan</i>]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form 1 and 2 putput or save data from <b>CEN_XML_BUFFER</b> and then reinitialize the buffer. In form 1 the <b>-h</b> option overrides temporarily the current file handle. Form 3 resets all data and optionally sets the current file handle.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-h</b>  write to <i>fhan</i> (default is <b>CEN_XML_OUTPUT</b>, see <a href="#xml_document">xml_document()</a>)
+<b>-n</b>  force new line at end of output string
+<b>-r</b>  reset module to initial values
+<b>-v</b>  save data to <i>name</i>, do no output</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>fhan</i>  a file handle or + for memory or - for stdout
+<i>name</i>  name of a variable to receive xml data</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>add new-line and flush to current output destination<pre><b>xml_flush</b> <b>-n</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>reset state and alter output destination<pre><b>xml_flush</b> ; <b>xml_flush</b> <b>-r</b> <b>-h</b> +</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>get some complex xml into a variable:<pre><b>xml_flush</b> ; <b>xml_flush</b> <b>-h</b> +
+xml_table <b>-d</b> <b>&quot;|&quot;</b> <b>&quot;1|Mercury|war&quot;</b> <b>&quot;2|Venus|love&quot;</b> <b>&quot;3|Earth|desaster&quot;</b>
+<b>xml_flush</b> <b>-v</b> vnam ;</pre></div>
+</div>
+</section>
+<section id='section-7'>
+<div id='xml_input' class='item-function'>
+<span>Function</span><span> - </span><span>xml_input</span><span> - </span><span>generate label and input elements</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_input</b> <i>type</i>#<i>id</i> [<b>-a</b> <i>satr</i>] [<b>-c</b> <i>scls</i>] [<b>-s</b> <i>scss</i>] [<b>-l</b>] [<b>-n</b>]
+                  [<b>-v</b> <i>dest</i>] [<b>--</b>] <i>text</i>
+<b>xml_input</b> <b>&quot;submit&quot;</b> ...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>type</i> Kind of input element or <b>&quot;label&quot;</b>. *<b> before options *</b>
+<i>id</i>   <b>&quot;id&quot;</b> and <b>&quot;name&quot;</b> attributes are added if not specified via <b>-a</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string
+<b>-c</b>  class (class attribute)
+<b>-s</b>  css string (style attribute)
+<b>-l</b>  literal <i>text</i>, do no xml escape
+<b>-n</b>  append newline
+<b>-v</b>  output to <i>dest</i> variable</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>xml_input</b> label#fname    <b>--</b> <b>&quot;First name:&quot;</b>
+<b>xml_input</b> text#fname     <b>--</b> <b>&quot;John&quot;</b>
+<b>xml_input</b> label#lname    <b>--</b> <b>&quot;Last name:&quot;</b>
+<b>xml_input</b> text#lname     <b>--</b> <b>&quot;Doe&quot;</b>
+<b>xml_input</b> checkbox#adult <b>-a</b> <b>&quot;checked=&apos;&apos;&quot;</b>
+<b>xml_input</b> label#adult    <b>--</b> <b>&quot;My age is above 18&quot;</b>
+<b>xml_input</b> submit         <b>--</b> <b>&quot;Submit&quot;</b>   # &lt;name&gt; not mandatory</pre></div>
+</div>
+</section>
+<section id='section-8'>
+<div id='xml_list' class='item-function'>
+<span>Function</span><span> - </span><span>xml_list</span><span> - </span><span>build a simple list</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_list</b> <i>tag</i>[#<i>id</i>] [<b>-a</b> <i>satr</i>] [<b>-c</b> <i>scls</i>] [<b>-s</b> <i>scss</i>] [<b>-n</b>] [<b>-l</b>]
+                  [<b>-g</b> <i>gelt</i>] [<b>-d</b> <i>deli</i>] <i>data</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string
+<b>-c</b>  class (class attribute)
+<b>-d</b>  delimiter to split <i>item</i> data
+<b>-l</b>  literal <i>item</i>..., do no xml escape
+<b>-n</b>  append newline
+<b>-s</b>  css string (style attribute)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>tag</i>   kind of parent element *<b> before options *</b>
+<i>id</i>    <b>&quot;id&quot;</b> and <b>&quot;name&quot;</b> attributes are added if not specified via <b>-a</b>
+<i>deli</i>  delimiter character(s) in printf notation
+<i>data</i>  data, split into fields using <i>deli</i>
+<i>gelt</i>  item element if <i>tag</i> is not <b>&quot;dl&quot;</b> <b>&quot;ol&quot;</b> or <b>&quot;ul&quot;</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>HTML lists are built for <i>tag</i> <b>&quot;dl&quot;</b> <b>&quot;ol&quot;</b> or <b>&quot;ul&quot;</b>. In this case <i>gelt</i> is ignored. With <i>tag</i> <b>&quot;dl&quot;</b> two <i>data</i> fields per list entry are used.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For all non HTML list <i>tag</i>s <i>gelt</i> must be specified to define the inner element type.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Attributes apply only to the parent element. To pass attributes to the inner elements or to get more control use the <a href="#xml_sequence">xml_sequence()</a> function.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre><b>xml_list</b> ul <b>-n</b> <b>--</b> <b>&quot;Moscow&quot;</b> <b>&quot;London&quot;</b> <b>&quot;Berlin&quot;</b> <b>&quot;Paris&quot;</b>
+<b>xml_list</b> dl <b>-n</b> <b>-d</b> &apos;=&apos; <b>--</b> <b>&quot;1=one&quot;</b> <b>&quot;2=two&quot;</b> 3 three
+<b>xml_list</b> tr <b>-g</b> td <b>--</b> <b>&quot;Text number 1&quot;</b> <b>&quot;Text number 2&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-9'>
+<div id='xml_sequence' class='item-function'>
+<span>Function</span><span> - </span><span>xml_sequence</span><span> - </span><span>generate a sequence of elements</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_sequence</b> <i>tag</i>[#<i>id</i>] [<b>-a</b> <i>satr</i>] [<b>-c</b> <i>scls</i>] [<b>-s</b> <i>scss</i>]
+             [<b>-e</b> <i>elem</i>] [<b>-f</b> <i>func</i>] [<b>-l</b>|<b>-n</b>] [<b>-t</b> <i>note</i>] [<b>--</b>] <i>data</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>tag</i>  the tag. *<b> before options *</b>
+<i>id</i>   for <i>tag</i>#<i>id</i> an <b>&quot;id&quot;</b> attribute is added (HTML mode only)
+<i>data</i> element content
+<i>elem</i> element callbak function:  <i>note</i> <i>elt</i> <i>data</i>
+<i>item</i> item callback function:    <i>note</i> <i>counter</i> <i>data</i>
+<i>note</i>  all callback functions receive this as 1st argument</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string (overridden by <b>CEN_XML_ATTR</b>)
+<b>-c</b>  element class (class attribute)
+<b>-d</b>  delimiter to split <i>data</i>
+<b>-e</b>  element callback function
+<b>-f</b>  item callback function
+<b>-l</b>  literal, no xml escape
+<b>-n</b>  append newline
+<b>-s</b>  element css string (style attribute)
+<b>-t</b>  arbitrary data passed to all callback functions</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># a simple sequence
+<b>xml_sequence</b> &apos;span&apos; <b>-d</b> &apos;|&apos; <b>-n</b> <b>--</b> <b>&quot;earth|wind|fire&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># using in item callback
+___item() {         # args: &lt;note&gt; &lt;counter&gt; &lt;data&gt;
+    local argi=$(($2 + 3)) ; <b>CEN_XML_ARGS</b>=<b>&quot;${!argi}&quot;</b>
+    case <b>&quot;$2&quot;</b> in
+        0)   <b>CEN_XML_ATTR</b>=<b>&quot;style=&apos;text-align:left;&apos;&quot;</b> ;;
+        1)   ;;
+        2)   <b>CEN_XML_ATTR</b>=<b>&quot;style=&apos;text-align:right;&apos;&quot;</b> ;;
+        *)   return 1
+    esac ; return 0
+}
+<b>xml_sequence</b> td <b>-c</b> <b>&quot;center&quot;</b> <b>-f</b> ___item <b>-n</b> <b>--</b> left center right</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># using an element callback
+___elem() {         # args: &lt;note&gt; &lt;elem&gt; &lt;data&gt;...
+    local args elem=<b>&quot;$2&quot;</b> ; shift 2
+    xml_element <b>&quot;$elem&quot;</b> <b>-a</b> <b>&quot;$CEN_XML_ATTR&quot;</b> <b>-b</b> <b>-i</b> <b>-n</b>
+    while [ <b>-n</b> <b>&quot;$1&quot;</b> ] ; do
+        splitjoin <b>-s</b> args <b>-d</b> &apos;=&apos; <b>&quot;$1&quot;</b> ; shift
+        xml_element dt    <b>--</b> <b>&quot;$args&quot;</b>
+        xml_element dd <b>-n</b> <b>--</b> <b>&quot;${args[1]}&quot;</b> ;
+    done
+    xml_element <b>&quot;$elem&quot;</b> <b>-e</b> <b>-u</b> <b>-n</b>
+}
+<b>xml_sequence</b> dl <b>-d</b> &apos;|&apos; <b>-e</b> ___elem <b>-n</b> <b>--</b> <b>&quot;water=flows|wind=blows&quot;</b> <b>&quot;fire=burns&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-10'>
+<div id='xml_table' class='item-function'>
+<span>Function</span><span> - </span><span>xml_table</span><span> - </span><span>build a table</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_table</b> [<b>-h</b> <i>fhdr</i>] [<b>-b</b> <i>body</i>|<b>-r</b> <i>frow</i>] [<b>-f</b> <i>foot</i>]
+          [<b>-t</b> <i>note</i>] [<b>-a</b> <i>satr</i>] [<b>-d</b> <i>deli</i>] <i>data</i>...</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string
+<b>-b</b>  body function
+<b>-c</b>  table class (class attribute)
+<b>-d</b>  delimiter to split <i>data</i> (default is <b>&quot;\t\n&quot;</b>)
+<b>-f</b>  footer function
+<b>-h</b>  header function
+<b>-l</b>  literal, no xml escape
+<b>-n</b>  append newline after td elements
+<b>-r</b>  row function [fills <b>CEN_XML_ARGS</b> array]
+<b>-s</b>  table css string (style attribute)
+<b>-t</b>  arbitrary data passed to all callback functions
+<b>-x</b>  function called after <b>&quot;&lt;table&gt;&quot;</b> can be used to add tags like
+    <b>&quot;&lt;caption&gt;&quot;</b> or <b>&quot;&lt;colgroup&gt;&quot;</b> or to generate any other content</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>fhdr</i>  callback for xml_element thead
+<i>body</i>  callback for xml_element tbody
+<i>foot</i>  callback for xml_element tfoot
+<i>frow</i>  row function, called in loop until it returns false
+<i>note</i>  all callback functions receive this as 1st argument
+<i>deli</i>  delimiter character(s) in printf notation
+<i>data</i>  row data, split into cols using <i>deli</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># simple table with 3 rows
+<b>xml_table</b> <b>-d</b> <b>&quot;|&quot;</b> <b>&quot;1|Mercury|war&quot;</b> <b>&quot;2|Venus|love&quot;</b> <b>&quot;3|Earth|desaster&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># table with rows callback (args are: &lt;note&gt; &lt;row-number&gt;)
+___rows() {
+    case <b>&quot;$2&quot;</b> in
+        0)  <b>CEN_XML_ARGS</b>=(<b>&quot;$1&quot;</b>) ;;
+        1)  <b>CEN_XML_ARGS</b>=(<b>&quot;1&quot;</b> <b>&quot;2&quot;</b>) ;;
+        2)  <b>CEN_XML_ARGS</b>=(<b>&quot;3&quot;</b> <b>&quot;4&quot;</b>) ;;
+       *)  return 1    # return false to stop
+    esac ; return 0
+}
+<b>xml_table</b> <b>-r</b> ___rows <b>-t</b> <b>&quot;A Matrix&quot;</b> <b>-x</b> ___extra</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># table usig extra callback (arg is: &lt;note&gt;)
+___xtra() {
+    xml_element caption <b>-n</b> <b>-t</b> <b>--</b> <b>&quot;$1&quot;</b>
+    xml_element colgroup <b>-i</b> <b>-n</b> <b>-b</b>
+       xml_element col <b>-s</b> <b>&quot;text-align: right; width: 10%;&quot;</b>
+       xml_element col <b>-s</b> <b>&quot;background-color: yellow;&quot;</b>
+    xml_element colgroup <b>-u</b> <b>-n</b> <b>-e</b>
+}
+<b>xml_table</b> <b>-t</b> <b>&quot;Directions&quot;</b> <b>-x</b> ___xtra <b>-d</b> <b>&quot;|&quot;</b> \
+          <b>&quot;N|north&quot;</b> <b>&quot;E|east&quot;</b> <b>&quot;S|south&quot;</b> <b>&quot;W|west&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-11'>
+<div id='xml_text' class='item-function'>
+<span>Function</span><span> - </span><span>xml_text</span><span> - </span><span>Text writer with minimal XML-escape encoding</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>xml_text</b> [<b>-a</b> <i>satr</i>] [<b>-l</b>] [<b>-b</b>|<b>-c</b>|<b>-n</b>|<b>-p</b>] [<b>-s</b>] [<b>-v</b> <i>dest</i>] <i>text</i>...
+<b>xml_text</b> [<b>-a</b> <i>satr</i>] [<b>-l</b>] [<b>-b</b>|<b>-c</b>|<b>-n</b>|<b>-p</b>] [<b>-s</b>] [<b>-v</b> <i>dest</i>] <b>-r</b> <i>fhan</i></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  attribute string for generated elements
+<b>-b</b>  add &lt;br/&gt; for each argument
+<b>-c</b>  enclose in <i>code</i> element
+<b>-l</b>  literal <i>text</i>, do no xml escape
+<b>-n</b>  append new-line to each argument
+<b>-p</b>  use <i>p</i>...&lt;/p&gt; for each argument
+<b>-r</b>  read args from file handle <i>fhan</i>
+<b>-s</b>  strip leading spaces (for <i>text</i> arguments and <b>-r</b> data)
+<b>-v</b>  output to <i>dest</i> variable
+<b>-x</b>  example, add <i>pre</i> element, no indent</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>satr</i>    attribute string
+<i>text</i>    any text
+<i>array</i>   array of texts
+<i>fhan</i>    a file handle or &apos;-&apos; for stdin</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre><b>xml_text</b> <b>-n</b> <b>--</b> <b>&quot;This &lt;is&gt; simple text&quot;</b>
+<b>xml_text</b> <b>-n</b> <b>-l</b> <b>&quot;This &lt;is&gt;xml data&lt;/is&gt; and text&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>xml_text</b> <b>-n</b> <b>-l</b> <b>-r</b> - &lt;&lt;!EOF
+  &lt;label for=<b>&quot;lname&quot;</b>&gt;Last name:&lt;/label&gt;&lt;br&gt;
+  &lt;input type=<b>&quot;text&quot;</b> id=<b>&quot;lname&quot;</b> name=<b>&quot;lname&quot;</b> value=<b>&quot;Doe&quot;</b>&gt;
+!EOF</pre></div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_win.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_xtr.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>

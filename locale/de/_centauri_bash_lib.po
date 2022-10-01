@@ -1,304 +1,301 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_lib:333
+#: /var/centauri/library/_centauri_bash_lib:338
 msgid "fatal:"
 msgstr "Fatal:"
 
-#: /var/centauri/library/_centauri_bash_lib:417
+#: /var/centauri/library/_centauri_bash_lib:422
 msgid "quit from subshell"
 msgstr "quit aus Subshell"
 
-#: /var/centauri/library/_centauri_bash_lib:422
+#: /var/centauri/library/_centauri_bash_lib:427
 msgid "Terminated"
 msgstr "Abgebrochen"
 
-#: /var/centauri/library/_centauri_bash_lib:424
+#: /var/centauri/library/_centauri_bash_lib:429
 msgid "Terminated after error"
 msgstr "Nach Fehler abgebrochen"
 
-#: /var/centauri/library/_centauri_bash_lib:440
+#: /var/centauri/library/_centauri_bash_lib:445
 msgid "Exit status:"
 msgstr "Rückgabewert:"
 
-#: /var/centauri/library/_centauri_bash_lib:446
+#: /var/centauri/library/_centauri_bash_lib:451
 msgid "Press any key to close the window..."
 msgstr "Beliebige Taste zum Fenster schließen drücken..."
 
-#: /var/centauri/library/_centauri_bash_lib:449
+#: /var/centauri/library/_centauri_bash_lib:454
 msgid "Press any key to continue..."
 msgstr "Beliebige Taste zum Fortsetzen drücken..."
 
-#: /var/centauri/library/_centauri_bash_lib:460
+#: /var/centauri/library/_centauri_bash_lib:465
 msgid "by user"
 msgstr "durch Benutzer"
 
-#: /var/centauri/library/_centauri_bash_lib:461
+#: /var/centauri/library/_centauri_bash_lib:466
 msgid "by signal"
 msgstr "durch Signal"
 
-#: /var/centauri/library/_centauri_bash_lib:472
-msgid "Missing argument"
-msgstr "Fehlendes Argument"
-
-#: /var/centauri/library/_centauri_bash_lib:473
-msgid "Missing option"
-msgstr "Fehlende Option"
-
-#: /var/centauri/library/_centauri_bash_lib:474
+#: /var/centauri/library/_centauri_bash_lib:477
 msgid "Invalid argument"
 msgstr "Ungültiges Argument"
 
-#: /var/centauri/library/_centauri_bash_lib:490
+#: /var/centauri/library/_centauri_bash_lib:478
+msgid "Missing argument"
+msgstr "Fehlendes Argument"
+
+#: /var/centauri/library/_centauri_bash_lib:494
 msgid "%s: %s() returned non-zero status"
 msgstr "%s: %s() hat einen Fehlerstatus zurückgeben"
 
-#: /var/centauri/library/_centauri_bash_lib:492
+#: /var/centauri/library/_centauri_bash_lib:496
 msgid "%s: Line #%s in %s()"
 msgstr "%s: Zeile #%s in %s()"
 
-#: /var/centauri/library/_centauri_bash_lib:494
-#: /var/centauri/library/_centauri_bash_lib:504
+#: /var/centauri/library/_centauri_bash_lib:498
+#: /var/centauri/library/_centauri_bash_lib:508
 msgid "***ABORT***"
 msgstr "***ABBRUCH***"
 
-#: /var/centauri/library/_centauri_bash_lib:497
+#: /var/centauri/library/_centauri_bash_lib:501
 msgid "Function call stack..."
 msgstr "Stapel der Funktionsaufrufe..."
 
-#: /var/centauri/library/_centauri_bash_lib:516
+#: /var/centauri/library/_centauri_bash_lib:520
 msgid " ***ERROR***"
 msgstr " ***FEHLER***"
 
-#: /var/centauri/library/_centauri_bash_lib:517
+#: /var/centauri/library/_centauri_bash_lib:521
 msgid " ***FATAL ERROR***"
 msgstr " ***FATALER FEHLER***"
 
-#: /var/centauri/library/_centauri_bash_lib:525
-#: /var/centauri/library/_centauri_bash_lib:861
+#: /var/centauri/library/_centauri_bash_lib:529
+#: /var/centauri/library/_centauri_bash_lib:865
 msgid " ***WARNING***"
 msgstr " ***WARNUNG***"
 
-#: /var/centauri/library/_centauri_bash_lib:610
 #: /var/centauri/library/_centauri_bash_lib:614
+#: /var/centauri/library/_centauri_bash_lib:618
 msgid "Script"
 msgstr "Skript"
 
-#: /var/centauri/library/_centauri_bash_lib:610
 #: /var/centauri/library/_centauri_bash_lib:614
+#: /var/centauri/library/_centauri_bash_lib:618
 msgid "Module"
 msgstr "Modul"
 
-#: /var/centauri/library/_centauri_bash_lib:611
+#: /var/centauri/library/_centauri_bash_lib:615
 msgid "%s '%s' API version to high (got %s max %s)"
 msgstr "%s '%s' API Version zu hoch (habe %s max %s)"
 
-#: /var/centauri/library/_centauri_bash_lib:615
+#: /var/centauri/library/_centauri_bash_lib:619
 msgid "%s '%s' API version to low (got %s min %s)"
 msgstr "%s '%s' API Version zu niedrig (habe %s max %s)"
 
-#: /var/centauri/library/_centauri_bash_lib:658
+#: /var/centauri/library/_centauri_bash_lib:662
 msgid "not enough arguments, (minimum $_amin) got $_acnt"
 msgstr "Nicht genug Argumente, (Minimum $_amin) habe $_acnt"
 
-#: /var/centauri/library/_centauri_bash_lib:660
+#: /var/centauri/library/_centauri_bash_lib:664
 msgid "takes one argument, got none"
 msgstr "Brauche ein Argument, habe keines"
 
-#: /var/centauri/library/_centauri_bash_lib:663
+#: /var/centauri/library/_centauri_bash_lib:667
 msgid "takes $_amin arguments, got $_acnt"
 msgstr "Brauche $_amin Argumente, habe $_acnt"
 
-#: /var/centauri/library/_centauri_bash_lib:664
+#: /var/centauri/library/_centauri_bash_lib:668
 msgid "no arguments permitted, got $_acnt"
 msgstr "Keine Argumente erlaubt, habe $_acnt"
 
-#: /var/centauri/library/_centauri_bash_lib:665
+#: /var/centauri/library/_centauri_bash_lib:669
 msgid "takes one argument, got $_acnt"
 msgstr "Brauche ein Argument, habe $_acnt"
 
-#: /var/centauri/library/_centauri_bash_lib:669
+#: /var/centauri/library/_centauri_bash_lib:673
 msgid "too many arguments, (maximum $_amax) got $_acnt"
 msgstr "Zu viele Argumente, (Maximum $_amax) habe $_acnt"
 
-#: /var/centauri/library/_centauri_bash_lib:678
+#: /var/centauri/library/_centauri_bash_lib:682
 msgid "Action"
 msgstr "Aktion"
 
-#: /var/centauri/library/_centauri_bash_lib:765
+#: /var/centauri/library/_centauri_bash_lib:769
 msgid " [y/N/q]? "
 msgstr " [j/N/b]? "
 
-#: /var/centauri/library/_centauri_bash_lib:765
+#: /var/centauri/library/_centauri_bash_lib:769
 msgid "yes no quit"
 msgstr "ja nein beenden"
 
-#: /var/centauri/library/_centauri_bash_lib:780
+#: /var/centauri/library/_centauri_bash_lib:784
 msgid " [y/N/c]? "
 msgstr " [j/N/a}? "
 
-#: /var/centauri/library/_centauri_bash_lib:781
+#: /var/centauri/library/_centauri_bash_lib:785
 msgid "yes no cancel"
 msgstr "ja nein abbrechen"
 
-#: /var/centauri/library/_centauri_bash_lib:789
-#: /var/centauri/library/_centauri_bash_lib:792
+#: /var/centauri/library/_centauri_bash_lib:793
+#: /var/centauri/library/_centauri_bash_lib:796
 msgid "no"
 msgstr "nein"
 
-#: /var/centauri/library/_centauri_bash_lib:790
+#: /var/centauri/library/_centauri_bash_lib:794
 msgid "yes no"
 msgstr "ja nein"
 
-#: /var/centauri/library/_centauri_bash_lib:792
+#: /var/centauri/library/_centauri_bash_lib:796
 msgid " [y/N]? "
 msgstr " [j/N]? "
 
-#: /var/centauri/library/_centauri_bash_lib:792
+#: /var/centauri/library/_centauri_bash_lib:796
 msgid " [Y/n]? "
 msgstr "J/n"
 
-#: /var/centauri/library/_centauri_bash_lib:848
+#: /var/centauri/library/_centauri_bash_lib:852
 msgid "***INVALID INPUT***"
 msgstr "***FALSCHE EINGABE***"
 
-#: /var/centauri/library/_centauri_bash_lib:848
+#: /var/centauri/library/_centauri_bash_lib:852
 msgid "Please try one of:"
 msgstr "Mögliche Eingaben sind:"
 
-#: /var/centauri/library/_centauri_bash_lib:1010
+#: /var/centauri/library/_centauri_bash_lib:1013
 msgid "error trap"
 msgstr "Fehlersignal"
 
-#: /var/centauri/library/_centauri_bash_lib:1022
-#: /var/centauri/library/_centauri_bash_lib:2271
+#: /var/centauri/library/_centauri_bash_lib:1025
+#: /var/centauri/library/_centauri_bash_lib:2266
 msgid "command '%s' not found"
 msgstr "Programm '%s' nicht gefunden"
 
-#: /var/centauri/library/_centauri_bash_lib:1097
+#: /var/centauri/library/_centauri_bash_lib:1092
 msgid "You must be root to run this program"
 msgstr "Sie brauchen 'root' Rechte zur Programmausführung"
 
-#: /var/centauri/library/_centauri_bash_lib:1190
+#: /var/centauri/library/_centauri_bash_lib:1185
 msgid "file"
 msgstr "Datei"
 
-#: /var/centauri/library/_centauri_bash_lib:1197
+#: /var/centauri/library/_centauri_bash_lib:1192
 msgid "folder"
 msgstr "Verzeichnis"
 
-#: /var/centauri/library/_centauri_bash_lib:1220
-#: /var/centauri/library/_centauri_bash_lib:1221
+#: /var/centauri/library/_centauri_bash_lib:1215
+#: /var/centauri/library/_centauri_bash_lib:1216
 msgid "Create"
 msgstr "Erstelle"
 
-#: /var/centauri/library/_centauri_bash_lib:1250
+#: /var/centauri/library/_centauri_bash_lib:1245
 msgid "Cannot create %s: %s"
 msgstr "Kann %s nicht erstellen: %s"
 
-#: /var/centauri/library/_centauri_bash_lib:1253
+#: /var/centauri/library/_centauri_bash_lib:1248
 msgid "Cannot change owner:"
 msgstr "Kann Eigentümer nicht ändern:"
 
-#: /var/centauri/library/_centauri_bash_lib:1304
+#: /var/centauri/library/_centauri_bash_lib:1299
 msgid "dryrun "
 msgstr "auslassen"
 
-#: /var/centauri/library/_centauri_bash_lib:1321
+#: /var/centauri/library/_centauri_bash_lib:1316
 msgid "running"
 msgstr "ausführen"
 
-#: /var/centauri/library/_centauri_bash_lib:1446
+#: /var/centauri/library/_centauri_bash_lib:1441
 msgid "Loading module:"
 msgstr "Lade Modul:"
 
-#: /var/centauri/library/_centauri_bash_lib:1458
+#: /var/centauri/library/_centauri_bash_lib:1453
 msgid "Failed to load module:"
 msgstr "Laden des Moduls fehlgeschlagen:"
 
-#: /var/centauri/library/_centauri_bash_lib:1460
+#: /var/centauri/library/_centauri_bash_lib:1455
 msgid "file not found:"
 msgstr "Datei nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_lib:1673
+#: /var/centauri/library/_centauri_bash_lib:1668
 msgid "Not a folder:"
 msgstr "Ist kein Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_lib:1686
+#: /var/centauri/library/_centauri_bash_lib:1681
 msgid "Cannot use folder:"
 msgstr "Verzeichnis nicht verwendbar:"
 
-#: /var/centauri/library/_centauri_bash_lib:1690
+#: /var/centauri/library/_centauri_bash_lib:1685
 msgid "folder :"
 msgstr "Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_lib:1779
+#: /var/centauri/library/_centauri_bash_lib:1774
 msgid "Action '%s': "
 msgstr "Aktion '%s': "
 
-#: /var/centauri/library/_centauri_bash_lib:1801
+#: /var/centauri/library/_centauri_bash_lib:1796
 msgid "Not yet implemented:"
 msgstr "Noch nicht implementiert:"
 
-#: /var/centauri/library/_centauri_bash_lib:1861
+#: /var/centauri/library/_centauri_bash_lib:1856
 msgid "Undefined function:"
 msgstr "Undefinierte Funktion:"
 
-#: /var/centauri/library/_centauri_bash_lib:1962
+#: /var/centauri/library/_centauri_bash_lib:1933
+msgid "Missing argument(s)"
+msgstr "Fehlende Argumente"
+
+#: /var/centauri/library/_centauri_bash_lib:1957
 msgid "no argument allowed"
 msgstr "Kein Argumentwert erlaubt"
 
-#: /var/centauri/library/_centauri_bash_lib:1974
+#: /var/centauri/library/_centauri_bash_lib:1969
 msgid "mutually exclusive options:"
 msgstr "Sich ausschliessende Optionen:"
 
-#: /var/centauri/library/_centauri_bash_lib:1977
+#: /var/centauri/library/_centauri_bash_lib:1972
 msgid "must have a numeric value"
 msgstr "Numerischer Wert erwartet"
 
-#: /var/centauri/library/_centauri_bash_lib:1983
+#: /var/centauri/library/_centauri_bash_lib:1978
 msgid "value must be 'off|on|auto' or '0|1|2'"
 msgstr "Wert muss 'off|on|auto' oder '0|1|2' sein"
 
-#: /var/centauri/library/_centauri_bash_lib:1987
+#: /var/centauri/library/_centauri_bash_lib:1982
 msgid "has an invalid value"
 msgstr "Ungültiger Argumentwert"
 
-#: /var/centauri/library/_centauri_bash_lib:1995
+#: /var/centauri/library/_centauri_bash_lib:1990
 msgid "must have a value"
 msgstr "Argumentwert fehlt"
 
-#: /var/centauri/library/_centauri_bash_lib:2276
+#: /var/centauri/library/_centauri_bash_lib:2271
 msgid "found no applicable command:"
 msgstr "Kein passendes Programm gefunden:"
 
-#: /var/centauri/library/_centauri_bash_lib:2490
-#: /var/centauri/library/_centauri_bash_lib:2493
+#: /var/centauri/library/_centauri_bash_lib:2476
+#: /var/centauri/library/_centauri_bash_lib:2479
 msgid "Running '%s' failed with status %s"
 msgstr "Ausführen von '%s' mit Status %s fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_lib:2509
+#: /var/centauri/library/_centauri_bash_lib:2495
 msgid "No free file handle"
 msgstr "Keine freie Dateizugriffsnummer"
 
-#: /var/centauri/library/_centauri_bash_lib:2620
+#: /var/centauri/library/_centauri_bash_lib:2606
 msgid "Unknown option '%s', try '%q --help'"
 msgstr "Unbekannte Option '%s', siehe '%q --help'"
 
-#: /var/centauri/library/_centauri_bash_lib:2663
+#: /var/centauri/library/_centauri_bash_lib:2649
 msgid "Don't know what to do, try '%q --help'"
 msgstr "Weiss nicht was zu tun ist, siehe '%q --help'"
 
-#: /var/centauri/library/_centauri_bash_lib:2690
+#: /var/centauri/library/_centauri_bash_lib:2676
 msgid "Unknown action '%s', try '%q --help'"
 msgstr "Unbekannte Aktion '%s', siehe '%q --help'"
 
-#: /var/centauri/library/_centauri_bash_lib:2694
+#: /var/centauri/library/_centauri_bash_lib:2680
 msgid "Previous error: Not all actions were run"
 msgstr "Vorhergehender Fehler: Nicht alle Aktionen ausgeführt"
-
-#~ msgid "Missing argument(s)"
-#~ msgstr "Fehlende Argumente"
 
 #~ msgid "Unknown option '%s', try '%s'"
 #~ msgstr "Unbekannte Option '%s', siehe '%s'"

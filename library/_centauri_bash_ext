@@ -1236,76 +1236,6 @@ resolve() {
 }
 
 # ------------------------------------------------------------------------------
-# splitcall - run commands or funtions splitting long arguments lists
-#
-# Call:     splitcall -c|-s <what> [-e|-f|-q] [-p] [-r]
-#           °         <>           [-a <para>] [-m <maxi>] [-d <deli>] -i <data>
-#           splitcall -c|-s <what> [-e|-f|-q] [-r]
-#           °         <>           [-a <para>] [-m <maxi>] [-p] [-d <deli>] -- <arg>...
-#
-#           ***not yet implented***
-#
-# Options:  -a  parameter array, see below
-#           -c  call a script function
-#           -d  delimiter passed to [[splitjoin()]]
-#           -e  add option -e (report errors)
-#           -f  add option -f (make errors fatal)
-#           -i  input variable name (can be an array)
-#           -m  maximum chunk size or parallel processes
-#           -p  parallel processing, see below
-#           -q  add option -q (no messages)
-#           -r  add option -r (ignore --dryrun)
-#           -s  use [[sysrun()]] to run a (external) command
-#
-# Arguments:<arg>   list of fields that get added to <data>
-#           <data>  list to be split into chunks
-#           <func>  a function to be invoked for chunks of <data>
-#           <para>  parameters passed to <func>, can be string or array, '@'
-#           °       stands for a chunk of <data>. If no '@' field is passed,
-#           °       it automatically gets appended to <para>.
-#           <maxi>  maximum chunk size (default: -c uses 100, -p uses number of cpus)
-#           <deli>  field delimiter if <data> is a string, not used for array
-#
-#.Examples: # call function: symlink -e -r -- "$@" "dest-folder"
-#.          local para("--" "@" "$dest-folder")
-#.          splitcall -c symlink -e -r -m 1024 -a para -- "$@"
-#
-#.          # run a program: sysrun -e -p -r -- mytool --option "$1" "dest"
-#.          local para("--option" "@" "$dest")
-#.          local arga("tick" "tack" "tock")
-#.          splitcall -s "mytool" -e -r -m 1 -a para -i arga
-#
-#.          # parallel processes: sysrun -- worker "$1"
-#.          splitcall -p -s "worker" -- '1.dat' '2.dat' '3.dat'
-#
-#.          # parallel subshells: wrapper -e -r -- "$1"
-#.          splitcall -p -c "wrapper" -e -r -- '1.dat' '2.dat' '3.dat'
-# ------------------------------------------------------------------------------
-splitcall() {
-    local _oerr _vnam _call _deli _fdry _ivar _maxi _ppar _srun
-    while [ "${1::1}" = "-" ] ; do
-      case "$1" in
-      --)   shift ; break ;;
-      -a)   shift ; _vnam="$1" ;;
-      -c)   shift ; _call="$1" ;;
-      -d)   shift ; _deli="$1" ;;
-      -e)   _oerr='-e' ;;
-      -f)   _oerr='-f' ;;
-      -i)   shift ; _ivar="$1" ;;
-      -m)   shift ; _maxi="$1" ;;
-      -p)   _ppar=1 ;;
-      -q)   _oerr='-q' ;;
-      -r)   _fdry='-r' ;;
-      -s)   shift ; _srun="$1" ;;
-      *)    _cen_abort - "$1"
-      esac ; shift
-    done
-    [ -z "$_call" -a -z "$_srun" ] && _cen_abort = '-c|-s'
-    [ -n "$1" ] && _cen_abort - "$1"
-    fatal -t "Not yet implented"
-}
-
-# ------------------------------------------------------------------------------
 # splitpath - Split path name into components
 #
 # Call:     splitpath -a <rslt> [-e] [-f] [-g|-p] [-w] <path>
@@ -1373,7 +1303,7 @@ splitpath() {
       *)    _cen_abort - "$1"
       esac ; shift
     done
-    [ -z "$_vset" ] && _cen_abort = '-a'        # missing option
+    [ -z "$_vset" ] && _cen_abort $"Missing option" '-a'
     _path="${1:-.}" ; [ "$_path" = '.' ] && _path="$PWD"
 
     # remove trailing or leading slash, prettify
@@ -2036,7 +1966,10 @@ tmpfile() {
     # create folder / file
 
     if [ -z "$CEN_EXT_TEMP" ] ; then                    # create folder, set hook
-        context -h _cen_ext_quit CEN_EXT_QUIT
+        if [ -z "$CEN_EXT_QUIT" ] ; then
+            CEN_EXT_QUIT="$CEN_HOOK_QUIT"
+            CEN_HOOK_QUIT=_cen_ext_quit
+        fi
         CEN_EXT_TEMP="$_base"
     fi
     [ -n "$_onoc" -a -z "$_snam" ] && return 0          # init only
