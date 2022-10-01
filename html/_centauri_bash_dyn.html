@@ -19,7 +19,7 @@
 </div>
 <div class='def-row'>
 <div class='def-label'>Remark:</div>
-<div class='def-block'>This module is created by the <b>autoload</b> utility at installation time. It contains proxy function definitions to dynamically load modules.</div>
+<div class='def-block'>This module is created by the <b>autoload</b> utility at installation time. It contains proxy function definitions to dynamically load modules and to enable loadable bash builtins.</div>
 </div>
 </section>
 <section id='section-2'>
@@ -49,7 +49,7 @@
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
-<div class='def-block'>At load time options can be passed to a module. This either happens implicitly (method 2) or explicitly (method 3). See <a href="_centauri_bash_lib.html#embed">embed()</a>. The available options are documented in the description of each module.</div>
+<div class='def-block'>At load time options can be passed to a module. This either happens implicitly (method 2) or explicitly (method 4). See <a href="_centauri_bash_lib.html#embed">embed()</a>. The available options are documented in the description of each module.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Limits:</div>
@@ -80,12 +80,12 @@
 </div>
 <div class='def-row'>
 <div class='def-label'>Setup:</div>
-<div class='def-block'>The <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> module, that handles autoload, it is generated using the program <b>autoload</b>. Usually called as (see help for <a href="#builtin">builtin</a>):</div>
+<div class='def-block'>The <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> module, that handles autoload, is generated using the program <b>autoload</b>. Usually called as (see help for <a href="#builtin">builtin</a>):</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>&gt; <b>$CEN_ROOT/library/autoload --builtin -</b></div>
+<div class='def-text'>&gt; <b>$CEN_ROOT/library/autoload --builtin</b></div>
 </div>
 </section>
 <section id='section-3'>
@@ -93,7 +93,7 @@
 <span>Topic</span><span> - </span><span>Builtin</span><span> - </span><span>Using loadable bash builtins</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
-<div class='def-block'>The library tries to avoid calls to exernal (e.g. non-bash) tools whenever possible. Bash has a lot of builtins, see <b>&quot;help enable&quot;</b>. For your linux distribution some extra builtins (bash examples) may be provided (on a debian system use <b>&quot;apt install bash-builtins&quot;</b>). The library will use installed builtins for <b>mkdir</b>, <b>rmdir</b>, <b>unlink</b> and <b>ln</b> to speed-up filesystem operations. The builtin for <b>sleep</b> is also supported.</div>
+<div class='def-block'>The library tries to avoid calls to external (e.g. non-builtin) tools whenever possible. Bash has a lot of builtins, see <b>&quot;help enable&quot;</b>. For your linux distribution some extra builtins (bash examples) may be provided (on a debian system use <b>&quot;apt install bash-builtins&quot;</b>). The library will use installed builtins for <b>mkdir</b>, <b>rmdir</b>, <b>rm</b>, <b>ln</b>, <b>unlink</b>, <b>mkfifo</b>,  <b>sleep</b> and <b>realpath</b>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -102,20 +102,21 @@
 </div>
 <div class='def-row'>
 <div class='def-label'>Warnings:</div>
-<div class='def-block'>(1) The builtins comming with debian have reduced functionality in comparison to GNU tools. <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> is aware of this and uses builtins in a safe way. User scripts might want to prefix the tool&apos;s name with a path to prevent unsafe builtin usage:</div>
+<div class='def-block'>(1) The builtins comming with bash have less functionality than the corresponding GNU tools. <a href="_centauri_bash_ext.html">_centauri_bash_ext</a> is aware of this and uses builtins in a safe way.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><pre># debian&apos;s builtin &apos;ln&apos; does not support option &apos;<b>-r</b>&apos;:
-/usr/bin/ln <b>-s</b> <b>-r</b> something unsafe      # or better ...
-system <b>--</b> $<b>CEN_COREBIN</b>/ln <b>-s</b> <b>-r</b> something nice
-sysrun <b>--</b> $<b>CEN_COREBIN</b>/ln <b>-s</b> <b>-r</b> something nice</pre></div>
+<div class='def-text'><pre># For example builtin &apos;ln&apos; does not support option &apos;<b>-r</b>&apos;
+                    # per default system does not use builtins ...
+system <b>--</b> ln <b>-s</b> <b>-r</b> something unsafe
+                    # but sysrun needs option -i ...
+sysrun <b>-i</b> <b>--</b> ln <b>-s</b> <b>-r</b> something unsafe</pre></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>(2) Builtins are only enabled if <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> is loaded.</div>
+<div class='def-block'>(2) Builtins are only loaded if <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> is enabled via <b>CEN_FEATURE_A</b> (library option <b>-a</b>).</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -126,7 +127,7 @@ PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>-a</b> <b>-d</b> <b>-r
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>(3) Builtins are best used via <a href="_centauri_bash_ext.html#sysrun">sysrun()</a> or by the library code itself. <a href="_centauri_bash_lib.html#system">system()</a> does not even run the extra builtins without option <b>&quot;-n&quot;</b>. This is due to use of the <b>&quot;$(&lt;cmd&gt; &lt;arg&gt;...)&quot;</b> construct in order to capture output or error messages. In this case bash forks a subshell which consumes time. To capture output the <a href="_centauri_bash_ext.html#sysrun">sysrun()</a> function uses a temporary file instead.</div>
+<div class='def-block'>(3) Builtins are best used via <a href="_centauri_bash_ext.html#sysrun">sysrun()</a> or by the library code itself, for example <a href="_centauri_bash_ext.html#move">move()</a>, <a href="_centauri_bash_ext.html#remove">remove()</a> or <a href="_centauri_bash_ext.html#symlink">symlink()</a>.</div>
 </div>
 </section>
 <section id='section-4'>

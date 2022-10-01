@@ -19,14 +19,15 @@
 </div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
-<div class='def-block'>The module implements three functions that use pipes (fifo) or the bash coproc command:</div>
+<div class='def-block'>The module implements four functions that use pipes (fifos) or the bash coproc command:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-text'>  • <a href="#sysbind">sysbind()</a>  - bind two pipes to a server process, simple RPC calls
   • <a href="#syspager">syspager()</a> - pipe a command&apos;s output through a pager (like less)
-  • <a href="#syspipe">syspipe()</a>  - run a command in background using coproc or a pipe</div>
+  • <a href="#syspipe">syspipe()</a>  - run a command in background using coproc or a pipe
+  • <a href="#sysloop">sysloop()</a>  - implements an event loop using a pipe</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remark:</div>
@@ -39,12 +40,12 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The library supports a pager via the <a href="_centauri_bash_pip.html">_centauri_bash_pip</a> module. If this module is available at script start time, the option <b>--pager</b> gets enabled automatically and all output from <a href="_centauri_bash_dbg.html#runuser">run()</a> or action handlers can be passed through a pager this way.</div>
+<div class='def-block'>The library supports a pager via the <a href="_centauri_bash_pip.html">_centauri_bash_pip</a> module. If this module is available at script start time, the option <b>--pager</b> gets enabled automatically and all output from <a href="_centauri_bash_dbg.html#runuser">run()</a>, action handlers or <a href="_centauri_bash_use.html#usageuser">usage()</a> can be passed through a pager this way.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The easiest method for paging output programmatically (and thereby honoring the <b>--pager</b> option) is using the <b>CEN_PAGER</b> variable. On request the option parser in <a href="_centauri_bash_lib.html#main">main()</a> will load <a href="_centauri_bash_pip.html">_centauri_bash_pip</a> and call <a href="#syspipe">syspipe()</a>:</div>
+<div class='def-block'>The easiest method for paging output programmatically (and thereby honoring the <b>--pager</b> option) is using the <b>CEN_PAGER</b> variable. On request the option parser in <a href="_centauri_bash_lib.html#main">main()</a> will load <a href="_centauri_bash_pip.html">_centauri_bash_pip</a> and call <a href="#syspipe">syspipe()</a>. The <a href="#syspipe">syspipe()</a> call will set <b>&quot;CEN_PAGER=syspipe&quot;</b> if paging is enabled, or clear <b>CEN_PAGER</b> if paging is off:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -54,7 +55,7 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The <a href="#syspipe">syspipe()</a> call will set <b>&quot;CEN_PAGER=syspipe&quot;</b> if paging is enabled, or clear <b>CEN_PAGER</b> if paging is off. To enable paging when <b>--pager</b> is not set, use the following code:</div>
+<div class='def-block'>The library functions <a href="_centauri_bash_lib.html#main">main()</a> and <a href="_centauri_bash_use.html#usageuser">usage()</a> use $<b>CEN_PAGER</b> internally to pass their output to a pager. To enable paging without <b>--pager</b> being set, use the following code:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -78,9 +79,19 @@ $<b>CEN_PAGER</b> &lt;worker&gt; &lt;arg&gt;...</pre></div>
 <span>Function</span><span> - </span><span>sysbind</span><span> - </span><span>bind two pipes to an external server process, simple RPC calls</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>sysbind</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b> <i>inst</i>] <b>-s</b> [<b>-d</b> <i>data</i>] [<b>--</b>] <i>serv</i> <i>arg</i>...
-<b>sysbind</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b> <i>inst</i>] <b>-c</b> [<i>name</i>|<b>-</b>] [<b>-a</b> <i>rslt</i>] [<b>-d</b> <i>data</i> | [<b>--</b>] <i>arg</i>...]
-<b>sysbind</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b> <i>inst</i>] <b>-t</b></div>
+<div class='def-text'>(1) <b>sysbind</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b> <i>inst</i>] <b>-s</b> [<b>-d</b> <i>data</i>] [<b>--</b>] <i>serv</i> <i>arg</i>...
+(2) <b>sysbind</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b> <i>inst</i>] <b>-c</b> [<i>name</i>|<b>-</b>] [<b>-a</b> <i>rslt</i>] [<b>-d</b> <i>data</i> | [<b>--</b>] <i>arg</i>...]
+(3) <b>sysbind</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b> <i>inst</i>] <b>-t</b></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>*<b> NOT YET IMPLEMENTED *</b></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (1) starts one server process per instance, see <i>inst</i>. The server <b>/dev/stdin</b> and <b>/dev/stdout</b> are connected via pipes to this <b>sysbind</b> instance. Form (2) does a simple RPC call and (3) terminates the server and closes the instance.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -90,7 +101,7 @@ $<b>CEN_PAGER</b> &lt;worker&gt; &lt;arg&gt;...</pre></div>
 <b>-d</b>  send data to server
 <b>-e</b>  report errors
 <b>-f</b>  errors are fatal
-<b>-s</b>  open pipes (start server)
+<b>-s</b>  open pipes (start server process)
 <b>-t</b>  close pipes (terminate server)</div>
 </div>
 <div class='def-row'>
@@ -100,8 +111,12 @@ $<b>CEN_PAGER</b> &lt;worker&gt; &lt;arg&gt;...</pre></div>
 <i>rslt</i>  array to receive server reply</div>
 </div>
 <div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
 <div class='def-label'>Instance:</div>
-<div class='def-text'>An array managed by this function, not to be modified by caller</div>
+<div class='def-block'>An array managed by this function, not to be modified by caller</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -113,13 +128,19 @@ $<b>CEN_PAGER</b> &lt;worker&gt; &lt;arg&gt;...</pre></div>
   inst[4]     receive fifo name (if any)
   ...         opaque data for internal use</div>
 </div>
+<div class='def-break'></div>
 <div class='def-row'>
-<div class='def-label'>Return:</div>
-<div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+<div class='def-empty'></div>
+<div class='def-block'>Using multiple instace arrays allow the use of multiple, independent servers.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
-<div class='def-block'>The RPC protocol should be text-line based (server replies are split into lines, delimiter is <b>&quot;\n&quot;</b>). The server must only send data in reply to a request. On each request a reply must be send. Server replies must end with a <b>&quot;\n&quot;</b>.</div>
+<div class='def-label'>Protocol:</div>
+<div class='def-block'>The RPC protocol should be text-line based (server replies are split into lines, delimiter is <b>&quot;\n&quot;</b>). The server must only send data in reply to a request. On each request a reply must be sent. Server replies must end with a <b>&quot;\n&quot;</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>To terminate a server instance, option <b>-t</b> sends a SIGHUP signal before closing the pipes. On the client side syspipe registers a quit hook that terminates all servers via SIGHUP.</div>
 </div>
 </section>
 <section id='section-4'>
@@ -229,11 +250,6 @@ DESTINATION := <b>-d</b> <i>consumer</i> | <b>-a</b> <i>array</i> | <b>-s</b> <i
 <div class='def-label'>Fifo:</div>
 <div class='def-block'>A temporary fifo is created via <a href="_centauri_bash_ext.html#tmpfile">tmpfile()</a> and the co-process gets its input from a <i>producer</i> (or sends its output to a <i>consumer</i>) via this fifo. With a <i>producer</i> / <i>consumer</i> pair a temporary file will be used to capture <i>cmd</i> output, and the <i>consumer</i> reads input from this file.</div>
 </div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-block'>Fifos can be used in a sub-shell only if <a href="_centauri_bash_ext.html#tmpfile">tmpfile()</a> was initialized by the main process.</div>
-</div>
 <div class='def-row'>
 <div class='def-label'>Errors:</div>
 <div class='def-block'>Error handling in co-processes is challenging. If error handling is not disabled via <b>&quot;-e -&quot;</b> then <b>syspipe</b> registers and clears a handler for SIGPIPE. Because of this and the bash restrictions on <b>coproc</b>, this function cannot (or should not) be invoked recursively.</div>
@@ -258,7 +274,7 @@ DESTINATION := <b>-d</b> <i>consumer</i> | <b>-a</b> <i>array</i> | <b>-s</b> <i
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
 <div class='def-text'>(1) fifo: send data through a pager<pre>producer() {
-    for ((i=0 ; i&lt;100i0; i++)) ; do
+    for ((i=0 ; i&lt;100; i++)) ; do
        [ <b>-z</b> <b>&quot;$CEN_SYSPIPE&quot;</b> ] &amp;&amp; break   # stop after SIGPIPE error
        echo <b>&quot;Hello $i&quot;</b>
     done 2&gt;/dev/null                    # hide SIGPIPE error message
@@ -288,17 +304,123 @@ local farg=<b>&quot;/etc/fstab&quot;</b>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remarks:</div>
-<div class='def-block'>The implementation allows nested calles to coproc from sub-shells and calls involving pipes from the master shell (otherwise pipes would not be removed on termination). If these conditions are not met, the script is aborted.</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
 <div class='def-block'>Variable <b>CEN_SYSPIPE</b> contains the pipe handle(s). The variable can also serve as a condition for the <i>producer</i> to stop (the error handler clears SIGPIPE).</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-block'>It might alse be a good idea to run <b>&quot;context -t +&quot;</b> to catch keyboard interrupts. Especially for any <i>cmd</i> that executes for long time or creates a lot of output.</div>
+</div>
+</section>
+<section id='section-6'>
+<div id='sysloop' class='item-function'>
+<span>Function</span><span> - </span><span>sysloop</span><span> - </span><span>implements an event loop using a pipe</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>sysloop</b> [<b>-e</b>|<b>-f</b>] [<b>-c</b> <i>evnt</i>] [<b>-p</b> <i>pipe</i>]
+(2) <b>sysloop</b> [<b>-e</b>|<b>-f</b>] [<b>-c</b> <i>evnt</i>] <b>-t</b> <i>time</i> [<b>-p</b> <i>pipe</i>] [<b>--</b>] [<i>tick</i>]
+(3) <b>sysloop</b> [<b>-e</b>|<b>-f</b>] <b>-m</b> [<b>-p</b> <i>pipe</i>] [<b>--</b>] <i>mesg</i>...
+(4) <b>sysloop</b> [<b>-e</b>|<b>-f</b>] <b>-q</b> [<b>-p</b> <i>pipe</i>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Form (1) creates a pipe and runs a reader loop and (2) aditionally starts a ticker (heartbeat) process. Form (3) sends a message and (4) terminates loop and ticker.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-c</b>      [*] a script function to process events
+<b>-e</b>      report failures as error messages
+<b>-f</b>      make errors fatal
+<b>-m</b>      [*] send a message
+<b>-p</b>      path of a fifo used as pipe (default: <b>CEN_SYSLOOP</b>[0])
+<b>-q</b>      [*] send quit message to terminate the read loop
+<b>-t</b>      start a heartbeat process (ticker)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>        [*] These options are mutually exclusive</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>evnt</i>      event handler function
+<i>mesg</i>      text to be sent (&lt;CR&gt; chars changed to &lt;TAB&gt;)
+<i>pipe</i>      path of fifo to be used. Created if needed
+<i>time</i>      heartbeat interval in [s]
+<i>tick</i>      heartbeat message (default is &apos;TICK&apos;)</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-block'><b>0</b> at success or <b>1</b> for error. A result code &gt;= <b>2</b> is an error stop caused by the event handler that returned this code.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Each main process can only run one <b>sysloop</b> instance. The state is kept in:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • <b>CEN_SYSLOOP</b>[0]    path of fifo
+  • <b>CEN_SYSLOOP</b>[1]    event handler function
+  • <b>CEN_SYSLOOP</b>[2]    pid of ticker</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (1) and (2) will create a fifo as needed, without <i>pipe</i> a temporary fifo path is used (see <a href="_centauri_bash_ext.html#tmpfile">tmpfile()</a>). Once opened the fifo path is saved in <b>CEN_SYSLOOP</b>[0]. The <b>sysloop</b> function will never delete the file nor will <b>CEN_SYSLOOP</b>[0] be unset. When option <b>-c</b> is used, <b>sysloop</b> will not return before the event handler returns a status other than <b>0</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Option <b>-c</b> registers the event handler an enters a read loop. The loop stops when a quit message is received, see option <b>-q</b>. Stopping the event loop also kills the ticker via <b>CEN_SYSLOOP</b>[2], clears <b>CEN_SYSLOOP</b>[1] and clears <b>CEN_SYSLOOP</b>[2].</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Before starting a ticker, a quit hook is registered to make sure that the ticker sub-shell gets terminated on <a href="_centauri_bash_lib.html#quit">quit()</a>. For the lifetime of the ticker a trap handler is registered, see <a href="_centauri_bash_lib.html#context">context()</a> options <b>-t +</b> and  <b>-t -</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Events:</div>
+<div class='def-block'>The event handler function is called with 2 or more arguments:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  $1      PID of the sender
+  $2      1st <i>mesg</i> argument from sender
+  ...     more <i>mesg</i> arguments from sender</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A return code of 1 will terminate the event loop (without error). Return codes &gt;= 2 indicate error termination.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Example:</div>
+<div class='def-text'><pre># event handler function
+msgproc() {
+    local pid=<b>&quot;$1&quot;</b> ; shift
+    message <b>-p</b> <b>&quot;Got %s arguments from PID=%s&quot;</b> $# <b>&quot;$pid&quot;</b>
+    return 0            # 0: continue  1: quit  2: error
+}
+
+# start event loop and a heartbeat process
+<b>sysloop</b> <b>-e</b> <b>-c</b> msgproc <b>-t</b> 5 <b>--</b> &apos;tick&apos; || return
+quit <b>&quot;success&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># some other process may send events
+<b>sysloop</b> <b>-e</b> <b>-m</b> <b>-p</b> <b>&quot;$pipe&quot;</b> <b>--</b> &apos;hello world&apos;
+<b>sysloop</b> <b>-e</b> <b>-m</b> <b>-q</b> <b>&quot;$pipe&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># it is possible to start/stop the ticker independently
+<b>sysloop</b> <b>-f</b> <b>-t</b> 5 <b>-p</b> &quot;$pipe<b>&quot; -s &quot;</b>$
+kill <b>&quot;${CEN_SYSLOOP[2]}&quot;</b></pre></div>
 </div>
 </section>
 </article>

@@ -209,7 +209,7 @@
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#prettypath'>prettypath</a></td>
 <td>Function</td>
-<td>Get pretty path for file or folder</td>
+<td>Get pretty/canonical/real path of a file or folder</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#redirect'>redirect</a></td>
 <td>Function</td>
@@ -217,7 +217,7 @@
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#remove'>remove</a></td>
 <td>Function</td>
-<td>Remove files or folders using /usr/bin/ ... unlink, rm, rmdir</td>
+<td>Remove files or folders using rm, rmdir coreutil or builtin</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#rename'>rename</a></td>
 <td>Function</td>
@@ -226,6 +226,10 @@
 <tr><td class='function'><a href='_centauri_bash_ext.html#resolve'>resolve</a></td>
 <td>Function</td>
 <td>Resolve and prettify (multiple) file/dir paths</td>
+</tr>
+<tr><td class='function'><a href='_centauri_bash_ext.html#splitcall'>splitcall</a></td>
+<td>Function</td>
+<td>run commands or funtions splitting long arguments lists</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#splitpath'>splitpath</a></td>
 <td>Function</td>
@@ -237,11 +241,11 @@
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#symlink'>symlink</a></td>
 <td>Function</td>
-<td>Make a symlink to a target using /usr/bin/ln</td>
+<td>Make symlink single or multiple targets using /usr/bin/ln</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#sysrun'>sysrun</a></td>
 <td>Function</td>
-<td>generate messages for errors, optionally run a command</td>
+<td>run a command or builtin, optionally generate error messages</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#tmpfile'>tmpfile</a></td>
 <td>Function</td>
@@ -455,6 +459,10 @@
 <td>Function</td>
 <td>run a command in background using coproc or a pipe</td>
 </tr>
+<tr><td class='function'><a href='_centauri_bash_pip.html#sysloop'>sysloop</a></td>
+<td>Function</td>
+<td>implements an event loop using a pipe</td>
+</tr>
 <tr><td class='module'><a href='_centauri_bash_pro.html'>_centauri_bash_pro</a></td>
 <td>Module</td>
 <td>Centauri Bash Library Progress Display Support</td>
@@ -594,6 +602,26 @@
 <tr><td class='function'><a href='_centauri_bash_use.html#usageopt'>usageopt</a></td>
 <td>Function</td>
 <td>add an option info (mostly used by modules that add options)</td>
+</tr>
+<tr><td class='module'><a href='_centauri_bash_web.html'>_centauri_bash_web</a></td>
+<td>Module</td>
+<td>Centauri Bash Library Web Application</td>
+</tr>
+<tr><td class='topic'><a href='_centauri_bash_web.html#webapllications'>web apllications</a></td>
+<td>Topic</td>
+<td>Simple Browser based application, optionally using CGI</td>
+</tr>
+<tr><td class='topic'><a href='_centauri_bash_web.html#webconfiguration'>web configuration</a></td>
+<td>Topic</td>
+<td>Simple Browser based application, optionally using CGI</td>
+</tr>
+<tr><td class='topic'><a href='_centauri_bash_web.html#webfeatures'>web features</a></td>
+<td>Topic</td>
+<td>Tweaking the default page generation</td>
+</tr>
+<tr><td class='function'><a href='_centauri_bash_web.html#webapp'>webapp</a></td>
+<td>Function</td>
+<td>Web application generator and starter</td>
 </tr>
 <tr><td class='module'><a href='_centauri_bash_win.html'>_centauri_bash_win</a></td>
 <td>Module</td>

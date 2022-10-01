@@ -12,9 +12,9 @@
 </div></nav>
 <section id='section-1'>
 <div id='centaurihelp' class='item-script'>
-<span>Script</span><span> - </span><span>centaurihelp</span><span> - </span><span>Documentation generator for centauri-bash-lib and centauritools</span></div>
+<span>Script</span><span> - </span><span>centaurihelp</span><span> - </span><span>Dokumentationsgenerator für centauri-bash-lib und centauritools</span></div>
 <div class='def-row'>
-<div class='def-label'>Usage:</div>
+<div class='def-label'>Aufruf:</div>
 <div class='def-text'><b>centaurihelp</b> [<b>-A</b>] [<b>-C</b>] [<b>-I</b>] [<b>-M</b>] [<b>-R</b>] [<b>-H</b> <i>folder</i>] [<b>-N</b>] [<b>-U</b> <i>file</i>] ...
 <b>centaurihelp</b> <b>-T</b> [<b>-H</b> <i>folder</i>] [<b>-N</b>] [<b>-U</b> <i>file</i>] ...
 <b>centaurihelp</b> <b>-G</b> <i>what</i> [<b>-H</b> <i>folder</i>] ...
@@ -23,71 +23,71 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>Documentation generator for centauri-bash-lib and centauritools.</div>
+<div class='def-text'>Dokumentationsgenerator für centauri-bash-lib und centauritools.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>This tool can generate documentation in HTML format or can be used at
-the command line in text mode (like the linux <b>&quot;man&quot;</b> program).</div>
+<div class='def-text'>Dieses Skript kann Dokumentation im HTML Format erzeugen oder kann aus
+der Kommandozeile so wie das Linux <b>&quot;man&quot;</b> Programm benutzt werden.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Options:</div>
-<div class='def-text'><b>-d</b> <b>--dryrun</b>          show what would be done, make no changes
-<b>-f</b> <b>--force</b>           override prudent default behaviours
-<b>-h</b> <b>--help</b>            show this text
-<b>-i</b> <b>--include</b> <i>expr</i>    include only items matching the expression
-<b>-n</b> <b>--no</b>              do not prompt for confirmation, assume &apos;no&apos;
-<b>-q</b> <b>--quiet</b>           report errors only
-<b>-v</b> <b>--verbose</b>         be verbose (use twice for debug)
-<b>-x</b> <b>--exclude</b> <i>expr</i>    exclude the items matching the expression
-<b>-y</b> <b>--yes</b>             do not prompt for confirmation, assume &apos;yes&apos;</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'>   <b>--embed</b>   <i>name</i>    use <i>name</i> instead of script name
-   <b>--info</b>            print full path and version
-   <b>--pager</b>   <i>prog</i>    pipe output thru pager, use &apos;none&apos; to disable
-   <b>--trace</b>           trace actions() or run()
-   <b>--wait</b>            prompt before exit</div>
+<div class='def-label'>Optionen:</div>
+<div class='def-text'><b>-d</b> <b>--dryrun</b>          Zeigen was getan wird, keine Änderungen vornehmen
+<b>-f</b> <b>--force</b>           Vorsichtsmassnahmen ausser Acht lassen
+<b>-h</b> <b>--help</b>            diesen Text ausgeben
+<b>-i</b> <b>--include</b> <i>expr</i>    Nur zum Ausdruck passende Dinge benutzen
+<b>-n</b> <b>--no</b>              Nicht nach Bestätigung fragen, &apos;nein&apos; annehmen
+<b>-q</b> <b>--quiet</b>           Nur Fehler melden
+<b>-v</b> <b>--verbose</b>         Viel Ausgabe (zweimal zum Testen)
+<b>-x</b> <b>--exclude</b> <i>expr</i>    Zum Ausdruck passende Dinge ausschliessen
+<b>-y</b> <b>--yes</b>             Nicht nach Bestätigung fragen, &apos;ja&apos; annehmen</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>-D</b> <b>--delete</b>          delete caches
-<b>-G</b> <b>--generate</b> <i>what</i>   generate HTML documentation
-<b>-H</b> <b>--html</b>   <i>folder</i>   create HTML output in folder     (implies <b>--all</b>)
-   <b>--file</b>            text only: output file names     (implies <b>--lines</b>)
-   <b>--lines</b>           text only: output line numbers
-<b>-L</b> <b>--library</b>         process library documentation (default)
-<b>-T</b> <b>--tools</b>           process the usage output of tools
-<b>-U</b> <b>--use</b>      <i>file</i>   process a single file, <b>&quot;-U .&quot;</b> for &apos;centaurihelp&apos;</div>
+<div class='def-text'>   <b>--embed</b>   <i>name</i>    Benutze <i>name</i> anstelle des Script Namens
+   <b>--info</b>            Vollen Pfad und Version ausgeben
+   <b>--pager</b>   <i>prog</i>    Programm für seitenweise Ausgabe, &apos;none&apos; für keines
+   <b>--trace</b>           Trace actions() oder run()
+   <b>--wait</b>            Nachfrage vor Beenden</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>-A</b> <b>--all</b>             (re)create missing index/modules/content/reference
-<b>-C</b> <b>--content</b>         produce table-of-content
-<b>-I</b> <b>--index</b>           html only: create &apos;index.html&apos;
-<b>-M</b> <b>--modules</b>         produce table of modules
-<b>-R</b> <b>--reference</b>       produce function/topic reference</div>
+<div class='def-text'><b>-D</b> <b>--delete</b>          Lösche Caches
+<b>-G</b> <b>--generate</b> <i>what</i>   Erzeuge HTML Dokumentation
+<b>-H</b> <b>--html</b>   <i>folder</i>   HTML Ausgabe nach Verzeichnis  (impliziert <b>--all</b>)
+   <b>--file</b>            Nur Text: Dateinamen anzeigen  (impliziert <b>--lines</b>)
+   <b>--lines</b>           Nur Text: Zeilennummer ausgeben
+<b>-L</b> <b>--library</b>         Zeige &apos;library&apos; Dokumentation an (Vorgabe)
+<b>-T</b> <b>--tools</b>           Zeige &apos;tools&apos; Dokumentation an
+<b>-U</b> <b>--use</b>      <i>file</i>   Verarbeite einzelne Datei, <b>&quot;-U .&quot;</b> für &apos;centaurihelp&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-A</b> <b>--all</b>             Aktualisiere oder erstelle index/modules/content/referenz
+<b>-C</b> <b>--content</b>         Inhaltsverzeichnis erstellen
+<b>-I</b> <b>--index</b>           Nur HTML: erstelle &apos;index.html&apos;
+<b>-M</b> <b>--modules</b>         Tabelle von Modulen erstellen
+<b>-R</b> <b>--reference</b>       Referez von Funktionen/Punkten erstellen</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Arguments:</div>
-<div class='def-text'><i>what</i>       selection: all | tools | library | dummy
-<i>folder</i>     output folder (- for /dev/stdout, + to prompt)
-<i>file</i>       any tool or library file</div>
+<div class='def-label'>Argumente:</div>
+<div class='def-text'><i>what</i>       Auswahl: all | tools | library | dummy
+<i>folder</i>     Ausgabeverzeichnis (- für /dev/stdout, + für Abfrage)
+<i>file</i>       Irgendein Tool oder eine Library Datei</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Filters:</div>
-<div class='def-text'>All extra command line arguments work as output filters. Any number of
-filters can be used and are cumulative. Tree selectors are provided to
-restrict output to functions &apos;-&apos; or topics &apos;+&apos; or modules &apos;=&apos;.</div>
+<div class='def-label'>Filter:</div>
+<div class='def-text'>Alle weiteren Kommandozeilenargumente sind Ausgabefilter. Die Zahl von Filtern
+ist beliebig, Filter wirken kumulativ. Es gibt drei Selektoren um Ausgabe auf
+Funktionen &apos;-&apos;, Topics &apos;+&apos; oder Module &apos;=&apos; zu beschränken.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Examples:</div>
-<div class='def-text'># select generated output
+<div class='def-label'>Beispiele:</div>
+<div class='def-text'># Erzeugte Ausgabe auswählen
 <b>centaurihelp</b> <b>--content</b>   # output table-of-content
 <b>centaurihelp</b> <b>--all</b>       # also output index/modules/content/reference
 <b>centaurihelp</b> <b>-i</b> ext      # only output _centauri_bash_ext documentation
@@ -99,20 +99,20 @@ restrict output to functions &apos;-&apos; or topics &apos;+&apos; or modules &a
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'># create the documentation as HTML (&apos;doc&apos; is the destination folder)
+<div class='def-text'># Dokumentation als HTML erstellen (das Zielverzeichnis ist &apos;doc&apos;)
 <b>centaurihelp</b> <b>--delete</b> <b>--all</b> <b>--html</b> doc</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'># create/view the documentation as file (<b>--force</b> enables ANSI escapes)
+<div class='def-text'># Dokumentation als Datei erstellen/ansehen (<b>--force</b> für ANSI Escapes)
 <b>centaurihelp</b> <b>--all</b> <b>--force</b> &gt; doc.txt
 less -FRX doc.txt</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'># generate HTML documentation
+<div class='def-text'># Erzeuge HTML Dokumentation
 <b>centaurihelp</b> <b>--generate</b>=tools <b>-H</b> mydir      # tool docs to custom location
 <b>centaurihelp</b> <b>--delete</b> <b>--generate</b>=all        # clear cache, docs to default</div>
 </div>

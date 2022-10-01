@@ -107,18 +107,19 @@ optarg <b>&quot;outfile&quot;</b> -   <b>-w</b>     # get output file, prompt fo
 <span>Function</span><span> - </span><span>inpdata</span><span> - </span><span>Read from an input file into an array</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'>(1) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-r</b> <i>func</i>] [<b>-q</b>] <b>--</b> <i>file</i>
-(2) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-r</b> <i>func</i>] <b>-l</b> [<b>-q</b>] [<b>-x</b> <i>ext</i>] <b>--</b> <i>file</i>|<b>+</b>|-
-(3) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-r</b> <i>func</i>] [<b>-q</b>] <b>-h</b> <i>hndl</i></div>
+<div class='def-text'>(1) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-c</b> <i>func</i>] [<b>-q</b>] [<b>-r</b>] <b>--</b> <i>file</i>
+(2) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-c</b> <i>func</i>] [<b>-q</b>] [<b>-r</b>] <b>-l</b> [<b>-x</b> <i>ext</i>] <b>--</b> <i>file</i>|<b>+</b>|-
+(3) <b>inpdata</b> [<b>-a</b> <i>dest</i>] [<b>-c</b> <i>func</i>] [<b>-q</b>] [<b>-r</b>] <b>-h</b> <i>hndl</i></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-a</b>  data array to reaad into
+<b>-c</b>  reader call function
 <b>-f</b>  errors are fatal
 <b>-h</b>  use a handle for input, see <a href="_centauri_bash_ext.html#redirect">redirect()</a>
 <b>-l</b>  enable prompt mode, loop mode, see <a href="#inpfile">inpfile()</a>
 <b>-q</b>  quiet, no error messages
-<b>-r</b>  reader call function
+<b>-r</b>  ignore <b>--dryrun</b>
 <b>-x</b>  use <i>ext</i> argument as default for extension</div>
 </div>
 <div class='def-row'>
@@ -136,7 +137,7 @@ optarg <b>&quot;outfile&quot;</b> -   <b>-w</b>     # get output file, prompt fo
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>At least <b>-a</b> or <b>-r</b> must be specified. These two options can be used at the same time. If <i>func</i> returns 0 the line is added to <i>dest</i>. Reading stops if <i>func</i> returns 2, a return value of 1 is ignored.</div>
+<div class='def-block'>At least <b>-a</b> or <b>-c</b> must be specified. These two options can be used at the same time. If <i>func</i> returns 0 the line is added to <i>dest</i>. Reading stops if <i>func</i> returns 2, a return value of 1 is ignored.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Return:</div>
@@ -155,7 +156,7 @@ optarg <b>&quot;outfile&quot;</b> -   <b>-w</b>     # get output file, prompt fo
     [ <b>-n</b> <b>&quot;$1&quot;</b> ]                     # return status
 }
 local data
-<b>inpdata</b> <b>-a</b> data <b>-r</b> reader <b>--</b> <b>&quot;my-file&quot;</b></pre></div>
+<b>inpdata</b> <b>-a</b> data <b>-c</b> reader <b>--</b> <b>&quot;my-file&quot;</b></pre></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -217,10 +218,10 @@ local data
 <span>Function</span><span> - </span><span>outdata</span><span> - </span><span>Write a data array into an output file</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'>(1) <b>outdata</b> <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-t</b>] <b>--</b> <i>file</i>
-(2) <b>outdata</b> <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] <b>-l</b> [<b>-t</b>] [<b>-x</b> <i>ext</i>] <b>--</b> <i>file</i>|<b>+</b>|-
-(3) <b>outdata</b> [<b>-a</b>|<b>-i</b>] <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-t</b>] <b>-h</b> <i>hndl</i>
-(4) <b>outdata</b> [<b>-a</b>|<b>-i</b>] <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>]</div>
+<div class='def-text'>(1) <b>outdata</b> <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-r</b>] [<b>-t</b>] <b>--</b> <i>file</i>
+(2) <b>outdata</b> <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-r</b>] <b>-l</b> [<b>-t</b>] [<b>-x</b> <i>ext</i>] <b>--</b> <i>file</i>|<b>+</b>|-
+(3) <b>outdata</b> [<b>-a</b>|<b>-i</b>] <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-r</b>] [<b>-t</b>] <b>-h</b> <i>hndl</i>
+(4) <b>outdata</b> [<b>-a</b>|<b>-i</b>] <b>-o</b> <i>data</i> [<b>-f</b>|<b>-q</b>] [<b>-r</b>]</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -231,6 +232,7 @@ local data
 <b>-l</b>  enable prompt mode, loop mode, see <a href="#outfile">outfile()</a>
 <b>-o</b>  data array
 <b>-q</b>  quiet, no error messages
+<b>-r</b>  ignore <b>--dryrun</b>
 <b>-t</b>  truncate an exiting file
 <b>-x</b>  use <i>ext</i> argument as default for extension</div>
 </div>
@@ -280,7 +282,7 @@ local data
 <span>Function</span><span> - </span><span>outfile</span><span> - </span><span>Get an output file or folder</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>outfile</b> [<b>-a</b>] [<b>-d</b>] [<b>-f</b>] [<b>-e</b>] [<b>-o</b>] [<b>-s</b> <i>var</i>]  [<b>-x</b> <i>ext</i>] [<b>--</b>] <i>file</i>|<b>-</b>|<b>+</b></div>
+<div class='def-text'><b>outfile</b> [<b>-a</b>] [<b>-d</b>] [<b>-f</b>] [<b>-e</b>] [<b>-o</b>] [<b>-r</b>] [<b>-s</b> <i>var</i>]  [<b>-x</b> <i>ext</i>] [<b>--</b>] <i>file</i>|<b>-</b>|<b>+</b></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -292,6 +294,7 @@ local data
 <b>-l</b>  loop until valid input is provided by the user (for <i>file</i> arg <b>+</b>)
 <b>-o</b>  no error message for empty argument or input
 <b>-q</b>  quiet, no error messages at all
+<b>-r</b>  ignore <b>--dryrun</b> (effects <b>-t</b> option only)
 <b>-s</b>  save path to variable (default is <b>CEN_OUTFILE</b>)
 <b>-t</b>  create new file or truncate an existing file
 <b>-x</b>  use <i>ext</i> argument as default for extension</div>

@@ -178,7 +178,7 @@ myservice setup uninstall</pre></div>
 <span>Function</span><span> - </span><span>background</span><span> - </span><span>Run a script in background, redirect input/output</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>background</b> [<b>-m</b> <i>suff</i>] [<b>-n</b>] [<b>-o</b> <i>file</i>|<b>-s</b>] <i>script</i> <i>arg</i>...</div>
+<div class='def-text'><b>background</b> [<b>-m</b> <i>suff</i>] [<b>-n</b>] [<b>-o</b> <i>file</i>|<b>-s</b>] [<b>-w</b>] <i>script</i> <i>arg</i>...</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -186,11 +186,12 @@ myservice setup uninstall</pre></div>
 <b>-n</b>  don&apos;t <b>background</b>, just redirect input/output
 <b>-i</b>  input from file (redirects <b>stdin</b>)
 <b>-o</b>  output to file (redirects <b>stdout</b> and <b>stderr</b>)
-<b>-s</b>  output to <b>syslog</b> (via <a href="_centauri_bash_lib.html#message">message()</a> et al)</div>
+<b>-s</b>  output to <b>syslog</b> (via <a href="_centauri_bash_lib.html#message">message()</a> et al)
+<b>-w</b>  no disown, simple subshell, set <b>CEN_QUIT_WSUB</b> for <a href="_centauri_bash_lib.html#quit">quit()</a></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>variable:</div>
-<div class='def-text'><b>CEN_BACKGROUND</b>  PID of the <b>background</b> process</div>
+<div class='def-text'><b>CEN_BACKGROUND</b>  PID of the background process</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Warning:</div>
@@ -209,16 +210,22 @@ embed <b>-m</b> <b>&quot;_centauri_bash_svc&quot;</b>           # if needed
 <b>background</b> run_bgnd                     # no output
 <b>background</b> <b>-s</b> run_bgnd                  # to syslog
 <b>background</b> <b>-o</b> <b>&quot;$CEN_NAME.log&quot;</b> run_bgnd  # to file
-<b>background</b> <b>-n</b> <b>-o</b> x.log <b>-m</b> old run_bgng  # logfile only</pre></div>
+<b>background</b> <b>-n</b> <b>-o</b> x.log <b>-m</b> old run_bgng  # logfile only
+<b>background</b> <b>-w</b> <b>-o</b> - run_bgnd             # keep output, no disown</pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remarks:</div>
-<div class='def-block'>Uses in/out redirection and bash&apos;s <b>disown</b> command. In contrast to <b>/usr/bin/nohup</b> this function does not start a new shell. This allows to run a subroutine of a script in <b>background</b>.  The <b>background</b> thread will not terminate when the caller exits.</div>
+<div class='def-block'>Uses in/out redirection and bash&apos;s <b>disown</b> command by default. In contrast to <b>/usr/bin/nohup</b> this function does not start a new shell. This can be used to run a subroutine of a script in background.  The background process will not be terminated when the main shell exits. Option <b>-w</b> disables using <b>disown</b> but sets <b>CEN_QUIT_WSUB</b> to make <a href="_centauri_bash_lib.html#quit">quit()</a> wait for all subshells to terminate.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-block'>The function is in module <a href="_centauri_bash_svc.html">_centauri_bash_svc</a> because it optionally uses <b>syslog</b> output. This will cause a conflict with the <a href="_centauri_bash_con.html">_centauri_bash_con</a> or the <a href="_centauri_bash_win.html">_centauri_bash_win</a> module.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When running background process (subshell) the <b>CEN_QUIT_WSUB</b> is set, causing <a href="_centauri_bash_lib.html#quit">quit()</a> to wait for all subshells to terminate before running the quit hook. This will prevent the main shell to delete files created by <a href="_centauri_bash_ext.html#tmpfile">tmpfile()</a> from a subshell.</div>
 </div>
 </section>
 <section id='section-4'>

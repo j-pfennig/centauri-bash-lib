@@ -53,6 +53,9 @@
 <tr><td class='topic'><a href="_centauri_bash_run.html#launcherconfig">launcher config</a></td><td>_centauri_bash_run</td><td>Configuration section in centauri-bash-lib</td></tr>
 <tr><td class='topic'><a href="_centauri_bash_run.html#shortpathconfig">shortpath config</a></td><td>_centauri_bash_run</td><td>Configuration section in centauri-bash-lib</td></tr>
 <tr><td class='topic'><a href="_centauri_bash_run.html#terminalconfig">terminal config</a></td><td>_centauri_bash_run</td><td>Configuration section in centauri-bash-lib</td></tr>
+<tr><td class='topic'><a href="_centauri_bash_web.html#webapllications">web apllications</a></td><td>_centauri_bash_web</td><td>Simple Browser based application, optionally using CGI</td></tr>
+<tr><td class='topic'><a href="_centauri_bash_web.html#webconfiguration">web configuration</a></td><td>_centauri_bash_web</td><td>Simple Browser based application, optionally using CGI</td></tr>
+<tr><td class='topic'><a href="_centauri_bash_web.html#webfeatures">web features</a></td><td>_centauri_bash_web</td><td>Tweaking the default page generation</td></tr>
 <tr><td class='topic'><a href="_centauri_bash_xtr.html#standalone">Standalone</a></td><td>_centauri_bash_xtr</td><td>Making standalone scripts that use centauri-bash-lib modules</td></tr>
 </table>
 </article>
@@ -75,6 +78,7 @@
 <tr><td class='module'><a href="_centauri_bash_tra.html">_centauri_bash_tra</a></td><td>Centauri Bash Library Trash Support</td></tr>
 <tr><td class='module'><a href="_centauri_bash_txt.html">_centauri_bash_txt</a></td><td>Centauri Bash Library Text Tools (grep, sort)</td></tr>
 <tr><td class='module'><a href="_centauri_bash_use.html">_centauri_bash_use</a></td><td>Centauri Bash Library usage() and Completion</td></tr>
+<tr><td class='module'><a href="_centauri_bash_web.html">_centauri_bash_web</a></td><td>Centauri Bash Library Web Application</td></tr>
 <tr><td class='module'><a href="_centauri_bash_win.html">_centauri_bash_win</a></td><td>Centauri Bash Library GUI Windowing Support</td></tr>
 <tr><td class='module'><a href="_centauri_bash_xml.html">_centauri_bash_xml</a></td><td>Centauri Bash Library XML/HTML Support</td></tr>
 <tr><td class='module'><a href="_centauri_bash_xtr.html">_centauri_bash_xtr</a></td><td>Self-extractor for standalone scripts</td></tr>
@@ -116,8 +120,8 @@
 <tr><td class='function'><a href="_centauri_bash_lib.html#isfunction">isfunction</a></td><td>_centauri_bash_lib</td><td>check wether a bash function, builtin or command exists</td></tr>
 <tr><td class='function'><a href="_centauri_bash_svc.html#isservice">isservice</a></td><td>_centauri_bash_svc</td><td>check if we run as service and initialize syslog output</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#joinpath">joinpath</a></td><td>_centauri_bash_ext</td><td>Build a path name from components</td></tr>
-<tr><td class='function'><a href="_centauri_bash_run.html#launcher">launcher</a></td><td>_centauri_bash_run</td><td>Run an external application using a generic name</td></tr>
 <tr><td class='function'><a href="_centauri_bash_run.html#launchercallback">launcher (callback)</a></td><td>_centauri_bash_run</td><td>Implementing a user defined command</td></tr>
+<tr><td class='function'><a href="_centauri_bash_run.html#launcher">launcher</a></td><td>_centauri_bash_run</td><td>Run an external application using a generic name</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#listsearch">listsearch</a></td><td>_centauri_bash_ext</td><td>search a word in a list</td></tr>
 <tr><td class='function'><a href="_centauri_bash_bat.html#logfile">logfile</a></td><td>_centauri_bash_bat</td><td>initialize a logfile to capture batch output</td></tr>
 <tr><td class='function'><a href="_centauri_bash_lib.html#main">main</a></td><td>_centauri_bash_lib</td><td>parse options dispatch action verbs or call run()</td></tr>
@@ -131,29 +135,31 @@
 <tr><td class='function'><a href="_centauri_bash_con.html#output">output</a></td><td>_centauri_bash_con</td><td>output formatted, write to stdout or a variable</td></tr>
 <tr><td class='function'><a href="_centauri_bash_svc.html#pidfile">pidfile</a></td><td>_centauri_bash_svc</td><td>create/delete PID file, check status, terminate process</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#pluralize">pluralize</a></td><td>_centauri_bash_ext</td><td>use singular or plural form depending on count</td></tr>
-<tr><td class='function'><a href="_centauri_bash_ext.html#prettypath">prettypath</a></td><td>_centauri_bash_ext</td><td>Get pretty path for file or folder</td></tr>
+<tr><td class='function'><a href="_centauri_bash_ext.html#prettypath">prettypath</a></td><td>_centauri_bash_ext</td><td>Get pretty/canonical/real path of a file or folder</td></tr>
 <tr><td class='function'><a href="_centauri_bash_pro.html#progress">progress</a></td><td>_centauri_bash_pro</td><td>progress bar or incremental progress reporting</td></tr>
 <tr><td class='function'><a href="_centauri_bash_svc.html#progressservice">progress (service)</a></td><td>_centauri_bash_svc</td><td>Legacy SysV fancy progress reporting</td></tr>
 <tr><td class='function'><a href="_centauri_bash_lib.html#quit">quit</a></td><td>_centauri_bash_lib</td><td>call CEN_HOOK_QUIT, terminate the script, optionally with message</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#redirect">redirect</a></td><td>_centauri_bash_ext</td><td>Open/close file handle for input/output</td></tr>
-<tr><td class='function'><a href="_centauri_bash_ext.html#remove">remove</a></td><td>_centauri_bash_ext</td><td>Remove files or folders using /usr/bin/ ... unlink, rm, rmdir</td></tr>
+<tr><td class='function'><a href="_centauri_bash_ext.html#remove">remove</a></td><td>_centauri_bash_ext</td><td>Remove files or folders using rm, rmdir coreutil or builtin</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#rename">rename</a></td><td>_centauri_bash_ext</td><td>Rename (or move) a file or folder using /usr/bin/mv</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#resolve">resolve</a></td><td>_centauri_bash_ext</td><td>Resolve and prettify (multiple) file/dir paths</td></tr>
-<tr><td class='function'><a href="_centauri_bash_dbg.html#runuser">run (user)</a></td><td>_centauri_bash_dbg</td><td>User defined Function for non-Action Scripts</td></tr>
 <tr><td class='function'><a href="_centauri_bash_svc.html#runservice">runservice</a></td><td>_centauri_bash_svc</td><td>start/stop/test services</td></tr>
+<tr><td class='function'><a href="_centauri_bash_dbg.html#runuser">run (user)</a></td><td>_centauri_bash_dbg</td><td>User defined Function for non-Action Scripts</td></tr>
 <tr><td class='function'><a href="_centauri_bash_iom.html#serialize">serialize</a></td><td>_centauri_bash_iom</td><td>Serialization support for bash variables</td></tr>
 <tr><td class='function'><a href="_centauri_bash_run.html#shortpath">shortpath</a></td><td>_centauri_bash_run</td><td>Resolve shortcut names for file system paths</td></tr>
+<tr><td class='function'><a href="_centauri_bash_ext.html#splitcall">splitcall</a></td><td>_centauri_bash_ext</td><td>run commands or funtions splitting long arguments lists</td></tr>
 <tr><td class='function'><a href="_centauri_bash_lib.html#splitjoin">splitjoin</a></td><td>_centauri_bash_lib</td><td>split or join strings/arrays, enumerator</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#splitpath">splitpath</a></td><td>_centauri_bash_ext</td><td>Split path name into components</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#suffixpath">suffixpath</a></td><td>_centauri_bash_ext</td><td>add or remove a suffix to or from a file path</td></tr>
-<tr><td class='function'><a href="_centauri_bash_ext.html#symlink">symlink</a></td><td>_centauri_bash_ext</td><td>Make a symlink to a target using /usr/bin/ln</td></tr>
+<tr><td class='function'><a href="_centauri_bash_ext.html#symlink">symlink</a></td><td>_centauri_bash_ext</td><td>Make symlink single or multiple targets using /usr/bin/ln</td></tr>
 <tr><td class='function'><a href="_centauri_bash_pip.html#sysbind">sysbind</a></td><td>_centauri_bash_pip</td><td>bind two pipes to an external server process, simple RPC calls</td></tr>
 <tr><td class='function'><a href="_centauri_bash_sys.html#sysconfig">sysconfig</a></td><td>_centauri_bash_sys</td><td>read library config, generate bash_completion and proxy</td></tr>
 <tr><td class='function'><a href="_centauri_bash_lib.html#sysfind">sysfind</a></td><td>_centauri_bash_lib</td><td>check for commands and builtins</td></tr>
 <tr><td class='function'><a href="_centauri_bash_sys.html#sysinfo">sysinfo</a></td><td>_centauri_bash_sys</td><td>implements --info to update or remove _centauri_bash_lib</td></tr>
+<tr><td class='function'><a href="_centauri_bash_pip.html#sysloop">sysloop</a></td><td>_centauri_bash_pip</td><td>implements an event loop using a pipe</td></tr>
 <tr><td class='function'><a href="_centauri_bash_pip.html#syspager">syspager</a></td><td>_centauri_bash_pip</td><td>pipe a command&apos;s output through a pager (like less)</td></tr>
 <tr><td class='function'><a href="_centauri_bash_pip.html#syspipe">syspipe</a></td><td>_centauri_bash_pip</td><td>run a command in background using coproc or a pipe</td></tr>
-<tr><td class='function'><a href="_centauri_bash_ext.html#sysrun">sysrun</a></td><td>_centauri_bash_ext</td><td>generate messages for errors, optionally run a command</td></tr>
+<tr><td class='function'><a href="_centauri_bash_ext.html#sysrun">sysrun</a></td><td>_centauri_bash_ext</td><td>run a command or builtin, optionally generate error messages</td></tr>
 <tr><td class='function'><a href="_centauri_bash_sys.html#syssetup">syssetup</a></td><td>_centauri_bash_sys</td><td>Setup/remove folders and links and services</td></tr>
 <tr><td class='function'><a href="_centauri_bash_lib.html#system">system</a></td><td>_centauri_bash_lib</td><td>run a command, builtin or function optinally capturing the output</td></tr>
 <tr><td class='function'><a href="_centauri_bash_sys.html#sysversion">sysversion</a></td><td>_centauri_bash_sys</td><td>determine os/kde versions, read/write version file</td></tr>
@@ -166,12 +172,13 @@
 <tr><td class='function'><a href="_centauri_bash_txt.html#txtfold">txtfold</a></td><td>_centauri_bash_txt</td><td>folding of long text lines, fetch limited text size</td></tr>
 <tr><td class='function'><a href="_centauri_bash_txt.html#txtgrep">txtgrep</a></td><td>_centauri_bash_txt</td><td>Lightweight internal text filter (like grep)</td></tr>
 <tr><td class='function'><a href="_centauri_bash_txt.html#txtsort">txtsort</a></td><td>_centauri_bash_txt</td><td>Simple internal sort of text lines</td></tr>
-<tr><td class='function'><a href="_centauri_bash_use.html#usageuser">usage (user)</a></td><td>_centauri_bash_use</td><td>Display a Usage Message, Helper for Command Completion</td></tr>
 <tr><td class='function'><a href="_centauri_bash_use.html#usagecat">usagecat</a></td><td>_centauri_bash_use</td><td>copy usage() text from stdin to sddout</td></tr>
 <tr><td class='function'><a href="_centauri_bash_use.html#usageopt">usageopt</a></td><td>_centauri_bash_use</td><td>add an option info (mostly used by modules that add options)</td></tr>
 <tr><td class='function'><a href="_centauri_bash_use.html#usageset">usageset</a></td><td>_centauri_bash_use</td><td>generate usage() output text programmatically</td></tr>
+<tr><td class='function'><a href="_centauri_bash_use.html#usageuser">usage (user)</a></td><td>_centauri_bash_use</td><td>Display a Usage Message, Helper for Command Completion</td></tr>
 <tr><td class='function'><a href="_centauri_bash_ext.html#walk">walk</a></td><td>_centauri_bash_ext</td><td>Iterate over files and folders</td></tr>
 <tr><td class='function'><a href="_centauri_bash_lib.html#warning">warning</a></td><td>_centauri_bash_lib</td><td>output a warning message</td></tr>
+<tr><td class='function'><a href="_centauri_bash_web.html#webapp">webapp</a></td><td>_centauri_bash_web</td><td>Web application generator and starter</td></tr>
 <tr><td class='function'><a href="_centauri_bash_win.html#windialog">windialog</a></td><td>_centauri_bash_win</td><td>show a GUI message box or dialog window</td></tr>
 <tr><td class='function'><a href="_centauri_bash_win.html#windows">windows</a></td><td>_centauri_bash_win</td><td>init/check GUI mode, launch GUI application</td></tr>
 <tr><td class='function'><a href="_centauri_bash_xml.html#xml_anchor">xml_anchor</a></td><td>_centauri_bash_xml</td><td>create a hyperlink</td></tr>

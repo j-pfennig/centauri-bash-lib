@@ -540,7 +540,11 @@ debug <b>-t</b> off                    # trace off</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>CEN_PATHS</b>          filesystem prefix for non FSH-compatible install</div>
+<div class='def-text'><b>CEN_PATHS</b>[0]       filesystem prefix for non FSH-compatible install
+<b>CEN_PATHS</b>[1]       GNU core binary path (usually <b>/usr/bin</b>)
+<b>CEN_PATHS</b>[2]       configuration folder (usually <b>/etc</b>)
+<b>CEN_PATHS</b>[3]       library persistent   (usually <b>/var/centauri/persistent</b>)
+<b>CEN_PATHS</b>[4]       library temporary    (usually <b>/var/centauri/transient</b>)</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -562,6 +566,7 @@ debug <b>-t</b> off                    # trace off</pre></div>
 <b>CEN_QUIT_SANE</b>      run <b>&quot;stty sane&quot;</b> in quit if non-zero
 <b>CEN_QUIT_TRAP</b>      default signal to enter <b>&quot;quit -s 4&quot;</b>
 <b>CEN_QUIT_WAIT</b>      wait after quit
+<b>CEN_QUIT_WSUB</b>      quit must wait for sub-shells to terminate
 <b>CEN_VERB</b>           <b>--verbose</b>|<b>--quiet</b> level, <b>0</b>:quiet  <b>1</b>:normal  <b>2</b>:verbose
 <b>CEN_VERSION</b>        script version, see <a href="#versioning">versioning</a> and <a href="_centauri_bash_lib.html">_centauri_bash_lib</a>
 <b>CEN_YESNO</b>          see <b>--yes</b> and <b>--no</b> options</div>
@@ -590,16 +595,13 @@ debug <b>-t</b> off                    # trace off</pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Maps:</div>
-<div class='def-block'>(dictionaries) bash has a scoping problem with maps, they must be declared in <b>_centauri_bash_lib</b> if they are to be global</div>
+<div class='def-block'>(dictionaries) declared in <b>_centauri_bash_lib</b></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>CEN_MODULES</b>        loaded extension modules
-<b>CEN_WALK_DMAP</b>      used by <a href="_centauri_bash_ext.html#walk">walk()</a>
-<b>CEN_AUTOMOUNT_DIR</b>  used by <a href="_centauri_bash_mnt.html#automount">automount()</a>
-<b>CEN_USE_OMAP</b>       used by <a href="_centauri_bash_use.html#usageuser">usage()</a>
-<b>CEN_CMD_PATH</b>       cached command paths, see <a href="_centauri_bash_lib.html#sysfind">sysfind()</a></div>
+<div class='def-text'><b>CEN_MODULES</b>        loaded extension modules, see <a href="_centauri_bash_lib.html#embed">embed()</a>
+<b>CEN_COMMANDS</b>       cached command paths, see <a href="_centauri_bash_lib.html#sysfind">sysfind()</a></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -716,7 +718,12 @@ hello</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'><b>declare -A</b> (to create a dictionary) is weird (or broken?). All dictionaries used in _centauri_bash_lib MUST be defined in the main module.</div>
+<div class='def-block'>Bash variables assigned outside a function automatically become global. Library modules are sourced and dynamic loading triggers sourcing from a function, but the statement above is still correct.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Take care of using <b>declare -g -A</b> (to create a global dictionary) inside modules. Option <b>-g</b> is not the default, even outside a function.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Scoping:</div>
@@ -725,11 +732,11 @@ hello</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>As a consequence each varable definition may shield an earlier definition. This is sometimes confusing in callback functions. To mitigate this problem the library prefixes local names with an underscore. For example <b>_item</b> is used by the library whereas <b>item</b> should be a user define variable.</div>
+<div class='def-block'>As a consequence each variable definition may shadow an earlier definition. This is sometimes confusing in callback functions. To mitigate this problem the library prefixes local names with an underscore. For example <b>_item</b> is used by the library whereas <b>item</b> should be a user defined variable.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>References:</div>
-<div class='def-block'> bash has reference variables:<b>local -n _vref=</b>&lt;name&gt; . These allow a functions to return values. This feature must be used with great care because of possible typing errors and the scoping rules:</div>
+<div class='def-block'> bash has reference variables: <b>local -n _vref=</b>&lt;name&gt; . These allow a functions to return values. This feature must be used with great care because of possible typing errors and the scoping rules:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -745,15 +752,24 @@ demo test 5 ; echo <b>&quot;test=$test (expecting 5)&quot;</b></pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Arrays:</div>
-<div class='def-block'>bash does lazy initialization of maps and arrays. Defining one of these only sets a flag and is quite fast. Here some conventions:</div>
+<div class='def-block'>bash does lazy initialization of arrays. Creation of an empty array only sets a flag and is quite fast. Here some conventions:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-text'><pre><b>CEN_EXT_MOUNTS</b>=()           # declare an static, global array
-declare <b>-A</b> <b>CEN_WALK_DMYP</b>    # declare a map (must be global)
 local _stxt=()              # declare a local array
 _stxt=()                    # drop array content</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Dictionaries are more expensive (~4kByte per instance) and are instantiated at declaration time:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>declare <b>-g</b> <b>-A</b> <b>CEN_WALK_DMAP</b> # declare a map (use -g for global)</pre></div>
 </div>
 </section>
 <section id='section-12'>

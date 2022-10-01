@@ -65,31 +65,36 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Sometimes is might be neccessary to encapsulate the data in an (unused) here document. This looks like:</div>
+<div class='def-block'>Sometimes it might be possible or neccessary to encapsulate data in an (unused) here document:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'><pre># start a here document to make bash happy
+<div class='def-block'><pre># start a here document to hide data from bash interpretation:
 : &lt;&lt;!!!END!!!
 !!!DATA!!!
 # ...
-# terminate self-extract:
+# terminate self-extract data:
 !!!STOP!!!
 # end of here document:
 !!!END!!!</pre></div>
 </div>
+<div class='def-row'>
+<div class='def-label'>Runtime:</div>
+<div class='def-block'>The embedded data is extracted at runtime into a cache folder. When the cache data is current, the extraction step is skipped. Use <a href="centauribuilder.html">centauribuilder</a> to encode/attach or decode/list packed runtime data, and <a href="uglify.html">uglify</a> to build self-extracting standalone scripts.</div>
+</div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
+<div class='def-block'>The self-extraction process itself is simple. The <a href="uglify.html">uglify</a> tool, when invoked with option <b>--extract</b>, adds an <b>embed -m _centauri_bash_xtr</b> statement prior to calling <a href="_centauri_bash_lib.html#main">main()</a>. Only if the extracted runtime contains an <b>LC_MESSAGE</b> folder for the current locale, the script has to be reloaded to make translations work. This is done by sourcing the script (<b>CEN_XTR_RUNTIME</b> is set as a flag to avoid recursion).</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>The data format is ASCII mixed with hex values for non-ASCII bytes. A &apos;.&apos; character is used to represent a &apos;\x&apos; sequence (and the &apos;.&apos; is encoded as hex). A few more substitutions are made so that any data line can be passed to <b>printf</b> as format string. The format is fast and easy to decode and is great for ASCII data. But binary data can take up to three times the origninal size.</div>
 </div>
+<div class='def-break'></div>
 <div class='def-row'>
-<div class='def-label'>Extract:</div>
-<div class='def-block'>The extraction process itself is simple. The <a href="uglify.html">uglify</a> tool, when invoked with option <b>--extract</b>, adds an <b>embed -m _centauri_bash_xtr</b> statement prior to calling <a href="_centauri_bash_lib.html#main">main()</a>. Only if the extracted runtime contains an <b>LC_MESSAGE</b> folder for the current locale, the script has to be realoaded to make translations work. This is done by sourcing the script (<b>CEN_XTR_RUNTIME</b> is set as a flag to avoid recursion).</div>
-</div>
-<div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-empty'></div>
 <div class='def-block'>Copyright Dr. J. Pfennig (c) 2022</div>
 </div>
 </section>
@@ -139,7 +144,7 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>&gt; <b>\$CEN_ROOT/library/uglify</b> <b>--output</b>=my-script.package my-script
+<div class='def-text'>&gt; <b>$CEN_ROOT/library/uglify</b> <b>--output</b>=my-script.package my-script
 &gt; <b>my-script.package</b> <b>--help</b></div>
 </div>
 <div class='def-break'></div>
@@ -159,7 +164,7 @@
 </div>
 <div class='def-row'>
 <div class='def-label'>Portable:</div>
-<div class='def-block'>The <b>portable</b> flavour uses a simplistic self-extract format that allows extraction without any external commands, see <a href="_centauri_bash_xtr.html">_centauri_bash_xtr</a>. The <a href="centauribuilder.html">centauribuilder</a> program can be used to create and analize self-extract data.</div>
+<div class='def-block'>The <b>portable</b> flavour uses a simplistic self-extract format that allows extraction without any external commands, see <a href="_centauri_bash_xtr.html">_centauri_bash_xtr</a>. The <a href="centauribuilder.html">centauribuilder</a> program can be used to create and analyze self-extract data.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -185,7 +190,7 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The variable <b>CEN_XTR_RUNTIME</b> contains the path of the cached runtime folder, which is should be the same a <b>CEN_ROOT</b>.</div>
+<div class='def-block'>The variable <b>CEN_XTR_RUNTIME</b> contains the path of the cached runtime folder, which should be the same as <b>CEN_ROOT</b>.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Archive:</div>

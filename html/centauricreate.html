@@ -12,64 +12,64 @@
 </div></nav>
 <section id='section-1'>
 <div id='centauricreate' class='item-script'>
-<span>Script</span><span> - </span><span>centauricreate</span><span> - </span><span>Create a centauri-bash-lib user script from a template</span></div>
+<span>Script</span><span> - </span><span>centauricreate</span><span> - </span><span>Ein centauri-bash-lib Benutzerskript aus Vorlage erstellen</span></div>
 <div class='def-row'>
-<div class='def-label'>Usage:</div>
-<div class='def-text'><b>centauricreate</b> <i>option</i>... <i>script</i>       # create a script
-<b>centauricreate</b> <b>--no</b> -                 # show cached options</div>
+<div class='def-label'>Aufruf:</div>
+<div class='def-text'><b>centauricreate</b> <i>option</i>... <i>script</i>       # Ein Skript erstellen
+<b>centauricreate</b> <b>--no</b> -                 # Zeige Optionscache</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>Create a centauri-bash-lib user script from a template.</div>
+<div class='def-text'>Ein centauri-bash-lib Benutzerskript aus Vorlage erstellen.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Options:</div>
-<div class='def-text'><b>-d</b> <b>--dryrun</b>          show what would be done, make no changes
-<b>-h</b> <b>--help</b>            show this text
-<b>-n</b> <b>--no</b>              do not prompt for confirmation, assume &apos;no&apos;
-<b>-q</b> <b>--quiet</b>           report errors only
-<b>-v</b> <b>--verbose</b>         be verbose (use twice for debug)
-<b>-y</b> <b>--yes</b>             do not prompt for confirmation, assume &apos;yes&apos;</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'>   <b>--embed</b>   <i>name</i>    use <i>name</i> instead of script name
-   <b>--info</b>            print full path and version
-   <b>--pager</b>   <i>prog</i>    pipe output thru pager, use &apos;none&apos; to disable
-   <b>--trace</b>           trace actions() or run()
-   <b>--wait</b>            prompt before exit</div>
+<div class='def-label'>Optionen:</div>
+<div class='def-text'><b>-d</b> <b>--dryrun</b>          Zeigen was getan wird, keine Änderungen vornehmen
+<b>-h</b> <b>--help</b>            diesen Text ausgeben
+<b>-n</b> <b>--no</b>              Nicht nach Bestätigung fragen, &apos;nein&apos; annehmen
+<b>-q</b> <b>--quiet</b>           Nur Fehler melden
+<b>-v</b> <b>--verbose</b>         Viel Ausgabe (zweimal zum Testen)
+<b>-y</b> <b>--yes</b>             Nicht nach Bestätigung fragen, &apos;ja&apos; annehmen</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>-A</b> <b>--author</b>   <i>text</i>   set script author
-<b>-D</b> <b>--descr</b>    <i>text</i>   short description of script
-<b>-L</b> <b>--license</b>  <i>text</i>   set script license
-<b>-N</b> <b>--noconf</b>          don&apos;t modify config file
-<b>-O</b> <b>--option</b>   <i>name</i>   select template option (repeatable)
-<b>-S</b> <b>--shell</b>    <i>bash</i>   override interpreter path (shebang)
-<b>-T</b> <b>--template</b> <i>tmpl</i>   choose template (default: hello)</div>
+<div class='def-text'>   <b>--embed</b>   <i>name</i>    Benutze <i>name</i> anstelle des Script Namens
+   <b>--info</b>            Vollen Pfad und Version ausgeben
+   <b>--pager</b>   <i>prog</i>    Programm für seitenweise Ausgabe, &apos;none&apos; für keines
+   <b>--trace</b>           Trace actions() oder run()
+   <b>--wait</b>            Nachfrage vor Beenden</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>The values of <b>--author</b> and <b>--license</b> are cached.</div>
+<div class='def-text'><b>-A</b> <b>--author</b>   <i>text</i>   Setze den Skript Author
+<b>-D</b> <b>--descr</b>    <i>text</i>   Kurzbeschreibung des Skripts
+<b>-L</b> <b>--license</b>  <i>text</i>   Setze die Skipt Lizenz
+<b>-N</b> <b>--noconf</b>          Konfigurationsdatei nicht ändern
+<b>-O</b> <b>--option</b>   <i>name</i>   Setze Option in Vorlage (wiederholbar)
+<b>-S</b> <b>--shell</b>    <i>bash</i>   Interpreter überschreiben (shebang)
+<b>-T</b> <b>--template</b> <i>tmpl</i>   Vorlage wählen (Voreinstellung: hello)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Die Werte von <b>--author</b> und <b>--license</b> werden gecached.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Arguments:</div>
-<div class='def-text'><i>bash</i>          any path, for example: /usr/bin/env bash
-<i>name</i>          option name, gets converted to uppercase
-<i>text</i>          any text not containing <b>&quot;;&quot;</b> or <b>&quot;-&quot;</b> to reset
-<i>tmpl</i>          name of a template, see below</div>
+<div class='def-label'>Argumente:</div>
+<div class='def-text'><i>bash</i>          Ein Pfad, zum Beispiel: /usr/bin/env bash
+<i>name</i>          Optionsname, wird in Grosschreibung konvertiert
+<i>text</i>          Text der kein Semikolon enthält, <b>&quot;-&quot;</b> für Vorgabe
+<i>tmpl</i>          Name einer Vorlage, siehe unten</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Templates:</div>
-<div class='def-text'>action        Template using command line verbs (action syntax)
+<div class='def-label'>Vorlagen:</div>
+<div class='def-text'>action        Vorlage mit Kommandozeilen-Verben (action Syntax)
 cgiforms      Demonstrates CGI programming using the XML module
 daemon        Example daemon or service
-files         Template for a file processor (no action syntax)
+files         Vorlage für ein Dateiprogramm (keine &apos;action&apos; Syntax)
 hello         A Hello World Example
 run           Template for simple scripts (no action syntax)
 service       Example oneshot service
@@ -77,20 +77,20 @@ simple        Using _centauri_bash_lib without main()
 module        a custom library module</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Examples:</div>
-<div class='def-text'># create script without &apos;main()&apos; from centauriHello template
+<div class='def-label'>Beispiele:</div>
+<div class='def-text'># Von Vorlage &apos;centauriHello&apos; Skript ohne &apos;main()&apos; erstellen
 <b>centauricreate</b> <b>--shell</b>=&apos;/usr/bin/env bash&apos; myfolder/simple</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'># create script with &apos;action&apos; syntax
+<div class='def-text'># Erstelle Skript mit &apos;action&apos; Syntax
 <b>centauricreate</b> <b>--template</b>=action mytool</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'># create script without demo code
+<div class='def-text'># Erstelle Skript ohne Demo Code
 <b>centauricreate</b> <b>--template</b>=action <b>--option</b>=minimal mytool</div>
 </div>
 </section>

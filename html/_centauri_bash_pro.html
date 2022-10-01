@@ -46,7 +46,7 @@
 <b>progress</b> <i>fmt</i> [<i>args</i>...]                   # same as: -p &lt;fmt&gt; -t &lt;args&gt;...
 <b>progress</b> [<b>-e</b>]                            # -no args- clear progress output
 <b>progress</b> <b>-w</b> <i>work</i> <b>-s</b> <i>step</i>
-         <b>-c</b> <i>fmt</i> [<i>labl</i> [<i>done</i>]]            # progress iterator</div>
+         <b>-c</b> <i>fmt</i> [<i>labl</i> [<i>done</i>|<b>-</b>]]          # progress iterator</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -65,19 +65,31 @@
 <b>-p</b>  line output, like <b>-t</b> but with printf formatting
 <b>-s</b>  like <b>&quot;-c .&quot;</b> if <i>step</i> is a number
 <b>-t</b>  line output (no <b>-c</b>), rewrite <b>progress</b> text (with <b>-c</b>)
-<b>-v</b>  disable <b>progress</b> output in verbose/trace mode</div>
+<b>-v</b>  disable <b>progress</b> output in verbose/trace mode
+<b>-w</b>  <b>progress</b> iterator</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-text'><b>••• windows mode (options -a -i and -v are silently ignored) •••</b>
-<b>-c</b>  set/increment progess bar (<i>proc</i> in percent)
+<b>-c</b>  set/increment progess bar
 <b>-d</b>  add <i>delay</i> in dryrun mode
 <b>-e</b>  close window (same as <b>progress</b> without args)
 <b>-l</b>  notification message
 <b>-p</b>  set label (<b>printf</b> formatting)
 <b>-s</b>  step by n (use &apos;n:m&apos; to set total to m)
-<b>-t</b>  set <b>progress</b> dialog label</div>
+<b>-t</b>  set <b>progress</b> dialog label
+<b>-w</b>  <b>progress</b> iterator</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>delay</i> <b>--dryrun</b> only: delay in [s] (example 0.3)
+<i>done</i>  final text, use <b>&quot;-&quot;</b> for no text and no delay
+<i>fmt</i>   a printf format string (example: <b>&quot;%s of %s&quot;</b>)
+<i>labl</i>  label text to show
+<i>prog</i>  <b>progress</b> in percent
+<i>step</i>  usage dependent see examples (syntax: [n][:m])
+<i>work</i>  callback function, returns 0 to continue reporting</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
@@ -120,15 +132,10 @@ sleep 0.4
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>run an iterator (calling a worker $# time, <b>progress</b> report is made
-only if $# is at least 20)...<pre>worker() { return 0 ; }
-<b>progress</b> <b>-w</b> worker <b>-d</b> 0.1 <b>-s</b> $#:20 <b>-c</b> <b>&quot;Step %s of %s ...&quot;</b> \
-   <b>&quot;Progress Demo -&quot;</b> <b>&quot;Completed.&quot;</b></pre></div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'>••• console mode only •••</div>
+<div class='def-text'>run an iterator (calling a worker <b>totl</b> times, <b>progress</b> report is made
+only if <b>totl</b> is at least <b>mini</b> ...<pre>worker() { return 0 ; }
+<b>progress</b> <b>-w</b> worker <b>-d</b> 0.1 <b>-s</b> <b>&quot;$totl:$mini&quot;</b> <b>-c</b> <b>&quot;Step %s of %s ...&quot;</b> \
+         <b>&quot;Progress Demo -&quot;</b> <b>&quot;Completed.&quot;</b></pre></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -137,8 +144,13 @@ only if $# is at least 20)...<pre>worker() { return 0 ; }
 for item in 0 1 2 3 4 5 6 7 8 9 ; do
     sleep 1
     <b>progress</b> <b>-c</b> <b>&quot;.&quot;</b>
-done
+    done
 quit <b>&quot;Demo over&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>••• console mode only •••</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>

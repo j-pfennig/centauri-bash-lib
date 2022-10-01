@@ -243,19 +243,21 @@ message <b>-a</b> <b>&quot;Success&quot;</b>                    # ... or continu
 <div class='def-label'>Call:</div>
 <div class='def-text'><b>quit</b>
 <b>quit</b> <b>-e</b>|<b>-t</b> [<b>--</b>] [<b>-</b>] <i>msg</i>...
-<b>quit</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>-s</b> <i>code</i>] [<b>--</b>] <i>msg</i>...</div>
+<b>quit</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>-s</b> <i>code</i>] [<b>--</b>] <i>msg</i>...
+<b>quit</b> <b>-h</b></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'>... most <a href="#message">message()</a> options (the implementation calls <b>message</b>)
 <b>-e</b>  check for error, print <b>&quot;Terminated after error&quot;</b> if 1st arg is not &apos;-&apos;
+<b>-h</b>  just run quit hook and reset to default (save for subshell)
 <b>-s</b>  override the exit code (<b>CEN_EXIT</b>)
 <b>-t</b>  sets <b>CEN_EXIT</b>=4, print <b>&quot;Terminated&quot;</b> if 1st arg is not &apos;-&apos;
 <b>-y</b>  run <b>&quot;stty sane&quot;</b> to restore terminal defaults</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Return:</div>
-<div class='def-block'>This function does not return, it calls an optional <b>quit</b> hook function and terminates the script with <b>CEN_EXIT</b> as exit code.</div>
+<div class='def-block'>This function does not return, it calls an optional quit hook function and terminates the script with <b>CEN_EXIT</b> as exit code.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
@@ -283,7 +285,12 @@ my_quit() {
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Scripts should not use the bash <b>exit</b> command directly unless they want to skip <b>quit</b> hook processing. All other script termination paths will invoke <b>CEN_HOOK_QUIT</b>.</div>
+<div class='def-block'>Scripts should not use the bash <b>exit</b> command directly unless they want to skip quit hook processing. All other script termination paths will invoke <b>CEN_HOOK_QUIT</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>If variable <b>CEN_QUIT_WSUB</b> is non-empty the bash <b>wait</b> command is run to wait until all subshells (child processes) terminate. See <a href="_centauri_bash_svc.html#background">background()</a>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -310,7 +317,7 @@ my_quit() {
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Calling <b>quit</b> from a subshell causes an abort, a subshell cannot safely run any <b>quit</b> hooks. In such a case the program logic has to be fixed.</div>
+<div class='def-block'>Calling <b>quit</b> from a subshell causes an abort, a subshell cannot safely terminate a script. In such a case the program logic has to be fixed.</div>
 </div>
 </section>
 <section id='section-8'>
@@ -475,16 +482,17 @@ done</pre></div>
 <div class='def-label'>Call:</div>
 <div class='def-text'>(1) <b>context</b> <b>-e</b> <i>mask</i> ...
 (2) <b>context</b> <b>-g</b> <i>mode</i> ...
-(3) <b>context</b> <b>-t</b> [<i>trap</i>|<b>+</b>|<b>-</b>] ...
-(4) <b>context</b> <b>-v</b> [0-3] ...
-(5) <b>context</b> ... [<b>-h</b> <i>text</i>] [<b>-r</b>] [<b>-s</b>] [<b>-c</b>|<b>-q</b>|<b>-x</b>] [<b>--</b>] <i>arg</i>...</div>
+(2) <b>context</b> <b>-h</b> <i>hook</i> <i>vnam</i> ...
+(4) <b>context</b> <b>-t</b> [<i>trap</i>|<b>+</b>|<b>-</b>] ...
+(5) <b>context</b> <b>-v</b> [0-3] ...
+(6) <b>context</b> ... [<b>-r</b>] [<b>-s</b>] [<b>-c</b>|<b>-q</b>|<b>-x</b>] [<b>--</b>] <i>arg</i>...</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-c</b>  [*] rerun script in a console if neccessary
 <b>-e</b>  enable/disable &apos;abort on error&apos; traps
-<b>-g</b>  init gui (0:noop  1:window  2:console)
-<b>-h</b>  window title <b>currently not implemented</b>
+<b>-g</b>  init gui (0:off  1:window  2:console  -:auto)
+<b>-h</b>  register a hook
 <b>-n</b>  don&apos;t add <b>--wait</b> for console
 <b>-q</b>  [*] check if caller is running in a console
 <b>-r</b>  raise a fatal error if the caller is not root
@@ -533,17 +541,17 @@ done</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Form (3): The <b>-t</b> option can catch signals 1, 2, 3 and 15.  An internal trap handler is provided for use with <b>-t +</b>|<b>-</b>. This feature allows trap handling to be nested. The <a href="#confirm">confirm()</a> function uses <b>-t +</b>|<b>-</b> by default to capture keyboard interrupts. The internal trap handler sanitizes input and calls <a href="#quit">quit()</a>.</div>
+<div class='def-block'>Form (4): The <b>-t</b> option can catch signals 1, 2, 3 and 15.  An internal trap handler is provided for use with <b>-t +</b>|<b>-</b>. This feature allows trap handling to be nested. The <a href="#confirm">confirm()</a> function uses <b>-t +</b>|<b>-</b> by default to capture keyboard interrupts. The internal trap handler sanitizes input and calls <a href="#quit">quit()</a>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Form (4): It the correct way of changing <b>--verbose</b>, see expample. <b>DO NOT</b> modify <b>CEN_VERB</b> directly.</div>
+<div class='def-block'>Form (5): Is the correct way of changing the <b>--verbose</b> state, see expample. <b>DO NOT</b> modify <b>CEN_VERB</b> directly.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Form (5): Option <b>-r</b> (without <b>-s</b>) is used to stop a non-root user via <a href="#fatal">fatal()</a>. The <b>-c</b> and <b>-x</b> options re-run the script via <a href="_centauri_bash_run.html#terminal">terminal()</a> if needed. And <b>-s</b> may re-run the script via <b>&quot;sudo&quot;</b>.</div>
+<div class='def-block'>Form (6): Option <b>-r</b> (without <b>-s</b>) is used to stop a non-root user via <a href="#fatal">fatal()</a>. The <b>-c</b> and <b>-x</b> options re-run the script via <a href="_centauri_bash_run.html#terminal">terminal()</a> if needed. And <b>-s</b> may re-run the script via <b>&quot;sudo&quot;</b>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -749,7 +757,12 @@ fi</pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remarks:</div>
-<div class='def-block'><i>script</i> must implement some default options like <b>--dryrun</b>, <b>--verbose</b>, <b>--quiet</b> and <b>--embed</b>.</div>
+<div class='def-block'>A <i>module</i> must be executable to be loaded. Packaged scripts can only use modules attached to the script file, module loading will be simulated.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>A <i>script</i> must implement some default options like <b>--dryrun</b>, <b>--verbose</b>, <b>--quiet</b> and <b>--embed</b>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -1176,7 +1189,7 @@ create <b>-t</b> <b>-v</b> <b>&quot;$data&quot;</b> <b>-h</b> - <b>&quot;$CEN_FO
 <span>Function</span><span> - </span><span>sysfind</span><span> - </span><span>check for commands and builtins</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>sysfind</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b>] [<b>-e</b>|<b>-f</b>|<b>-w</b>|<b>-q</b>] [<b>-p</b> <i>path</i>] [<b>-s</b> <i>var</i>] <i>cmd</i>...</div>
+<div class='def-text'><b>sysfind</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b>] [<b>-i</b>] [<b>-e</b>|<b>-f</b>|<b>-w</b>|<b>-q</b>] [<b>-p</b> <i>path</i>] [<b>-s</b> <i>var</i>] <i>cmd</i>...</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -1185,6 +1198,7 @@ create <b>-t</b> <b>-v</b> <b>&quot;$data&quot;</b> <b>-h</b> - <b>&quot;$CEN_FO
 <b>-d</b>  drop from cache (use <b>-d</b> <b>-c</b> to refresh cache entries)
 <b>-e</b>  print error message
 <b>-f</b>  call <a href="#fatal">fatal()</a> on error
+<b>-i</b>  ignore cached builtin, search external command
 <b>-o</b>  one match only, skip missing commands
 <b>-p</b>  overrides the <b>PATH</b> environment variable
 <b>-s</b>  save full command path(s) to <i>var</i>
@@ -1214,12 +1228,12 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 </div>
 <div class='def-row'>
 <div class='def-label'>Remarks:</div>
-<div class='def-block'>This function is used by <a href="#system">system()</a> and <a href="_centauri_bash_ext.html#sysrun">sysrun()</a>. A command cache is maintained in the <b>CEN_CMD_PATH</b> dictionary. The keys are command or builtin names; values are absolute paths for external commands or &apos;-&apos; for builtins.</div>
+<div class='def-block'>This function is used by <a href="#system">system()</a> and <a href="_centauri_bash_ext.html#sysrun">sysrun()</a>. A command cache is maintained in the <b>CEN_COMMANDS</b> dictionary. The keys are command or builtin names; values are absolute paths for external commands or &apos;-&apos; for builtins.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>When <i>cmd</i> is a plain name (without slashes) and if <i>cmd</i> is cached, the cached result is returned. When <i>cmd</i> is a path no cache lookup is done and not builtin will be used (overriding <b>-b</b>).</div>
+<div class='def-block'>When <i>cmd</i> is a plain name (without slashes) and if <i>cmd</i> is cached, the cached result is returned. When <i>cmd</i> is a path no cache lookup is done and no builtin will be used (overriding <b>-b</b>). The <b>-i</b> option ignores builtin cache entries and instead searches for external commands.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -1234,7 +1248,12 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Bash builtins are used only with option <b>-b</b>. Without <b>-b</b> builtins are ignored. When <b>-b</b> is used a builtin shadows an external command. If <i>cmd</i> is a path, the <b>-b</b> option is disabled and no builtins are used.</div>
+<div class='def-block'>Bash builtins are searched only with option <b>-b</b>. Without <b>-b</b> builtins are ignored. When <b>-b</b> is used a builtin shadows an external command. If <i>cmd</i> is a path, the <b>-b</b> option is disabled and no builtins are used.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Loadable builtins will not be autoloaded by this function, use <b>&quot;enable -a&quot;</b> to do so. See the <b>BASH_LOADABLES_PATH</b> variable. The <a href="_cen_bash_dyn.html">_cen_bash_dyn</a> module uses wrapper functions for autoload and uses <b>&quot;enbale -f&quot;</b> explicitly.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -1247,7 +1266,7 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <span>Function</span><span> - </span><span>system</span><span> - </span><span>run a command, builtin or function optinally capturing the output</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>system</b> [<b>-e</b>|<b>-f</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-p</b>|<b>-q</b>|<b>-v</b>] [<b>-x</b>] <i>opt</i>... [<b>--</b>] <i>cmd</i> <i>arg</i>...
+<div class='def-text'><b>system</b> [<b>-e</b>|<b>-f</b>] [<b>-b</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-p</b>|<b>-q</b>|<b>-v</b>] [<b>-x</b>] <i>opt</i>... [<b>--</b>] <i>cmd</i> <i>arg</i>...
 <b>system</b> <i>opt</i>... <b>-u</b> <i>user</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
 <b>system</b> <i>opt</i>... <b>-s</b> <i>var</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
 <b>system</b> <i>opt</i>... <b>-a</b> <i>var</i> [<b>-d</b> <i>del</i>] [<b>--</b>] <i>cmd</i> <i>arg</i>...
@@ -1257,13 +1276,14 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-a</b>  [*] save <b>/dev/stdout</b> to array <i>var</i>
+<b>-b</b>  prefer bash builtins over external commands
 <b>-c</b>  check if exernal or builtin commands exist (do not run)
 <b>-d</b>  array item delimiters, use with <b>-a</b>, default <b>&quot;\t\n&quot;</b>
 <b>-e</b>  print error message on error
 <b>-f</b>  call <a href="#fatal">fatal()</a> on error
 <b>-i</b>  add <b>-i</b> option to <a href="#message">message()</a> call
 <b>-m</b>  message for all output (implies <b>-s</b> and <b>-q</b>)
-<b>-n</b>  do not check command (implied if <i>cmd</i> is <b>eval</b>)
+<b>-n</b>  do not check command (implied if <i>cmd</i> is <b>eval</b>), allow script calls
 <b>-p</b>  [*] pretty print errors (implies <b>-s</b> and <b>-q</b>)
 <b>-q</b>  redirect <b>/dev/stderr</b> and <b>/dev/stdout</b> (to <b>/dev/null</b> without <b>-s</b>)
 <b>-r</b>  ignore option <b>--dryrun</b>
@@ -1297,28 +1317,49 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 </div>
 <div class='def-row'>
 <div class='def-label'>Commands:</div>
-<div class='def-block'>Unless option <b>-n</b> is used, <b>system</b> calls <b>&quot;sysfind -b -c &lt;cmd&gt;&quot;</b> to find out if an external command or a builtin exists (script functions are ignored). External comands are prefixed with a filesystem path and bash builtins are run as <b>&quot;builtin &lt;cmd&gt;&quot;</b>.</div>
+<div class='def-block'>The primary purpose of <b>system</b> is to run external commands. For bash builtins option <b>-b</b> must be used. A script function is executed only if option <b>-n</b> is used. In other words: by default builtins or functions are ignored and do not shadow external commands.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>When option <b>-n</b> is absent <b>system</b> will never run a script function. In other words: script functions do not shadow external programs or bash builtins.</div>
+<div class='def-block'>On execution without option <b>-n</b> external comands are prefixed with a filesystem path and bash builtins are run as <b>&quot;builtin &lt;cmd&gt;&quot;</b>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Unless <i>cmd</i> contains slashes (is a path) or option <b>-b</b> is used, builtins shadow commands. Unfortunately most bash builtins do not have the full functionality of their coreutil equivalents.</div>
+<div class='def-block'>Unless option <b>-q</b> is used, the execution takes place in a subshell via <b>&quot;$(&lt;cmd&gt; &lt;args&gt;)&quot;</b>. The command output is captured (see <b>-a</b> and <b>-s</b>) and on error pretty formatted messages can be printed (see <b>-e</b> and <b>-p</b>). Subshells can be avoided using <a href="_centauri_bash_ext.html#sysrun">sysrun()</a>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'><b>Note:</b> It is not possible for a script to disable builtins via <b>&quot;enable -n&quot;</b>. Use the following techniques to bypass a builtin:</div>
+<div class='def-block'>Scripts that use external tools should use <b>&quot;system -c &lt;cmd&gt;...&quot;</b> early to check if the required tools are available.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Builtins:</div>
+<div class='def-block'>Loadable bash builtins are not automatically loaded, see module <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> and the <a href="autoload.html">autoload</a> tool. The bash <b>enable</b> command options <b>-a</b>/<b>-n</b> have no effect for the <b>system</b> function.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Caching:</div>
+<div class='def-block'>Unless <i>cmd</i> contains a slash (is a path) the function <a href="#sysfind">sysfind()</a> is used to locate a path or to check for a builtin. The result is cached and reused. Option <b>-b</b> can override a cached path, and option <b>-n</b> does not use caching at all.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>  • pass a full path <i>cmd</i> to <b>system</b> (the path will be cached)
-  • explicitly call <b>&quot;sysfind -c &lt;cmd&gt;&quot;</b> before to seed the cache</div>
+<div class='def-block'>The cache can be seeded by calling sysfind explicitly before <b>system</b>. See also option <b>-c</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Output:</div>
+<div class='def-block'>The options <b>-q</b> <b>-p</b> <b>-e</b> and <b>-z</b> control which (error-)output is generated:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • <b>system</b>        [<b>-a</b>|<b>-s</b> <i>var</i>]   # no capture, no error message
+  • <b>system</b> <b>-q</b>     [<b>-a</b>|<b>-s</b> <i>var</i>]   # drop stdout and stderr, no error message
+  • <b>system</b> <b>-p</b>     [<b>-a</b>|<b>-s</b> <i>var</i>]   # drop stdout, prettify stderr, no error message
+  • <b>system</b> <b>-e</b>     [<b>-a</b>|<b>-s</b> <i>var</i>]   # no capture, error message
+  • <b>system</b> <b>-e</b> <b>-p</b>  [<b>-a</b>|<b>-s</b> <i>var</i>]   # capture stdout and stderr, error message
+  • <b>system</b> <b>-e</b> <b>-p</b> <b>-z</b>             # capture only stderr, error message</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
@@ -1336,14 +1377,14 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><pre><b>system</b> sleep 1                          # run builtin or program
+<div class='def-text'><pre><b>system</b> <b>-b</b> sleep 1                       # run builtin or program
 <b>system</b> rename <b>&quot;s/a/b/&quot;</b> *.tmp            # tool (/usr/bin/rename)
 <b>system</b> <b>-n</b> rename one two                # call a script function</pre></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><pre>@<b>CEN_HOOK_QUIT</b> <b>-h</b>                       # must run hooks ...
+<div class='def-text'><pre>quit <b>-h</b>                                 # must run hooks ...
 <b>system</b> <b>-x</b> <b>--</b> shutdown                   # ... before using exec</pre></div>
 </div>
 </section>

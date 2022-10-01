@@ -318,20 +318,21 @@ message <b>&quot;Index $valn is &apos;$valm&apos;&quot;</b></pre></div>
 </section>
 <section id='section-9'>
 <div id='prettypath' class='item-function'>
-<span>Function</span><span> - </span><span>prettypath</span><span> - </span><span>Get pretty path for file or folder</span></div>
+<span>Function</span><span> - </span><span>prettypath</span><span> - </span><span>Get pretty/canonical/real path of a file or folder</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'><b>prettypath</b> [<b>-f</b>|<b>-q</b>|<b>-w</b>] [<b>-e</b>] [<b>-s</b> <i>var</i>] [<b>-t</b> <i>trm</i>]
-            [<b>-n</b>] [<b>-b</b>] [<b>-c</b>|<b>-p</b>] [<b>--</b>] [<i>path</i>]</div>
+            [<b>-n</b>] [<b>-b</b>] [<b>-c</b>|<b>-l</b>] [<b>-p</b>] [<b>--</b>] [<i>path</i>]</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
-<div class='def-text'><b>-b</b>  get dirname of argument
-<b>-c</b>  canonicalize path (e.g return full path)
+<div class='def-text'><b>-b</b>  get dirname of argument (strip trailing file name)
+<b>-c</b>  canonicalize path (return full physical path)
 <b>-e</b>  <i>path</i> must exist
 <b>-f</b>  errors are made fatal
+<b>-l</b>  read symlink but do not canonicalize (return logical path)
 <b>-n</b>  network (abstract) path, see <b>repath</b> in <b>centauri-bash-lib</b>
-<b>-p</b>  get physical path (default is a logical path)
+<b>-p</b>  prettify path, see <b>repath</b> in <b>centauri-bash-lib</b>
 <b>-q</b>  output no error messages
 <b>-s</b>  save path to <i>var</i> (default is <b>CEN_PRETTYPATH</b>)
 <b>-t</b>  trim prefix from result path
@@ -456,14 +457,14 @@ echo two &gt;&amp;$fhan                # second output line
 </section>
 <section id='section-11'>
 <div id='remove' class='item-function'>
-<span>Function</span><span> - </span><span>remove</span><span> - </span><span>Remove files or folders using /usr/bin/ ... unlink, rm, rmdir</span></div>
+<span>Function</span><span> - </span><span>remove</span><span> - </span><span>Remove files or folders using rm, rmdir coreutil or builtin</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'><b>remove</b> [<b>-d</b>] [<b>-e</b>] [<b>-o</b>] [<b>-r</b>] [<b>-f</b>|<b>-q</b>] [<b>-s</b>|<b>-v</b>] <i>path</i>...</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
-<div class='def-text'><b>-d</b>  recurse folders (using <b>&quot;/usr/bin/rm -r&quot;</b>)
+<div class='def-text'><b>-d</b>  recurse folders (like using <b>&quot;/usr/bin/rm -r&quot;</b>)
 <b>-e</b>  files/dirs must exist (default is <b>&quot;/usr/bin/rm -f&quot;</b>)
 <b>-f</b>  make errors fatal
 <b>-o</b>  add option <b>--one-file-system</b> to <b>rm</b> command
@@ -526,19 +527,20 @@ echo two &gt;&amp;$fhan                # second output line
 <span>Function</span><span> - </span><span>resolve</span><span> - </span><span>Resolve and prettify (multiple) file/dir paths</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>resolve</b> [<b>-a</b> <i>arr</i>|<b>-s</b> <i>var</i>] [<b>-t</b> <i>trm</i>] [<b>-e</b>] [<b>-f</b>|<b>-q</b>] [<b>-m</b>|<b>-p</b>] <i>path</i>...
-<b>resolve</b> [<b>-s</b> <i>var</i>] [<b>-e</b>] [<b>-f</b>] [<b>-m</b>|<b>-p</b>] <b>-x</b> <i>exe</i></div>
+<div class='def-text'><b>resolve</b> [<b>-a</b> <i>arr</i>|<b>-s</b> <i>var</i>] [<b>-t</b> <i>trm</i>] [<b>-e</b>] [<b>-f</b>|<b>-q</b>] [<b>-c</b>|<b>-m</b>] [<b>-p</b>] <i>path</i>...
+<b>resolve</b> [<b>-s</b> <i>var</i>] [<b>-e</b>] [<b>-f</b>|<b>-q</b>] [<b>-c</b>|<b>-m</b>] [<b>-p</b>] <b>-x</b>|<b>-y</b> <i>exe</i></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-a</b>  save result to array <i>arr</i>
-<b>-e</b>  paths must exist, don&apos;t pass non-existing to readlink
+<b>-c</b>  canonicalize, ignore missing <i>path</i>s
+<b>-e</b>  error if <i>path</i>s does not exist
 <b>-f</b>  make errors fatal
-<b>-m</b>  canonicalize only, missing ok (disabled by <b>-p</b>)
+<b>-m</b>  canonicalize, including missing <i>path</i>s
 <b>-s</b>  save result to <i>var</i>
 <b>-t</b>  trim prefix from result paths
 <b>-f</b>  make errors fatal
-<b>-p</b>  return pretty name (not for missing paths, disables <b>-m</b>)
+<b>-p</b>  return pretty name, see <a href="#prettypath">prettypath()</a>
 <b>-q</b>  do not report errors
 <b>-x</b>  locate an executable file using <b>BASH_ARGV</b>0
 <b>-y</b>  locate a file using <b>BASH_ARGV</b>0</div>
@@ -547,7 +549,7 @@ echo two &gt;&amp;$fhan                # second output line
 <div class='def-label'>Arguments:</div>
 <div class='def-text'><i>path</i>  any symlink, file or folder. All <i>path</i> args are
       resolved at once by a single call to <b>/usr/bin/readlink</b>
-<i>exe</i>   name of an executable file
+<i>exe</i>   name of an executable file or script
 <i>arr</i>   result array
 <i>var</i>   result string (one line per <i>path</i>)
 <i>trm</i>   remove any leading <i>trm</i><b>/</b> from result <i>path</i>s</div>
@@ -564,6 +566,11 @@ echo two &gt;&amp;$fhan                # second output line
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-block'>If option <b>-p</b> is given, the function prettifies the result paths in the same way as <a href="#prettypath">prettypath()</a> does. This option overrides option <b>-m</b> and only existing paths will be returned.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Options <b>-x</b>/<b>-y</b> search $<b>CEN_TOOLS</b>, $<b>CEN_LIBRARY</b> and the <b>BASH_ARGV</b>0 basedir. A script can use this to get the invocating path or a file in the library or the same folder as the invocating path.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
@@ -583,8 +590,81 @@ echo two &gt;&amp;$fhan                # second output line
 <b>resolve</b> <b>--</b> here/* and/there*    # readlink execution would fail
 <b>resolve</b> <b>-e</b> <b>--</b> here/* and/there* # error message per missing item</pre></div>
 </div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># get my invokation path
+<b>resolve</b> <b>-x</b> <b>-p</b> &amp;&amp; message <b>&quot;Path:&quot;</b> <b>&quot;${CEN_RESOLVE%/*}&quot;</b></pre></div>
+</div>
 </section>
 <section id='section-14'>
+<div id='splitcall' class='item-function'>
+<span>Function</span><span> - </span><span>splitcall</span><span> - </span><span>run commands or funtions splitting long arguments lists</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'><b>splitcall</b> <b>-c</b>|<b>-s</b> <i>what</i> [<b>-e</b>|<b>-f</b>|<b>-q</b>] [<b>-p</b>] [<b>-r</b>]
+                     [<b>-a</b> <i>para</i>] [<b>-m</b> <i>maxi</i>] [<b>-d</b> <i>deli</i>] <b>-i</b> <i>data</i>
+<b>splitcall</b> <b>-c</b>|<b>-s</b> <i>what</i> [<b>-e</b>|<b>-f</b>|<b>-q</b>] [<b>-r</b>]
+                     [<b>-a</b> <i>para</i>] [<b>-m</b> <i>maxi</i>] [<b>-p</b>] [<b>-d</b> <i>deli</i>] <b>--</b> <i>arg</i>...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>*<b>not yet implented*</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>  parameter array, see below
+<b>-c</b>  call a script function
+<b>-d</b>  delimiter passed to <a href="_centauri_bash_lib.html#splitjoin">splitjoin()</a>
+<b>-e</b>  add option <b>-e</b> (report errors)
+<b>-f</b>  add option <b>-f</b> (make errors fatal)
+<b>-i</b>  input variable name (can be an array)
+<b>-m</b>  maximum chunk size or parallel processes
+<b>-p</b>  parallel processing, see below
+<b>-q</b>  add option <b>-q</b> (no messages)
+<b>-r</b>  add option <b>-r</b> (ignore <b>--dryrun</b>)
+<b>-s</b>  use <a href="#sysrun">sysrun()</a> to run a (external) command</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>arg</i>   list of fields that get added to <i>data</i>
+<i>data</i>  list to be split into chunks
+<i>func</i>  a function to be invoked for chunks of <i>data</i>
+<i>para</i>  parameters passed to <i>func</i>, can be string or array, &apos;@&apos;
+      stands for a chunk of <i>data</i>. If no &apos;@&apos; field is passed,
+      it automatically gets appended to <i>para</i>.
+<i>maxi</i>  maximum chunk size (default: <b>-c</b> uses 100, <b>-p</b> uses number of cpus)
+<i>deli</i>  field delimiter if <i>data</i> is a string, not used for array</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre># call function: symlink <b>-e</b> <b>-r</b> <b>--</b> <b>&quot;$@&quot;</b> <b>&quot;dest-folder&quot;</b>
+local para(<b>&quot;--&quot;</b> <b>&quot;@&quot;</b> <b>&quot;$dest-folder&quot;</b>)
+<b>splitcall</b> <b>-c</b> symlink <b>-e</b> <b>-r</b> <b>-m</b> 1024 <b>-a</b> para <b>--</b> <b>&quot;$@&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># run a program: sysrun <b>-e</b> <b>-p</b> <b>-r</b> <b>--</b> mytool <b>--option</b> <b>&quot;$1&quot;</b> <b>&quot;dest&quot;</b>
+local para(<b>&quot;--option&quot;</b> <b>&quot;@&quot;</b> <b>&quot;$dest&quot;</b>)
+local arga(<b>&quot;tick&quot;</b> <b>&quot;tack&quot;</b> <b>&quot;tock&quot;</b>)
+<b>splitcall</b> <b>-s</b> <b>&quot;mytool&quot;</b> <b>-e</b> <b>-r</b> <b>-m</b> 1 <b>-a</b> para <b>-i</b> arga</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># parallel processes: sysrun <b>--</b> worker <b>&quot;$1&quot;</b>
+<b>splitcall</b> <b>-p</b> <b>-s</b> <b>&quot;worker&quot;</b> <b>--</b> &apos;1.dat&apos; &apos;2.dat&apos; &apos;3.dat&apos;</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># parallel subshells: wrapper <b>-e</b> <b>-r</b> <b>--</b> <b>&quot;$1&quot;</b>
+<b>splitcall</b> <b>-p</b> <b>-c</b> <b>&quot;wrapper&quot;</b> <b>-e</b> <b>-r</b> <b>--</b> &apos;1.dat&apos; &apos;2.dat&apos; &apos;3.dat&apos;</pre></div>
+</div>
+</section>
+<section id='section-15'>
 <div id='splitpath' class='item-function'>
 <span>Function</span><span> - </span><span>splitpath</span><span> - </span><span>Split path name into components</span></div>
 <div class='def-row'>
@@ -634,7 +714,7 @@ echo two &gt;&amp;$fhan                # second output line
 <b>splitpath</b>    <b>-f</b> ...  #  =&gt;  (&quot;/one/two&quot; &quot;a.b.c&quot;)</pre></div>
 </div>
 </section>
-<section id='section-15'>
+<section id='section-16'>
 <div id='suffixpath' class='item-function'>
 <span>Function</span><span> - </span><span>suffixpath</span><span> - </span><span>add or remove a suffix to or from a file path</span></div>
 <div class='def-row'>
@@ -711,63 +791,97 @@ case $? in
 esac</pre></div>
 </div>
 </section>
-<section id='section-16'>
+<section id='section-17'>
 <div id='symlink' class='item-function'>
-<span>Function</span><span> - </span><span>symlink</span><span> - </span><span>Make a symlink to a target using /usr/bin/ln</span></div>
+<span>Function</span><span> - </span><span>symlink</span><span> - </span><span>Make symlink single or multiple targets using /usr/bin/ln</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>symlink</b> [<b>-r</b>|<b>-q</b>] [<b>-m</b>] [<b>-s</b>] [<b>--</b>] <i>target</i> [<i>link</i>]</div>
+<div class='def-text'>(1) <b>symlink</b> [<b>-f</b>|<b>-q</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-x</b>] [<b>-r</b>] [<b>-s</b>] [<b>--</b>] <i>target</i> <i>link</i>
+(2) <b>symlink</b> [<b>-f</b>|<b>-q</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-x</b>] [<b>-r</b>] [<b>-s</b>] [<b>--</b>] <i>target</i> [<i>fldr</i>]
+(3) <b>symlink</b> [<b>-f</b>|<b>-q</b>] [<b>-n</b>] [<b>-r</b>] [<b>--</b>] <i>target</i>... <i>fldr</i>
+(4) <b>symlink</b> <b>-n</b> [<b>-f</b>|<b>-q</b>] [<b>-r</b>] [<b>-s</b>] [<b>--</b>] <i>target</i> <i>fldr</i>/<i>link</i></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-c</b>  canonicalize target path
 <b>-d</b>  allow that <i>link</i> is a folder
 <b>-f</b>  make errors fatal
-<b>-i</b>  no error message for non-existing target
+<b>-i</b>  [*] no error message for missing <i>target</i>
 <b>-m</b>  if link is a file/dir move it to &apos;<i>link</i>.$<b>CEN_NAME</b>&apos;
-<b>-n</b>  don&apos;t check <i>target</i> allowing stale <b>symlink</b>
+<b>-n</b>  [*] no checks, <i>link</i> will replace file (ln <b>-f</b> <b>-s</b>)
 <b>-q</b>  do not report errors
 <b>-r</b>  make relative links
 <b>-s</b>  do not generate messages
-<b>-x</b>  if link is a file/dir delete it</div>
+<b>-x</b>  if <i>link</i> is a file/dir explicitly delete it</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>[*] these options allow the creation of stale symlinks</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>target</i> location the <b>symlink</b> points to
+<i>link</i>   name (or path) of <b>symlink</b> to be created
+<i>fldr</i>   folder where to create the <b>symlink</b></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Return:</div>
 <div class='def-text'><b>0</b> := OK   <b>1</b> := no <i>target</i>   <b>2</b> := <i>link</i> is a file</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
-<div class='def-block'>This is a conveniency wrapper for <b>/usr/bin/ln</b> that provides some extra reporting and error handling. Without option <b>-n</b> the function refuses to create a symlink if <i>target</i> does not exist.</div>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This is a conveniency wrapper for <b>/usr/bin/ln</b> (or the loadable bash builtin) that provides some extra reporting and error handling. Without option <b>-n</b> the form (1) and (2) refuse to create a symlink if <i>target</i> does not exist.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (3) can place multiple links into a folder but cannot check <i>target</i>... at all.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The function cannot check a relative <i>target</i> path with <i>link</i> being a folder, see form (4).</div>
 </div>
 </section>
-<section id='section-17'>
+<section id='section-18'>
 <div id='sysrun' class='item-function'>
-<span>Function</span><span> - </span><span>sysrun</span><span> - </span><span>generate messages for errors, optionally run a command</span></div>
+<span>Function</span><span> - </span><span>sysrun</span><span> - </span><span>run a command or builtin, optionally generate error messages</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'>(1) <b>sysrun</b> [<b>-f</b>] [<b>-m</b> <i>mesg</i>] <b>-c</b> <i>stat</i> [<b>--</b>] [<i>cmd</i> <i>arg</i>...]
-(2) <b>sysrun</b> [<b>-f</b>|<b>-q</b>] [<b>-a</b> <i>anam</i>] [<b>-m</b> <i>mesg</i>] [<b>-b</b>|<b>-n</b>]
-           [<b>-d</b>] [<b>-p</b>] [<b>-r</b>] [<b>-s</b>] [<b>--</b>] <i>cmd</i> <i>arg</i>...</div>
+<div class='def-text'>(1) <b>sysrun</b> [<b>-e</b>|<b>-f</b>] [<b>-p</b>] [<b>-m</b> <i>mesg</i>] [<b>-w</b> <i>what</i>]
+           [<b>-a</b> <i>anam</i>] [<b>-b</b>|<b>-i</b>] [<b>-d</b>] [<b>-n</b>] [<b>-r</b>] [<b>-z</b>] [<b>--</b>] <i>cmd</i> <i>arg</i>...
+(2) <b>sysrun</b> <b>-q</b>
+           [<b>-a</b> <i>anam</i>] [<b>-b</b>|<b>-i</b>] [<b>-d</b>] [<b>-n</b>] [<b>-r</b>] [<b>-z</b>] [<b>--</b>] <i>cmd</i> <i>arg</i>...
+(3) <b>sysrun</b> <b>-c</b> <i>stat</i> [<b>-f</b>] [<b>-m</b> <i>mesg</i>] [<b>--</b>] [<i>cmd</i> <i>arg</i>...]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>This is a faster, simpler variant of <a href="_centauri_bash_lib.html#system">system()</a>, see below. Form (1) runs a command or builtin with error reporting, form (2) does no error reporting at all. Form (3) can be used to generate error messages from error codes.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
-<div class='def-text'><b>-a</b>  capture output into an array
-<b>-b</b>  do not run a script function, prefer builtin over command
+<div class='def-text'><b>-a</b>  capture <b>/dev/stdout</b> into an array (overrides <b>-p</b> and <b>-q</b>)
+<b>-b</b>  do not run a function, prefer builtin over external
 <b>-c</b>  error code for reporting (<i>cmd</i> is not executed)
 <b>-d</b>  use &apos;./&apos; prefix if 1st arg starts with a &apos;-&apos;
-<b>-e</b>  ignored for <a href="_centauri_bash_lib.html#system">system()</a> compatibility
-<b>-f</b>  make errors fatal
-<b>-m</b>  format string for error message
+<b>-e</b>  print error message if command <i>cmd</i> fails
+<b>-f</b>  like <b>-e</b> but make errors fatal
+<b>-i</b>  do not run a function or builtin, see <b>sysfind -i</b>
+<b>-m</b>  custom format string for error message
 <b>-n</b>  do no checks on <i>cmd</i> (implied if <i>cmd</i> is a path)
-<b>-p</b>  pretty-print error messages
-<b>-q</b>  do not output error messages
+<b>-p</b>  discard <b>/dev/stdout</b>, capture <b>/dev/stderr</b>, pretty-print error message
+<b>-q</b>  discard <b>/dev/stdout</b> and <b>/dev/stderr</b>, no error message
 <b>-r</b>  ignore <b>--dryrun</b>
-<b>-s</b>  do not report activity via <a href="_centauri_bash_lib.html#trace">trace()</a>
-<b>-z</b>  don&apos;t capture <b>/dev/stdout</b>, but <b>-a</b> and <b>-p</b> capture <b>/dev/stderr</b></div>
+<b>-s</b>  <b>DO NOT USE</b>
+<b>-w</b>  override command name in error message
+<b>-z</b>  don&apos;t capture <b>/dev/stdout</b> (for use with <b>-p</b>)</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Arguments:</div>
 <div class='def-text'><i>mesg</i>  printf format string with 2 string variables
+<i>what</i>  shown in error message
 <i>stat</i>  status code to report (<b>0</b> reports nothing)
 <i>cmd</i>   a program name or path
 <i>arg</i>   program argument, at least one argument is required</div>
@@ -778,12 +892,12 @@ esac</pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remarks:</div>
-<div class='def-block'>This function can be used (1) to create error messages or (2) to run a command - optionally reporting errors. It is much simpler than <a href="_centauri_bash_lib.html#system">system()</a> and uses a temporary file to catch the program output (or error messages).</div>
+<div class='def-block'>The options <b>-e</b> <b>-f</b> <b>-p</b> <b>-q</b> and <b>-z</b> of this function work like in <a href="_centauri_bash_lib.html#system">system()</a>. The use of <b>-c</b> <b>-m</b> and <b>-w</b> offers extra functionality for error reporting. The main reason for using <b>sysrun</b> is performance:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The bash <b>&quot;$(&lt;cmd&gt; &lt;arg&gt;...)&quot;</b> construct as it is used by <a href="_centauri_bash_lib.html#system">system()</a> creates a subshell for each command, which is time consuming and spawns extra processes. On the other hand the temporary file used by <a href="#sysrun">sysrun()</a> has to be created on 1st use and later to be deleted in a quit hook.</div>
+<div class='def-block'>The bash <b>&quot;$(&lt;cmd&gt; &lt;arg&gt;...)&quot;</b> construct as it is used by <a href="_centauri_bash_lib.html#system">system()</a> creates a subshell for each command, which is time consuming and can spawn extra processes. On the other hand the temporary file used by <b>sysrun</b> has to be created on 1st use and later to be deleted in a quit hook, see <a href="_centauri_bash_lib.html#quit">quit()</a>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -798,12 +912,12 @@ esac</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Option <b>-b</b> will always use an available builtin and will not run script functions. Without <b>-b</b> <b>sysrun</b> behaves like <a href="_centauri_bash_lib.html#system">system()</a> and honors cached paths.</div>
+<div class='def-block'>Option <b>-b</b> will always use an available builtin and will not run script functions. Without <b>-b</b> <b>sysrun</b> behaves like <a href="_centauri_bash_lib.html#system">system()</a> and honors cached paths. Option <b>-i</b> can be used to run an external command rather than a builtin.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Using a full path for <i>cmd</i> disables option <b>-b</b> and allows to bypass cached paths. This can be used for example to bypass a builtin. <b>Note:</b> It is not possible for a script to disable builtins via <b>&quot;enable -n&quot;</b>.</div>
+<div class='def-block'>Using a full path for <i>cmd</i> overrides option <b>-b</b> and allows to ignore cached paths. This can be used for example to bypass a builtin. <b>Note:</b> It is not possible for a script to disable builtins via <b>&quot;enable -n&quot;</b>. See <a href="_centauri_bash_lib.html#sysfind">sysfind()</a></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -813,7 +927,7 @@ esac</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>It is possible to use <b>sysrun</b> from a subshell, but the main process must have set the tmpfile base folder (like <b>&quot;tmpfile -n&quot;</b>) before starting the subshell.</div>
+<div class='def-block'>It is possible to use <b>sysrun</b> from a subshell, but the main process should have set the tmpfile base folder (like <b>&quot;tmpfile -n&quot;</b>) before starting the subshell in order to remove temporary files.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -850,7 +964,7 @@ esac</pre></div>
 <b>sysrun</b> <b>-a</b> aout <b>-p</b> <b>--</b> ls <b>-l</b> &amp;&amp; splitjoin <b>-i</b> aout</pre></div>
 </div>
 </section>
-<section id='section-18'>
+<section id='section-19'>
 <div id='tmpfile' class='item-function'>
 <span>Function</span><span> - </span><span>tmpfile</span><span> - </span><span>create temporary files that get deleted on program exit</span></div>
 <div class='def-row'>
@@ -872,6 +986,7 @@ esac</pre></div>
 <b>-f</b>  make errors fatal
 <b>-n</b>  do not actually create the file
 <b>-p</b>  create a pipe (fifo) instead of a file
+<b>-r</b>  ignore <b>--dryrun</b>
 <b>-s</b>  use variable <i>name</i> to save result (default is <b>CEN_TMPFILE</b>)
 <b>-t</b>  set base folder to <b>&quot;/tmp/centauri-&lt;user&gt;&quot;</b>
 <b>-v</b>  set base folder to <b>&quot;/var/tmp/centauri-&lt;user&gt;&quot;</b></div>
@@ -911,7 +1026,7 @@ message <b>&quot;Base folder: $CEN_EXT_TEMP, temp file: $myfile&quot;</b></pre><
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-text'><pre># delete a specific base folder (resets current base)
-<b>tmpfile</b> <b>&quot;/var/spool/$CEN_NAME&quot;</b> <b>-d</b></pre></div>
+<b>tmpfile</b> <b>-b</b> <b>&quot;/var/spool/$CEN_NAME&quot;</b> <b>-d</b></pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remarks:</div>
@@ -926,7 +1041,7 @@ v or <b>-b</b> does not automatically delete prevously created files.</div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Daemons or services should use <b>-v</b> or unset <b>XDG_RUNTIME_DIR</b>. Otherwise systemd might delete the base folder, which in turn may cause severe problems as new temp files cannot be create any more. The code in <a href="_cen_bash_svc.html">_cen_bash_svc</a> uses <b>-v</b>.</div>
+<div class='def-block'>Daemons or services should use <b>-v</b> or unset <b>XDG_RUNTIME_DIR</b>. Otherwise systemd might delete the base folder, which in turn may cause severe problems as new temp files cannot be created any longer. The <a href="_cen_bash_svc.html">_cen_bash_svc</a> module unsets <b>XDG_RUNTIME_DIR</b> on load.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -941,10 +1056,19 @@ v or <b>-b</b> does not automatically delete prevously created files.</div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>To use <b>tmpfile</b> from a subshell, the parent shell must initialize the base folder (like <b>&quot;tmpfile -n&quot;</b>). Otherwise the function must abort because no quit hook can be registered in a subshell.</div>
+<div class='def-block'>When using <b>tmpfile</b> from a subshell care must been taken to remove temp files. The subshell code must not call <a href="_centauri_bash_lib.html#quit">quit()</a> but can safely call <b>&quot;tempfile -d&quot;</b>. Terminating the main shell via quit() may unexpectedly delete temp files of subshells:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><pre># save subshell use ...
+<b>tmpfile</b> <b>-n</b>                      # main shell registers hook
+do_background &amp;                 # run subshell
+do_something_else
+wait ; quit                     # wait for subshell before quit</pre></div>
 </div>
 </section>
-<section id='section-19'>
+<section id='section-20'>
 <div id='trimjoin' class='item-function'>
 <span>Function</span><span> - </span><span>trimjoin</span><span> - </span><span>remove leading/trailing whitespace and optionally join</span></div>
 <div class='def-row'>
@@ -987,7 +1111,7 @@ v or <b>-b</b> does not automatically delete prevously created files.</div>
 <div class='def-text'><pre><b>trimjoin</b> <b>-d</b> <b>&quot;, &quot;</b> <b>&quot;one&quot;</b> <b>&quot;two&quot;</b> <b>&quot;three&quot;</b>    # comma separated list</pre></div>
 </div>
 </section>
-<section id='section-20'>
+<section id='section-21'>
 <div id='walk' class='item-function'>
 <span>Function</span><span> - </span><span>walk</span><span> - </span><span>Iterate over files and folders</span></div>
 <div class='def-row'>

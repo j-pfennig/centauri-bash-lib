@@ -330,12 +330,23 @@ PATH+=<b>&quot;:~/centauritools&quot;</b>            # add this to your ~/.bashr
 </div>
 <div class='def-row'>
 <div class='def-label'>Non-FHS:</div>
-<div class='def-block'>Most Linux systems follow the FSH standard. For other implementations or to install into a non-root FS, the <b>CEN_PATHS</b> array varialbe is provided. It is initialized by the <a href="#libraryproxy">library proxy</a> to FSH values:</div>
+<div class='def-block'>Most Linux systems follow the FSH standard. For other implementations or to install into a non-root FS, the <b>CEN_PATHS</b> array variable is provided. It is initialized by the <a href="#libraryproxy">library proxy</a> to FSH values. The <b>CEN_PREFIX</b> variable can be set to point to a different root folder:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><pre># paths that can be installation dependent
+<div class='def-text'><pre># to alter the FS root folder (not required for termux, see below)
+export <b>CEN_PREFIX</b>=/some/other/root</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When <b>CEN_PREFIX</b> is not set but <b>PREFIX</b> is non-empty and no <b>&quot;/var&quot;</b> folder is found, _centauri_bash_lib sets <b>CEN_PREFIX</b>=<b>&quot;$PREFIX&quot;</b>. This is used to support termux linux on android. <b>CEN_PREFIX</b> is automatically prepended to <b>CEN_PATHS</b>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre># paths that can be installation dependent (don&apos;t use <b>CEN_PREFIX</b> here):
 <b>CEN_PATHS</b>=(<b>&quot;&quot;</b> <b>&quot;/usr/bin&quot;</b> <b>&quot;/etc&quot;</b> <b>&quot;/var&quot;</b> <b>&quot;/tmp&quot;</b>)</pre></div>
 </div>
 <div class='def-break'></div>
