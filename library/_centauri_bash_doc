@@ -404,6 +404,7 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #         CEN_QUIT_SANE      run "stty sane" in quit if non-zero
 #         CEN_QUIT_TRAP      default signal to enter "quit -s 4"
 #         CEN_QUIT_WAIT      wait after quit
+#         CEN_QUIT_WSUB      quit must wait for sub-shells to terminate
 #         CEN_VERB           --verbose|--quiet level, **0**:quiet  **1**:normal  **2**:verbose
 #         CEN_VERSION        script version, see [[versioning]] and [[_centauri_bash_lib]]
 #         CEN_YESNO          see --yes and --no options
@@ -419,14 +420,10 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #         CEN_TRACE          optimization: call [[trace()]] for -v only
 #         CEN_TRACE2         optimization: call [[trace()]] for -v -v only
 #
-#+Maps:   (dictionaries) bash has a scoping problem with maps, they must be
-#         declared in **_centauri_bash_lib** if they are to be global
+#+Maps:   (dictionaries) declared in **_centauri_bash_lib**
 #
-#         CEN_MODULES        loaded extension modules
-#         CEN_WALK_DMAP      used by [[walk()]]
-#         CEN_AUTOMOUNT_DIR  used by [[automount()]]
-#         CEN_USE_OMAP       used by [[usage()]]
-#         CEN_CMD_PATH       cached command paths, see [[sysfind()]]
+#         CEN_MODULES        loaded extension modules, see [[embed()]]
+#         CEN_COMMANDS       cached command paths, see [[sysfind()]]
 #
 #+Options: internal and user defined names should always start with CEN_OPT_
 #
@@ -517,21 +514,24 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #          In the form **CEN_**''<module>''**_**''<name>''. The definitions are placed
 #          at the top of the module. Only global variables are static.
 #
-#+         **declare -A** (to create a dictionary) is weird (or broken?). All
-#          dictionaries used in _centauri_bash_lib MUST be defined in the
-#          main module.
+#+         Bash variables assigned outside a function automatically become
+#          global. Library modules are sourced and dynamic loading triggers
+#          sourcing from a function, but the statement above is still correct.
+#
+#+         Take care of using **declare -g -A** (to create a global dictionary)
+#          inside modules. Option -g is not the default, even outside a function.
 #
 #+Scoping: When bash searches a variable is walks back in the call stack until
 #          it encounters a variable definition. If not found anywhere else the
 #          variable becomes global.
 #
-#+         As a consequence each varable definition may shield an earlier
+#+         As a consequence each variable definition may shadow an earlier
 #          definition. This is sometimes confusing in callback functions.
 #          To mitigate this problem the library prefixes local names with
 #          an underscore. For example **_item** is used by the library whereas
-#          **item** should be a user define variable.
+#          **item** should be a user defined variable.
 #
-#+References: °bash has reference variables:**local -n _vref=**''<name>'' . These
+#+References: °bash has reference variables: **local -n _vref=**''<name>'' . These
 #          allow a functions to return values. This feature must be used with
 #          great care because of possible typing errors and the scoping rules:
 #
@@ -544,13 +544,17 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #.         local test=4
 #.         demo test 5 ; echo "test=$test (expecting 5)"
 #
-#+Arrays:  bash does lazy initialization of maps and arrays. Defining one of
-#          these only sets a flag and is quite fast. Here some conventions:
+#+Arrays:  bash does lazy initialization of arrays. Creation of an empty
+#          array only sets a flag and is quite fast. Here some conventions:
 #
 #.         CEN_EXT_MOUNTS=()           # declare an static, global array
-#.         declare -A CEN_WALK_DMYP    # declare a map (must be global)
 #.         local _stxt=()              # declare a local array
 #.         _stxt=()                    # drop array content
+#
+#+         Dictionaries are more expensive (~4kByte per instance) and are
+#          instantiated at declaration time:
+#
+#.         declare -g -A CEN_WALK_DMAP # declare a map (use -g for global)
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # documentation - The source code documentation extractor

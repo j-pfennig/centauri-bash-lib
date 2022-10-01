@@ -4,35 +4,44 @@
 #
 # Call:     . _centauri_bash_pip
 #
-#+General:  The module implements three functions that use pipes (fifo) or
+#+General:  The module implements four functions that use pipes (fifos) or
 #           the bash coproc command:
 #
 #,          - [[sysbind()]]  - bind two pipes to a server process, simple RPC calls
 #,          - [[syspager()]] - pipe a command's output through a pager (like less)
 #,          - [[syspipe()]]  - run a command in background using coproc or a pipe
+#,          - [[sysloop()]]  - implements an event loop using a pipe
 #
 # Copyright Dr. J. Pfennig (c) 2021-2022
 # ------------------------------------------------------------------------------
 
 CEN_MODULES['_centauri_bash_pip']='0.02:1'
 
+CEN_PIP_BUSY=                   # coproc recursion protection
+CEN_PIP_QUIT=                   # quit hook, see piploop()
+CEN_PIP_BMAP=                   # dictionary of sysbind instances
+
+embed -c '_centauri_bash_ext'           # import on demand
+
 # ------------------------------------------------------------------------------
 # Pager + Using a pager like less or more
 #
 #+The library supports a pager via the [[_centauri_bash_pip]] module. If this
 # module is available at script start time, the option --pager gets enabled
-# automatically and all output from [[run()]] or action handlers can be passed
-# through a pager this way.
+# automatically and all output from [[run()]], action handlers or [[usage()]]
+# can be passed through a pager this way.
 #
 #+The easiest method for paging output programmatically (and thereby honoring
 # the --pager option) is using the CEN_PAGER variable. On request the option
-# parser in [[main()]] will load [[_centauri_bash_pip]] and call [[syspipe()]]:
+# parser in [[main()]] will load [[_centauri_bash_pip]] and call [[syspipe()]].
+# The [[syspipe()]] call will set "CEN_PAGER=syspipe" if paging is enabled,
+# or clear CEN_PAGER if paging is off:
 #
 #.      $CEN_PAGER <worker> <arg>...
 #
-#+The [[syspipe()]] call will set "CEN_PAGER=syspipe" if paging is enabled,
-# or clear CEN_PAGER if paging is off. To enable paging when --pager is not
-# set, use the following code:
+#+The library functions [[main()]] and [[usage()]] use $CEN_PAGER internally
+# to pass their output to a pager. To enable paging without --pager being set,
+# use the following code:
 #
 #.      embed -q _centauri_bash_pip && syspipe  # load module and enable
 #.      $CEN_PAGER <worker> <arg>...
@@ -48,16 +57,19 @@ CEN_MODULES['_centauri_bash_pip']='0.02:1'
 # to prettify it.
 # ------------------------------------------------------------------------------
 
-embed -c '_centauri_bash_ext'           # import on demand
-
-CEN_PIP_BUSY=                           # coproc recursion protection
-
 # ------------------------------------------------------------------------------
 # sysbind - bind two pipes to an external server process, simple RPC calls
 #
-# Call:     sysbind [-e|-f] [-i <inst>] -s [-d <data>] [--] <serv> <arg>...
-#           sysbind [-e|-f] [-i <inst>] -c [<name>|-] [-a <rslt>] [-d <data> | [--] <arg>...]
-#           sysbind [-e|-f] [-i <inst>] -t
+# Call:     (1) sysbind [-e|-f] [-i <inst>] -s [-d <data>] [--] <serv> <arg>...
+#           (2) sysbind [-e|-f] [-i <inst>] -c [<name>|-] [-a <rslt>] [-d <data> | [--] <arg>...]
+#           (3) sysbind [-e|-f] [-i <inst>] -t
+#
+#           *** NOT YET IMPLEMENTED ***
+#
+#+          Form (1) starts one server process per instance, see <inst>. The server
+#           **/dev/stdin** and **/dev/stdout** are connected via pipes to this
+#           sysbind instance. Form (2) does a simple RPC call and (3) terminates
+#           the server and closes the instance.
 #
 # Options:  -a  destination array for RPC reply
 #           -i  array to keep state in (default: CEN_SYSBIND)
@@ -65,14 +77,16 @@ CEN_PIP_BUSY=                           # coproc recursion protection
 #           -d  send data to server
 #           -e  report errors
 #           -f  errors are fatal
-#           -s  open pipes (start server)
+#           -s  open pipes (start server process)
 #           -t  close pipes (terminate server)
 #
 # Arguments:<arg>   arguments for server
 #           <inst>  instance array, not to be modified by caller
 #           <rslt>  array to receive server reply
 #
-# Instance: An array managed by this function, not to be modified by caller
+# Return:   **true** at success or **false** otherwise.
+#
+#+Instance: An array managed by this function, not to be modified by caller
 #
 #,          inst[0]     process id of server
 #,          inst[1]     handle for send pipe
@@ -81,12 +95,17 @@ CEN_PIP_BUSY=                           # coproc recursion protection
 #,          inst[4]     receive fifo name (if any)
 #,          ...         opaque data for internal use
 #
-# Return:   **true** at success or **false** otherwise.
+#+          Using multiple instace arrays allow the use of multiple, independent
+#           servers.
 #
-#+The RPC protocol should be text-line based (server replies are split into
-# lines, delimiter is "\n"). The server must only send data in reply to a
-# request. On each request a reply must be send. Server replies must end with
-# a "\n".
+#+Protocol: The RPC protocol should be text-line based (server replies are split
+#           into lines, delimiter is "\n"). The server must only send data in
+#           reply to a request. On each request a reply must be sent. Server
+#           replies must end with a "\n".
+#
+#+          To terminate a server instance, option -t sends a SIGHUP signal before
+#           closing the pipes. On the client side syspipe registers a quit hook
+#           that terminates all servers via SIGHUP.
 # ------------------------------------------------------------------------------
 CEN_SYSBIND=
 sysbind() {
@@ -97,7 +116,7 @@ sysbind() {
       --)   shift ; break ;;
       -a)   shift ;;
       -i)   shift ; _inam="$1" ;;
-      -c)   shift _frun=2;;
+      -c)   shift ; _frun=2;;
       -d)   shift ;;
       -e)   _emsg='error' ;;
       -f)   _emsg='fatal' ;;
@@ -108,25 +127,54 @@ sysbind() {
     done
     [ -z "$_frun" ] && _cen_abort + '-s|-c|-t'
 
+    # sysbind -i * is used to ternate all instances
+    if [ "$_inam" = '*' ] ; then
+        [ "${#CEN_SYSBIND[*]}" -le 1 ] && return 0
+        trace "sysbind terminate all instances"
+        for _frun in "${!CEN_PIP_BMAP[@]}" ; do
+            sysbind -t "$_frun"
+        done
+        return 0
+    fi
+
     local -n _inst="$_inam"
 
     # close pipes, terminate server
     if [ "$_frun" = 0 ] ; then
         [ -z "$_inst" ] && return 0                     # not initialized
-        _inst=()
+        _inst=('-')
 
     # open pipes, start server
     elif [ "$_frun" = 1 ] ; then
-        if [ -n "$_inst" ] ; then                       # already initialized
-            _emsg -- $"server already initialized" ; return 1
+        if [ "${_inst:--}" != '-' ] ; then              # already initialized
+            _emsg -- $"sysbind instance already running:" "$_inam" ; return 1
         fi
+
+        # manage a map of instances
+        if [ "${#CEN_SYSBIND[*]}" -le 1 ] ; then
+            unset CEN_PIP_BMAP
+            declare -g -A CEN_PIP_BMAP ; CEN_SYSBIND=('-')
+        fi
+        CEN_PIP_BMAP["$_inam"]="$_inam"
+        declare -p CEN_PIP_BMAP
+
         _inst=(- - - - -)
-        fatal "not implemented"
+        #fatal "not implemented"
+        if [ -z "$CEN_PIP_QUIT" ] ; then
+            CEN_PIP_QUIT="$CEN_HOOK_QUIT"
+            CEN_HOOK_QUIT=_cen_pip_quit
+        fi
+
+        # manage an array of instances
+        #[ "${#CEN_SYSBIND[*]}" = 0 ] && CEN_SYSBIND=(- - - - -)
+        #CEN_SYSBIND+=("$_inam")
+
+        # TODO: context -t +/-
 
     # call server
     else
         if [ -z "$_inst" ] ; then                       # not initialized
-            _emsg -- $"server not initialized" ; return 1
+            _emsg -- $"sysbind instance not running:" "$_inam" ; return 1
         fi
         fatal "not implemented"
     fi
@@ -488,5 +536,205 @@ syspipe() {
     [ "${_ocal:--}" != '-' -a "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
     return $_stat
 }
+
+# ------------------------------------------------------------------------------
+# sysloop - implements an event loop using a pipe
+#
+# Call:     (1) sysloop [-e|-f] [-c <evnt>] [-p <pipe>]
+#           (2) sysloop [-e|-f] [-c <evnt>] -t <time> [-p <pipe>] [--] [<tick>]
+#           (3) sysloop [-e|-f] -m [-p <pipe>] [--] <mesg>...
+#           (4) sysloop [-e|-f] -q [-p <pipe>]
+#
+#+Form (1) creates a pipe and runs a reader loop and (2) aditionally starts a ticker
+# (heartbeat) process. Form (3) sends a message and (4) terminates loop and ticker.
+#
+# Options:  -c      [*] a script function to process events
+#           -e      report failures as error messages
+#           -f      make errors fatal
+#           -m      [*] send a message
+#           -p      path of a fifo used as pipe (default: CEN_SYSLOOP[0])
+#           -q      [*] send quit message to terminate the read loop
+#           -t      start a heartbeat process (ticker)
+#
+#                   [*] These options are mutually exclusive
+#
+# Arguments:<evnt>      event handler function
+#           <mesg>      text to be sent (''<CR>'' chars changed to ''<TAB>'')
+#           <pipe>      path of fifo to be used. Created if needed
+#           <time>      heartbeat interval in [s]
+#           <tick>      heartbeat message (default is 'TICK')
+#
+#+Return:   **0** at success or **1** for error. A result code >= **2** is an
+#           error stop caused by the event handler that returned this code.
+#
+#+Each main process can only run one sysloop instance. The state is kept in:
+#
+#,          - CEN_SYSLOOP[0]    path of fifo
+#,          - CEN_SYSLOOP[1]    event handler function
+#,          - CEN_SYSLOOP[2]    pid of ticker
+#
+#+Form (1) and (2) will create a fifo as needed, without <pipe> a temporary
+# fifo path is used (see [[tmpfile()]]). Once opened the fifo path is saved in
+# CEN_SYSLOOP[0]. The sysloop function will never delete the file nor will
+# CEN_SYSLOOP[0] be unset. When option -c is used, sysloop will not return
+# before the event handler returns a status other than **0**.
+#
+#+Option -c registers the event handler an enters a read loop. The loop stops when
+# a quit message is received, see option -q. Stopping the event loop also kills
+# the ticker via CEN_SYSLOOP[2], clears CEN_SYSLOOP[1] and clears CEN_SYSLOOP[2].
+#
+#+Before starting a ticker, a quit hook is registered to make sure that the
+# ticker sub-shell gets terminated on [[quit()]]. For the lifetime of the ticker
+# a trap handler is registered, see [[context()]] options **-t°+** and  **-t°-**.
+#
+#+Events:   The event handler function is called with 2 or more arguments:
+#
+#,          $1      PID of the sender
+#,          $2      1st <mesg> argument from sender
+#,          ...     more <mesg> arguments from sender
+#
+#+          A return code of 1 will terminate the event loop (without error).
+#           Return codes >= 2 indicate error termination.
+#
+#.Example:  # event handler function
+#.          msgproc() {
+#.              local pid="$1" ; shift
+#.              message -p "Got %s arguments from PID=%s" $# "$pid"
+#.              return 0            # 0: continue  1: quit  2: error
+#.          }
+#.
+#.          # start event loop and a heartbeat process
+#.          sysloop -e -c msgproc -t 5 -- 'tick' || return
+#.          quit "success"
+#
+#.          # some other process may send events
+#.          sysloop -e -m -p "$pipe" -- 'hello world'
+#.          sysloop -e -m -q "$pipe"
+#
+#.          # it is possible to start/stop the ticker independently
+#.          sysloop -f -t 5 -p "$pipe" -s "$
+#.          kill "${CEN_SYSLOOP[2]}"
+# ------------------------------------------------------------------------------
+CEN_SYSLOOP=
+sysloop() {
+    #$CEN_DEBUG -c -- "$*"
+    local _emsg="$CEN_TRACE" _fatl _frun _isok _pipe _time
+    while [ "${1::1}" = "-" ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -c)   shift ; isfunction -a -- "$1" ; _frun=1
+            CEN_SYSLOOP=("$CEN_SYSLOOP" "$1" "${CEN_SYSLOOP[2]}") ;;
+      -e)   _emsg='error' ;;
+      -f)   _emsg='fatal' ; _fatl='-f' ;;
+      -m)   _frun=2 ;;
+      -p)   shift ; _pipe="${1:--}" ; _isok=1 ;;
+      -q)   _frun=0 ;;
+      -t)   shift ; _time="$1" ; _isok=1 ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
+    # get fifo
+    if [ -z "$CEN_SYSLOOP" -o -n "$_pipe" ] ; then
+        if [ "${_pipe:--}" = '-' ] ; then
+            tmpfile $_fatl -p -r -s _pipe || return 1
+        elif [ -p "$_pipe" ] ; then
+            :
+        elif [ ! -e "$_pipe" ] ; then
+            sysrun ${_fatl:--e} -r -- mkfifo -- "$_pipe" || return 1
+        else
+            $_emsg "Not a pipe:" "$_pipe" ; return 1
+        fi
+        prettypath -s CEN_SYSLOOP -- "$_pipe"
+    fi
+
+    # start ticker
+    if [ -n "$_time" ] ; then
+        if [[ "$_time" =~ ^[0-9]+(.[0-9]*)? ]] ; then
+            _cen_pip_ticker "$_time" "$1"
+        else
+            $_emsg "Invalid time:" "$_time" ; return 1
+        fi
+    fi
+
+    if [ "$_frun" = 0 ] ; then                  # sent quit ...
+        echo "$BASHPID" - > "$CEN_SYSLOOP" 2>/dev/null
+        trace -a "sysloop sent quit, status=" $?
+
+    elif [ "$_frun" = 1 ] ; then                # event loop ...
+        trace "sysloop enter loop (pipe=$CEN_SYSLOOP)"
+        local _epid _emsg _earg _ecnt _stat=0
+        while [ -n "${CEN_SYSLOOP[1]}" ] ; do
+           while read -r _epid _ecnt _emsg ; do
+                if [ -n "${_epid//[0-9]/}" -o -n "${_ecnt//[-0-9]/}" ] ; then
+                    trace "sysloop input ignored:" "$_epid" "$_ecnt"
+                    continue
+                elif [ "${_ecnt:--}" = '-' ] ; then
+                    trace -a -p "sysloop quit message from PID=%s" "$_epid"
+                    _stat=0 ; CEN_SYSLOOP[1]= ; break
+                elif [ "$_ecnt" -gt 1 ] ; then
+                    splitjoin -s _earg -d '\a' -- "$_emsg"
+                    ${CEN_SYSLOOP[1]} "$_epid" "${_earg[@]}" && continue
+                else
+                    ${CEN_SYSLOOP[1]} "$_epid" "$_emsg" && continue
+                fi
+                _stat=$? ; CEN_SYSLOOP[1]= ; break
+           done < "$CEN_SYSLOOP"
+        done
+        trace -p "sysloop exit loop (status %s)" "$_stat"
+        _cen_pip_ticker                         # stop ticker
+        [ "$_stat" -gt 1 ] && return $_stat
+
+    elif [ "$_frun" = 2 ] ; then                # sent message ...
+        local _mesg="$1"
+        [ $# -gt 1 ] && splitjoin -j _mesg -d '\a' -- "$@"
+        if echo "$BASHPID" $# "${_mesg//$'\n'/$'\t' }" > "$CEN_SYSLOOP" 2>/dev/null ; then
+            trace -a "sysloop send success:" "$BASHPID $*"
+        else
+            $_emsg "sysloop send failed:" "$BASHPID $*" ; return 1
+        fi
+
+    else
+        [ -z "$_isok" ] && _cen_abort + '-c|-m|-q|-t'
+    fi
+    return 0
+}
+
+# start or stop ticker: [<time> <mesg> [<ppid>]]
+#   no args: stop  two args: start  three args: run loop
+_cen_pip_ticker() {
+    if [ $# = 0 ] ; then
+        [ -z "${CEN_SYSLOOP[2]}" ] && return 1
+        kill "${CEN_SYSLOOP[2]}" 2>/dev/null && trace "sysloop ticker stopped"
+        CEN_SYSLOOP[2]=
+        context -t -
+        return 0
+    elif [ $# -lt 3 ] ; then
+        [ -n "${CEN_SYSLOOP[2]}" ] && return 1
+        if [ -z "$CEN_PIP_QUIT" ] ; then
+            CEN_PIP_QUIT="$CEN_HOOK_QUIT"
+            CEN_HOOK_QUIT=_cen_pip_quit
+        fi
+        context -t +
+        _cen_pip_ticker "$1" "${2:-TICK}" "$$" &
+        CEN_SYSLOOP[2]=$!
+        trace "sysloop ticker started (PID=$!):" "$1" "${2:-TICK}"
+        return 0
+    fi
+
+    # ticker loop, runs until signal
+    while sleep "$1" ; do
+        echo "$3 0 $2" > "$CEN_SYSLOOP" 2>/dev/null || return 1
+    done
+}
+
+# hook to terminate ticker process
+_cen_pip_quit() {
+    $CEN_NOTRACE set +x
+    sysbind -i '*' -t                       # stop all servers
+    _cen_pip_ticker                         # stop sysloop ticker
+    $CEN_NOTRACE set -x
+    $CEN_PIP_QUIT "$@"
+} || :
 
 # end

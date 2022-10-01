@@ -277,7 +277,7 @@ inpfile() {
                 if [ -n "$_fdir" ] ; then
                     windialog -k getexistingdirectory -t $"Select an input folder" "$PWD"
                 else
-                    local _xext ; [ "${_fext:--}" != "-" ] && printf -v _xext \
+                    local _xext ; [ "${_fext:--}" != '-' ] && printf -v _xext \
                         "*.%s (*.%s);; %s (*.*)" "$_fext" "$_fext" $"All files"
                     windialog -k getopenfilename -t $"Select an input file" "$PWD" "$_xext"
                 fi
@@ -547,7 +547,7 @@ outfile() {
                 if [ -n "$_fdir" ] ; then
                     windialog -k getexistingdirectory -t $"Select an output folder" "$PWD"
                 else
-                    local _xext ; [ "${_fext:--}" != "-" ] && printf -v _xext \
+                    local _xext ; [ "${_fext:--}" != '-' ] && printf -v _xext \
                         "*.%s (*.%s);; %s (*.*)" "$_fext" "$_fext" $"All files"
                     windialog -k getsavefilename -t $"Select an output file" "$PWD" "$_xext"
                 fi

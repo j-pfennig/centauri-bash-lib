@@ -219,6 +219,7 @@ findmount() { _cen_dyn_load mnt "$@" ; }
 sysbind() { _cen_dyn_load pip "$@" ; }
 syspager() { _cen_dyn_load pip "$@" ; }
 syspipe() { _cen_dyn_load pip "$@" ; }
+sysloop() { _cen_dyn_load pip "$@" ; }
 
 progress() { _cen_dyn_load pro "$@" ; }
 

@@ -595,14 +595,15 @@ _cen_win_dialog() {
     else
         [ "$_text" = '-' ] && _text="$1"
         [ "$_titl" != '-' ] && _text="*** $_titl ***  $_text"
-        sysrun -r xmessage -geometry 640 -font -adobe-*-*-r-*--0-100-*-*-p-*-*-* -default okay -center "$_text"
+        sysrun -q -r xmessage -geometry 640 -font -adobe-*-*-r-*--0-100-*-*-p-*-*-* -default okay -center "$_text"
     fi
 
     if [ "$_varg" = '-' ] ; then
-        sysrun -r -n "$CEN_WIN_PATH" "${_opts[@]}"
+        sysrun -q -r -n "$CEN_WIN_PATH" "${_opts[@]}"
     else
         system -r -n -s $_varg "$CEN_WIN_PATH" "${_opts[@]}"
     fi
+
     # return status
 }
 
@@ -675,6 +676,7 @@ _cen_win_txtfold() {
             _txtf="$_nout" ; _txtf="$_tinp"
         fi
     else                                            # text folding ...
+        embed -c '_centauri_bash_txt'
         txtfold -d "$_deli" -m "$_wide" -s _temp _tinp
         _txtf="$_nout" ; _txtf="$_temp"
     fi

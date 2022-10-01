@@ -697,7 +697,7 @@ xml_input() {
 xml_list() {
     # 1st arg must be a list type
     local _selt="${1:--}" ; shift
-    [ "${_selt::1}" = "-" ] && _cen_abort $"Missing type" 'xml_list'
+    [ "${_selt::1}" = '-' ] && _cen_abort $"Missing type" 'xml_list'
 
     local _sdel _satr _satr _scls _stxt="-t" _onew _item _sliav _gelt
     while [ "${1::1}" = "-" ] ; do

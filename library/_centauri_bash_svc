@@ -736,10 +736,10 @@ runservice() {
 
     status) [ "${#_slst[@]}" -gt 1 ] && _cen_abort "status allows only 1 arg"
             if [ -n "$CEN_SVC_SYSD" ] ; then
-                 sysrun -n -r -q -a _info -- systemctl is-active "$_slst" || ((_serr |= 4))
+                 sysrun -q -r -n -a _info -- systemctl is-active "$_slst" || ((_serr |= 4))
                  _kind=$"Service (systemd)"
             else
-                if sysrun -n -r -q -- "$CEN_SVC_SYSV/$_slst" "status" ; then
+                if sysrun -q -r -n -- "$CEN_SVC_SYSV/$_slst" "status" ; then
                    _info=$"active"
                 else
                    _info=$"inactive" ; ((_serr |= 4))
@@ -999,7 +999,7 @@ _cen_svc_action() {
         if ! _cen_svc_user "$@" ; then                  # fwd to user code
             if [ "$CEN_SVC_TYPE" != "oneshot" ] ; then  # catch signal, call run()
                 CEN_SVC_RUNNING="running"
-                trap _cen_svc_sigterm 1 2 3 15
+                context -t _cen_svc_sigterm             # set trap handler
                 isfunction -c run                       # call run() if existing
             fi
         fi
@@ -1014,7 +1014,7 @@ _cen_svc_action() {
 # hook termination signals, set state, call actionStop
 # ------------------------------------------------------------------------------
 _cen_svc_sigterm() {
-    trap - 1 2 3 15 ; CEN_SVC_RUNNING="stop"
+    context -t - ; CEN_SVC_RUNNING="stop"
     _cen_svc_state "kill"                               # need no pid file
     if isfunction actionStop ; then
         message $"Got a 'stop' signal"":" $"running actionStop"

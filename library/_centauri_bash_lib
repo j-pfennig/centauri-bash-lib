@@ -39,7 +39,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2022
 # ------------------------------------------------------------------------------
 
-declare -A CEN_MODULES["_centauri_bash_lib"]="0.99:1:1"
+declare -g -A CEN_MODULES["_centauri_bash_lib"]="0.99:1:1"
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -98,12 +98,7 @@ CEN_RUN_MAX_ARGS=+      # run max args (+:=no limit)
 # CEN_PACKAGE=          # packaged script flag
 # CEN_IS_SOURCED=       # app is sourced, do not run main/quit
 
-# BASH-BUG: scoping for maps is broken.  So we declare global maps here.
-#           declare only sets a flag but does not init (see declare -p):
-declare -A CEN_WALK_DMAP
-declare -A CEN_AUTOMOUNT_DIR
-declare -A CEN_USE_OMAP
-declare -A CEN_CMD_PATH         # set by sysfind
+declare -g -A CEN_COMMANDS  # dictionary used by sysfind
 
 # handle invokation options (features)
 CEN_FEATURE_A=          # dynamic module loading
@@ -2158,7 +2153,7 @@ splitjoin() {
 #.          system -e -n -z -- "$edit" 'myfile.txt'
 #
 #+This function is used by [[system()]] and [[sysrun()]]. A command cache is
-# maintained in the CEN_CMD_PATH dictionary. The keys are command or builtin
+# maintained in the CEN_COMMANDS dictionary. The keys are command or builtin
 # names; values are absolute paths for external commands or '-' for builtins.
 #
 #+When <cmd> is a plain name (without slashes) and if <cmd> is cached, the
@@ -2214,12 +2209,12 @@ sysfind() {
 
     local _snam _sdir _scmd _parr _sifs _srun
     for _snam in "$@" ; do
-        if [ -n "${CEN_CMD_PATH["${_snam:-/}"]}" ] ; then   # is cached ...
+        if [ -n "${CEN_COMMANDS["${_snam:-/}"]}" ] ; then   # is cached ...
             if [ -n "$_fdrp" ] ; then                       # drop from cache
-                unset CEN_CMD_PATH["$_snam"]
+                unset CEN_COMMANDS["$_snam"]
                 [ -n "$_fcch" ] || continue                 # using -c -d to refresh
             elif [ -z "$_fign" ] ; then
-                _scmd="${CEN_CMD_PATH["$_snam"]}"
+                _scmd="${CEN_COMMANDS["$_snam"]}"
                 [ "$_scmd" = '-' ] && _scmd="$_snam" || _scmd+="/$_snam"
                 _cen_sysfind "${_scmd/\/\//\/}" && break
                 continue
@@ -2240,7 +2235,7 @@ sysfind() {
                             _cen_dyn_builtin "$_snam" >/dev/null && _scmd="$_snam"
                     fi
                     if [ -n "$_scmd" ] ; then
-                        [ -n "$_fcch" ] && CEN_CMD_PATH["$_snam"]='-'
+                        [ -n "$_fcch" ] && CEN_COMMANDS["$_snam"]='-'
                         _cen_sysfind "$_scmd" && break
                         continue
                     fi
@@ -2260,7 +2255,7 @@ sysfind() {
         done
 
         if [ -n "$_scmd" ] ; then
-            [ -n "$_fcch" ] && CEN_CMD_PATH["$_snam"]="$_sdir"
+            [ -n "$_fcch" ] && CEN_COMMANDS["$_snam"]="$_sdir"
             _cen_sysfind "$_scmd" && break
         elif [ -z "$_fone" ] ; then
             $_ferr -p $"command '%s' not found" "$_snam" ; _stat=1
@@ -2347,6 +2342,15 @@ sysfind() {
 #+          The cache can be seeded by calling sysfind explicitly before system.
 #           See also option -c.
 #
+#+Output:   The options -q -p -e and -z control which (error-)output is generated:
+#
+#,          - system        [-a|-s <var>] # no capture, no error message
+#,          - system -q     [-a|-s <var>] # drop stdout and stderr, no error message
+#,          - system -p     [-a|-s <var>] # drop stdout, prettify stderr, no error message
+#,          - system -e     [-a|-s <var>] # no capture, error message
+#,          - system -e -p  [-a|-s <var>] # capture stdout and stderr, error message
+#,          - system -e -p -z             # capture only stderr, error message
+#
 #.Examples: system mycmd                            # no error/output handling
 #.          system -e -p -s rslt -- mycmd arg1      # formatted msg on error
 #.          system -q -a data -- mycmd arg1         # no error output
@@ -2410,13 +2414,13 @@ system() {
         sysfind -c $_bflg $_ferr -- "$@" || _stat=127
         $CEN_NOTRACE set -x ; return "$_stat"
     elif [ -z "$_cpro" ] ; then                         # no -n option
-        _temp="${CEN_CMD_PATH["${1:-/}"]}"
+        _temp="${CEN_COMMANDS["${1:-/}"]}"
         if [ -z "$_temp" ] ; then                       # not cached, try to add it
             [ "$_nout" = 1 ] && _temp= || _temp="${_ferr:--e}"
             if ! sysfind -c $_bflg $_temp -- "$1" ; then
                 $CEN_NOTRACE set -x ; return 127
             fi
-            _temp="${CEN_CMD_PATH["$1"]}"
+            _temp="${CEN_COMMANDS["$1"]}"
         fi
         if [ "$_temp" = '-' ] ; then                    # cached as builtin
             if [ -z "$_bflg" ] ; then                   # run external...

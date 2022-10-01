@@ -162,7 +162,7 @@ _cen_path_realp() {
             if [ -n "$CEN_FEATURE_A" ] ; then
                 # set cache and flag if builtin can be loaded
                 if _cen_dyn_builtin 'realpath' >/dev/null ; then
-                    CEN_CMD_PATH['realpath']='-' ;CEN_EXT_REALP=1
+                    CEN_COMMANDS['realpath']='-' ;CEN_EXT_REALP=1
                 fi
             fi
             _cen_path_realp "$@"
@@ -175,12 +175,12 @@ _cen_path_realp() {
         [ "$CEN_VERB" -gt 1 ] && dryrun -r "builtin" "${_exro[@]}"
         builtin "${_exro[@]}" &>/dev/null && _retr=0
     else
-        sysrun -a _rslt -b -q -r "${_exro[@]}" -- "$2" && _retr=0
+        sysrun -q -r -a _rslt -b "${_exro[@]}" -- "$2" && _retr=0
     fi
 
     # retry with readlink -m as fallback
     if [ "$_retr" = 1 ] ; then
-        sysrun -a _rslt -b -q -r -- readlink -m -- "$2" && _retr=0
+        sysrun -q -r -a _rslt -b -- readlink -m -- "$2" && _retr=0
     fi
 
     if [ "$_retr" = 0 ] ; then                  # success: set _logi
@@ -513,11 +513,11 @@ listsearch() {
 # <dest> must be a folder. In this case -o and -x are disabled.
 # ------------------------------------------------------------------------------
 move() {
-    local _oftl _orep _orun _osys="-p" _oerr=error _omsg="$CEN_TRACE"
+    local _oftl _orep _orun _osys="-e -p" _oerr=error _omsg="$CEN_TRACE"
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -f)   _oftl="-f" ; _oerr=fatal ;;
+      -f)   _oftl="-f" ; _osys="-f -p" ; _oerr=fatal ;;
       -o)   _orem=1 ;;
       -q)   _orep="-q" ; _osys="-q" ; _oerr="$CEN_TRACE" ;;
       -r)   _orun="-r" ;;
@@ -551,7 +551,7 @@ move() {
 
     $_omsg -a -p $"Moving '%s' to '%s'" "${*:1:$#-1}" "$_dest"
 
-    sysrun $_oftl $_orun $_osys -b -- mv -f -- "${@:1:$#-1}" "$_dest" && return 0
+    sysrun $_orun $_osys -b -- mv -f -- "${@:1:$#-1}" "$_dest" && return 0
     [ -n "$CEN_OPT_DRYRUN" ]                     # --dryrun always returns 0
 }
 
@@ -807,15 +807,12 @@ prettypath() {
 
     if [ "$_ocan" = 1 ] ; then                      # read symlink
         _cen_path_realp -l "$1" && _varg="$_logi"
-        # sysrun -r -q -b -a _logi -- readlink -s -- "$1" && _varg="$_logi"
     elif [ -n "$_ocan" ] ; then                     # canonicalize
         _cen_path_realp -c "$1" && _varg="$_logi"
-        # sysrun -r -q -b -a _logi -- readlink -s -m -- "$1" && _varg="$_logi"
     else                                            # prettify
         _cen_path_pretty -p "$_fset" "$1"
         if [[ "$_varg" == *..* ]] ; then            # must canonicalize path ...
             _cen_path_realp -a "$1" && _varg="$_logi"
-            # sysrun -r -q -b -a _logi -- readlink -s -m -- "$1" && _varg="$_logi"
         fi
     fi
 
@@ -1045,12 +1042,12 @@ remove() {
 # function fails if <des> exists and neither option -o or -x are given.
 # ------------------------------------------------------------------------------
 rename() {
-    local _oftl _omis _orep _orun _osys="-p" _oerr=error _omsg="$CEN_TRACE" _suff
+    local _oftl _omis _orep _orun _osys="-e -p" _oerr=error _omsg="$CEN_TRACE" _suff
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -b)   shift ; _suff="$1" ; _orem=1 ;;
-      -f)   _oftl="-f" ; _oerr=fatal ;;
+      -f)   _oftl="-f" ; _osys="-f -p" ; _oerr=fatal ;;
       -m)   _omis=1 ;;
       -o)   _orem=1 ;;
       -q)   _orep="-q" ; _osys="-q" ; _oerr="$CEN_TRACE" ;;
@@ -1089,7 +1086,7 @@ rename() {
     fi
 
     $_omsg -a -p $"Renaming '%s' to '%s'" "$1" "$_dest"
-    sysrun -b $_oftl $_orun $_osys -- mv -f -- "$1" "$_dest" && return 0
+    sysrun -b $_orun $_osys -- mv -f -- "$1" "$_dest" && return 0
     [ -n "$CEN_OPT_DRYRUN" ]                     # --dryrun always returns 0
 }
 
@@ -1107,7 +1104,7 @@ rename() {
 #           -s  save result to <var>
 #           -t  trim prefix from result paths
 #           -f  make errors fatal
-#           -p  return pretty name, [[see prettypath()]]
+#           -p  return pretty name, see [[prettypath()]]
 #           -q  do not report errors
 #           -x  locate an executable file using BASH_ARGV0
 #           -y  locate a file using BASH_ARGV0
@@ -1147,7 +1144,7 @@ rename() {
 # ------------------------------------------------------------------------------
 CEN_RESOLVE=
 resolve() {
-    local _ocan _otrm _oerr="-e" _oexe _oftl _pret \
+    local _ocan _otrm _oexe _osys='-e -p' _pret \
           _vset="CEN_RESOLVE" _varr _vrrr _xchk _xerr=error _nret=0
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
@@ -1155,10 +1152,10 @@ resolve() {
       -a)   shift ; _vset= ; local -n _vvaa="$1" ; _vvaa=() ;;
       -c)   _ocan='-e' ;;
       -e)   _xchk=1 ;;
-      -f)   _xerr=fatal ; _oftl="-f" ;;
+      -f)   _xerr=fatal ; _osys="-f -p" ;;
       -m)   _ocan='-m' ;;
       -p)   _pret=1 ;;
-      -q)   _xerr=: ; _oftl="-q" ;;
+      -q)   _xerr=: ; _osys="-q" ;;
       -s)   shift ; _vset="$1" ; _varr= ;;
       -t)   shift ; _otrm="$1" ;;
       -x)   _oexe=1 ;;
@@ -1175,7 +1172,7 @@ resolve() {
     # get executable - use _centauri_bash_lib paths and resolve argv0 if needed
     if [ -n "$_oexe" ] ; then
         local _logi _self="$CEN_TOOLS:$CEN_LIBRARY:${BASH_ARGV0%/*}"
-        PATH="$PATH:$_self" sysrun -a _logi -q -r -s -- type -f -p -- "$1"
+        PATH="$PATH:$_self" sysrun -q -r -s -a _logi -- type -f -p -- "$1"
         if [ -z "$_logi" ] ; then
             [ -h "$BASH_ARGV0" ] && _cen_path_realp -c "$BASH_ARGV0"
             _self="${_logi%/*}"
@@ -1211,7 +1208,7 @@ resolve() {
                 _cen_path_realp -c "$1" || return 1 ; set -- "$_logi"
             fi
         elif [ $# -gt 1 ] ; then
-            sysrun $_oftl -a _vrrr -r $_oftl -- readlink $_ocan -- "$@" || return 1
+            sysrun $_osys -a _vrrr -r -- readlink $_ocan -- "$@" || return 1
             set -- "${_vrrr[@]}"
         fi
     fi
@@ -1221,7 +1218,7 @@ resolve() {
         _vrrr=()
         for _logi in "$@" ; do
             if [ -n "$_pret" ] ; then
-                _cen_path_pretty $_oerr -p _logi "$_logi" || continue
+                _cen_path_pretty -e -p _logi "$_logi" || continue
             fi
             [ -n "$_otrm" ] && _cen_path_ltrim "$_otrm"
             _vrrr+=("$_logi")
@@ -1321,7 +1318,7 @@ splitpath() {
     esac
 
     if [[ "$_path" == *..* ]] ; then            # must canonicalize path ...
-        sysrun -r -q -b -a _path -- readlink -s -m -- "$1" || return 2
+        sysrun -q -r -b -a _path -- readlink -s -m -- "$1" || return 2
     fi
 
     [ "$_path" = '/' ] && return 1              # root has no parent
@@ -1474,9 +1471,12 @@ suffixpath() {
 }
 
 # ------------------------------------------------------------------------------
-# symlink - Make a symlink to a target using /usr/bin/ln
+# symlink - Make symlink single or multiple targets using /usr/bin/ln
 #
-# Call:      symlink [-r|-q] [-m] [-s] [--] <target> [<link>]
+# Call:     (1) symlink [-f|-q] [-i] [-n] [-m|-x] [-r] [-s] [--] <target> <link>
+#           (2) symlink [-f|-q] [-i] [-n] [-m|-x] [-r] [-s] [--] <target> [<fldr>]
+#           (3) symlink [-f|-q] [-n] [-r] [--] <target>... <fldr>
+#           (4) symlink -n [-f|-q] [-r] [-s] [--] <target> <fldr>/<link>
 #
 # Options:  -c  canonicalize target path
 #           -d  allow that <link> is a folder
@@ -1491,11 +1491,21 @@ suffixpath() {
 #
 #           [*] these options allow the creation of stale symlinks
 #
+# Arguments:<target> location the symlink points to
+#           <link>   name (or path) of symlink to be created
+#           <fldr>   folder where to create the symlink
+#
 # Return:   **0** := OK   **1** := no <target>   **2** := <link> is a file
 #
-#+This is a conveniency wrapper for **/usr/bin/ln** that provides some extra
-# reporting and error handling. Without option -n the function refuses to create
-# a ''symlink'' if <target> does not exist.
+#+This is a conveniency wrapper for **/usr/bin/ln** (or the loadable bash builtin)
+# that provides some extra reporting and error handling. Without option -n the
+# form (1) and (2) refuse to create a ''symlink'' if <target> does not exist.
+#
+#+Form (3) can place multiple links into a folder but cannot check <target>...
+# at all.
+#
+#+The function cannot check a relative <target> path with <link> being a folder,
+# see form (4).
 # ------------------------------------------------------------------------------
 symlink() {
     local _fign _targ _ocan _odir _oftl='error' _onck _orel _osys='-e -p' _move _mesg="$CEN_TRACE"
@@ -1518,6 +1528,14 @@ symlink() {
     done
     local _etxt _link="$2" _targ="$1"
 
+    # multiple targets, link must be a folder, run /usr/bin/ln
+    if [ $# -gt 2 ] ; then
+        local _leng="$#" ; _link="${!_leng}"    # kde/kate highligt bug: "${!#}"
+        folder ${_osys//-[ep]/} -- "$_link" || return 1
+        sysrun $_osys -i -m "$_etxt" -d -- ln $_onck $_orel -s -- "$@" || return 1
+        return
+    fi
+
     if [ -z "$_link" ] ; then
         _link="${_targ##*/}"
     elif [ -n "$_odir" ] && [ -d "$_link" ] ; then
@@ -1531,7 +1549,7 @@ symlink() {
         elif [ "$_targ" -ef "$_link" ] ; then
             $_mesg -a $"Target '$_targ', link is current"": $_link" ; return 0
         else
-            [ -n "$_ocan" ] && system -r -q -s _targ -- readlink -s -m -- "$_targ"
+            [ -n "$_ocan" ] && _cen_path_realp -c "$_targ" && _targ="$_logi"
         fi
 
         if [ -h "$_link" ] ; then
@@ -1563,41 +1581,50 @@ symlink() {
 }
 
 # ------------------------------------------------------------------------------
-# sysrun - generate messages for errors, optionally run a command
+# sysrun - run a command or builtin, optionally generate error messages
 #
-# Call:     (1) sysrun [-f] [-m <mesg>] -c <stat> [--] [<cmd> <arg>...]
-#           (2) sysrun [-f|-q] [-a <anam>] [-m <mesg>] [-b|-n]
-#                      [-d] [-p] [-r] [-s] [--] <cmd> <arg>...
+# Call:     (1) sysrun [-e|-f] [-p] [-m <mesg>] [-w <what>]
+#                      [-a <anam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
+#           (2) sysrun -q
+#                      [-a <anam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
+#           (3) sysrun -c <stat> [-f] [-m <mesg>] [--] [<cmd> <arg>...]
 #
-# Options:  -a  capture output into an array
-#           -b  do not run a script function, prefer builtin over command
+#+          This is a faster, simpler variant of [[system()]], see below. Form (1)
+#           runs a command or builtin with error reporting, form (2) does no error
+#           reporting at all. Form (3) can be used to generate error messages from
+#           error codes.
+#
+# Options:  -a  capture **/dev/stdout** into an array (overrides -p and -q)
+#           -b  do not run a function, prefer builtin over external
 #           -c  error code for reporting (<cmd> is not executed)
 #           -d  use './' prefix if 1st arg starts with a '-'
-#           -e  ignored for [[system()]] compatibility
-#           -f  make errors fatal
-#           -i  do not run a script or builtin, see **sysfind -i**
-#           -m  format string for error message
+#           -e  print error message if command <cmd> fails
+#           -f  like -e but make errors fatal
+#           -i  do not run a function or builtin, see **sysfind -i**
+#           -m  custom format string for error message
 #           -n  do no checks on <cmd> (implied if <cmd> is a path)
-#           -p  pretty-print error messages
-#           -q  do not output error messages
+#           -p  discard **/dev/stdout**, capture **/dev/stderr**, pretty-print error message
+#           -q  discard **/dev/stdout** and **/dev/stderr**, no error message
 #           -r  ignore --dryrun
-#           -s  do not report activity via [[trace()]]
-#           -z  don't capture **/dev/stdout**, but -a and -p capture **/dev/stderr**
+#           -s  **DO NOT USE**
+#           -w  override command name in error message
+#           -z  don't capture **/dev/stdout** (for use with -p)
 #
 # Arguments:<mesg>  printf format string with 2 string variables
+#           <what>  shown in error message
 #           <stat>  status code to report (**0** reports nothing)
 #           <cmd>   a program name or path
 #           <arg>   program argument, at least one argument is required
 #
 # Return:   **true** at success or **false** otherwise.
 #
-#+This function can be used (1) to create error messages or (2) to run a command -
-# optionally reporting errors. It is much simpler than [[system()]] and uses a
-# temporary file to catch the program output (or error messages).
+#+The options -e -f -p -q and -z of this function work like in [[system()]].
+# The use of -c -m and -w offers extra functionality for error reporting.
+# The main reason for using sysrun is performance:
 #
 #+The bash "$(<cmd>°<arg>...)" construct as it is used by [[system()]] creates a
-# subshell for each command, which is time consuming and spawns extra processes.
-# On the other hand the temporary file used by [[sysrun()]] has to be created on
+# subshell for each command, which is time consuming and can spawn extra processes.
+# On the other hand the temporary file used by sysrun has to be created on
 # 1st use and later to be deleted in a quit hook, see [[quit()]].
 #
 #+So this function is good especially when builtin commands like **mkdir**, **rmdir**,
@@ -1649,23 +1676,23 @@ symlink() {
 # ------------------------------------------------------------------------------
 sysrun() {
     $CEN_NOTRACE set +x
-    local _ecmd=error _emsg _ofmt _oign _osta _opre _orun _oout=0 _owho _ffnd=1 _vnam _tcmd="$CEN_TRACE"
+    local _ecmd="$CEN_TRACE" _emsg _ofmt _oign _osta _opre _orun _oout _owho _ffnd=1 _vnam
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -a)   shift ; _vnam="$1" ;;
+      -a)   shift ; _vnam="$1" ; _oout=0 ;;
       -b)   _ffnd=0 ;;
       -c)   shift ; _osta="$1" ;;
       -d)   _opre=1 ;;
-      -e)   ;;
+      -e)   _ecmd=error ;;
       -f)   _ecmd=fatal ;;
       -i)   _oign='-i' ;;
-      -m)   shift ; _emsg="$1" ;;
+      -m)   shift ; _emsg="$1" ; [ -z "$_oout" ] && _oout=0 ;;
       -n)   _ffnd= ;;
-      -p)   _ofmt=1 ;;
-      -q)   _ecmd= ;;
+      -p)   _ofmt=1 ; [ -z "$_oout" ] && _oout=0 ;;
+      -q)   [ -z "$_oout" ] && _oout=0 ;;
       -r)   _orun="-r" ;;
-      -s)   _tcmd=":" ;;
+#      -s)   ;;
       -w)   shift ; _owho="$1" ;;
       -z)   _oout=1 ;;
       *)    _cen_abort - "$1"
@@ -1684,7 +1711,7 @@ sysrun() {
             _opre=
         # using sysfind and cache
         else
-            _xtmp="${CEN_CMD_PATH["$_xcmd"]}"               # sysfind() cache
+            _xtmp="${CEN_COMMANDS["${_xcmd:--}"]}"          # sysfind() cache
             if [ "$_xtmp" = '-' ] ; then                    # cached as builtin
                 if [ -z "$_oign" ] ; then
                     _xtmp="$_xcmd"
@@ -1717,7 +1744,6 @@ sysrun() {
 
     # run command "$_xcmd" ...
     if [ -z "$_osta" ] ; then
-        [ "$_tcmd" = ":" ] && _orun+=" -s"
 
         # stupid builtins: remove '--' from command line
         if [ -n "$_opre" ] ; then
@@ -1749,7 +1775,7 @@ sysrun() {
             IFS=$'\n' read -a "${_vnam:-_xerr}" -d '' -r <"$_outf"
         elif [ "$_oout" = 0 ] ; then
             "$_xcmd" "$@" &>/dev/null ; _osta=$?
-        elif [ "$_oout" = 1 ] ; then
+        else
             "$_xcmd" "$@" ; _osta=$?
         fi || :
     fi
@@ -1768,19 +1794,23 @@ sysrun() {
                 _xmsg=$"Status"" $_osta"
             fi
     esac
-    [ "$_tcmd" = ":" ] || _tcmd+=" -a"
-    [ "${_emsg:--}" = "-" ] && _emsg=$"Running '%s%s' failed"
+
+    [ "${_emsg:--}" = '-' ] && _emsg=$"Running '%s%s' failed"
     [ -n "$_xmsg" ] && _xmsg=": $_xmsg"
-    if [ -n "$_ofmt" ] ; then                           # system() style ...
+    if [ -z "$_ecmd" -a -n "$_ofmt" ] ; then            # system -p style
+        splitjoin -j _xtmp -d '\n' -i "${_vnam:-_xerr}"
+        message -m "$_xtmp"
+        $CEN_NOTRACE set -x ; return $_osta
+    elif [ -n "$_ofmt" ] ; then                         # system -e -p style
         splitjoin -s _xtmp -d '\n' -i "${_vnam:-_xerr}"
         _xarg=
         for _xtmp in "${_xtmp[@]}" ; do
             _xarg+="${_xtmp#/*: *: }"$'\n'              # strip bash error prefix
         done
-        ${_ecmd:-$_tcmd} -m -p "${_emsg} %s\n%s" "${_owho:-($_xcmd)}" "" "$_xmsg" "$_xarg"
+        $_ecmd -m -p "${_emsg} %s\n%s" "${_owho:-($_xcmd)}" "" "$_xmsg" "$_xarg"
     else                                                # simple ...
-        [ $# -gt 0 ] && _xarg=" $*"
-        ${_ecmd:-$_tcmd} -p "$_emsg$_xmsg" "${_owho:-($_xcmd)}" "$_xarg"
+        # [ $# -gt 0 ] && _xarg=" $*"
+        $_ecmd -p "$_emsg$_xmsg" "${_owho:-($_xcmd)}" "$_xarg"
     fi
     $CEN_NOTRACE set -x ; return $_osta
 }
@@ -1930,7 +1960,7 @@ tmpfile() {
         [ -d "$_base" ] && return 0                     # don't remove folder
         set +f ; set -- "$_base$_ssuf"*                 # make sure glob is on
         [ "$1" = "$_base$_ssuf*" ] && return 0          # nothing to remove
-        sysrun -b -q -- rm -f -- "$@" ; return          # return status
+        sysrun -q -b -- rm -f -- "$@" ; return          # return status
     fi
 
     # create folder / file
@@ -1957,7 +1987,7 @@ tmpfile() {
         2>/dev/null >"$_svar" && return 0
         $_oerr $"Cannot create" "$_svar" || return 1
     else
-        sysrun -b -e $_orun -- mkfifo "$_svar" || return 1
+        sysrun -e -b $_orun -- mkfifo "$_svar" || return 1
     fi
     return 0
 }
@@ -2086,6 +2116,7 @@ trimjoin() {
 CEN_WALK_FILES=()
 CEN_WALK_DIRS=()
 CEN_WALK_LEVEL=0
+declare -g -A CEN_WALK_DMAP
 
 walk() {
     local _fdir=false _ffil=: _fexc=: _frec _fadd _fbro="-e" _fhid _fext=() _stat _levl=999999999
@@ -2137,13 +2168,12 @@ walk() {
 
         # recurse into folders
         if [ -n "$_dirs" -a "$_stat" -lt 3 ] ; then
-            local _full _indx=0 _exe_dirn
-            sysrun -r -p -a _exe_dirn -b -- readlink -m -- "${_dirs[@]}" || return 3
+            local _full _indx=0 _cen_walk_dirn
+            resolve -a _cen_walk_dirn -m -- "${_dirs[@]}" || return 3
             for _item in "${_dirs[@]}" ; do
-                _full="${_exe_dirn[_indx++]}"
+                _full="${_cen_walk_dirn[_indx++]}"
                 [ -n "${CEN_WALK_DMAP[$_full]}" ] && continue
                 CEN_WALK_DMAP[$_full]="$_item"
-
                 _stat=0
                 if [ "$_ffil" = "false" ] ; then  # --incl/--excl
                     $_fexc "${_full##*/}" ; _stat=$?

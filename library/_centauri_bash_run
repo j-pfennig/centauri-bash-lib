@@ -1139,7 +1139,7 @@ fi
 [ "\$EUID" = "0" ] && [ ! -d "\$CEN_ROOT/transient" ] && embed -m "_centauri_bash_sys"
 :
 !EOF
-    sysrun -p -- chmod 775 "$CEN_TOOLS/_centauri_bash_lib" || :
+    sysrun -e -p -- chmod 775 "$CEN_TOOLS/_centauri_bash_lib" || :
     return 0
 }
 

@@ -493,7 +493,7 @@ sysconfig() {
 # custom completion function
 _centauri_bash_lib_compl() {
     # completion of options
-    if [ "\${2::1}" = "-" ] ; then
+    if [ "\${2::1}" = '-' ] ; then
         local _xall="\$(CEN_COMPLETION=opts \$1 --help) --info --help --verbose --quiet"
         COMPREPLY=(\$(compgen -W "\$_xall" -- \$2))
         # no space for option argument

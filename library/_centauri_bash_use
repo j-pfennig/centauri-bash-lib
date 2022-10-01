@@ -22,10 +22,10 @@
 # to the documentation format of [[_centauri_bash_doc]] in order to pretty-print
 # the help text.
 #
-# Copyright Dr. J. Pfennig (c) 2016-2021
+# Copyright Dr. J. Pfennig (c) 2016-2022
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_use"]="0.20:1"
+CEN_MODULES["_centauri_bash_use"]="0.21:1"
 
 CEN_USE_USAGE=          # flag that _cen_usage was called
 
@@ -36,6 +36,8 @@ CEN_USE_HEADER=         # generated usage header
 CEN_USE_OPTIONS=        #  ... options text
 CEN_USE_ACTIONS=        #  ... actions text
 CEN_USE_OTHER=          #  ... other text
+
+declare -g -A CEN_USE_OMAP  # maps option letters to description text
 
 # ------------------------------------------------------------------------------
 # Call:     usageparser [-s] [-c|-m] <worker> <file> <cache>
