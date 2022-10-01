@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html><head><meta charset='UTF-8'></meta>
+<title>centaurihelp ─ _centauri_bash_web</title>
+<link rel='stylesheet' type='text/css' href='default.css'></link>
+<script type='text/javascript' src='default.js'></script>
+</head><body><article id='top'>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_use.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_win.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+<section id='section-1'>
+<div id='_centauri_bash_web' class='item-module'>
+<span>Module</span><span> - </span><span>_centauri_bash_web</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Web Application</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>. <b>_centauri_bash_web</b> [<b>-n</b>|<b>-w</b>]</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-n</b>  no module init
+<b>-w</b>  run <b>&quot;webapp -w&quot;</b> after module load</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>This module adds the <b>--cgibin</b>, <b>--webapp</b> and <b>--webdir</b> options to a script, depending on the module options described above.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>When an <a href="_centauri_bash_dbg.html#actionsuser">actions()</a> is defined, the <a href="_centauri_bash_lib.html#main">main()</a> hook also loads _centauri_bash_cgi (unless disabled via <b>CEN_WEB_CGIAPP</b>=0).</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The module implements exactly one public function: <a href="#webapp">webapp()</a></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2022</div>
+</div>
+</section>
+<section id='section-2'>
+<div id='webapllications' class='item-topic'>
+<span>Topic</span><span> - </span><span>web apllications</span><span> - </span><span>Simple Browser based application, optionally using CGI</span></div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  using _centauri_bash_web
+  optinal _centauri_bash_cgi
+  starting centaurilauncher
+  using qml if availlable</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  autogenerates run
+  create base folder
+  create cgidir to flag cgi use
+  run() calls websetup() as bgnd sub-shell (if existing)
+  run() calls cgisetup() as bgnd sub-shell (if existing)
+  run() does self-extract as bgnd sub-shell
+  run() execs launcher in bgnd
+  deletes pid file or so to allow launcher to wait</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  launcher checks cgidir to launch lighttpd
+  launcher waits for lock
+  launcher run kiosk</div>
+</div>
+</section>
+<section id='section-3'>
+<div id='webconfiguration' class='item-topic'>
+<span>Topic</span><span> - </span><span>web configuration</span><span> - </span><span>Simple Browser based application, optionally using CGI</span></div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  x
+  x
+  x
+  x</div>
+</div>
+</section>
+<section id='section-4'>
+<div id='webfeatures' class='item-topic'>
+<span>Topic</span><span> - </span><span>web features</span><span> - </span><span>Tweaking the default page generation</span></div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Set name prefix for bash callbacks and javascript code</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_PREFIX</b>=&apos;demo_&apos;          # (default is &apos;web_&apos; or &apos;cgi_&apos;)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Set start page (default is index or 1st page)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_NAVIGATE</b>[0]=&apos;webapp/startpage.html&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Generate no index document (default is to generate)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_PAGES</b>[0]=&apos;-&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Set main page (the main page is shown in the navigator)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_INDEX</b>=                  # (default index or 1st page) <b>CEN_WEB_INDEX</b>=&apos;-&apos;               # disable, not shown <b>CEN_WEB_INDEX</b>=&apos;master&apos;          # use &apos;master.html&apos;</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Customize the index page</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_PAGES</b>[0]=(||<b>&quot;A different title&quot;</b>) <b>CEN_WEB_PAGES</b>[0]=(::content||<b>&quot;Rename as content.html&quot;</b>) <b>CEN_WEB_PAGES</b>[0]=(myindex||<b>&quot;Page generator: web_page_myindex&quot;</b>)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_NAVIGATE</b>[5]=&apos;[0-9]&apos;     # filter for page (index.html) <b>CEN_WEB_NAVIGATE</b>[6]=&apos;2.*&apos;       # filter for box</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Customize the navigator</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_NAVIGATE</b>[2]=&apos;back&apos;      # set different anchor text <b>CEN_WEB_NAVIGATE</b>[3]=&apos;main&apos; <b>CEN_WEB_NAVIGATE</b>[4]=&apos;next&apos; <b>CEN_WEB_NAVIGATE</b>[4]=1           # no bottom navigator</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Customize the page layout</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><b>CEN_WEB_PAGES</b>+=(<b>&quot;:1||No header or footer, center only&quot;</b>) <b>CEN_WEB_PAGES</b>+=(<b>&quot;:2||Header and center&quot;</b>)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Disable default css or no &apos;layout.css&apos; at all</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Disable default javascript or no &apos;default.js&apos; at all</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • Custom colors</div>
+</div>
+</section>
+<section id='section-5'>
+<div id='webapp' class='item-function'>
+<span>Function</span><span> - </span><span>webapp</span><span> - </span><span>Web application generator and starter</span></div>
+<div class='def-row'>
+<div class='def-label'>Call:</div>
+<div class='def-text'>(1) <b>webapp</b> [<b>-a</b>] [<b>-b</b>] [<b>-i</b>] [<b>-l</b>] [<b>-p</b>] [<i>page</i>]
+(2) <b>webapp</b> <b>-h</b> <i>href</i>|- <i>text</i> [<i>vnam</i>]
+(3) <b>webapp</b> <b>-n</b>   
+(4) <b>webapp</b> <b>-x</b> box|page|- [<i>glob</i>]</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>This function provides a way to generate a (temporary) web site. The structure and the layout follow a declarative approach, imdividual page are created imperatively. Data from <a href="_centauri_bash_xtr.html">_centauri_bash_xtr</a> can be used too.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-a</b>   generate an application id
+<b>-b</b>   create html base folder
+<b>-h</b>
+<b>-i</b>   initialize data structures
+<b>-l</b>   run launcher
+<b>-n</b>   add a navigator
+<b>-p</b>   create web pages
+<b>-r</b>   create a redirect
+<b>-x</b>   add index list
+<b>-z</b>   continue running after error</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>xxxx</i>  blurb</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Components:</div>
+<div class='def-block'>Generated pages consist of one to five components. In HTML each component is a <b>&lt;div class=&apos;name&apos;&gt;</b> element, where <i>name</i> is the component name. The default CSS contains the neccessary definitions to put the components into place:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • header            (optional) page header
+  • left              (optional) left panel
+  • center            the main part
+  • right             (optional) right panel
+  • footer            (optional) page footer</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Pages:</div>
+<div class='def-block'><b>CEN_WEB_PAGES</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Layout:</div>
+<div class='def-block'><b>CEN_WEB_LAYOUT</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Geometry:</div>
+<div class='def-block'><b>CEN_WEB_GEOMETRY</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Colors:</div>
+<div class='def-block'><b>CEN_WEB_COLORS</b></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Sequence:</div>
+<div class='def-block'>To create a WebApp a sequence of calls to the <b>webapp</b> functions can be run:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  <b>webapp</b> <b>-a</b>           find a unique application id
+  <b>webapp</b> <b>-b</b>           create temporary HTML base folder
+  <b>webapp</b> <b>-c</b>           write a CSS file for page layout
+  <b>webapp</b> <b>-g</b>           generate pages
+  <b>webapp</b> <b>-l</b>           run launcher via exec (does not return)</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>As these steps depend on each other, <b>-b</b> implies <b>-a</b>, <b>-c</b> implies <b>-b</b> and so on, a single call to <b>webapp</b> <b>-l</b> would run the whole sequence.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Startup:</div>
+<div class='def-block'>Instead of running running the above sequence of steps explicitly it is possible to automate this by caling <b>webapp</b> <b>-r</b> as the last command inside run():</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  <b>webapp</b> <b>-r</b>           running/completing the startup sequence</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>For a script that has no run() method inself, a sumple run() is generated, that just contains a call to <b>webapp</b> <b>-r</b>. The function <b>webapp</b> <b>-r</b> runs these steps (simpliefied code shown):</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>webapp</b> <b>-b</b>                           # html base folder
+embed <b>-m</b> &apos;_centauri_bash_xtr&apos; <b>-q</b>    # self extract to cache
+symlink <b>--</b> <b>&quot;$CEN_XTR_RUNTIME&quot;</b> <b>&quot;$CEN_WEB_WEBDIR/static&quot;</b>
+isfunction <b>-c</b> &apos;${<b>CEN_WEB_PREFIX</b>}setup&apos;           # callback to script
+<b>webapp</b> <b>-c</b>                           # create or symlink layout.css
+<b>webapp</b> <b>-g</b>                           # generate pages
+<b>webapp</b> <b>-l</b>                           # run launcher (no return)</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Callbacks:</div>
+<div class='def-block'>The library code ...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  _web_<i>name</i>
+  _web_navig
+  _web_header
+  _web_footer</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>web_setup:</div>
+<div class='def-block'>Some <b>CEN_WEB_</b> variables are need setup for the page generator. This can be done in a user callback.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>web_page:</div>
+<div class='def-block'>If a configured page does not exist, the page generator makes calls to a user-defined function. The function name is built from the prefile <b>web_page_</b> and the page name.</div>
+</div>
+</section>
+</article>
+<div class='def-break'></div>
+<nav><div class='nav-row'>
+<div class='nav-left'><a href='_centauri_bash_use.html'>[&lt;&lt; previous]</a></div>
+<div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
+<div class='nav-mid'><a href='reference.html#top'>[Reference]</a></div>
+<div class='nav-right'><a href='_centauri_bash_win.html'>[next &gt;&gt;]</a></div>
+</div></nav>
+</body></html>
