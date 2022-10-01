@@ -216,3 +216,4 @@ msgstr "Dokumentation als HTML erstellen (das Zielverzeichnis ist 'doc')"
 #: /var/centauri/tools/centaurihelp:2160
 msgid "create/view the documentation as file (--force enables ANSI escapes)"
 msgstr "Dokumentation als Datei erstellen/ansehen (--force für ANSI Escapes)"
+

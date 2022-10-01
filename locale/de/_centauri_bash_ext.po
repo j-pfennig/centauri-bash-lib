@@ -7,7 +7,7 @@ msgstr "Datei oder Ordner nicht gefunden:"
 
 #: /var/centauri/library/_centauri_bash_ext:313
 #: /var/centauri/library/_centauri_bash_ext:538
-#: /var/centauri/library/_centauri_bash_ext:1076
+#: /var/centauri/library/_centauri_bash_ext:1073
 msgid "Missing arg(s)"
 msgstr "Fehlendes Argument"
 
@@ -52,139 +52,138 @@ msgid "one"
 msgstr "ein"
 
 #: /var/centauri/library/_centauri_bash_ext:804
-#: /var/centauri/library/_centauri_bash_ext:1200
-#: /var/centauri/library/_centauri_bash_ext:1209
+#: /var/centauri/library/_centauri_bash_ext:1197
+#: /var/centauri/library/_centauri_bash_ext:1206
 msgid "No such file or folder:"
 msgstr "Datei oder Ordner nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_ext:908
+#: /var/centauri/library/_centauri_bash_ext:905
 msgid "closing file handle:"
 msgstr "Schliesse Zugriffsnummer:"
 
-#: /var/centauri/library/_centauri_bash_ext:918
+#: /var/centauri/library/_centauri_bash_ext:915
 msgid "File handle %s is in use"
 msgstr "Zugriffsnummer %s ist belegt"
 
-#: /var/centauri/library/_centauri_bash_ext:921
+#: /var/centauri/library/_centauri_bash_ext:918
 msgid "Got no variable to save file handle"
 msgstr "Variable zum Speichern der Zugriffsnummer fehlt"
 
-#: /var/centauri/library/_centauri_bash_ext:924
+#: /var/centauri/library/_centauri_bash_ext:921
 msgid "found file handle:"
 msgstr "Zugriffsnummer gefunden:"
 
-#: /var/centauri/library/_centauri_bash_ext:977
+#: /var/centauri/library/_centauri_bash_ext:974
 msgid "file"
 msgstr "Datei"
 
-#: /var/centauri/library/_centauri_bash_ext:997
+#: /var/centauri/library/_centauri_bash_ext:994
 msgid "symlink"
 msgstr "Verknüpfung"
 
-#: /var/centauri/library/_centauri_bash_ext:999
+#: /var/centauri/library/_centauri_bash_ext:996
 msgid "folder"
 msgstr "Ordner"
 
-#: /var/centauri/library/_centauri_bash_ext:1009
+#: /var/centauri/library/_centauri_bash_ext:1006
 msgid "files/folders"
 msgstr "Dateien/Ordner"
 
-#: /var/centauri/library/_centauri_bash_ext:1011
+#: /var/centauri/library/_centauri_bash_ext:1008
 msgid "Removing %s: %s"
 msgstr "Lösche %s: %s"
 
-#: /var/centauri/library/_centauri_bash_ext:1018
+#: /var/centauri/library/_centauri_bash_ext:1015
 msgid "Cannot remove %s: %s"
 msgstr "Kann %s nicht löschen: %s"
 
+#: /var/centauri/library/_centauri_bash_ext:1068
 #: /var/centauri/library/_centauri_bash_ext:1071
-#: /var/centauri/library/_centauri_bash_ext:1074
 msgid "Extra arg(s)"
 msgstr "Zusätzliches Argument"
 
-#: /var/centauri/library/_centauri_bash_ext:1081
+#: /var/centauri/library/_centauri_bash_ext:1078
 msgid "Rename destination exists:"
 msgstr "Umbenennungsziel existiert bereits:"
 
-#: /var/centauri/library/_centauri_bash_ext:1084
+#: /var/centauri/library/_centauri_bash_ext:1081
 msgid "Rename destination is a folder:"
 msgstr "Umbenennungsziel ist ein Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_ext:1086
+#: /var/centauri/library/_centauri_bash_ext:1083
 msgid "Removing destination before rename:"
 msgstr "Ziel vor Umbenennen entfernen:"
 
-#: /var/centauri/library/_centauri_bash_ext:1091
+#: /var/centauri/library/_centauri_bash_ext:1088
 msgid "Renaming '%s' to '%s'"
 msgstr "Umbennen von '%s' nach '%s'"
 
-#: /var/centauri/library/_centauri_bash_ext:1309
-msgid "Missing option"
-msgstr "Fehlende Option"
-
-#: /var/centauri/library/_centauri_bash_ext:1530
+#: /var/centauri/library/_centauri_bash_ext:1618
 msgid "Link target does not exist:"
 msgstr "Verknüpfungsziel existiert nicht:"
 
-#: /var/centauri/library/_centauri_bash_ext:1532
+#: /var/centauri/library/_centauri_bash_ext:1620
 msgid "Target '$_targ', link is current"
 msgstr "Ziel '$_targ', Verknüpfung ist aktuell"
 
-#: /var/centauri/library/_centauri_bash_ext:1538
+#: /var/centauri/library/_centauri_bash_ext:1626
 msgid "Removing existing link"
 msgstr "Bestehende Verknüpfung entfernen"
 
-#: /var/centauri/library/_centauri_bash_ext:1543
+#: /var/centauri/library/_centauri_bash_ext:1631
 msgid "Link '$_link' file/fldr deleted"
 msgstr "Verknüpfung '$_link' Datei/Ordner gelöscht"
 
-#: /var/centauri/library/_centauri_bash_ext:1546
+#: /var/centauri/library/_centauri_bash_ext:1634
 msgid "Link '$_link' file/fldr moved"
 msgstr "Verknüpfung '$2', Datei/Ordner verschoben"
 
-#: /var/centauri/library/_centauri_bash_ext:1548
+#: /var/centauri/library/_centauri_bash_ext:1636
 msgid "Link is an existing folder"
 msgstr "Verknüpfung ist ein bestehender Ordner"
 
-#: /var/centauri/library/_centauri_bash_ext:1550
+#: /var/centauri/library/_centauri_bash_ext:1638
 msgid "Link is an existing file"
 msgstr "Verknüpfung ist eine bestehende Datei"
 
-#: /var/centauri/library/_centauri_bash_ext:1556
+#: /var/centauri/library/_centauri_bash_ext:1644
 msgid "Failed to create symbolic link"
 msgstr "Kann Verknüpfung nicht erstellen:"
 
-#: /var/centauri/library/_centauri_bash_ext:1562
+#: /var/centauri/library/_centauri_bash_ext:1650
 msgid "Target '%s', created link '%s'"
 msgstr "Ziel '%s', Verknüpfung '%s' erstellt"
 
-#: /var/centauri/library/_centauri_bash_ext:1762
+#: /var/centauri/library/_centauri_bash_ext:1858
 msgid "Invalid argument(s)"
 msgstr "Argument(e) ungültig"
 
-#: /var/centauri/library/_centauri_bash_ext:1763
+#: /var/centauri/library/_centauri_bash_ext:1859
 msgid "File not executable"
 msgstr "Datei nicht ausführbar"
 
-#: /var/centauri/library/_centauri_bash_ext:1764
+#: /var/centauri/library/_centauri_bash_ext:1860
 msgid "Program not found"
 msgstr "Programm nicht gefunden"
 
-#: /var/centauri/library/_centauri_bash_ext:1766
+#: /var/centauri/library/_centauri_bash_ext:1862
 msgid "Signal"
 msgstr "Signal"
 
-#: /var/centauri/library/_centauri_bash_ext:1768
+#: /var/centauri/library/_centauri_bash_ext:1864
 msgid "Status"
 msgstr "Status"
 
-#: /var/centauri/library/_centauri_bash_ext:1772
+#: /var/centauri/library/_centauri_bash_ext:1868
 msgid "Running '%s%s' failed"
 msgstr "Ausführung von '%s%s' fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_ext:1958
+#: /var/centauri/library/_centauri_bash_ext:2055
 msgid "Cannot create"
 msgstr "Nicht erstellbar"
+
+#~ msgid "Missing option"
+#~ msgstr "Fehlende Option"
 
 #~ msgid "init in subshell"
 #~ msgstr "Init in Subshell"

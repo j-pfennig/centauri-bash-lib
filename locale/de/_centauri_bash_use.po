@@ -1,100 +1,100 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_use:97
+#: /var/centauri/library/_centauri_bash_use:99
 msgid "Redefined label"
 msgstr "Doppeltes Label"
 
-#: /var/centauri/library/_centauri_bash_use:130
-#: /var/centauri/library/_centauri_bash_use:187
+#: /var/centauri/library/_centauri_bash_use:132
+#: /var/centauri/library/_centauri_bash_use:189
 msgid "Orphaned label"
 msgstr "Verwaistes Label"
 
-#: /var/centauri/library/_centauri_bash_use:198
+#: /var/centauri/library/_centauri_bash_use:200
 msgid "Bad exit status ignored"
 msgstr "Fehlerstatus ignoriert"
 
-#: /var/centauri/library/_centauri_bash_use:394
-#: /var/centauri/library/_centauri_bash_use:617
+#: /var/centauri/library/_centauri_bash_use:396
+#: /var/centauri/library/_centauri_bash_use:619
 msgid "usage:"
 msgstr "Aufruf:"
 
-#: /var/centauri/library/_centauri_bash_use:397
+#: /var/centauri/library/_centauri_bash_use:399
 msgid "show what would be done, make no changes"
 msgstr "Zeigen was getan wird, keine Änderungen vornehmen"
 
-#: /var/centauri/library/_centauri_bash_use:398
+#: /var/centauri/library/_centauri_bash_use:400
 msgid "override prudent default behaviours"
 msgstr "Vorsichtsmassnahmen ausser Acht lassen"
 
-#: /var/centauri/library/_centauri_bash_use:399
+#: /var/centauri/library/_centauri_bash_use:401
 msgid "gui mode (0:=off  1:=windows  2:=terminal)"
 msgstr "GUI Modus (0:=aus  1:=Windows  2:=Terminal)"
 
-#: /var/centauri/library/_centauri_bash_use:400
+#: /var/centauri/library/_centauri_bash_use:402
 msgid "include only items matching the expression"
 msgstr "Nur zum Ausdruck passende Dinge benutzen"
 
-#: /var/centauri/library/_centauri_bash_use:401
+#: /var/centauri/library/_centauri_bash_use:403
 msgid "show this text"
 msgstr "diesen Text ausgeben"
 
-#: /var/centauri/library/_centauri_bash_use:402
+#: /var/centauri/library/_centauri_bash_use:404
 msgid "do not prompt for confirmation, assume 'no'"
 msgstr "Nicht nach Bestätigung fragen, 'nein' annehmen"
 
-#: /var/centauri/library/_centauri_bash_use:403
+#: /var/centauri/library/_centauri_bash_use:405
 msgid "generate less output or warnings"
 msgstr "Wenig Ausgabe oder Warnungen erzeugen"
 
-#: /var/centauri/library/_centauri_bash_use:404
+#: /var/centauri/library/_centauri_bash_use:406
 msgid "report errors only"
 msgstr "Nur Fehler melden"
 
-#: /var/centauri/library/_centauri_bash_use:405
+#: /var/centauri/library/_centauri_bash_use:407
 msgid "be verbose (use twice for debug)"
 msgstr "Viel Ausgabe (zweimal zum Testen)"
 
-#: /var/centauri/library/_centauri_bash_use:406
+#: /var/centauri/library/_centauri_bash_use:408
 msgid "exclude the items matching the expression"
 msgstr "Zum Ausdruck passende Dinge ausschliessen"
 
-#: /var/centauri/library/_centauri_bash_use:407
+#: /var/centauri/library/_centauri_bash_use:409
 msgid "do not prompt for confirmation, assume 'yes'"
 msgstr "Nicht nach Bestätigung fragen, 'ja' annehmen"
 
-#: /var/centauri/library/_centauri_bash_use:408
+#: /var/centauri/library/_centauri_bash_use:410
 msgid "next action(s) even after error"
 msgstr "Nächste action(s) auch nach Fehler"
 
-#: /var/centauri/library/_centauri_bash_use:412
+#: /var/centauri/library/_centauri_bash_use:414
 msgid "use <name> instead of script name"
 msgstr "Benutze <name> anstelle des Script Namens"
 
-#: /var/centauri/library/_centauri_bash_use:413
+#: /var/centauri/library/_centauri_bash_use:415
 msgid "print full path and version"
 msgstr "Vollen Pfad und Version ausgeben"
 
-#: /var/centauri/library/_centauri_bash_use:414
+#: /var/centauri/library/_centauri_bash_use:416
 msgid "trace actions() or run()"
 msgstr "Trace actions() oder run()"
 
-#: /var/centauri/library/_centauri_bash_use:415
+#: /var/centauri/library/_centauri_bash_use:417
 msgid "prompt before exit"
 msgstr "Nachfrage vor Beenden"
 
-#: /var/centauri/library/_centauri_bash_use:419
+#: /var/centauri/library/_centauri_bash_use:421
 msgid "pipe output thru pager, use 'none' to disable"
 msgstr "Programm für seitenweise Ausgabe, 'none' für keines"
 
-#: /var/centauri/library/_centauri_bash_use:445
+#: /var/centauri/library/_centauri_bash_use:447
 msgid "options:"
 msgstr "Optionen:"
 
-#: /var/centauri/library/_centauri_bash_use:562
+#: /var/centauri/library/_centauri_bash_use:564
 msgid "••• other actions •••"
 msgstr "••• andere Aktionen •••"
 
-#: /var/centauri/library/_centauri_bash_use:598
+#: /var/centauri/library/_centauri_bash_use:600
 msgid "••• service actions •••"
 msgstr "••• Dienst Aktionen •••"

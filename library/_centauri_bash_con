@@ -92,8 +92,7 @@ console() {
         if [ -z "$CEN_CONS_HOOK_MESSAGE" ] ; then
             CEN_CONS_HOOK_MESSAGE=$CEN_HOOK_MESSAGE
             CEN_HOOK_MESSAGE='_cen_con_mesg'
-            CEN_CONS_HOOK_QUIT=$CEN_HOOK_QUIT
-            CEN_HOOK_QUIT='_cen_con_quit'
+            context -h _cen_con_quit CEN_CONS_HOOK_QUIT
         fi
 
         if [ -z "$fmod" ] ; then

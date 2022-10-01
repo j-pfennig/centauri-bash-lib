@@ -10,8 +10,8 @@ msgid "Run in foreground (output '%s'): %s"
 msgstr "Im Vordergrund ausführen (Ausgabe '%s'): %s"
 
 #: /var/centauri/library/_centauri_bash_svc:233
-msgid "Run in background"
-msgstr "Im Hintergrund ausführen"
+msgid "Run in background:"
+msgstr "Im Hintergrund ausführen:"
 
 #: /var/centauri/library/_centauri_bash_svc:241
 msgid "Run in background (output '%s'): %s"

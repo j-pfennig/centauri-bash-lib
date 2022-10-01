@@ -222,6 +222,7 @@ _cen_win_pdlg() {
             sysfind -f -s CEN_WIN_APPQDBUS -- 'qdbus'   # check and save path
             windialog -l CEN_WIN_PROGRESS -- - " "      # set minimum size
             [ -z "$CEN_WIN_PROGRESS" ] && fatal $"Failed to init progress dialog"
+            context -h _cen_win_quit CEN_WIN_HOOK_QUIT  # close on quit
             _cen_win_pdlg showCancelButton 1
         fi
 
@@ -958,12 +959,10 @@ _cen_win_quit() {
 
 embed -c _centauri_bash_ext             # required module
 
-# register hooks
+# register option hook
 CEN_WIN_HOOK_OPTIONS="$CEN_HOOK_OPTIONS"
 CEN_HOOK_OPTIONS="_cen_win_option"
 
-CEN_WIN_HOOK_QUIT="$CEN_HOOK_QUIT"
-CEN_HOOK_QUIT="_cen_win_quit"
 #CEN_CONS_MSGLEN=                        # flags open progress dialog
 
 # dummies (indent to hide from _centauri_bash_dyn generator)

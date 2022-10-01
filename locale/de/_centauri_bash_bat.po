@@ -17,10 +17,6 @@ msgstr "Ausgabe umgeleitet, Protokolldatei='%s'"
 msgid "Running in batchmode as '%s', logfile='%s'"
 msgstr "Läuft im Hintergrund als '%s', Protokolldatei='%s'"
 
-#: /var/centauri/library/_centauri_bash_bat:230
-msgid "Missing option"
-msgstr "Fehlende Option"
-
 #: /var/centauri/library/_centauri_bash_bat:289
 msgid "Truncate logfile:"
 msgstr "Protokolldatei überschreiben:"
@@ -44,3 +40,6 @@ msgstr "Im Hintergrund ausführen (<brun>:=echo|batch|nohup|none)"
 #: /var/centauri/library/_centauri_bash_bat:323
 msgid "logfile (use - to disable, + for %s)"
 msgstr "Protokolldatei (- zum Abschalten, + für %s)"
+
+#~ msgid "Missing option"
+#~ msgstr "Fehlende Option"

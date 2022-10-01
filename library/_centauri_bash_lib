@@ -466,11 +466,12 @@ _cen_abort() {
     set +xeE ; IFS=$' \n\t' ; exec 2>&$CEN_STDERR
     local _fnot _indx=1 _idnt="| " _mesg _temp
 
-    while [ "${1::1}" = '-' -o "$1" = '+' ] ; do
+    while [ "${1::1}" = '-' -o "${#1}" = 1 ] ; do
       case "$1" in
       --) shift ; break ;;
-      -)  shift ; _mesg=$"Invalid argument" ; break ;;
       +)  shift ; _mesg=$"Missing argument" ; break ;;
+      =)  shift ; _mesg=$"Missing option" ; break ;;
+      ?)  shift ; _mesg=$"Invalid argument" ; break ;;
       -n) [ "$CEN_VERB" -le 2 ] && _fnot=1 ;;
       -[0-9]) _indx=${1:1} ;
       esac ; shift
@@ -670,7 +671,7 @@ arguments() {
         return 0
     fi
     if [ -n "$_vsav" ] ; then
-        local -n _vref="$_vsav" ; _vsav="$_mesg"
+        local -n _vref="$_vsav" ; _vref="$_mesg"
         return 1
     fi
 
@@ -884,14 +885,15 @@ _cen_getline() {
 #
 # Call:     (1) context -e <mask> ...
 #           (2) context -g <mode> ...
-#           (3) context -t [<trap>|+|-] ...
-#           (4) context -v [0-3] ...
-#           (5) context ... [-h <text>] [-r] [-s] [-c|-q|-x] [--] <arg>...
+#           (2) context -h <hook> <vnam> ...
+#           (4) context -t [<trap>|+|-] ...
+#           (5) context -v [0-3] ...
+#           (6) context ... [-r] [-s] [-c|-q|-x] [--] <arg>...
 #
 # Options:  -c  [*] rerun script in a console if neccessary
 #           -e  enable/disable 'abort on error' traps
 #           -g  init gui (0:off  1:window  2:console  -:auto)
-#           -h  window title **currently not implemented**
+#           -h  register a hook
 #           -n  don't add --wait for console
 #           -q  [*] check if caller is running in a console
 #           -r  raise a fatal error if the caller is not root
@@ -924,15 +926,15 @@ _cen_getline() {
 #+Form (2): The -g option will load the [[_centauri_bash_con]] or [[_centauri_bash_win]]
 # module, depending on <mode>.
 #
-#+Form (3): The -t option can catch signals 1, 2, 3 and 15.  An internal trap handler
+#+Form (4): The -t option can catch signals 1, 2, 3 and 15.  An internal trap handler
 # is provided for use with **-t +**|**-**. This feature allows trap handling to be nested.
 # The [[confirm()]] function uses **-t +**|**-** by default to capture keyboard
 # interrupts. The internal trap handler sanitizes input and calls [[quit()]].
 #
-#+Form (4): Is the correct way of changing the --verbose state, see expample. **DO°NOT**
+#+Form (5): Is the correct way of changing the --verbose state, see expample. **DO°NOT**
 # modify CEN_VERB directly.
 #
-#+Form (5): Option -r (without -s) is used to stop a non-root user via [[fatal()]]. The
+#+Form (6): Option -r (without -s) is used to stop a non-root user via [[fatal()]]. The
 #           -c and -x options re-run the script via [[terminal()]] if needed. And -s
 #           may re-run the script via "sudo".
 #
@@ -980,14 +982,14 @@ _cen_getline() {
 #.          }
 # ------------------------------------------------------------------------------
 context() {
-    local _aerr _cons _mgui _root _sudo _text _trap _verb _wait="--wait --wait"
+    local _aerr _cons _func _nhoo _mgui _root _sudo _text _trap _verb _wait="--wait --wait"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   _cons=1 ;;
       -e)   shift ; _aerr="${1:-0}" ;;
       -g)   shift ; _mgui="${1:--}" ;;
-      -h)   shift ; _text="${1:--}" ;;
+      -h)   shift ; _func="$1" ; shift ; _nhoo="$1" ;;
       -n)   _wait=  ;;
       -q)   _cons=0 ;;
       -r)   _root=1 ;;
@@ -1080,6 +1082,14 @@ context() {
         [ "$CEN_WINDOWS" = 1 ] && CEN_OPT_GUI=1
         [ "$CEN_CONSOLE" = 1 ] && CEN_OPT_GUI=2
         isfunction -z windows ; isfunction -z console ; isfunction -y progress
+    fi
+
+    if [ -n "$_func" ] ; then
+        local -n _vhoo="$_nhoo"
+        if [ -z "$_vhoo" ] ; then
+            isfunction -f -- "$_func"
+            _vhoo="$CEN_HOOK_QUIT" ; CEN_HOOK_QUIT="$_func"
+        fi
     fi
 
     # check for being root (-r only), check console status
@@ -1925,7 +1935,7 @@ isfunction() {
 #.          [ -n "$err" ] && optarg - - -m "--left --right"
 # ------------------------------------------------------------------------------
 optarg() {
-    [ $# -lt 2 ] && _cen_abort $"Missing argument(s)" "$*"
+    [ $# -lt 2 ] && _cen_abort '+'
     local _acnt=2 _emsg  _vnam _varr _expr="${3:--}"
     if [ -z "$CEN_ARGOPT" ] ; then
         [ $# -gt 3 ] && CEN_ACTARR="$4"
