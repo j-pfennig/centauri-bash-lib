@@ -142,7 +142,7 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 #.          embed -m _centauri_bash_win
 #
 #+Options:  At load time options can be passed to a module. This either happens
-#           implicitly (method 2) or explicitly (method 3). See [[embed()]]. The
+#           implicitly (method 2) or explicitly (method 4). See [[embed()]]. The
 #           available options are documented in the description of each module.
 #
 # Limits:   Some modules cannot be autoloaded:
@@ -162,10 +162,10 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 #           [[_centauri_bash_tra]] - use **_centauri_bash_lib -m tra**
 #           [[_centauri_bash_win]] - use **_centauri_bash_lib -m win** or **-g**
 #
-#+Setup:    The [[_centauri_bash_dyn]] module, that handles autoload, it is generated
+#+Setup:    The [[_centauri_bash_dyn]] module, that handles autoload, is generated
 #           using the program **$CEN_NAME**. Usually called as (see help for [[builtin]]):
 #
-#           > **\$CEN_ROOT/library/$CEN_NAME --builtin -**
+#           > **\$CEN_ROOT/library/$CEN_NAME --builtin**
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Builtin + Using loadable bash builtins
