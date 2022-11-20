@@ -258,7 +258,7 @@ lang_catalogues() {
                 *.po)   ;;
                 *)      warning -a $"Ignoring 'locale' entry:" "$item"
                 esac
-                [ -e "$lang/$item" ] && list+=($item)
+                [ -e "$lang/$item" ] && list+=("$item")
                 #trace -a "Locales:" "$item"
             done
             [ "${#list[@]}" -le 1 ] && break
@@ -303,7 +303,7 @@ lang_l10n() {
     folder -c -f -- "$llib"
     embed -i -v -- "$l10x" -f --input="$DAT_WORK" --output="$lwrk" join "$self" "$@" || stat=1
     folder -c -f -- "$curr"
-    return $_stat
+    return $stat
 }
 
 # ------------------------------------------------------------------------------

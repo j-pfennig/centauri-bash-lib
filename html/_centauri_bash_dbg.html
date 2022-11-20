@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_dbg</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_dbg")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_con.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_dbg' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_dbg</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Debug Support and Documentation</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_dbg</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Debug support and documentation</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_dbg</b> [<b>-n</b>] [<b>-a</b>] [<b>-m</b>] [<b>-o</b>] [<b>-q</b>]</div>
@@ -76,14 +76,14 @@ $<b>CEN_DEBUG</b> <b>-t</b> off           # stop tracing</pre></div>
 </section>
 <section id='section-2'>
 <div id='help' class='item-topic'>
-<span>Topic</span><span> - </span><span>Help</span><span> - </span><span>How to get the <a href="index.html">Centauri Bash Library</a> Documentation</span></div>
+<span>Topic</span><span> - </span><span>Help</span><span> - </span><span>How to get the Centauri Bash Library Documentation</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The library code contains documentation comments that can be formatted using the <a href="centaurihelp.html">centaurihelp</a> tool. This tool can also generate an HTML tree. It uses caching to allow fast command-line searches. All tools using the library get a <b>--help</b> option that can show usage information. Again <a href="centaurihelp.html">centaurihelp</a> can be used to generate HTML for tools or to pretty-print command-line output.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Aliases:</div>
-<div class='def-block'>For command line use it is recommended to define two aliases by adding the following lines to your ~/.profile :</div>
+<div class='def-block'>For command line use it is recommended to define two aliases by adding the following lines to your <b>~/.profile</b> :</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -100,29 +100,121 @@ alias clt=_clt_helper</pre></div>
   • <b>clt</b>  (short for <b>centaurihelp --tools</b>) does the same for tools</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>HTML:</div>
-<div class='def-block'>By default HTML documentation is generated into $<b>CEN_ROOT</b>/html by using <a href="centaurihelp.html">centaurihelp</a>. To export the data with a Web server you will typically create a symbolic link:</div>
+<div class='def-label'>Speed:</div>
+<div class='def-block'>The help system is implemented in <a href="_centauri_bash_doc.html">_centauri_bash_doc</a>, <a href="_centauri_bash_use.html">_centauri_bash_use</a> and <a href="centaurihelp.html">centaurihelp</a>. All of which is entirely written in bash script. Except on the 1st execution, when caches get updated, <b>clh</b> should not exhibit noticeable delays on a decent hardware. It works fine on a Raspberry Pi4 and is still usable on a Raspberry Pi-Zero.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><pre>ln <b>-s</b> $<b>CEN_ROOT</b>/html /var/www/html/centauri-bash-lib
-centaurihelp <b>--delete</b> <b>--generate</b>=all</pre></div>
+<div class='def-block'>A little speed up is provided by <a href="uglify.html">uglify</a> option <b>-D</b>, which creates pre-processed documentation files in <b>&quot;$CEN_LIBRARY&quot;</b>, see also <a href="_centauri_bash_dyn.html#preprocessing">Preprocessing</a>.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
 <div class='def-text'><pre>centaurihelp <b>-M</b> <b>-C</b> <b>-R</b>           # list modules, content and reference
 centaurihelp <b>-T</b>                 # list tools
+centaurihelp <b>-B</b>                 # browse HTML documentation
 centaurihelp <b>-i</b> ext             # output _centauri_bash_ext documentation
 centaurihelp sys txt            # show everthing matching &apos;sys&apos; or &apos;txt&apos;
 centaurihelp - sys              # show functions matching &apos;sys&apos;
 centaurihelp + sys              # show topics matching &apos;sys&apos;
 centaurihelp = dbg              # show module documentation of &apos;dbg&apos;</pre></div>
 </div>
+<div class='def-row'>
+<div class='def-label'>HTML:</div>
+<div class='def-block'>By default HTML documentation is generated into $<b>CEN_ROOT</b>/html by using <a href="centaurihelp.html">centaurihelp</a> with options <b>--html</b> and/or <b>--generate</b>:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>centaurihelp <b>--generate</b>=all     # generate all docs into $CEN_ROOT/html
+centaurihelp <b>-H</b> mydir <b>-G</b> all    # generate all docs into &apos;mydir&apos;</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>--generate</b> option runs centaurihelp multiple times to resolve forward references between tools and library ...</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>centaurihelp <b>--html</b>=mydir <b>-T</b> <b>-y</b> # tools doc to folder &apos;mydir&apos;
+centaurihelp <b>--html</b>=mydir <b>-A</b> <b>-y</b> # library doc to folder &apos;mydir&apos;
+centaurihelp <b>--html</b>=mydir <b>-T</b> <b>-y</b> # ... update index
+centaurihelp <b>--html</b>=mydir <b>-I</b> <b>-y</b> # ... update index</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <b>--browse</b> option causes centaurihelp to run &quot;<a href="centaurilauncher.html">centaurilauncher</a> viewer&quot; and in turn <b>qml</b> (which servers as a very fast viewer) or a web browser. See also <a href="_centauri_bash_run.html#launcher">launcher()</a>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>To export the HTML data with a Web server you may just create a symbolic link:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>ln <b>-s</b> $<b>CEN_ROOT</b>/html /var/www/html/centauri-bash-lib</pre></div>
+</div>
 </section>
 <section id='section-3'>
+<div id='pathsandshortcuts' class='item-topic'>
+<span>Topic</span><span> - </span><span>Paths and Shortcuts</span><span> - </span><span>Variables that contain filesystem paths</span></div>
+<div class='def-row'>
+<div class='def-label'>General:</div>
+<div class='def-block'>In the library documentation often variable names like <b>CEN_ROOT</b> or <b>CEN_LIBRARY</b> or <b>CEN_TOOLS</b> are used. Most of these are only set at script execution time. The variable values are installation dependent. To see the actual values type:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>centaurihelp <b>--info</b> paths</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>To query installation dependent variables in a script the <a href="_centauri_bash_run.html#shortpath">shortpath()</a> function or the <a href="centauripaths.html">centauripaths</a> tool may be used:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'><pre>centauripaths &apos;root&apos; &apos;library&apos; &apos;tools&apos;
+centauripaths <b>--list</b> <b>--table</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The <a href="_centauri_bash_run.html#shortpath">shortpath</a> definitions can be extended with entries in the <b>&quot;centauri-bash-lib&quot;</b> configuration file in folder <b>&quot;$CEN_ROOT/default&quot;</b>. See <a href="_centauri_bash_run.html#libraryconfiguration">Library configuration</a>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Alias:</div>
+<div class='def-block'>To navigate between folders using short path names the <b>&quot;ccd&quot;</b> bash alias can be added to your <b>~/.profile</b> :</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>_ccd_helper() {
+    if [ $# = 0 <b>-o</b> <b>&quot;${1::1}&quot;</b> = &apos;-&apos; ]; then
+        centauripaths <b>--embed</b> ccd <b>-I</b> <b>&quot;$@&quot;</b>;
+    else
+        local cdes=$(centauripaths <b>--embed</b> ccd <b>--error</b> <b>&quot;$@&quot;</b>);
+        [ <b>-n</b> <b>&quot;$cdes&quot;</b> ] &amp;&amp; cd <b>&quot;$cdes&quot;</b>;
+    fi
+}
+alias ccd=&apos;_ccd_helper&apos;</pre></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'><pre>ccd                 # list configured short path names
+ccd <b>--table</b>         # ... same in tabular form
+ccd library         # cd to $CEN_LIBRARY
+ccd lib             # ... same (short path names can be abbreviated)
+ccd locale/de       # extra path fragments can be appended
+ccd /var/www        # absolute paths are understood as fall back</pre></div>
+</div>
+</section>
+<section id='section-4'>
 <div id='introduction' class='item-topic'>
-<span>Topic</span><span> - </span><span>Introduction</span><span> - </span><span>How to use the <a href="index.html">Centauri Bash Library</a> in a Script</span></div>
+<span>Topic</span><span> - </span><span>Introduction</span><span> - </span><span>How to use the Centauri Bash Library in a Script</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The library was built to simplify bash scripting and provides command line parsing (<b>options</b>, <b>verbs</b> and <b>arguments</b>), reporting, debugging and helper functions.</div>
@@ -167,9 +259,9 @@ centaurihelp = dbg              # show module documentation of &apos;dbg&apos;</
 <div class='def-block'>See <a href="_centauri_bash_doc.html">_centauri_bash_doc</a> for more details on how to use the library.</div>
 </div>
 </section>
-<section id='section-4'>
+<section id='section-5'>
 <div id='userscript' class='item-topic'>
-<span>Topic</span><span> - </span><span>User Script</span><span> - </span><span>Writing a script using the <a href="index.html">Centauri Bash Library</a></span></div>
+<span>Topic</span><span> - </span><span>User Script</span><span> - </span><span>Writing a script using the Centauri Bash Library</span></div>
 <div class='def-row'>
 <div class='def-label'>Templates:</div>
 <div class='def-block'>Under <b>&quot;$CEN_ROOT/tools/templates&quot;</b> a couple of templates are provided as examples and to provide starting-points for own developments:</div>
@@ -241,7 +333,7 @@ main <b>&quot;$@&quot;</b> ; quit</pre></div>
 <div class='def-text'><pre>#!/bin/bash
 <b>CEN_LEGAL</b>=<b>&quot;Copyright Dr. J. Pfennig (c) 2007-2019; BSD License&quot;</b>
 <b>CEN_TITLE</b>=<b>&quot;Example of a script using command line verbs&quot;</b>
-PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>-r</b> <b>&quot;$0&quot;</b> <b>&quot;0.00:1&quot;</b> || exit 2
+PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>&quot;$0&quot;</b> <b>&quot;0.00:1&quot;</b> || exit 2
 
 actionOne() {
     message <b>&quot;One:&quot;</b> <b>&quot;$*&quot;</b>
@@ -270,7 +362,7 @@ main <b>&quot;$@&quot;</b> ; quit</pre></div>
 <div class='def-block'>All examples specified a script version (here <b>&quot;0.00&quot;</b>) and a minimum API version (here <b>&quot;1&quot;</b>). See <a href="_centauri_bash_doc.html#versioning">versioning</a> for more information about version checking.</div>
 </div>
 </section>
-<section id='section-5'>
+<section id='section-6'>
 <div id='optionsuser' class='item-function'>
 <span>Function</span><span> - </span><span>options (user)</span><span> - </span><span>User defined Option Parsing</span></div>
 <div class='def-row'>
@@ -321,7 +413,7 @@ main <b>&quot;$@&quot;</b> ; quit</pre></div>
 <div class='def-block'>The <a href="#debug">debug</a> module will parse the source code of options() in order to handle bash input completion. For this reason there <b>must</b> be a case statement containing calls to <a href="_centauri_bash_lib.html#optarg">optarg()</a>.</div>
 </div>
 </section>
-<section id='section-6'>
+<section id='section-7'>
 <div id='actionsuser' class='item-function'>
 <span>Function</span><span> - </span><span>actions (user)</span><span> - </span><span>User defined Verb Dispatcher</span></div>
 <div class='def-row'>
@@ -375,7 +467,7 @@ main <b>&quot;$@&quot;</b> ; quit</pre></div>
 <div class='def-block'>The <a href="#debug">debug</a> module will parse the source code of actions() in order to handle bash input completion. For this reason there <b>must</b> be a case statement containing calls to <a href="_centauri_bash_lib.html#invoke">invoke()</a>.</div>
 </div>
 </section>
-<section id='section-7'>
+<section id='section-8'>
 <div id='runuser' class='item-function'>
 <span>Function</span><span> - </span><span>run (user)</span><span> - </span><span>User defined Function for non-Action Scripts</span></div>
 <div class='def-row'>
@@ -417,7 +509,7 @@ main <b>&quot;$@&quot;</b> ; quit</pre></div>
 <div class='def-text'>  <b>+</b>   no upper limit for args (default)</div>
 </div>
 </section>
-<section id='section-8'>
+<section id='section-9'>
 <div id='debug' class='item-function'>
 <span>Function</span><span> - </span><span>debug</span><span> - </span><span>control tracing and generate debug output</span></div>
 <div class='def-row'>

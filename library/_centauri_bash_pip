@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_pip = Centauri Bash Library Coprocess, Pipe and Pager support
+# _centauri_bash_pip = centauri-bash-lib: Coprocess, pipe and pager support
 #
 # Call:     . _centauri_bash_pip
 #
@@ -17,8 +17,8 @@
 
 CEN_MODULES['_centauri_bash_pip']='0.02:1'
 
+CEN_PIP_WAIT=
 CEN_PIP_BUSY=                   # coproc recursion protection
-CEN_PIP_QUIT=                   # quit hook, see piploop()
 CEN_PIP_BMAP=                   # dictionary of sysbind instances
 
 embed -c '_centauri_bash_ext'           # import on demand
@@ -28,13 +28,14 @@ embed -c '_centauri_bash_ext'           # import on demand
 #
 #+The library supports a pager via the [[_centauri_bash_pip]] module. If this
 # module is available at script start time, the option --pager gets enabled
-# automatically and all output from [[run()]], action handlers or [[usage()]]
-# can be passed through a pager this way.
+# automatically. Via this option output from [[run()]], action handlers or
+# [[usage()]] can be passed through the selected pager. This includes **stdout**
+# and **stderr**.
 #
 #+The easiest method for paging output programmatically (and thereby honoring
 # the --pager option) is using the CEN_PAGER variable. On request the option
 # parser in [[main()]] will load [[_centauri_bash_pip]] and call [[syspipe()]].
-# The [[syspipe()]] call will set "CEN_PAGER=syspipe" if paging is enabled,
+# The [[syspipe()]] call will set "CEN_PAGER=syspipe°-y" if paging is enabled,
 # or clear CEN_PAGER if paging is off:
 #
 #.      $CEN_PAGER <worker> <arg>...
@@ -43,7 +44,7 @@ embed -c '_centauri_bash_ext'           # import on demand
 # to pass their output to a pager. To enable paging without --pager being set,
 # use the following code:
 #
-#.      embed -q _centauri_bash_pip && syspipe  # load module and enable
+#.      embed -q _centauri_bash_pip && syspager -y  # load module and enable
 #.      $CEN_PAGER <worker> <arg>...
 #
 #+It is also possible to call [[syspager()]] directly, but this will always
@@ -95,7 +96,7 @@ embed -c '_centauri_bash_ext'           # import on demand
 #,          inst[4]     receive fifo name (if any)
 #,          ...         opaque data for internal use
 #
-#+          Using multiple instace arrays allow the use of multiple, independent
+#+          Using multiple instnace arrays allow the use of multiple, independent
 #           servers.
 #
 #+Protocol: The RPC protocol should be text-line based (server replies are split
@@ -130,7 +131,7 @@ sysbind() {
     # sysbind -i * is used to ternate all instances
     if [ "$_inam" = '*' ] ; then
         [ "${#CEN_SYSBIND[*]}" -le 1 ] && return 0
-        trace "sysbind terminate all instances"
+        $CEN_TRACE "sysbind terminate all instances"
         for _frun in "${!CEN_PIP_BMAP[@]}" ; do
             sysbind -t "$_frun"
         done
@@ -160,7 +161,6 @@ sysbind() {
 
         _inst=(- - - - -)
         #fatal "not implemented"
-        context -h _cen_pip_quit CEN_PIP_QUIT
 
         # manage an array of instances
         #[ "${#CEN_SYSBIND[*]}" = 0 ] && CEN_SYSBIND=(- - - - -)
@@ -181,7 +181,7 @@ sysbind() {
 # ------------------------------------------------------------------------------
 # syspager - pipe a command's output through a pager (like less)
 #
-# Call:     (1) syspager [-c <cmd>|<path>] [-d] [<func> <arg>...]
+# Call:     (1) syspager [-c <cmd>|<path>] [-d] [-y] [<func> <arg>...]
 #           (2) $CEN_PAGER <func> <arg>...
 #
 #+          Form (1) initializes CEN_PAGER and CEN_OPT_PAGER. It optionally
@@ -193,6 +193,7 @@ sysbind() {
 #
 # Options:  -c  override pager given by CEN_OPT_PAGER
 #           -d  clear CEN_PAGER and set CEN_OPT_PAGER='off'
+#           -y  redirect **stderr** of <func> to **stdout**
 #
 # Arguments:<cmd>   pager command: on|off|yes|no|less|more
 #           <path>  filesystem path of a pager command
@@ -205,16 +206,25 @@ sysbind() {
 # handling. Passing a large amount of data to the pager, so that the pipe
 # enters blocking state, and then quitting the pager will cause a SIGPIPE
 # error. In turn the error handler will call [[quit()]] so that syspager does
-# not return, but quit hooks will run.
+# not return, but quit hooks will run. The implementation does something like:
+#
+#.  syspipe -o func -y -c '+' -- less -R -F -X
+#
+#+While running the pager the [[context()]] function (option **-t°+|-**) is used
+# to catch keyboard interrupts. Also [[syspipe()]] sets a trap for SIGPIPE.
+#
+#+Function <func> must not call **exit** but is allowed to call [[quit()]]. The
+# later will terminate the pager via SIGTERM.
 # ------------------------------------------------------------------------------
 syspager() {
     #$CEN_DEBUG -c -- "$*"
-    local _opag="${CEN_OPT_PAGER:-less}"
+    local _ocap _opag="${CEN_OPT_PAGER:-less}"
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   shift ; _opag="${1:-less}" ;;
       -d)   CEN_PAGER= ; CEN_OPT_PAGER='off' ;;
+      -y)   _ocap='-y' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -231,9 +241,9 @@ syspager() {
         if [ "$_plst" = 'none' ] ; then
             :
         elif sysfind -s CEN_OPT_PAGER -- "${_plst[0]}" ; then
-            CEN_PAGER='syspager'                   # 1st pager ok
+            CEN_PAGER="syspager $_ocap"            # 1st pager ok
         elif sysfind -s CEN_OPT_PAGER -- "${_plst[1]}" ; then
-            CEN_PAGER='syspager'                   # 2nd pager ok
+            CEN_PAGER="syspager $_ocap"            # 2nd pager ok
         else
             fatal $"Pager not found:" "$_plst"
         fi
@@ -258,45 +268,45 @@ syspager() {
         *)            _args=("$CEN_OPT_PAGER")
     esac
 
-    # run pager via syspipe to avoid sub-shell by pipe problem
-    _sane="$CEN_QUIT_SANE" ; CEN_QUIT_SANE=1
+    # run pager via syspipe to avoid sub-shell by pipe (|) problem
+    _sane="$CEN_QUIT_SANE" ; CEN_QUIT_SANE=1 ; context -t +
     if [ -n "$CEN_PACKAGE" ] ; then
         # calling external tool with full path, CEN_ROOT makes no sense here
-        CEN_ROOT= syspipe -c 'quit' -n -o "$*" -r -- "${_args[@]}"
+        CEN_ROOT= syspipe -c '+' -n -o "$*" -r $_ocap -- "${_args[@]}"
     else
-        syspipe -c 'quit' -n -o "$*" -r -- "${_args[@]}"
+        syspipe -c '+' -n -o "$*" -r $_ocap -- "${_args[@]}"
     fi || :
-    CEN_QUIT_SANE="$_sane"
+    CEN_QUIT_SANE="$_sane" ; context -t -
 }
 
 # ------------------------------------------------------------------------------
 # syspipe - run a command in background using coproc or a pipe
 #
-# Call:     syspipe ORIGIN [DESTINATION] [-c <error>|-]
+# Call:     syspipe ORIGIN [DESTINATION] [-c <error>|-|+]
 #                   [-e|-f] [-g] [-n] [-r] [-v] [-x] [-y] -- <cmd> <arg>...
 #
 #           ORIGIN      := -o <producer> | -i <var> | -i -
 #           DESTINATION := -d <consumer> | -a <array> | -s <string>
 #
-# Options:  -a      [*] put output into an array (overrides -c)
-#           -d      [*] destination script function (stdin -> <consumer>)
-#           -c      error handler (also called from SIGPIPE trap)
-#           -e      error message if check fails, overrides -q, see -n
-#           -f      make errors fatal
-#           -g      accept command exit status=1 as non-error
-#           -i      [*] get input data from array or string (overrides -p)
-#           -n      do not check <producer>, <provider> or <cmd>
-#           -o      [*] origin script function (<producer> => stdout)
-#           -r      ignore dryrun
-#           -s      [*] put output into a string variable (overrides -c)
-#           -x      run as 'coproc' (can have only one coproc at a time)
-#           -y      redirect stderr of <cmd> to stdout
+# Options:  -a  [*] put output into an array (overrides -c)
+#           -d  [*] destination script function (stdin -> <consumer>)
+#           -c  error handler (also called from SIGPIPE trap)
+#           -e  error message if check fails, overrides -q, see -n
+#           -f  make errors fatal
+#           -g  accept command exit status=1 as non-error
+#           -i  [*] get input data from array or string (overrides -p)
+#           -n  do not check <producer>, <provider> or <cmd>
+#           -o  [*] origin script function (<producer> => stdout)
+#           -r  ignore --dryrun option
+#           -s  [*] put output into a string variable (overrides -c)
+#           -x  run as 'coproc' (can have only one coproc at a time)
+#           -y  redirect **stderr** of <cmd> to **stdout**
 #
-#                   [*] These options are mutually exclusive
+#               [*] These options are mutually exclusive
 #
 # Arguments:<cmd>       command to be run in background
 #           <arg>       command argument(s)
-#           <error>     a custom error handler, use "-" to disable error handling
+#           <error>     a function, "-" (no handler) or "+" (silent), see below
 #           <consumer>  [#] script function that produces data for <cmd>
 #           <producer>  [#] script function that consumes data from <cmd>
 #           <array>     name of an array variable
@@ -325,14 +335,15 @@ syspager() {
 #           file.
 #
 #+Errors:   Error handling in co-processes is challenging. If error handling is not
-#           disabled via "-e -" then syspipe registers and clears a handler for SIGPIPE.
-#           Because of this and the bash restrictions on **coproc**, this
+#           disabled via "-c -" then syspipe registers and clears a handler for SIGPIPE.
+#           Because of this and the bash restrictions on **coproc**, the syspipe
 #           function cannot (or should not) be invoked recursively.
 #
-#+          The default handler reports an error after SIGPIPE or when <cmd>
-#           returns an error. A custom error handler can be provided (like "-e quit"
-#           for a silent termination). Here an implementation example:
+#+          The default handler reports an error after SIGPIPE or when <cmd> returns
+#           an error. A custom error handler can be provided (use "-c '+'" for a
+#           silent termination via [[quit()]]). Here an implementation example:
 #
+#.          # arguments on call: STATUS|SIGPIPE <status> <command>
 #.          pip_error() {
 #.              if [ "$1" = 'STATUS' ] ; then
 #.                  error -p $"command failed (status %s): %s" "$2" "$3"
@@ -445,11 +456,10 @@ syspipe() {
 
     # register a SIGPIPE handler that restores stderr and stdout
     if [ "$_ocal" != '-' ] ; then
-        local _herr _hstd; _cen_handle _herr _hstd      # get 2 handles
-        eval exec "$_herr>&2 $_hstd>&1"                 # save stderr and stdout
-        local _call="CEN_SYSPIPE=; $_ocal SIGPIPE - '$_acmd'; _ocal="
-        trap "trap SIGPIPE; exec 1>&$_hstd 2>&$_herr; $_call" SIGPIPE
-        eval exec "$_herr>&- $_hstd>&-"
+        local _call="CEN_SYSPIPE=; "
+        [ "$_ocal" = '+' ] && _call+='quit' || _call+="$_ocal SIGPIPE - '$_acmd'"
+        _call+='; _ocal='
+        trap "trap SIGPIPE; exec 1>&$CEN_STDOUT 2>&$CEN_STDERR; $_call" SIGPIPE
     fi
 
     # run command via coproc
@@ -470,7 +480,7 @@ syspipe() {
             $_osrc >&"$_hinp"
         fi
         eval exec "$_hinp"'>&-'                         # producer must close pipe
-        [ -r /dev/fd/$_hout ] && $_ocon <&"$_hout"      # consumer needs exiting pipe
+        [ -r /dev/fd/$_hout ] && $_ocon <&"$_hout"      # consumer needs existing pipe
         wait $_cpid || _stat=$?
         CEN_PIP_BUSY= ; CEN_SYSPIPE=
 
@@ -507,18 +517,23 @@ syspipe() {
             fi
         }
 
-        local _pwrk _pipe
-        if [ -n "$_osrc" -a -n "$_ocon" ] ; then
-            _cen_pip_worker '<>' ; _pwrk=$!
-            $_osrc >"${_pipe[0]}"                       # this is a fifo
-        elif [ -n "$_osrc" ] ; then
-            _cen_pip_worker '<' ; _pwrk=$!
-            $_osrc >"$_pipe"
-        else
-           _cen_pip_worker '>' ; _pwrk=$!
+        local _pipe
+        if [ -n "$_osrc" ] ; then                       # has source function
+            if [ -n "$_ocon" ] ; then                   # ... and consumer
+                _cen_pip_worker '<>' ; CEN_PIP_WAIT=$!
+            else                                        # ... only producer
+                _cen_pip_worker '<' ; CEN_PIP_WAIT=$!
+            fi
+            if [ -n "$_fcap" ] ; then                   # also capture stderr
+                $_osrc >"$_pipe" 2>&1
+            else
+                $_osrc >"$_pipe"
+            fi
+        else                                            # have consumer only
+           _cen_pip_worker '>' ; CEN_PIP_WAIT=$!
            $_ocon <"$_pipe"
         fi
-        wait $_pwrk ; _stat=$?
+        wait $CEN_PIP_WAIT ; _stat=$? ; CEN_PIP_WAIT=
         [ -n "${_pipe[1]}" ] && $_ocon <"${_pipe[1]}"   # this is a file
         [ "$_verb" -gt 1 ] && context -v "$_verb"
         CEN_SYSPIPE=
@@ -527,11 +542,24 @@ syspipe() {
 
     # unregister a SIGPIPE handler
     if [ "$_ocal" != '-' ] ; then
-        trap SIGPIPE ; eval exec "$_herr>&- $_hstd>&-"
+        trap SIGPIPE
     fi
 
     [ "${_ocal:--}" != '-' -a "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
     return $_stat
+}
+
+# called by quit handler, wait for pipe reader or kill pipe reader
+_cen_pip_reset() {
+    [ -z "$CEN_PIP_WAIT" ] && return
+    exec 1>&- 2>&-                              # close pipe
+    exec 1>&$CEN_STDOUT 2>&$CEN_STDERR          # restore tty output
+    trap SIGPIPE
+    if [ -n "$CEN_TRAPSIG" ] ; then             # kill reader after signal
+        kill $CEN_PIP_WAIT
+    else                                        # wait for reader to terminate
+        wait $CEN_PIP_WAIT
+    fi
 }
 
 # ------------------------------------------------------------------------------
@@ -545,15 +573,15 @@ syspipe() {
 #+Form (1) creates a pipe and runs a reader loop and (2) aditionally starts a ticker
 # (heartbeat) process. Form (3) sends a message and (4) terminates loop and ticker.
 #
-# Options:  -c      [*] a script function to process events
-#           -e      report failures as error messages
-#           -f      make errors fatal
-#           -m      [*] send a message
-#           -p      path of a fifo used as pipe (default: CEN_SYSLOOP[0])
-#           -q      [*] send quit message to terminate the read loop
-#           -t      start a heartbeat process (ticker)
+# Options:  -c  [*] a script function to process events
+#           -e  report failures as error messages
+#           -f  make errors fatal
+#           -m  [*] send a message
+#           -p  path of a fifo used as pipe (default: CEN_SYSLOOP[0])
+#           -q  [*] send quit message to terminate the read loop
+#           -t  start a heartbeat process (ticker)
 #
-#                   [*] These options are mutually exclusive
+#               [*] These options are mutually exclusive
 #
 # Arguments:<evnt>      event handler function
 #           <mesg>      text to be sent (''<CR>'' chars changed to ''<TAB>'')
@@ -583,6 +611,16 @@ syspipe() {
 #+Before starting a ticker, a quit hook is registered to make sure that the
 # ticker sub-shell gets terminated on [[quit()]]. For the lifetime of the ticker
 # a trap handler is registered, see [[context()]] options **-t°+** and  **-t°-**.
+#
+#+Traps:    When running **sysloop°-c** the read command is used to read messages
+#           from the pipe. Unfortunately this blocks the execution of traps until
+#           the read command returns (see bash documentation). To stop a running
+#           loop gracefully a pipe message is needed. This is implemented by the
+#           ticker sub-shell process:
+#
+#,          (1) the ticker has a trap handler for SIGHUP SIGINT SIGQUIT SIGTERM
+#,          (2) for these traps it sends a quit message and exits
+#,          (3) a SIGALRM trap is used by sysloop to stop the ticker
 #
 #+Events:   The event handler function is called with 2 or more arguments:
 #
@@ -615,7 +653,7 @@ syspipe() {
 CEN_SYSLOOP=
 sysloop() {
     #$CEN_DEBUG -c -- "$*"
-    local _emsg="$CEN_TRACE" _fatl _frun _isok _pipe _time
+    local _emsg="$CEN_TRACE" _fatl _frun _isok _pipe _time _rpip
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -626,6 +664,7 @@ sysloop() {
       -m)   _frun=2 ;;
       -p)   shift ; _pipe="${1:--}" ; _isok=1 ;;
       -q)   _frun=0 ;;
+      -r)   _rpip=1 ;;
       -t)   shift ; _time="$1" ; _isok=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -638,7 +677,7 @@ sysloop() {
         elif [ -p "$_pipe" ] ; then
             :
         elif [ ! -e "$_pipe" ] ; then
-            sysrun ${_fatl:--e} -r -- mkfifo -- "$_pipe" || return 1
+            sysrun ${_fatl:--e} -p -r -- mkfifo -- "$_pipe" || return 1
         else
             $_emsg "Not a pipe:" "$_pipe" ; return 1
         fi
@@ -654,20 +693,21 @@ sysloop() {
         fi
     fi
 
-    if [ "$_frun" = 0 ] ; then                  # sent quit ...
+    if [ "$_frun" = 0 ] ; then                  # send quit ...
         echo "$BASHPID" - > "$CEN_SYSLOOP" 2>/dev/null
-        trace -a "sysloop sent quit, status=" $?
+        $CEN_TRACE -a -c " sent quit" "status=$?"
 
     elif [ "$_frun" = 1 ] ; then                # event loop ...
-        trace "sysloop enter loop (pipe=$CEN_SYSLOOP)"
+        $CEN_TRACE -c " enter loop" "pipe=$CEN_SYSLOOP"
         local _epid _emsg _earg _ecnt _stat=0
+        CEN_SYSLOOP[3]="$_rpip"
         while [ -n "${CEN_SYSLOOP[1]}" ] ; do
            while read -r _epid _ecnt _emsg ; do
                 if [ -n "${_epid//[0-9]/}" -o -n "${_ecnt//[-0-9]/}" ] ; then
-                    trace "sysloop input ignored:" "$_epid" "$_ecnt"
+                    $CEN_TRACE -c " input ignored" -- "$_epid" "$_ecnt"
                     continue
                 elif [ "${_ecnt:--}" = '-' ] ; then
-                    trace -a -p "sysloop quit message from PID=%s" "$_epid"
+                    $CEN_TRACE -a -c " quit msg." "from PID=$_epid"
                     _stat=0 ; CEN_SYSLOOP[1]= ; break
                 elif [ "$_ecnt" -gt 1 ] ; then
                     splitjoin -s _earg -d '\a' -- "$_emsg"
@@ -678,17 +718,17 @@ sysloop() {
                 _stat=$? ; CEN_SYSLOOP[1]= ; break
            done < "$CEN_SYSLOOP"
         done
-        trace -p "sysloop exit loop (status %s)" "$_stat"
+        $CEN_TRACE -c " exit loop" "status=$_stat"
         _cen_pip_ticker                         # stop ticker
         [ "$_stat" -gt 1 ] && return $_stat
 
-    elif [ "$_frun" = 2 ] ; then                # sent message ...
+    elif [ "$_frun" = 2 ] ; then                # send message ...
         local _mesg="$1"
         [ $# -gt 1 ] && splitjoin -j _mesg -d '\a' -- "$@"
         if echo "$BASHPID" $# "${_mesg//$'\n'/$'\t' }" > "$CEN_SYSLOOP" 2>/dev/null ; then
-            trace -a "sysloop send success:" "$BASHPID $*"
+            $CEN_TRACE -a -c " send success" -- "$BASHPID $*"
         else
-            $_emsg "sysloop send failed:" "$BASHPID $*" ; return 1
+            $_emsg -c " send failed" -- "$BASHPID $*" ; return 1
         fi
 
     else
@@ -697,37 +737,70 @@ sysloop() {
     return 0
 }
 
-# start or stop ticker: [<time> <mesg> [<ppid>]]
-#   no args: stop  two args: start  three args: run loop
+# ------------------------------------------------------------------------------
+# implementation of ticker process for sysloop
+#
+#   calls from sysloop: _cen_pip_ticker <time> <mesg>   # start
+#                       _cen_pip_ticker                 # stop
+#
+#   ticker process:     _cen_pip_ticker <time> <mesg> <ppid>
+#
+#   trap handling:      _cen_pip_ticker term
+#                       _cen_pip_ticker stop            # signal 14 (alarm)
+# ------------------------------------------------------------------------------
 _cen_pip_ticker() {
-    if [ $# = 0 ] ; then
+    # handler for external traps: SIGHUP SIGINT SIGQUIT SIGTERM
+    if [ "$1" = 'term' ] ; then
+        message -c ' ticker' "got signal - sending quit"
+        trap '' 14                          # ignore alarm signal, will exit anyhow
+        echo "$BASHPID" - > $CEN_SYSLOOP
+        trace -c ' ticker' "terminated" ; exit
+
+    # handler for internal trap: SIGALRM (raised by sysloop to stop ticker)
+    elif [ "$1" = 'stop' ] ; then
+        trace -a -c ' ticker' "stopped" ; exit
+
+    # subroutine call from sysloop to stop ticker
+    elif [ $# = 0 ] ; then
         [ -z "${CEN_SYSLOOP[2]}" ] && return 1
-        kill "${CEN_SYSLOOP[2]}" 2>/dev/null && trace "sysloop ticker stopped"
-        CEN_SYSLOOP[2]=
+
+        kill -s 14 "${CEN_SYSLOOP[2]}" 2>/dev/null &&
+            trace -c ' ticker' "stopping"
+
+        if [ -n "${CEN_SYSLOOP[3]}" ] ; then
+            $CEN_TRACE -a -c "removing pipe" "$CEN_SYSLOOP"
+            remove -s -- "$CEN_SYSLOOP" ; CEN_SYSLOOP=
+        fi
+        CEN_SYSLOOP[2]= ; CEN_SYSLOOP[3]=
         context -t -
         return 0
+
+    # subroutine call from sysloop to start ticker
     elif [ $# -lt 3 ] ; then
         [ -n "${CEN_SYSLOOP[2]}" ] && return 1
-        context -t + -h _cen_pip_quit CEN_PIP_QUIT
+        context -t +
         _cen_pip_ticker "$1" "${2:-TICK}" "$$" &
         CEN_SYSLOOP[2]=$!
-        trace "sysloop ticker started (PID=$!):" "$1" "${2:-TICK}"
+        $CEN_TRACE -c ' ticker' "started (PID=$!):" "$1" "${2:-TICK}"
         return 0
     fi
 
-    # ticker loop, runs until signal
+    ### ticker loop, runs until signal ###
+
+    trap "_cen_pip_ticker stop" 14              # internal trap
+    trap "_cen_pip_ticker term" 1 2 3 15        # external traps
     while sleep "$1" ; do
         echo "$3 0 $2" > "$CEN_SYSLOOP" 2>/dev/null || return 1
     done
 }
 
-# hook to terminate ticker process
+# ------------------------------------------------------------------------------
+# quit callback to terminate sysbind and sysloop ticker process
+# ------------------------------------------------------------------------------
 _cen_pip_quit() {
-    $CEN_NOTRACE set +x
     sysbind -i '*' -t                       # stop all servers
+    _cen_pip_reset                          # close open pipe
     _cen_pip_ticker                         # stop sysloop ticker
-    $CEN_NOTRACE set -x
-    $CEN_PIP_QUIT "$@"
-} || :
+}
 
 # end

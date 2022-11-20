@@ -17,7 +17,7 @@ body {
 p {
     margin: 1em;
     text-align: justify;
-    font-size: 12pt;
+    font-size: 11pt;
 }
 
 i, em, b {
@@ -38,7 +38,7 @@ pre {
 /* --- headers --- */
 
 h2, div.item-module {
-    font-size: 14pt;
+    font-size: 13pt;
     background-color: lavender;
     margin-top: 1em;
     border-style: outset;
@@ -47,7 +47,7 @@ h2, div.item-module {
 }
 
 div.item-script {
-    font-size: 14pt;
+    font-size: 13pt;
     background-color: aquamarine;
     margin-top: 1em;
     border-style: outset;
@@ -56,7 +56,7 @@ div.item-script {
 }
 
 div.item-header {
-    font-size: 14pt;
+    font-size: 13pt;
     background-color: beige;
     margin-top: 1em;
     margin-bottom: 1em;
@@ -66,7 +66,7 @@ div.item-header {
 }
 
 div.item-topic {
-    font-size: 14pt;
+    font-size: 13pt;
     background-color: khaki;
     margin-top: 1em;
     border-style: outset;
@@ -75,7 +75,7 @@ div.item-topic {
 }
 
 div.item-function {
-    font-size: 14pt;
+    font-size: 13pt;
     background-color: wheat;
     margin-top: 1em;
     border-style: outset;
@@ -94,26 +94,27 @@ div.def-label {
     padding-top: 1em;
     min-width: 8em;
     font-weight: bold;
-    font-size: 11pt;
+    font-size: 10pt;
 }
 
 div.def-empty {
     display: table-cell;
     width: 8em;
-    font-size: 11pt;
+    font-size: 10pt;
 }
 
 div.def-text {
     display: table-cell;
-    font-size: 11pt;
+    font-size: 10pt;
     font-family: monospace;
     white-space: pre;
 }
 
 div.def-block {
     display: table-cell;
-    font-size: 11pt;
+    font-size: 10pt;
     font-family: monospace;
+    text-align: justify;
 }
 
 div.def-break {
@@ -123,7 +124,7 @@ div.def-break {
 /* ---- table for index etc. ---- */
 
 table {
-    font-size: 11pt;
+    font-size: 10pt;
     margin-left: 0.5em;
     border-spacing: 8pt 2pt;
 }
@@ -160,7 +161,7 @@ td.function {
 /* ---- navigator (table layout) ---- */
 
 nav {
-    font-size: 11pt;
+    font-size: 10pt;
     display: table;
     width: 100%;
     background-color: cadetblue;

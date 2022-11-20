@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_web = Centauri Bash Library Web Application
+# _centauri_bash_web = centauri-bash-lib: Web application
 #
 # Call:     . _centauri_bash_web [-n|-w]
 #
@@ -107,7 +107,7 @@ CEN_WEB_NAVIGATE=(
     -  )                    # 7 - (optional) glob for box index
 
 # ------------------------------------------------------------------------------
-# web apllications + Simple Browser based application, optionally using CGI
+# Web Applications + Simple Browser based application, optionally using CGI
 #
 #,          using _centauri_bash_web
 #,          optinal _centauri_bash_cgi
@@ -129,7 +129,7 @@ CEN_WEB_NAVIGATE=(
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# web configuration + Simple Browser based application, optionally using CGI
+# Web Config + Section in centauri-bash-lib configuration file
 #
 #,          x
 #,          x
@@ -138,7 +138,7 @@ CEN_WEB_NAVIGATE=(
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# web features + Tweaking the default page generation
+# Web Features + Tweaking the default page generation
 #
 #,          - Set name prefix for bash callbacks and javascript code
 #

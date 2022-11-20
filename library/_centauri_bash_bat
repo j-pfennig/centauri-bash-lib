@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_bat = Centauri Bash Library Batch Support
+# _centauri_bash_bat = centauri-bash-lib: Batch job support
 #
 # Call:     . _centauri_bash_bat [-b|-l|-n]
 #
@@ -8,16 +8,16 @@
 #           -l  enable logfile only
 #           -n  disable all (batch and logfile), no module init
 #
-# This module adds the --batch and --logfile options to a script, depending
+#+This module adds the --batch and --logfile options to a script, depending
 # on the module options described above. The module load options are relevant
 # for command line option parsing and --help output only. Manual initialization
 # via [[batchmode()]] and [[logfile()]] is always possible.
 #
-# The [[main()]] function will automatically invoke the [[batchmode()]] function
+#+The [[main()]] function will automatically invoke the [[batchmode()]] function
 # to run a script in batch mode.  This behaviour can be overriden, see
 # [[batchmode()]] or the CEN_BAT_STATE variable.
 #
-# By default, when no module options are given, the variables CEN_BAT_BATCH
+#+By default, when no module options are given, the variables CEN_BAT_BATCH
 # (enable batch) and CEN_BAT_LOGFILE (enable logfile) are set. These can be
 # used or set by a script as needed.
 #
@@ -34,10 +34,10 @@
 #           --logfile=**-**     # no logging at all
 #           --logfile=**+**     # (default) use $CEN_NAME.log as <file>
 #
-# Copyright Dr. J. Pfennig (c) 2017-2019
+# Copyright Dr. J. Pfennig (c) 2017-2022
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_bat"]="0.10:1"
+CEN_MODULES["_centauri_bash_bat"]="0.11:1"
 
 CEN_OPT_BATCH=                  # see --batch
 CEN_OPT_LOGFILE=                # see --logfile
@@ -55,27 +55,27 @@ CEN_BAT_LOGFILE=1               # enable logfile
 #
 # Options:  -c  explicitly set batch arguments
 #           -i  enable batch, used by [[options()]] or [[actions()]]
-#           -r  run it, used by [[quit()]] hook
+#           -r  run it, used by [[quit()]] callback
 #
 # Variable: CEN_BAT_STATE=          # no batch command queued
 #           CEN_BAT_STATE="init"    # command queued
 #           CEN_BAT_STATE="run"     # about to execute
 #           CEN_BAT_STATE="done"    # command executed (or error)
 #
-# Batches can be implicit (the user script does nothing) or explicit. For the
-# later the user script must call "batchmode -c" with arguments at the end
+#+Batches can be implicit (the user script does nothing) or explicit. For the
+# later the user script must call "batchmode°-c" with arguments at the end
 # of option processing -or- start of action processing -or- set CEN_BAT_STATE
 # to an non-empty value.
 #
-# Batches are always run from the quit hook. When the user script did not call
-# "batchmode -c" or set CEN_BAT_STATE before action processing starts (or [[run()]]
+#+Batches are always run from the quit callback. When the user script did not call
+# "batchmode°-c" or set CEN_BAT_STATE before action processing starts (or [[run()]]
 # gets called), a [[quit()]] call is made by this code.
 #
-# The quit hook checks if commands where queued (via ''"''**batchmode -c** <cmd>''"''). If
-# not the original script call is added as command. The queue is then executed
+#+The quit callback checks if commands where queued (via ''"''**batchmode -c** <cmd>''"'').
+# If not the original script call is added as command. The queue is then executed
 # via **/usr/bin/nohup** or **/usr/bin/at**.
 #
-# Warning:  Script options passed to **batchmode -c** must have long names and must use
+#+Warning:  Script options passed to **batchmode -c** must have long names and must use
 #           the **=** syntax for values (examples: --hello **--color=green**).
 #
 # Example:  Registering explicit batch commands (using verb dispatching)
@@ -187,10 +187,8 @@ ${args[@]}
             CEN_BAT_STATE="done" ; return
         fi
 
-        # must register quit hook
+        # must enable quit callback
         CEN_BAT_BATCH=1
-        CEN_BAT_HOOK_QUIT="$CEN_HOOK_QUIT"
-        CEN_HOOK_QUIT="_cen_bat_quit"
 
         # reinvokation with --batch=@
         if [ "${CEN_OPT_BATCH::1}" = "@" ] ; then
@@ -265,7 +263,7 @@ ${args[@]}
 #
 # Returns:  **true** on success, sets CEN_OPT_LOGFILE to path
 #
-# This function implements the --logfile option and is usually called
+#+This function implements the --logfile option and is usually called
 # automatically by [[options()]] or [[actions()]]. It can be called explicitly
 # to override the default behaviour.
 # ------------------------------------------------------------------------------
@@ -341,10 +339,9 @@ _cen_bat_action() {
     [ -n "$CEN_BAT_BATCH" ] && batchmode -i
 }
 
-# hook for quit()
+# called by quit()
 _cen_bat_quit() {
     [ -n "$CEN_BAT_BATCH" ] && error -t && batchmode -r
-    $CEN_BAT_HOOK_QUIT "$@"
 }
 
 # ------------------------------------------------------------------------------
@@ -361,11 +358,9 @@ elif [ "$1" = "-n" ] ; then         # do not init
     return 0
 fi
 
-# register option/quit hook
-CEN_BAT_HOOK_OPTIONS="$CEN_HOOK_OPTIONS"
-CEN_HOOK_OPTIONS="_cen_bat_option"
-CEN_BAT_HOOK_ACTIONS="$CEN_HOOK_ACTIONS"
-CEN_HOOK_ACTIONS="_cen_bat_action"
+# register option/action hooks
+CEN_BAT_HOOK_OPTIONS="$CEN_HOOK_OPTIONS" ; CEN_HOOK_OPTIONS="_cen_bat_option"
+CEN_BAT_HOOK_ACTIONS="$CEN_HOOK_ACTIONS" ; CEN_HOOK_ACTIONS="_cen_bat_action"
 
 :
 # end

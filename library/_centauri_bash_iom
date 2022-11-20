@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_iom = Centauri Bash Library Input/Output and Caching Support
+# _centauri_bash_iom = centauri-bash-lib: Input/Output and caching support
 #
 # Call:     . _centauri_bash_iom [-e] [-i|-r] [-o|-w]
 #
@@ -1144,7 +1144,7 @@ serialize() {
 
         dryrun "serialize: $_ffil" && return
         create $_fqui -v _sout -h - -s -t -- "$_ffil" $_mode || return 1
-        $_otra -a "serialize: write to:" "$_ffil"
+        $_otra -a -c $" writing" "$_ffil"
 
     # --- read ---
 
@@ -1154,13 +1154,15 @@ serialize() {
             . $_ffil &>/dev/null
             CEN_QUIT_TRAP="$_trap"
             if [ $? = 0 ] ; then
-                $_otra -a "serialize: read from:" "$_ffil"
+                $_otra -a -c $" reading" "$_ffil"
             else
                 $_oerr $"Failed to deserialize data from:" "$_ffil"
                 return 1
             fi
+        elif [ -n "$_fqui" ] ; then
+            $CEN_TRACE -c $" missing" -- "$_ffil" ; return 1
         else
-            $_oerr "serialize: data missing:" "$_ffil" ; return 1
+            $_oerr $"Cannot deserialize data from:" "$_ffil" ; return 1
         fi || true
     fi
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_con = Centauri Bash Library Console Support
+# _centauri_bash_con = centauri-bash-lib: Console mode support
 #
 # Call:     . _centauri_bash_con [-n|-i]
 #
@@ -37,7 +37,6 @@ CEN_CONS_PROGLN=        # progress line mode flag
 CEN_CONSOLE=            # 0: stdout not tty, 1: console ok, 2: unknown device
 
 CEN_CONS_HOOK_MESSAGE=
-CEN_CONS_HOOK_QUIT=
 
 # ------------------------------------------------------------------------------
 # console - query/initialize console mode support
@@ -88,15 +87,12 @@ console() {
 
     # implicit initialization
     if [ -z "$CEN_CONSOLE" -o -n "$fmod" ] ; then
-        # hook message() and quit()
+        # hook message()
         if [ -z "$CEN_CONS_HOOK_MESSAGE" ] ; then
-            CEN_CONS_HOOK_MESSAGE=$CEN_HOOK_MESSAGE
-            CEN_HOOK_MESSAGE='_cen_con_mesg'
-            context -h _cen_con_quit CEN_CONS_HOOK_QUIT
+            CEN_CONS_HOOK_MESSAGE=$CEN_HOOK_MESSAGE ; CEN_HOOK_MESSAGE='_cen_con_mesg'
         fi
 
         if [ -z "$fmod" ] ; then
-#            if ! [ -t 1 -a -t 2 ] ; then
             if ! [ -t 2 ] ; then
                 fmod=0
             elif [ "${TERM::5}" = "xterm" -o "$TERM" = "linux" ] ; then
@@ -162,22 +158,22 @@ console() {
 #           <rslt>  variable to receice the output
 #
 # Options:  -a  append result to <rslt>
-#           -d  deco style
+#           -d  decoration style
 #           -l  add new-line
 #           -m  multi-line mode, repeat decoration per line
 #           -s  save result to <rslt> (default is CEN_DECORATE)
 #
-#+Modes:    The mode can be -, a digit or a keyword. Most modes prepend the
-#           data with a starting escape sequence and append an escape to go
-#           back to normal text mode.
+#+Style:    The <deco> paramater can be "-", a digit or a keyword. Most modes
+#           prepend the data with a starting escape sequence and append an escape
+#           to go back to normal text mode.
 #
-#           **-        **   just copy, no decoration
-#           **1  bold  **   bold text, back to normal
-#           **2  mark  **   inverted text, back to normal
-#           **3  italic**   italics text, back to normal
-#           **4  uline **   undelined text, back to normal
-#           **9  remove**   remove escape sequences from input
-#           **0  normal**   back to normal, than text
+#,          **-        **   just copy, no decoration
+#,          **1  bold  **   bold text, back to normal
+#,          **2  mark  **   inverted text, back to normal
+#,          **3  italic**   italics text, back to normal
+#,          **4  uline **   undelined text, back to normal
+#,          **9  remove**   remove escape sequences from input
+#,          **0  normal**   back to normal, than text
 # ------------------------------------------------------------------------------
 CEN_DECORATE=
 decorate() {
@@ -568,17 +564,18 @@ _cen_con_more() {
 # hook message functions to add "-d <deco>" and "-b <offs>"
 # ------------------------------------------------------------------------------
 _cen_con_mesg() {
-    local _deco _fatl _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _args _verb="$CEN_VERB" _stat=0
+    local _deco _fatl _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _scal _args _verb="$CEN_VERB" _stat=0
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -a)   [ -n "$CEN_AUTOIND" ] && _args+=("-i") ;;
 
       # added here
       -b)   shift ; [ "${CEN_COLS:-0}" = 0 ] || _fbrk="$1" ;;
       -d)   shift ; [ "${1::1}" = "+" ] || _deco="$1" ;;
 
       # standard options
+      -a)   [ -n "$CEN_AUTOIND" ] && _args+=("-i") ;;
+      -c)   shift ; _scal="$1" ;;
       -e)   _args+=("$1") ; _stat="$CEN_EXIT" ; _verb=1 ;;
       -f)   _args+=("$1") ; _stat="$CEN_EXIT" ; _verb=1 ; _fatl=1 ;;
       -i|-r|-w)
@@ -600,6 +597,9 @@ _cen_con_mesg() {
         printf -v _mesg "$@"
     else
         _mesg="$*"
+    fi
+    if [ -n "$_scal" ] ; then                   # option -c
+        _cen_shortfmt _scal - "$_scal" ; _mesg="${_scal:1} $_mesg"
     fi
 
     # must handle multi line here
@@ -739,14 +739,6 @@ _cen_con_prog() {
 }
 
 # ------------------------------------------------------------------------------
-# Hook the quit call to cancel progress()
-# ------------------------------------------------------------------------------
-_cen_con_quit() {
-    [ -n "$CEN_CONS_MSGLEN" ] && progress
-    $CEN_CONS_HOOK_QUIT "$@"
-}
-
-# ------------------------------------------------------------------------------
 # Startup: <[-n|-i]>
 # ------------------------------------------------------------------------------
 
@@ -766,6 +758,9 @@ if [ "$1" = "-i" ] ; then
 elif ! [ "$1" = "-n" ] ; then
     console -c 0 || true
 fi
+
+# _cen_con_quit() is disabled in _centauri_bash_lib, progress messages will
+#                 removed via _cen_pro_quit
 
 :
 # end

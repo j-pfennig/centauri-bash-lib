@@ -3,7 +3,7 @@
 <title>centaurihelp ─ content</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("content")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='module.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,24 +12,24 @@
 </div></nav>
 <section id='section-1'>
 <div id='content' class='item-topic'>
-<span>Topic</span><span> - </span><span>Content</span><span> - </span><span>Documentation content by module - <a href="index.html">_centauri_bash_lib</a></span></div>
+<span>Topic</span><span> - </span><span>Content</span><span> - </span><span>Documentation content by module - <a href="index.html">centauri-bash-lib</a></span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
-<div class='def-block'>The documentation is structured by <b>modules</b>, <b>functions</b> and <b>topics</b>. Each <b>module</b> is a bash script, and <b>functions</b> are always contained in <b>modules</b>. <b>Topics</b> have no executable code.</div>
+<div class='def-block'>The library documentation is structured into <b>modules</b>, <b>functions</b> and <b>topics</b>. Each <b>module</b> is a bash script, and <b>functions</b> are always contained in <b>modules</b>. <b>Topics</b> have no executable code.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>The main module <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> (or it&apos;s proxy) must be sourced by the user script, see <a href="_centauri_bash_doc.html#initialization">Initialization</a>. Other library modules can be loaded dynamically.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The main module <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> must be sourced by the user script. Other modules can be loaded dynamically.</div>
-</div>
-<div class='def-row'>
-<div class='def-label'>Remarks:</div>
-<div class='def-block'>Copyright Dr. J. Pfennig (c) 2019-2022</div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2019-2022; BSD License</div>
 </div>
 </article>
 <article><div class='item-header'>List of documentation items grouped by module</div><table><tr><td class='module'><a href='_centauri_bash_bat.html'>_centauri_bash_bat</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Batch Support</td>
+<td>centauri-bash-lib: Batch job support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_bat.html#batchmode'>batchmode</a></td>
 <td>Function</td>
@@ -41,7 +41,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_cgi.html'>_centauri_bash_cgi</a></td>
 <td>Module</td>
-<td>Centauri Bash Library CGI Support</td>
+<td>centauri-bash-lib: CGI script support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_cgi.html#cgiapp'>cgiapp</a></td>
 <td>Function</td>
@@ -49,7 +49,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_con.html'>_centauri_bash_con</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Console Support</td>
+<td>centauri-bash-lib: Console mode support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_con.html#console'>console</a></td>
 <td>Function</td>
@@ -69,11 +69,15 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_dbg.html'>_centauri_bash_dbg</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Debug Support and Documentation</td>
+<td>centauri-bash-lib: Debug support and documentation</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_dbg.html#help'>Help</a></td>
 <td>Topic</td>
 <td>How to get the Centauri Bash Library Documentation</td>
+</tr>
+<tr><td class='topic'><a href='_centauri_bash_dbg.html#pathsandshortcuts'>Paths and Shortcuts</a></td>
+<td>Topic</td>
+<td>Variables that contain filesystem paths</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_dbg.html#introduction'>Introduction</a></td>
 <td>Topic</td>
@@ -101,11 +105,27 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_doc.html'>_centauri_bash_doc</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Documentation Support</td>
+<td>centauri-bash-lib: Inline documentation support</td>
+</tr>
+<tr><td class='topic'><a href='_centauri_bash_doc.html#formatting'>Formatting</a></td>
+<td>Topic</td>
+<td>How to format inline documentation for centaurihelp</td>
+</tr>
+<tr><td class='function'><a href='_centauri_bash_doc.html#documentation'>documentation</a></td>
+<td>Function</td>
+<td>A bash source code documentation extractor</td>
+</tr>
+<tr><td class='function'><a href='_centauri_bash_doc.html#documentationworker'>documentation (worker)</a></td>
+<td>Function</td>
+<td>Documentation block callback</td>
+</tr>
+<tr><td class='function'><a href='_centauri_bash_doc.html#documentationtext'>documentation (text)</a></td>
+<td>Function</td>
+<td>Documentation text block callback</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_doc.html#commandsyntax'>Command Syntax</a></td>
 <td>Topic</td>
-<td>Options, Verbs and Arguments</td>
+<td>Options, verbs and arguments</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_doc.html#commandline'>Command Line</a></td>
 <td>Topic</td>
@@ -117,7 +137,7 @@
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_doc.html#initialization'>Initialization</a></td>
 <td>Topic</td>
-<td>How _centauri_bash_lib and modules are found</td>
+<td>How centauri-bash-lib and its modules are found</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_doc.html#versioning'>Versioning</a></td>
 <td>Topic</td>
@@ -143,25 +163,13 @@
 <td>Topic</td>
 <td>Scoping Rules, References, Conventions</td>
 </tr>
-<tr><td class='function'><a href='_centauri_bash_doc.html#documentation'>documentation</a></td>
-<td>Function</td>
-<td>The source code documentation extractor</td>
-</tr>
-<tr><td class='function'><a href='_centauri_bash_doc.html#documentationworker'>documentation (worker)</a></td>
-<td>Function</td>
-<td>Documentation block processor</td>
-</tr>
-<tr><td class='topic'><a href='_centauri_bash_doc.html#formatting'>Formatting</a></td>
-<td>Topic</td>
-<td>How to Format Code Documentation for centaurihelp</td>
-</tr>
 <tr><td class='module'><a href='_centauri_bash_dyn.html'>_centauri_bash_dyn</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Dynamic Module loading</td>
+<td>centauri-bash-lib: Dynamic Module loading</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_dyn.html#dynamicloading'>Dynamic loading</a></td>
 <td>Topic</td>
-<td>Dynamic loading of _centauri_bash_lib modules</td>
+<td>Dynamic loading of centauri-bash-lib modules</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_dyn.html#builtin'>Builtin</a></td>
 <td>Topic</td>
@@ -177,7 +185,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_ext.html'>_centauri_bash_ext</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Sort and IO Extension</td>
+<td>centauri-bash-lib: Filesystem extension</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#attributes'>attributes</a></td>
 <td>Function</td>
@@ -229,7 +237,7 @@
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#splitcall'>splitcall</a></td>
 <td>Function</td>
-<td>run commands or funtions splitting long arguments lists</td>
+<td>run commands or functions splitting long arguments lists</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_ext.html#splitpath'>splitpath</a></td>
 <td>Function</td>
@@ -261,11 +269,11 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_ins.html'>_centauri_bash_ins</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Installation Helpers</td>
+<td>centauri-bash-lib: Installation helpers</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_ins.html#serviceanddaemon'>Service and Daemon</a></td>
 <td>Topic</td>
-<td>How centauri-bash-library supports Services and Daemons</td>
+<td>How centauri-bash-lib supports Services and Daemons</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_ins.html#servicetypes'>Service Types</a></td>
 <td>Topic</td>
@@ -289,19 +297,15 @@
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_ins.html#libraryproxy'>Library Proxy</a></td>
 <td>Topic</td>
-<td>The _centauri_bash_lib Proxy</td>
+<td>The centauri-bash-lib Proxy</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_ins.html#localization'>Localization</a></td>
 <td>Topic</td>
 <td>Adding support for translations (l10n)</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_ins.html#pathshortcuts'>Path Shortcuts</a></td>
-<td>Topic</td>
-<td>Shortcuts for filesystem paths</td>
-</tr>
 <tr><td class='module'><a href='_centauri_bash_iom.html'>_centauri_bash_iom</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Input/Output and Caching Support</td>
+<td>centauri-bash-lib: Input/Output and caching support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_iom.html#inpdata'>inpdata</a></td>
 <td>Function</td>
@@ -333,7 +337,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_lib.html'>_centauri_bash_lib</a></td>
 <td>Module</td>
-<td>Centauri Bash Library (main module)</td>
+<td>centauri-bash-lib: Main module</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_lib.html#trace'>trace</a></td>
 <td>Function</td>
@@ -361,7 +365,7 @@
 </tr>
 <tr><td class='function'><a href='_centauri_bash_lib.html#apicheck'>apicheck</a></td>
 <td>Function</td>
-<td>get/check api version</td>
+<td>Get/check library api version</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_lib.html#arguments'>arguments</a></td>
 <td>Function</td>
@@ -425,7 +429,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_mnt.html'>_centauri_bash_mnt</a></td>
 <td>Module</td>
-<td>Centauri Bash Library mount Support</td>
+<td>centauri-bash-lib: Storage device mount support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_mnt.html#automount'>automount</a></td>
 <td>Function</td>
@@ -441,7 +445,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_pip.html'>_centauri_bash_pip</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Coprocess, Pipe and Pager support</td>
+<td>centauri-bash-lib: Coprocess, pipe and pager support</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_pip.html#pager'>Pager</a></td>
 <td>Topic</td>
@@ -465,7 +469,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_pro.html'>_centauri_bash_pro</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Progress Display Support</td>
+<td>centauri-bash-lib: Progress display support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_pro.html#progress'>progress</a></td>
 <td>Function</td>
@@ -473,11 +477,15 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_run.html'>_centauri_bash_run</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Configuration related Functions</td>
+<td>centauri-bash-lib: Configuration related functions</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_run.html#launcherconfig'>launcher config</a></td>
+<tr><td class='topic'><a href='_centauri_bash_run.html#libraryconfiguration'>Library configuration</a></td>
 <td>Topic</td>
-<td>Configuration section in centauri-bash-lib</td>
+<td>The centauri-bash-lib configuration file</td>
+</tr>
+<tr><td class='topic'><a href='_centauri_bash_run.html#launcherconfig'>launcher Config</a></td>
+<td>Topic</td>
+<td>Section in centauri-bash-lib configuration file</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_run.html#launchercallback'>launcher (callback)</a></td>
 <td>Function</td>
@@ -487,17 +495,17 @@
 <td>Function</td>
 <td>Run an external application using a generic name</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_run.html#shortpathconfig'>shortpath config</a></td>
+<tr><td class='topic'><a href='_centauri_bash_run.html#shortpathconfig'>shortpath Config</a></td>
 <td>Topic</td>
-<td>Configuration section in centauri-bash-lib</td>
+<td>Section in centauri-bash-lib configuration file</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_run.html#shortpath'>shortpath</a></td>
 <td>Function</td>
 <td>Resolve shortcut names for file system paths</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_run.html#terminalconfig'>terminal config</a></td>
+<tr><td class='topic'><a href='_centauri_bash_run.html#terminalconfig'>terminal Config</a></td>
 <td>Topic</td>
-<td>Configuration section in centauri-bash-lib</td>
+<td>Section in centauri-bash-lib configuration file</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_run.html#terminal'>terminal</a></td>
 <td>Function</td>
@@ -505,7 +513,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_svc.html'>_centauri_bash_svc</a></td>
 <td>Module</td>
-<td>Centauri Bash Library service/syslog Support</td>
+<td>centauri-bash-lib: Service and syslog support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_svc.html#progressservice'>progress (service)</a></td>
 <td>Function</td>
@@ -533,7 +541,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_sys.html'>_centauri_bash_sys</a></td>
 <td>Module</td>
-<td>Centauri Bash Library OS Integration Support</td>
+<td>centauri-bash-lib: OS integration support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_sys.html#sysversion'>sysversion</a></td>
 <td>Function</td>
@@ -553,7 +561,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_tra.html'>_centauri_bash_tra</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Trash Support</td>
+<td>centauri-bash-lib: Trash bin support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_tra.html#trash'>trash</a></td>
 <td>Function</td>
@@ -561,7 +569,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_txt.html'>_centauri_bash_txt</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Text Tools (grep, sort)</td>
+<td>centauri-bash-lib: Text tools (grep, sort)</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_txt.html#txtsort'>txtsort</a></td>
 <td>Function</td>
@@ -585,7 +593,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_use.html'>_centauri_bash_use</a></td>
 <td>Module</td>
-<td>Centauri Bash Library usage() and Completion</td>
+<td>centauri-bash-lib: Help usage() and bash completion</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_use.html#usageuser'>usage (user)</a></td>
 <td>Function</td>
@@ -605,17 +613,17 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_web.html'>_centauri_bash_web</a></td>
 <td>Module</td>
-<td>Centauri Bash Library Web Application</td>
+<td>centauri-bash-lib: Web application</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_web.html#webapllications'>web apllications</a></td>
+<tr><td class='topic'><a href='_centauri_bash_web.html#webapplications'>Web Applications</a></td>
 <td>Topic</td>
 <td>Simple Browser based application, optionally using CGI</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_web.html#webconfiguration'>web configuration</a></td>
+<tr><td class='topic'><a href='_centauri_bash_web.html#webconfig'>Web Config</a></td>
 <td>Topic</td>
-<td>Simple Browser based application, optionally using CGI</td>
+<td>Section in centauri-bash-lib configuration file</td>
 </tr>
-<tr><td class='topic'><a href='_centauri_bash_web.html#webfeatures'>web features</a></td>
+<tr><td class='topic'><a href='_centauri_bash_web.html#webfeatures'>Web Features</a></td>
 <td>Topic</td>
 <td>Tweaking the default page generation</td>
 </tr>
@@ -625,7 +633,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_win.html'>_centauri_bash_win</a></td>
 <td>Module</td>
-<td>Centauri Bash Library GUI Windowing Support</td>
+<td>centauri-bash-lib: GUI windowing Support</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_win.html#windows'>windows</a></td>
 <td>Function</td>
@@ -637,7 +645,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_xml.html'>_centauri_bash_xml</a></td>
 <td>Module</td>
-<td>Centauri Bash Library XML/HTML Support</td>
+<td>centauri-bash-lib: Support for generating XML/HTML</td>
 </tr>
 <tr><td class='function'><a href='_centauri_bash_xml.html#xml_anchor'>xml_anchor</a></td>
 <td>Function</td>
@@ -681,7 +689,7 @@
 </tr>
 <tr><td class='module'><a href='_centauri_bash_xtr.html'>_centauri_bash_xtr</a></td>
 <td>Module</td>
-<td>Self-extractor for standalone scripts</td>
+<td>centauri-bash-lib: Self-extractor for standalone scripts</td>
 </tr>
 <tr><td class='topic'><a href='_centauri_bash_xtr.html#standalone'>Standalone</a></td>
 <td>Topic</td>

@@ -3,7 +3,7 @@
 <title>centaurihelp ─ centaurilauncher</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("centaurilauncher")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='centaurihelp.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='index.html#top'>[Library]</a></div>
@@ -12,38 +12,25 @@
 </div></nav>
 <section id='section-1'>
 <div id='centaurilauncher' class='item-script'>
-<span>Script</span><span> - </span><span>centaurilauncher</span><span> - </span><span>Starter für GUI- und Konsolen-Anwendungen</span></div>
+<span>Script</span><span> - </span><span>centaurilauncher</span><span> - </span><span>Launcher for GUI or Console Applications</span></div>
 <div class='def-row'>
-<div class='def-label'>Centaurihelp:</div>
-<div class='def-text'>configfile: Datei lesen: /etc/default/centauri-bash-lib
-       configfile: Datei lesen: /etc/default/centauri-bash-lib
-       configfile: Datei lesen: /etc/default/centauri-bash-lib
-       serialize: write to: /home/local/.cache/centauri-bash-lib.dat
-Aufruf:    <b>centaurilauncher</b> <i>option</i>... [<i>action</i> <i>argument</i>... [<b>--</b>]]...</div>
+<div class='def-label'>Usage:</div>
+<div class='def-text'><b>centaurilauncher</b> <i>option</i>... [<i>action</i> <i>argument</i>... [<b>--</b>]]...</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>Starter für GUI- und Konsolen-Anwendungen.</div>
+<div class='def-text'>Launcher for GUI or Console Applications.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Optionen:</div>
-<div class='def-text'><b>-d</b> <b>--dryrun</b>          Zeigen was getan wird, keine Änderungen vornehmen
-<b>-h</b> <b>--help</b>            diesen Text ausgeben
-<b>-n</b> <b>--no</b>              Nicht nach Bestätigung fragen, &apos;nein&apos; annehmen
-<b>-q</b> <b>--quiet</b>           Nur Fehler melden
-<b>-v</b> <b>--verbose</b>         Viel Ausgabe (zweimal zum Testen)
-<b>-y</b> <b>--yes</b>             Nicht nach Bestätigung fragen, &apos;ja&apos; annehmen
-<b>-z</b> <b>--zombie</b>          Nächste action(s) auch nach Fehler</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'>   <b>--embed</b>   <i>name</i>    Benutze <i>name</i> anstelle des Script Namens
-   <b>--info</b>            Vollen Pfad und Version ausgeben
-   <b>--pager</b>   <i>prog</i>    Programm für seitenweise Ausgabe, &apos;none&apos; für keines
-   <b>--trace</b>           Trace actions() oder run()
-   <b>--wait</b>            Nachfrage vor Beenden</div>
+<div class='def-label'>Options:</div>
+<div class='def-text'><b>-d</b> <b>--dryrun</b>          show what would be done, make no changes
+<b>-h</b> <b>--help</b>            show this text
+<b>-n</b> <b>--no</b>              do not prompt for confirmation, assume &apos;no&apos;
+<b>-q</b> <b>--quiet</b>           report errors only
+<b>-v</b> <b>--verbose</b>         be verbose (use twice for debug)
+<b>-y</b> <b>--yes</b>             do not prompt for confirmation, assume &apos;yes&apos;
+<b>-z</b> <b>--zombie</b>          next action(s) even after error</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -53,11 +40,11 @@ Aufruf:    <b>centaurilauncher</b> <i>option</i>... [<i>action</i> <i>argument</
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>-M</b> <b>--mode</b>    <i>mode</i>    Start Modus (in Hintergrund laufen)
-<b>-D</b> <b>--desktop</b> <i>desk</i>    Verwendendete Desktopeinstellung ändern</div>
+<div class='def-text'><b>-M</b> <b>--mode</b>    <i>mode</i>    start mode (run in background)
+<b>-D</b> <b>--desktop</b> <i>desk</i>    override desktop configuration to use</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Aktionen:</div>
+<div class='def-label'>Actions:</div>
 <div class='def-text'>browser  <i>arg</i>...      open a web browser
 console  <i>arg</i>...      command line terminal
 editor   <i>arg</i>...      open a text editor
@@ -65,18 +52,19 @@ files    <i>arg</i>...      open a file manager
 httpd    <i>arg</i>...      launch a private web server
 kiosk    <i>arg</i>...      web browser in kiosk mode
 library  <i>arg</i>...      interactive centauri-bash-lib console
+viewer   <i>arg</i>...      html viewer (qml or browser)
 webapp   <i>arg</i>...      run a centauri-bash-lib web application</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>list     <i>info</i>        Detailinformationen zu Aktionen anzeigen</div>
+<div class='def-text'>list     <i>info</i>        show detailed information about actions</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Argumente:</div>
-<div class='def-text'><i>desk</i>         Ein Desktop Name wie: tty kde lxqt gnome
-<i>info</i>         einer von: all session executable
-<i>mode</i>         0:warten (Voreinst.)  1:exec  2:Hintergrund  3:disown</div>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>desk</i>         a desktop name like: tty kde lxqt gnome
+<i>info</i>         one out of: all session executable
+<i>mode</i>         0:wait (default)  1:exec  2:background  3:disown</div>
 </div>
 </section>
 </article>

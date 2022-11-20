@@ -3,16 +3,16 @@
 <title>centaurihelp ─ uglify</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("uglify")'><article id='top'>
 <nav><div class='nav-row'>
-<div class='nav-left'></div>
+<div class='nav-left'><a href='autoload.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='index.html#top'>[Library]</a></div>
 <div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
-<div class='nav-right'></div>
+<div class='nav-right'><a href='l10n-tool.html'>[next &gt;&gt;]</a></div>
 </div></nav>
 <section id='section-1'>
 <div id='uglify' class='item-script'>
-<span>Script</span><span> - </span><span>uglify</span><span> - </span><span>Pack centauri-bash-lib sources, create packaged script</span></div>
+<span>Script</span><span> - </span><span>uglify</span><span> - </span><span>Pack <a href="index.html">centauri-bash-lib</a> sources, create packaged script</span></div>
 <div class='def-row'>
 <div class='def-label'>Usage:</div>
 <div class='def-text'>(1)  <b>uglify</b> <i>option</i>... -|<i>module</i>...
@@ -21,36 +21,46 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>This tool strips comments and extra spaces from bash sources. Modules
-with lots of comments load a little bit faster when stripped. The proxy
-of centauri-bash-lib and the embed function load stripped sources if
-they are up to date:</div>
+<div class='def-text'>This tool removes comments and extra spaces from bash sources. Modules
+with large comments load a little bit faster when &apos;uglified&apos;. The proxy
+of centauri-bash-lib and the embed function load stripped files if they
+are up to date (newer than the source).</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>Usage (1) creates packed <i>module</i>.p files. The recommended usage is:</div>
+<div class='def-text'>A simalar pre-processing can be done to speed up centaurihelp. This is
+implemented by removing the script code and saving only documentation.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>    $ <b>uglify</b> -             # use all modules</div>
+<div class='def-text'>Usage (1) creates packed <i>module</i>.p and/or &lt;module.d&gt; files:</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>To generate <i>module</i>.p files for some modules only use:</div>
+<div class='def-text'>    $ <b>uglify</b> <b>-U</b>             # use all modules, uglify only
+    $ <b>uglify</b> <b>-D</b> <b>-U</b>          # also process documentation
+    $ <b>uglify</b> <b>-D</b>             # only process documentation</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>    $ <b>uglify</b> <i>module</i>...     # where &lt;module&gt; is a file name</div>
+<div class='def-text'>To generate <i>module</i>.p or .d files for some modules only use:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>    $ <b>uglify</b> <i>module</i>...      # where &lt;module&gt; is a file name
+    $ <b>uglify</b> <b>-D</b> <i>module</i>...</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-text'>Usage (2) packs a script and the used modules (stripped) into a single
-file. Modules that are not auto-detected can be specified as arguments.</div>
+file. Modules that are not auto-detected can be specified as arguments.
+The centauribuild tool runs <b>uglify</b> for building stand-alone scripts.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -66,22 +76,25 @@ file. Modules that are not auto-detected can be specified as arguments.</div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>   <b>--embed</b>   <i>name</i>    use <i>name</i> instead of script name
-   <b>--info</b>            print full path and version
-   <b>--pager</b>   <i>prog</i>    pipe output thru pager, use &apos;none&apos; to disable
-   <b>--trace</b>           trace actions() or run()
-   <b>--wait</b>            prompt before exit</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
 <div class='def-text'><b>-C</b> <b>--config</b> <i>file</i>     (packaging) use a configuration file
 <b>-N</b> <b>--nodeps</b>          (packaging) ignore <b>&quot;embed -[cmq]&quot;</b> in library modules
 <b>-X</b> <b>--extractor</b>       (packaging) add self-extractor (_centauri_bash_xtr)</div>
 </div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>-D</b> <b>--docu</b>            (pre-processing) create *.d files for centaurihelp
+<b>-U</b> <b>--uglify</b>          (pre-processing) create *.p files for faster loading</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Option <b>--uglify</b> is implied if no other option is specified</div>
+</div>
 <div class='def-row'>
 <div class='def-label'>Arguments:</div>
 <div class='def-text'><i>module</i>               a module name (3 letter or full name)
+<i>file</i>                 configuration file, see centaurilauncher
 <i>packed</i>               generated packed script
 <i>script</i>               a script to be packaged with centauri-bash-lib</div>
 </div>
@@ -98,7 +111,7 @@ file. Modules that are not auto-detected can be specified as arguments.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Dependencies:</div>
-<div class='def-text'>Form (2) tries to auto-detect module dendencies (see <b>--nodeps</b>). To hide
+<div class='def-text'>Form (2) tries to auto-detect module dependencies (see <b>--nodeps</b>). To hide
 a dependency use &apos;embed <b>-r</b> ...&apos; with &apos;<b>-r</b>&apos; being the 1st option. To add a
 dependency without actually initializing the module use &apos;embed <b>-c</b> ...&apos;.
 Custom modules are always ignored but can be added using command args.</div>
@@ -107,9 +120,9 @@ Custom modules are always ignored but can be added using command args.</div>
 </article>
 <div class='def-break'></div>
 <nav><div class='nav-row'>
-<div class='nav-left'></div>
+<div class='nav-left'><a href='autoload.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='#top'>[Top of Page]</a></div>
 <div class='nav-mid'><a href='tools.html#top'>[Tools]</a></div>
-<div class='nav-right'></div>
+<div class='nav-right'><a href='l10n-tool.html'>[next &gt;&gt;]</a></div>
 </div></nav>
 </body></html>

@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_sys</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_sys")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_svc.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_sys' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_sys</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> OS Integration Support</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_sys</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: OS integration support</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_sys</b> [<b>-n</b>]</div>
@@ -142,7 +142,7 @@
   • non-root caller: try persistent state or locally cached state</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>It is not possible to determine the KDE-Plasma version if KDE is not running. If so the function tries next time when running under KDE.</div>
 </div>
 </section>
@@ -210,7 +210,7 @@
 </section>
 <section id='section-4'>
 <div id='sysinfo' class='item-function'>
-<span>Function</span><span> - </span><span>sysinfo</span><span> - </span><span>implements --info to update or remove <a href="index.html">_centauri_bash_lib</a></span></div>
+<span>Function</span><span> - </span><span>sysinfo</span><span> - </span><span>implements --info to update or remove _centauri_bash_lib</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>(1) <b>sysinfo</b> [<b>version</b>|<b>detailed</b>]
@@ -244,7 +244,7 @@
 <i>root</i>          override defaults, see <a href="#syssetup">syssetup</a></div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>Unless <b>noquit</b> is specified (form (2) and form (3) only), the function calls <a href="_centauri_bash_lib.html#quit">quit()</a> and never returns.</div>
 </div>
 </section>

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_svc = Centauri Bash Library service/syslog Support
+# _centauri_bash_svc = centauri-bash-lib: Service and syslog support
 #
 # Call:     . _centauri_bash_svc [-n|-s]
 #
@@ -357,6 +357,7 @@ pidfile() {
         [ -n "$_flgd" ] && remove -r -- "$file"
         [ "${temp:-0}" = 0 ] && return 0                # nothing to kill
         [ "${_flgs:--}" = "-" ] && _flgs="SIGTERM"
+        $CEN_TRACE "pidfile: send signal:" "$_flgs $temp"
         kill -s $_flgs $temp 2>/dev/null ; return       # return status
     fi
 
@@ -509,6 +510,8 @@ isservice() {
         isfunction run && CEN_SVC_TYPE="simple"
     fi
 
+    [ -n "$_flgn" ] && return 0                 # was just a query
+    CEN_IS_SERVICE=1                            # becoming svc or daemon
     [ -z "$CEN_SVC_SHORT" ] && CEN_SVC_SHORT="${CEN_TITLE:-$CEN_NAME}"
 
     if [ "$CEN_SVC_TYPE" = "oneshot" ] ; then
@@ -517,9 +520,6 @@ isservice() {
     elif [ "$_fsvc" -lt 2 ] ; then
         fatal $"A 'simple' service needs an 'actions' or 'run' function"
     fi
-
-    [ -n "$_flgn" ] && return 0                 # was just a query
-    CEN_IS_SERVICE=1                            # becoming svc or daemon
 
     # register action hook
     if [ -z "$CEN_SVC_HOOK_ACTIONS" ] ; then
@@ -810,19 +810,20 @@ _cen_svc_logger() {
 # Output a message (options -b/-d/-n ignored), overrides _centauri_bash_lib
 # ------------------------------------------------------------------------------
 _cen_svc_message() {
-    [ -z "$CEN_SVC_SYSLOG" ] && isservice           # late init
+    [ -z "$CEN_SVC_SYSLOG" ] && isservice -n        # init syslog only
     if [ "$CEN_SVC_SYSLOG" = 0 ] ; then             # output to stderr only
         $CEN_SVC_HOOK_MESSAGE "$@" ; return         # use _centauri_bash_lib
     fi
 
     # we handle output in this module ...
-    local _sfmt _serr _sind _srea _mlog
+    local _scal _sfmt _serr _sind _srea _mlog
     local _spri _snam="${CEN_EMBED:-$CEN_NAME}:" _verb="$CEN_VERB"
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _sind="$CEN_AUTOIND" ;;
       -b)   shift ;;                                # ignored here
+      -c)   shift ; _scal="$1" ;;
       -d)   shift ;;                                # ignored here
       -e)   _verb=1 ; _spri="error"
             _serr=$" ***ERROR***" ;;
@@ -847,6 +848,9 @@ _cen_svc_message() {
         printf -v _sfmt "$_sfmt" "$@"
     else
         _sfmt="$*"
+    fi
+    if [ -n "$_scal" ] ; then                       # option -c
+        _cen_shortfmt _scal - "$_scal" ; _serr+="$_scal"
     fi
 
     # can send "info" messages to stderr in some cases ...
@@ -876,34 +880,12 @@ _cen_svc_message() {
         done 1>&2
     fi
 
-#    if [ "$_mlog" != 0 ] ; then                     # output to syslog
-#        _spri="daemon.${_spri:-info}"
-#        case "$CEN_SVC_LOGPID" in
-#            2)  command logger -p "$_spri" -t "$CEN_NAME" --id=$BASHPID "$_sfmt" ;;
-#            1)  command logger -p "$_spri" -t "$CEN_NAME" "$_sfmt" ;;
-#            *)  if ! system -c logger ; then
-#                    CEN_SVC_SYSLOG=0
-#                else
-#                    local _lmsg="command logger -p"
-#                    # check: --id=xxx may result in an error message but with zero return status
-#                    _lmsg=$($_lmsg "$_spri" -t "$CEN_NAME" --id=$BASHPID "$_sfmt") || _lmsg=1
-#                    if [ -z "$_lmsg" ] ; then
-#                        CEN_SVC_LOGPID=2
-#                    # option --id=<pid> might be unsupported, retry without
-#                    else
-#                        CEN_SVC_LOGPID=1
-#                        command logger -p "$_spri" -t "$CEN_NAME" "$_sfmt"
-#                    fi
-#                fi
-#        esac &>/dev/null
-#    fi
-
-    [ "$_mlog" != 0 ] && _cen_svc_logger "daemon.${_spri:-info}" "$_sfmt"
+    if [ "$_mlog" != 0 ] ; then
+        [ -n "$_scal" ] && _sfmt="${_scal:1} $_sfmt"
+        _cen_svc_logger "daemon.${_spri:-info}" "$_sfmt"
+    fi
     return "$CEN_EXIT"
 }
-
-# syslog [-n] [-p] <text>...        # write a message to syslog
-# syslog [-n] -m <mode>             # set output mode (overrides --syslog option)
 
 # ------------------------------------------------------------------------------
 # hook for actions()
@@ -1014,13 +996,14 @@ _cen_svc_action() {
 # hook termination signals, set state, call actionStop
 # ------------------------------------------------------------------------------
 _cen_svc_sigterm() {
-    context -t - ; CEN_SVC_RUNNING="stop"
-    _cen_svc_state "kill"                               # need no pid file
+    context -t .                                        # clear trap handler
+    CEN_SVC_RUNNING='stop'                              # flag stop state
+    _cen_svc_state 'kill'                               # need no pid file
     if isfunction actionStop ; then
         message $"Got a 'stop' signal"":" $"running actionStop"
         invoke stop - - - SIGTERM
     else
-        message "Got a 'stop' signal"
+        message $"Got a 'stop' signal"
     fi
 }
 

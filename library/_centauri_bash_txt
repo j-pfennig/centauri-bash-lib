@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_txt = Centauri Bash Library Text Tools (grep, sort)
+# _centauri_bash_txt = centauri-bash-lib: Text tools (grep, sort)
 #
 # Call:     . _centauri_bash_txt
 #

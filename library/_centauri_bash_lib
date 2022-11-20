@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_lib = Centauri Bash Library (main module)
+# _centauri_bash_lib = centauri-bash-lib: Main module
 #
 # Call:     **. _centauri_bash_lib** <opt>... [-m <name>]... [--] "$0" <vers> [<amin> [<amax>]]
 #
@@ -68,9 +68,11 @@ CEN_QUIT_WAIT=          # delay after quit
 CEN_RUNDRY=1            # make no changes
 CEN_STAGE='loading'     # what is going on
 CEN_STDERR=             # saved initial error handle, see 'exec 2>&$CEN_STDERR'
+CEN_STDOUT=             # ... see 'exec 1>&$CEN_STDOUT'
 CEN_TRACE=:             # call trace() for -v only
 CEN_TRACE2=:            # call trace() for -v -v only
 CEN_TRAPLVL=            # see context -t
+CEN_TRAPSIG=            # current signal number, set by _cen_trap
 CEN_VERB=1              # verbosity, -v and -q
 CEN_YESNO=              # see --yes and --no options
 
@@ -127,6 +129,7 @@ CEN_HOOK_QUIT="_cen_quit"
 
 # CEN_NAME=             # script name
 # CEN_VERSION=          # versions: <script> <lib> <api-curr> <api-min>
+# CEN_SHORTFMT=         # format for _cen_shortfmt
 
 # optional features
 while [ "${1::1}" = '-' ] ; do
@@ -155,6 +158,7 @@ CEN_NAME="${CEN_NAME##*/}"
 if [ -n "$CEN_FEATURE_T" -a -z "$TEXTDOMAIN" ] ; then
     TEXTDOMAIN='_centauri_bash_lib'; TEXTDOMAINDIR="$CEN_ROOT/locale"
 fi
+CEN_SHORTFMT=$" %-16s:"
 
 CEN_VERSION=("$2")
 [ -n "$3" ] && CEN_RUN_MIN_ARGS="$3"
@@ -162,7 +166,11 @@ CEN_VERSION=("$2")
 [ "$COLUMNS" = '0' ] && CEN_NOCOLS=1        # COLUMNS may get updated by bash
 
 CEN_DISPLAY="$XDG_SESSION_TYPE"             # could be 'x11' or 'wayland'
-[ -z "$CEN_DISPLAY" -a -n "$DISPLAY" ] && CEN_DISPLAY='x11'
+if [ -z "$DISPLAY" ] ; then
+    [ "$CEN_DISPLAY" = 'x11' ] && CEN_DISPLAY=
+else
+    [ -z "$CEN_DISPLAY" ] && CEN_DISPLAY='x11'
+fi
 
 # ------------------------------------------------------------------------------
 # trace   - output a debug message (with --verbose option)
@@ -233,13 +241,14 @@ warning()   {   $CEN_NOTRACE return 0 ; $CEN_HOOK_MESSAGE -w "$@" || : ; }
 # ------------------------------------------------------------------------------
 # error - output error message, set/test error status
 #
-# Call:     error [-a|-i] [-m|-n] [-p] [-r] [-x] [-z] [--] <msg>...
+# Call:     error [-a|-i] [-m|-n] [-p] [-r] [-x] [-f|-z] [--] <msg>...
 #           error -s <exit>
 #           error [-c|-t|-x]
 #           error -q <msg>...
 #
 # Options:  ... most [[message()]] options (the implementation calls **message -e**)
 #           -c  clear error state (resets CEN_EXIT and CEN_DONE from 2 to 1)
+#           -f  make error fatal - same as calling [[fatal()]]
 #           -s  set exit code, saved as variable CEN_EXIT. The minimum value is 2,
 #               lower values are stored as 2. Updates CEN_DONE from 1 to 2.
 #           -t  silently check for pending error termination. Returns **false** for
@@ -278,13 +287,14 @@ warning()   {   $CEN_NOTRACE return 0 ; $CEN_HOOK_MESSAGE -w "$@" || : ; }
 # error) and CEN_EXIT=4 (abort/quit). These codes are interpreted by [[embed()]].
 # ------------------------------------------------------------------------------
 error() {
-    local _zero _isok _popt=("-e")
+    local _zero _isok _fopt _popt=()
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a|-i|-n|-m|-p|-r)
             _popt+=("$1") ;;
       -c)   CEN_EXIT=0 ; [ "$CEN_DONE" = 2 ] && CEN_DONE=1 ; return 0 ;;
+      -f)   _fopt=1 ;;
       -s)   CEN_EXIT="$2" ; _isok=1 ; shift ;;
       -t)   [ "$CEN_DONE" != 2 ] ; return ;;
       -q)   [ "$CEN_DONE" != 2 ] && return
@@ -295,7 +305,9 @@ error() {
        *)   _cen_abort - "$1"
       esac ; shift
     done
-    [ -n "$CEN_NOTRACE" ] && [ -z "$_isok" -a -n "$*" ] && message ${_popt[@]} -- "$@"
+
+    [ -n "$_fopt" ] && fatal ${_popt[@]} -- "$@"
+    [ -n "$CEN_NOTRACE" ] && [ -z "$_isok" -a -n "$*" ] && message -e ${_popt[@]} -- "$@"
     [ "$CEN_DONE" = 1 ] && CEN_DONE=2
     [ "$CEN_EXIT" -le 1 ] && CEN_EXIT=2
     return "${_zero:-$CEN_EXIT}"
@@ -397,7 +409,7 @@ fatal() {
 quit() {
     # ignore non-library call to quit if application is sourced
     [ -n "$CEN_IS_SOURCED" -a -z "$CEN_STAGE" ] && return 0
-    exec 2>&$CEN_STDERR
+    exec 1>&$CEN_STDOUT 2>&$CEN_STDERR
 
     local _flgt _opts=()
     while [ "${1::1}" = '-' ] ; do
@@ -424,30 +436,52 @@ quit() {
             shift ; set -- $"Terminated after error""${1:+:}" "$@"
         fi
     fi || :
-    [ -n "$CEN_QUIT_WSUB" ] && wait
-    $CEN_HOOK_QUIT "${_opts[@]}" ${1:+--} "$@" ; exit 2  # exit 2 on hook function failure
+    $CEN_HOOK_QUIT "${_opts[@]}" ${1:+--} "$@" ; exit 2 # exit 2 on hook function failure
 }
 
 # called via CEN_HOOK_QUIT: [-h] <mesg>...
 _cen_quit() {
-    [ $# = 1 -a "$1" = '-h' ] && return 0
-    CEN_HOOK_QUIT=_cen_exit ; [ "$#" -gt 0 ] && message "$@" ; _cen_exit
+    $CEN_NOTRACE set +x
+    local _modu
+    for _modu in "${!CEN_MODULES[@]}" ; do
+        case "${_modu#_centauri_bash_}" in
+        lib|dyn)    continue ;;                         # no quit handlers
+        con|win)    continue ;;                         # handled via progress()
+        pro|ext)    continue ;;                         # run later: see progress(), tmpfile()
+        *_usr)      _modu="${_modu%_usr}" ;;
+        *)          _modu="_cen${_modu#_centauri_bash}"
+        esac
+        isfunction -c "${_modu}_quit"
+    done || :
+    $CEN_NOTRACE set -x
+
+    [ -n "$CEN_QUIT_WSUB" ] && wait                     # wait for subshells
+    CEN_HOOK_QUIT=_cen_exit
+    if [ $# = 1 -a "$1" = '-h' ] ; then
+        _cen_exit -
+    else
+        [ "$#" -gt 0 ] && message "$@" ; _cen_exit
+    fi || :
 }
 
 # helper to terminate script: [<exitcode>]
 _cen_exit() {
-    [ $# != 0 ] && CEN_EXIT="$1"
-    $CEN_TRACE -r $"Exit status:" "${CEN_EXIT:-0}"
+    $CEN_NOTRACE set +x                         # do not trace exit code
+    [ "${1:--}" != '-' ] && CEN_EXIT="$1"
+    isfunction -c '_cen_pro_quit' || :          # remove progress output
+    isfunction -c '_cen_ext_quit' || :          # run quit tmpfile late
+    [ "$1" = '-' ] && return 0                  # see quit -h
+    $CEN_TRACE -r -c $"Exit status" -- "${CEN_EXIT:-0}"
     [ -n "$CEN_QUIT_SANE" ] && system -r -q -- stty sane
     if [ "$CEN_QUIT_WAIT" = 3 ] ; then
        sleep 2
     elif [ "$CEN_QUIT_WAIT" = 2 ] ; then
         trap "exit ${CEN_EXIT:-0}" 1 2 3 15
-        read -n1 -p $"Press any key to close the window..." 2>&1
+        read -n1 -p $"Press any key to close the window..." 1>&2
     elif [ -n "$CEN_QUIT_WAIT" ] ; then
         trap "exit ${CEN_EXIT:-0}" 1 2 3 15
-        read -n1 -p $"Press any key to continue..." 2>&1
-        echo 2>&1
+        read -n1 -p $"Press any key to continue..." 1>&2
+        echo 1>&2
     fi
     exit "${CEN_EXIT:-0}"
 }
@@ -455,6 +489,7 @@ _cen_exit() {
 # called from trapped signals to terminate script
 _cen_trap() {
     trap - 1 2 3 15 ; CEN_TRAPLVL=              # avoid recursion
+    CEN_TRAPSIG="${1:--}"
     [ -n "$CEN_CONS_MSGLEN" ] && ((CEN_CONS_MSGLEN += 2))
     [ -n "$CEN_QUIT_WAIT" ] && CEN_QUIT_WAIT=3
     [ "$1" = 2 ] && quit -t - $"by user"
@@ -463,7 +498,7 @@ _cen_trap() {
 
 # fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+ <arg>...
 _cen_abort() {
-    set +xeE ; IFS=$' \n\t' ; exec 2>&$CEN_STDERR
+    set +xeE ; IFS=$' \n\t' ; exec 1>&$CEN_STDOUT 2>&$CEN_STDERR
     local _fnot _indx=1 _idnt="| " _mesg _temp
 
     while [ "${1::1}" = '-' -o "${#1}" = 1 ] ; do
@@ -501,17 +536,18 @@ _cen_abort() {
     done
     _temp="$CEN_NAME ${CEN_CMDOPTS[*]} ${CEN_CMDARGS[*]}" ; _temp="${_temp% }"
      _cen_compactify _temp ; _mesg+="$_temp"
-    _cen_message -l -m -r $"***ABORT***" "$_mesg" ; _cen_exit 4
+     _cen_message -l -m -r $"***ABORT***" "$_mesg" ; _cen_exit 4
 }
 
 # implementation of output functions (see also: _centauri_bash_con|_svc|_win)
 _cen_message() {
-    local _sfmt _smul _spro _serr _sind _snam="${CEN_EMBED:-$CEN_NAME}:" _verb="$CEN_VERB" _stat=0
+    local _scal _sfmt _smul _spro _serr _sind _snam="${CEN_EMBED:-$CEN_NAME}:" _verb="$CEN_VERB" _stat=0
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _sind="$CEN_AUTOIND" ;;
       -b)   shift ;; # ignored here
+      -c)   shift ; _scal="$1" ;;
       -d)   shift ;; # ignored here
       -e)   _verb=1 ; _stat="$CEN_EXIT" ; _serr=$" ***ERROR***" ;;
       -f)   _verb=1 ; _stat="$CEN_EXIT" ; _serr=$" ***FATAL ERROR***" ;;
@@ -528,11 +564,15 @@ _cen_message() {
     done
 
     if [ -n "$CEN_CONS_MSGLEN" ] ; then         # see progress(), ignore -q
-        echo 1>&2 ; CEN_CONS_MSGLEN=
+        echo 1>&2 ; CEN_CONS_MSGLEN=            #     needed for trace()
     fi
     [ "$_verb" -gt 0 ] || return "$_stat"       # global -q option
+
     [ "$CEN_AUTOIND" = 2 ] && _sind=1 ; CEN_AUTOIND=1
     [ -n "$_sind" ] && _snam="${_snam//?/ }"    # no program name
+    if [ -n "$_scal" ] ; then                   # option -c
+        _cen_shortfmt _scal - "$_scal" ; _serr+="$_scal"
+    fi
 
     if [ -z "$_smul$_sfmt" ] ; then             # simple case, no -p or -m
         echo $_spro "$_snam$_serr" "$@"
@@ -554,8 +594,33 @@ _cen_message() {
     return "$_stat"                             # error/fatal return CEN_EXIT
 }
 
+# format short message: <vnam> <orig>|- <mesg>
+_cen_shortfmt() {
+    local _temp="$2" _asci _ugly
+    [ "${3::1}" = ' ' ] || _temp=
+    [ "${3::2}" = '()' ] && _temp='-'
+    [ "$_temp" = '-' ] &&
+        for _temp in "${FUNCNAME[@]}" ; do
+            case "$_temp" in
+            _cen_*)     continue ;;
+            trace|isfunction|message|warning|error)
+                        continue ;;
+            *)          break
+            esac
+        done
+    # printf %s does not handle utf-8 correctly
+    _temp+="$3"
+    if [ -z "${_temp//[[:ascii:]]/}" ] ; then
+        printf -v $1 "$CEN_SHORTFMT" "$_temp"           # is pure ascii
+    else
+        _asci="${_temp//[[:alpha:]]/.}"   # this is unicode aware
+        printf -v _ugly "$CEN_SHORTFMT" "$_asci"        # get correct padding
+        printf -v $1 "%s" "${_ugly/$_asci/$_temp}"      # back to unicode
+    fi
+}
+
 # ------------------------------------------------------------------------------
-# apicheck - get/check api version
+# apicheck - Get/check library api version
 #
 # Call:     apicheck [-v array] [-c|-e|-f] -m <module>
 #           apicheck [-v array] [-c|-e|-f] [<version>]
@@ -570,7 +635,22 @@ _cen_message() {
 #           <module>    a module name like "_centauri_bash_ext"
 #           <version>   a version string <vers>[:<api>[:<min>]]
 #
-# Return    **true** on successs and **false** on failure.
+#           <vers>      version string like N.MM (not interpreted by library)
+#           <api>       reqired minimum api level for a script or library api
+#                       level when used by [[_centauri_bash_lib]]
+#           <min>       minimum compatibility level of the library
+#
+# Return:   **true** on successs and **false** on failure.
+#
+#+Version checking happens automatically on module load. See [[versioning]]
+# for details of the implementation.
+#
+# Examples: Parse (and check) a version string
+#.          apicheck -v flds "1.03:1"               # no check
+#.          apicheck -v flds -f "1.03:1"            # check against library
+#
+#           Get version of a loaded library module
+#.          apicheck -v flds -m _myname_mymode_usr  # check usr module
 # ------------------------------------------------------------------------------
 apicheck() {
     local _fchk _fmod _vnam _scal="$CEN_NAME"
@@ -885,7 +965,7 @@ _cen_getline() {
 #
 # Call:     (1) context -e <mask> ...
 #           (2) context -g <mode> ...
-#           (2) context -h <hook> <vnam> ...
+#           (2) context -h <hnam> <vnam> <hook> ...
 #           (4) context -t [<trap>|+|-] ...
 #           (5) context -v [0-3] ...
 #           (6) context ... [-r] [-s] [-c|-q|-x] [--] <arg>...
@@ -909,6 +989,9 @@ _cen_getline() {
 #           <mode>   gui mode
 #           <text>   window title text
 #           <trap>   callback for trapped signals
+#           <hnam>   hook chain: CEN_HOOK_MAIN ... CEN_HOOK_QUIT
+#           <hvar>   variable receiving next hook entry
+#           <hook>   a hook function
 #           <arg>... arguments passed to **sudo** or console
 #
 #+Return:   Options -c|-s do not return when opening a console or running sudo (and
@@ -925,6 +1008,8 @@ _cen_getline() {
 #
 #+Form (2): The -g option will load the [[_centauri_bash_con]] or [[_centauri_bash_win]]
 # module, depending on <mode>.
+#
+#+Form (3): Adds a hook function to a hook chain if variable <vnam> is empty.
 #
 #+Form (4): The -t option can catch signals 1, 2, 3 and 15.  An internal trap handler
 # is provided for use with **-t +**|**-**. This feature allows trap handling to be nested.
@@ -982,14 +1067,14 @@ _cen_getline() {
 #.          }
 # ------------------------------------------------------------------------------
 context() {
-    local _aerr _cons _func _nhoo _mgui _root _sudo _text _trap _verb _wait="--wait --wait"
+    local _aerr _cons _hooc _hoov _hoof _mgui _root _sudo _text _trap _verb _wait="--wait --wait"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   _cons=1 ;;
       -e)   shift ; _aerr="${1:-0}" ;;
       -g)   shift ; _mgui="${1:--}" ;;
-      -h)   shift ; _func="$1" ; shift ; _nhoo="$1" ;;
+      -h)   shift ; _hooc="$1" ; shift ; _hoov="$1" ; shift ; _hoof="$1" ;;
       -n)   _wait=  ;;
       -q)   _cons=0 ;;
       -r)   _root=1 ;;
@@ -1038,21 +1123,23 @@ context() {
         [ "$_verb" -gt 2 ] && CEN_TRACE2='trace' || CEN_TRACE2=':'
     fi
 
-    # handle signals
-    if [ "$_trap" = "+" ] ; then
-        ((CEN_TRAPLVL += 1))
+    # handle signals: SIGHUP SIGINT SIGQUIT SIGTERM
+    [ -n "$_trap" ] && case "$_trap" in
+    +)  ((CEN_TRAPLVL += 1))
         [ "$CEN_TRAPLVL" = 1 ] &&
             for _trap in 1 2 3 15 ; do
                 trap "_cen_trap $_trap" $_trap
             done
-    elif [ "$_trap" = '-' ] ; then
-        ((CEN_TRAPLVL -= 1))
+        ;;
+    -)  ((CEN_TRAPLVL -= 1))
         if [ "$CEN_TRAPLVL" -le 0 ] ; then
             trap - 1 2 3 15 ; CEN_TRAPLVL=
         fi
-    elif [ -n "$_trap" ] ; then
-        trap "$_trap" 1 2 3 15 ; CEN_TRAPLVL=1
-    fi
+        ;;
+    .)  trap - 1 2 3 15 ; CEN_TRAPLVL=
+        ;;
+    *)  trap "$_trap" 1 2 3 15 ; CEN_TRAPLVL=1
+    esac
 
     # initialize gui mode
     if [ -n "$_mgui" -a -z "$CEN_CONSOLE" -a -z "$CEN_WINDOWS" ] ; then
@@ -1084,11 +1171,13 @@ context() {
         isfunction -z windows ; isfunction -z console ; isfunction -y progress
     fi
 
-    if [ -n "$_func" ] ; then
-        local -n _vhoo="$_nhoo"
-        if [ -z "$_vhoo" ] ; then
-            isfunction -f -- "$_func"
-            _vhoo="$CEN_HOOK_QUIT" ; CEN_HOOK_QUIT="$_func"
+    # add a hook function
+    if [ -n "$_hooc" ] ; then
+        [ -n "$_hoof" ] || _cen_abort + '-h'
+        local -n _vchn="$_hooc" _vvar="$_hoov"
+        if [ -z "$_vvar" ] ; then
+            isfunction -f -- "$_hoof"
+            _vvar="$_vchn" ; _vchn="$_hoof"
         fi
     fi
 
@@ -1102,7 +1191,7 @@ context() {
     if [ -n "$_cons" ] ; then
         [ -n "$CEN_QUIT_WAIT" ] && CEN_IS_DESKTOP=0     # (--wait) no emulator, just wait
         if [ -z "$CEN_IS_DESKTOP" -a "$_cons" != 2 ] ; then
-            if [ -n "$CEN_DISPLAY" ] ; then             # only load iom if needed
+            if [ -n "$CEN_DISPLAY" ] ; then             # only load module if needed
                 embed -r -q '_centauri_bash_run' && terminal -c
             fi || :
             [ -z "$CEN_IS_DESKTOP" ] && CEN_IS_DESKTOP=0
@@ -1124,7 +1213,8 @@ context() {
     if [ -n "$CEN_DISPLAY" ] && [ "${CEN_IS_DESKTOP:-0}" != 0 -o "$_cons" = 2 ] ; then
         if embed -r -q '_centauri_bash_run' ; then
             if [ "$_cons" = 2 ] ; then                  # force a console window ...
-                terminal -f -o 1 -m 3 -t "$_text" -r -- $_sudo "$@" && return 2 || return 1
+#                terminal -f -o 1 -m 3 -t "$_text" -r -- $_sudo "$@" && return 2 || return 1
+                terminal -f -o 1 -t "$_text" -r -- $_sudo "$@"
             else                                        # exec console, no return on success
                 terminal -f -m 1 -t "$_text" -r -- $_sudo "$@"
             fi
@@ -1144,7 +1234,7 @@ context() {
 #                  -v <data> [-h <name>] <path> [<mode> [<owner>]]
 #           create [-d] [-s] [-f|-q|-w] <path> [<mode> [<owner>]]   # create folder
 #
-# Options:  -a  create new file or append to existing file
+# Options:  -a  ''create'' new file or append to existing file
 #           -c  copy from /dev/stdin
 #           -d  ''create'' a folder (default is create file)
 #           -f  make errors fatal
@@ -1218,7 +1308,7 @@ create() {
         [ -e "$_fout" ] && return 0                 # existing, no truncate
     fi
     dryrun $_frun -s $"Create"" $_mtxt:" "$1" && return 0
-    $_otra -a $"Create"" $_mtxt:" "$1"
+    $_otra -a -c " $_mtxt" -- "$1"
 
     local _temp _stat=0 _unew
     if [ -n "$_mdir" ] ; then                       # create folder...
@@ -1230,6 +1320,8 @@ create() {
         # explicitly truncate as we always append to output
         if [ -z "$_ftru" ] ; then
             :
+        elif [ "$#" = 1 ] && [ -f "$_fout" -a -w "$_fout" ] ; then
+            >"$_fout" || _stat=$?                   # really truncate
         elif [ -n "$CEN_FEATURE_A" ] ; then         # can use builtins...
             remove $_frun -- "$_fout"
         elif [ -e "$1" ] ; then
@@ -1301,7 +1393,7 @@ _cen_umask() {
 # (command line options --verbose --dryrun).
 # ------------------------------------------------------------------------------
 dryrun() {
-    local _fsil _rsta=0 _tmsg=$"dryrun "
+    local _fsil _rsta=0 _tmsg=$"dryrun"
     if [ -z "$CEN_OPT_DRYRUN" -o -n "$CEN_RUNDRY" ] ; then
         $CEN_NOTRACE return 1                       # don't trace
         [ "$CEN_VERB" -lt 3 ] && return 1 ; _rsta=1
@@ -1318,16 +1410,17 @@ dryrun() {
     [ $# = 0 ] && return $_rsta
     if [ "$_rsta" = 1 ] ; then
         [ "$CEN_VERB" -lt 2 -o -n "$_fsil" ] && return 1
-        _tmsg=$"running"
+        _tmsg=$"Running"
     fi
     $CEN_NOTRACE return $_rsta                      # don't trace
-    _tmsg+=": $*" ; _cen_compactify _tmsg
+    _cen_shortfmt _tmsg - "$_tmsg" ; _tmsg="${_tmsg:1} $*"
+    _cen_compactify _tmsg
     $CEN_HOOK_MESSAGE -t -a -b 0 "$_tmsg" ; return $_rsta
 }
 
 # compactify a long string: <vnam> [<lmax>]
 _cen_compactify() {
-    [ "$CEN_NOCOLS" ] && return 0                   # has COLUMNS=0
+    [ -n "$CEN_NOCOLS" ] && return 0                # has COLUMNS=0
     local -n _vcmp="$1"
     if [ "${2:--}" = '-' ] ; then                   # use full line
         local _cols="${COLUMNS:-100}"
@@ -1383,7 +1476,7 @@ _cen_compactify() {
 # modules attached to the script file, module loading will be simulated.
 #
 #+A <script> must implement some default options like --dryrun, --verbose,
-#  --quiet and --embed.
+#  --quiet and --embed. If <script> cannot be executed a fatal error results.
 #
 #+The --embed option passes the caller's name and an optional auto-indent
 # state flag to <script>. Syntax: --embed=<name>[:a]
@@ -1443,7 +1536,8 @@ embed() {
             fi
         elif [ -x "$_srun" ] ; then
             [ -n "$CEN_FEATURE_A" -a "$_modu" = 3 ] && return 0
-            $CEN_TRACE2 -a $"Loading module:" "$_snam" "$@"
+          ##  $CEN_TRACE2 -a $"Loading module:" "$_snam" "$@"
+            $CEN_TRACE2 -a -c $" module" "$_snam" "$@"
             [ -n "$TEXTDOMAIN" ] && TEXTDOMAIN="$_snam"
             if [ "$_srun.p" -nt "$_srun" ] ; then
                 . "$_srun.p" "$@" || _sexi=$?
@@ -1457,7 +1551,7 @@ embed() {
         [ "$_sexi" = 0 -o "$_modu" -ge 2 ] && return $_sexi
         _cen_abort $"Failed to load module:" "$_snam"
     elif ! [ -x "$_srun" -a ! -d "$_srun" ] ; then
-        error -z "embed" $"file not found:" "$_srun" ; return 1
+        fatal $"Failed to execute script:" "$_srun"
     fi
 
     _xcmd+=("$_srun" --embed="$_enam$_oind" $_verb $_odry "$@")
@@ -1581,7 +1675,6 @@ filter() {
 #.          folder -m -b transient xxx   # create in transient folder
 #.          folder -s cfldr -u cache     # get path of cache folder
 #
-#
 #.          # get a per-app temporary path (in XDG_RUNTIME_DIR or /tmp)
 #.          folder -g -t -- "-$$.log"
 #.          message "Temporary path:" "$CEN_FOLDER"
@@ -1687,7 +1780,7 @@ folder() {
         _vval= ; return 1
     fi
     [ -n "$_onor" ] && _vval="$PWD"
-    $CEN_TRACE -a $"folder :" "$_vval"
+    $CEN_TRACE -a -c $" current" "$_vval"
     return 0
 }
 
@@ -1800,11 +1893,11 @@ invoke() {
     if ! isfunction "$nact" ; then
         error -z $"Not yet implemented:" "$CEN_ACTION"
     elif [ -n "$CEN_OPT_TRACE" ] ; then
-        $CEN_TRACE -r "Invoking '$CEN_ACTION': $nact"
+        $CEN_TRACE -r -c " '$CEN_ACTION'" "$nact"
         # must catch ERR trap in _cen_abort
         CEN_NOTRACE= ; set -x ; $nact "${CEN_ACTARR[@]}" ; set +x ; CEN_NOTRACE=:
     else
-        $CEN_TRACE -r "Invoking '$CEN_ACTION': $nact"
+        $CEN_TRACE -r -c " '$CEN_ACTION'" "$nact"
         # must catch ERR trap in _cen_abort
         $nact "${CEN_ACTARR[@]}"
     fi
@@ -1893,7 +1986,6 @@ isfunction() {
 #           <opt>      option to specify the an ''option'' argument type
 #           <check>    regular expression to check an ''option'' argument
 #           <value>    overrides CEN_ACTARR
-#
 #
 # Variables:CEN_ARGOPT    [in] argument value (overrides CEN_ACTARR)
 #           CEN_ACTARR    [in] next argument, can be a value
@@ -2134,7 +2226,7 @@ splitjoin() {
 # ------------------------------------------------------------------------------
 # sysfind - check for commands and builtins
 #
-# Call:     sysfind [-b] [-c] [-d] [-i] [-e|-f|-w|-q] [-p <path>] [-s <var>] <cmd>...
+# Call:     sysfind [-b] [-c] [-d] [-i] [-e|-f|-w|-q] [-p <path>] [-s <var>] [--] <cmd>...
 #
 # Options:  -b  allow <cmd> to be a bash builtin (builtins shadow commands)
 #           -c  cache the <cmd> result (used by [[system()]] and [[sysrun()]])
@@ -2282,12 +2374,10 @@ sysfind() {
 # ------------------------------------------------------------------------------
 # system - run a command, builtin or function optinally capturing the output
 #
-# Call:     system [-e|-f] [-b] [-i] [-n] [-m|-p|-q|-v] [-x] <opt>... [--] <cmd> <arg>...
-#           system <opt>... -u <user> [--] <cmd> <arg>...
-#           system <opt>... -s <var> [--] <cmd> <arg>...
-#           system <opt>... -a <var> [-d <del>] [--] <cmd> <arg>...
-#           system <opt>... -b <inp> <out> [--] <cmd> <arg>...
-#           system [-e|-f] -c [--] <cmd>...
+# Call:     (1) system [-e|-f] [-b] [-i] [-n] [-m|-p|-q|-v] [-x]
+#                      [-s <var>|-a <var>] [-d <del>] [-g <good>]
+#                      [-u <user>] [--] <cmd> <arg>...      # run command (or builtin)
+#           (2) system [-e|-f] -c [--] <cmd>...             # check commands
 #
 # Options:  -a  [*] save **/dev/stdout** to array <var>
 #           -b  prefer bash builtins over external commands
@@ -2295,6 +2385,7 @@ sysfind() {
 #           -d  array item delimiters, use with -a, default "\t\n"
 #           -e  print error message on error
 #           -f  call [[fatal()]] on error
+#           -g  no error processing if <cmd> exit code is less or equal <good>
 #           -i  add -i option to [[message()]] call
 #           -m  message for all output (implies -s and -q)
 #           -n  do not check command (implied if <cmd> is **eval**), allow script calls
@@ -2312,37 +2403,38 @@ sysfind() {
 #
 #           [*] these options are mutually exclusive
 #
-# Arguments:<cmd>     command to be run
+# Arguments:<cmd>     external command (or builtin) to be run or checked
 #           <arg>...  options and arguments passed to <cmd>
-#           <inp>     command for input  (use ':' as noop)
-#           <out>     command for output (use ':' as noop)
 #           <var>     variable or array name to return a result
 #           <del>     element delimiters for result array
+#           <good>    highest non-error exit code (default: 0)
 #           <user>    a user name or "-" for **root**
 #
 #+Return:   Running a command returns the exit code, but option -x does not
 #           return (and does not run quit hooks). On errors **false** is
 #           returned.
 #
-#+Commands: The primary purpose of system is to run external commands. For
-#           bash builtins option -b must be used. A script function is executed
+#+Commands: Form (1): The primary purpose of system is to run external commands.
+#           For bash builtins option -b must be used. A script function is executed
 #           only if option -n is used. In other words: by default builtins or
 #           functions are ignored and do not shadow external commands.
 #
-#+          On execution without option -n external comands are prefixed with a
-#           filesystem path and bash builtins are run as "builtin°<cmd>".
+#+          Option -n bypasses all <cmd> checks (and therefore also run builtins).
+#           Without option -n external comands are prefixed with a filesystem
+#           path. and bash builtins (see option -b) are run as "builtin°<cmd>".
 #
 #+          Unless option -q is used, the execution takes place in a subshell
 #           via "$(<cmd> <args>)". The command output is captured (see -a and -s)
 #           and on error pretty formatted messages can be printed (see -e and -p).
 #           Subshells can be avoided using [[sysrun()]].
 #
-#+          Scripts that use external tools should use "system°-c°<cmd>..." early
-#           to check if the required tools are available.
+#+          Form (2): Scripts that use external tools should use "system°-c°<cmd>..."
+#           early to check if the required tools are available.
 #
-#+Builtins: Loadable bash builtins are not automatically loaded, see module
-#           [[_centauri_bash_dyn]] and the [[autoload]] tool. The bash **enable**
-#           command options -a/-n have no effect for the system function.
+#+Builtins: Without option -b builtins are ignored. When using option -b loadable bash
+#           builtins may be loaded automatically, see module [[_centauri_bash_dyn]]
+#           and the [[autoload]] tool. The bash **enable** command  options -a/-n have
+#           no effect for the system function.
 #
 #+Caching:  Unless <cmd> contains a slash (is a path) the function [[sysfind()]]
 #           is used to locate a path or to check for a builtin. The result is
@@ -2369,7 +2461,7 @@ sysfind() {
 #.          system -z -s emsg -- mycmd arg3         # capture errors only
 #.          system -c -f venus mars                 # check commands
 #
-#.          system -b sleep 1                       # run builtin or program
+#.          system -b sleep 1                       # run builtin or command
 #.          system rename "s/a/b/" *.tmp            # tool (/usr/bin/rename)
 #.          system -n rename one two                # call a script function
 #
@@ -2387,7 +2479,7 @@ _cen_sudo() {
 
 system() {
     $CEN_NOTRACE set +x
-    local _ferr _mind _nout _val_ _vset _vdel _xcmd _stat=0 _sudo _cpro _rdry _bflg _zflg _temp
+    local _ferr _good=0 _mind _nout _val_ _vset _vdel _xcmd _stat=0 _sudo _cpro _rdry _bflg _zflg _temp
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -2397,6 +2489,7 @@ system() {
       -d)   shift ; [ "$1" = '--' ] && _vdel=(-n) || _vdel=("-d" "$1") ;;
       -e)   _ferr="-e" ;;
       -f)   _ferr="-f" ;;
+      -g)   shift ; _good="$1" ;;
       -i)   _mind="-i" ;;
       -m)   _nout=3 ;;
       -n)   _cpro=0 ;;
@@ -2479,8 +2572,8 @@ system() {
         "${_xcmd[@]}" || _stat=$?
     fi
 
-    if [ "$_stat" = 0 ] ; then
-        $CEN_NOTRACE set -x ; return 0
+    if [ "$_stat" -le "$_good" ] ; then
+        $CEN_NOTRACE set -x ; return "$_stat"
     elif [ "$_nout" = 2 -a -n "$_val_" ] ; then
         if [ -z "$_ferr" ] ; then
             message $_mind -m -- "$_val_"
@@ -2601,7 +2694,7 @@ main() {
             _oinf=1 ; CEN_FEATURE_D=1 ; CEN_FEATURE_Y=1 ;;
         --pager)
             if embed -r -q '_centauri_bash_pip' ; then
-                optarg 'pager' - -t ; syspager
+                optarg 'pager' - -t ; syspager -y
             else
                 _isok=
             fi
@@ -2718,7 +2811,7 @@ if [ ! -x "${CEN_PATHS[1]}/bash" ] ; then
 fi
 
 # save stderr handle, register error handlers
-_cen_handle CEN_STDERR ; eval exec "$CEN_STDERR>&2"
+_cen_handle CEN_STDOUT CEN_STDERR ; eval exec "$CEN_STDOUT>&1" "$CEN_STDERR>&2"
 [ -n "$CEN_FEATURE_E" ] && context -e 3 || context -e 2
 
 # load modules

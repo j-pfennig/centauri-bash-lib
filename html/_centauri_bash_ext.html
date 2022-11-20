@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_ext</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_ext")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_dyn.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_ext' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_ext</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Sort and IO Extension</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_ext</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Filesystem extension</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_ext</b></div>
@@ -84,7 +84,7 @@
 <div class='def-text'>(3) Exclude patterns<pre><b>attributes</b> <b>-x</b> <b>&quot;*.p&quot;</b> <b>-x</b> <b>&quot;*~&quot;</b> <b>-m</b> 664 library/_*</pre></div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>The <b>/usr/bin/chown</b> program uses a &apos;<i>user</i>:[<i>group</i>]&apos; notation for owner. With &apos;<i>user</i><b>:</b>&apos; (no group but trailing colon) the user&apos;s primary group is used.</div>
 </div>
 </section>
@@ -112,7 +112,7 @@
 <div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>This is a conviniency wrapper for coreutils <b>/usr/bin/cp</b> that provides some extra reporting and error handling.</div>
 </div>
 </section>
@@ -489,7 +489,7 @@ echo two &gt;&amp;$fhan                # second output line
 <div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>This is a conviniency wrapper for <b>unlink</b>, <b>rm</b> and <b>rmdir</b> that provides some extra reporting and error handling. The implementation is aware of simple cases so that the bash builtins <b>unlink</b> and <b>rmdir</b> can be used (if enabled via <a href="autoload.html">autoload</a>). If the number of arguments is &gt; 1 the function always calls <b>rm</b> without any further checks.</div>
 </div>
 </section>
@@ -518,7 +518,7 @@ echo two &gt;&amp;$fhan                # second output line
 <div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>This is a conviniency wrapper for <b>/usr/bin/mv</b> that provides some extra reporting and error handling. Only one <i>src</i> argument is supported and the function fails if <i>des</i> exists and neither option <b>-o</b> or <b>-x</b> are given.</div>
 </div>
 </section>
@@ -599,18 +599,18 @@ echo two &gt;&amp;$fhan                # second output line
 </section>
 <section id='section-14'>
 <div id='splitcall' class='item-function'>
-<span>Function</span><span> - </span><span>splitcall</span><span> - </span><span>run commands or funtions splitting long arguments lists</span></div>
+<span>Function</span><span> - </span><span>splitcall</span><span> - </span><span>run commands or functions splitting long arguments lists</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>splitcall</b> <b>-c</b>|<b>-s</b> <i>what</i> [<b>-e</b>|<b>-f</b>|<b>-q</b>] [<b>-p</b>] [<b>-r</b>]
+<div class='def-text'><b>splitcall</b> <b>-c</b>|<b>-s</b> <i>what</i> [<b>-e</b>|<b>-f</b>|<b>-q</b>] [<b>-g</b> <i>good</i>] [<b>-p</b>] [<b>-r</b>]
                      [<b>-a</b> <i>para</i>] [<b>-m</b> <i>maxi</i>] [<b>-d</b> <i>deli</i>] <b>-i</b> <i>data</i>
-<b>splitcall</b> <b>-c</b>|<b>-s</b> <i>what</i> [<b>-e</b>|<b>-f</b>|<b>-q</b>] [<b>-r</b>]
+<b>splitcall</b> <b>-c</b>|<b>-s</b> <i>what</i> [<b>-e</b>|<b>-f</b>|<b>-q</b>] [<b>-g</b> <i>good</i>] [<b>-r</b>]
                      [<b>-a</b> <i>para</i>] [<b>-m</b> <i>maxi</i>] [<b>-p</b>] [<b>-d</b> <i>deli</i>] <b>--</b> <i>arg</i>...</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>*<b>not yet implented*</b></div>
+<div class='def-text'>*<b>implentation is incomplete*</b></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -619,8 +619,9 @@ echo two &gt;&amp;$fhan                # second output line
 <b>-d</b>  delimiter passed to <a href="_centauri_bash_lib.html#splitjoin">splitjoin()</a>
 <b>-e</b>  add option <b>-e</b> (report errors)
 <b>-f</b>  add option <b>-f</b> (make errors fatal)
+<b>-g</b>  stop processing if exit code of <i>what</i> is greater <i>good</i>
 <b>-i</b>  input variable name (can be an array)
-<b>-m</b>  maximum chunk size or parallel processes
+<b>-m</b>  maximum chunk size for parallel processes
 <b>-p</b>  parallel processing, see below
 <b>-q</b>  add option <b>-q</b> (no messages)
 <b>-r</b>  add option <b>-r</b> (ignore <b>--dryrun</b>)
@@ -630,7 +631,9 @@ echo two &gt;&amp;$fhan                # second output line
 <div class='def-label'>Arguments:</div>
 <div class='def-text'><i>arg</i>   list of fields that get added to <i>data</i>
 <i>data</i>  list to be split into chunks
-<i>func</i>  a function to be invoked for chunks of <i>data</i>
+<i>deli</i>  used to split strings into items, see <a href="_centauri_bash_lib.html#splitjoin">splitjoin()</a>
+<i>good</i>  maximum non-error return code (default is using <b>&quot;error -t&quot;</b>)
+<i>what</i>  a function/command to be invoked for chunks of <i>data</i>
 <i>para</i>  parameters passed to <i>func</i>, can be string or array, &apos;@&apos;
       stands for a chunk of <i>data</i>. If no &apos;@&apos; field is passed,
       it automatically gets appended to <i>para</i>.

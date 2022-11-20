@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_tra = Centauri Bash Library Trash Support
+# _centauri_bash_tra = centauri-bash-lib: Trash bin support
 #
 # Call:     . _centauri_bash_tra [-n]
 #
@@ -127,13 +127,7 @@ _cen_tra_home() {
 
 # find trash method: [-|<meth>]
 _cen_tra_init() {
-    embed -m "_centauri_bash_ext"
-
-    # register option/quit hook
-    if [ -z "$CEN_TRA_HOOK_QUIT" ] ; then
-        CEN_TRA_HOOK_QUIT="$CEN_HOOK_QUIT"
-        CEN_HOOK_QUIT="_cen_tra_quit"
-    fi
+    embed -c "_centauri_bash_ext"
 
     # explicit init
     if [ "${1:--}" != '-' ] ; then
@@ -215,15 +209,14 @@ _cen_tra_option() {
     esac
 }
 
-# hook for quit()
-_cen_tra_quit() {
-    [ -n "$CEN_TRA_LIST" ] && trash -f              # flush quue
-    $CEN_TRA_HOOK_QUIT "$@"
-}
-
 # ------------------------------------------------------------------------------
 # Startup: [-n]
 # ------------------------------------------------------------------------------
+
+# called by quit()
+_cen_tra_quit() {
+    [ -n "$CEN_TRA_LIST" ] && trash -f              # flush quue
+}
 
 [ "$1" = "-n" ] && return 0                         # do not init
 

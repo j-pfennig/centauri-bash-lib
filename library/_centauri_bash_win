@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_win = Centauri Bash Library GUI Windowing Support
+# _centauri_bash_win = centauri-bash-lib: GUI windowing Support
 #
 # Call:     . _centauri_bash_win
 #
@@ -74,6 +74,7 @@ _cen_win_input=         # used by input dialog
 #
 # Options:  -c  check for a GUI feature
 #           -e  error message if init to GUI is not possible
+#           -f  error are fatal
 #           -g  set GUI to be used (default is "kde")
 #           -i  initialize GUI mode if possible
 #           -l  launch GUI application in background
@@ -86,6 +87,11 @@ _cen_win_input=         # used by input dialog
 #           <title>     Window title for a launched application
 #           <app>       path or name or generic name "browser" "editor" "console"
 #           <feature>   GUI feature, see below. Use - to check for full support
+#
+#+Init:     initialization is controlled via option -i. If not used explicitly to turn
+#           GUI-Mode on/off (-i°1 or -i°0) the automatic detection mode (-i°2) is run
+#           implicitly. Auto detection calls **context°-q** and may run **xsetroot** to
+#           create an X11 root window.
 #
 #+Support:  Currently only **kde** is fully supported (**kdialog** must be installed).
 #           Using **-g°-** or **-g°+** will not check the GUI, e.g. if **kdialog**
@@ -126,12 +132,13 @@ _cen_win_input=         # used by input dialog
 windows() {
     # debug -c -- "$*"
     # parse options
-    local _titl _ferr _frun _fchk _fgui
+    local _titl _ferr _frun _fchk _fgui _emsg='error'
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   shift ; _fchk="$1" ;;
       -e)   _ferr=1 ;;
+      -f)   _emsg='fatal' ;;
       -g)   shift ; _fgui="$1" ;;
       -i)   shift ; CEN_WINDOWS="$1" ; CEN_WIN_NAME= ;;
       -l)   _frun=0 ;;
@@ -160,9 +167,9 @@ windows() {
     if [ -n "$_fchk" ] ; then
         if [ "$CEN_WINDOWS" = 1 ] ; then
             windialog -c "$_fchk" && return 0
-            [ -n "$_ferr" ] && error $"insuffient window support, please install 'kdialog'"
+            [ -n "$_ferr" ] && $_emsg $"insuffient window support, please install 'kdialog'"
         else
-            [ -n "$_ferr" ] && error $"window mode not initialized"
+            [ -n "$_ferr" ] && $_emsg $"window mode not initialized"
         fi
         return 1
     fi
@@ -174,11 +181,11 @@ windows() {
             _cen_win_launch $_frun "$_titl" "$@" ; return
         elif [ -z "$CEN_DISPLAY" ] ; then               # must have display
             CEN_WINDOWS=0 ; CEN_WIN_NAME='-'
-            [ -n "$_ferr" ] && error $"could not initialize window mode"
-            return 1
+            [ -n "$_ferr" ] && $_emsg $"could not initialize window mode"
+            return 1_frun
         fi
     else
-        [ -n "$_ferr" ] && error $"window mode not initialized"
+        [ -n "$_ferr" ] && $_emsg $"window mode not initialized"
         CEN_WIN_NAME='-' ; return 1
     fi
 
@@ -222,7 +229,6 @@ _cen_win_pdlg() {
             sysfind -f -s CEN_WIN_APPQDBUS -- 'qdbus'   # check and save path
             windialog -l CEN_WIN_PROGRESS -- - " "      # set minimum size
             [ -z "$CEN_WIN_PROGRESS" ] && fatal $"Failed to init progress dialog"
-            context -h _cen_win_quit CEN_WIN_HOOK_QUIT  # close on quit
             _cen_win_pdlg showCancelButton 1
         fi
 
@@ -615,7 +621,7 @@ _cen_win_txtjoin() {
     local _wide="$1" _frst="$2" _nout="$3" ; shift 3
     local _item _text _fill _larr _temp
     if [ "$CEN_WIN_NAME" = 'kdialog' ] ; then
-        _fill='\&nbsp;'
+        _fill=2                                     # use &nbsp to fill
         if [ "${1:--}" != '-' ] ; then
             _cen_win_txtfold  "$_wide" "$_frst" "$_fill" '<br/>' "$1" _item
             _text="<h4>$_item</h4>" ; _fill=
@@ -633,7 +639,7 @@ _cen_win_txtjoin() {
 
     elif [ "$CEN_WIN_NAME" = 'zenity' ] ; then
         local _lbrk="<span size='2048'>"$'\n\n'"</span>"
-        _fill=' '
+        _fill=1                                     # fill with spaces
         if [ "${1:--}" != '-' ] ; then
             _cen_win_txtfold  "$_wide" "$_frst" "$_fill" $'\n' "$1" _item
             _text="<span weight='bold' size='medium'>$_item</span>"$'\n' ; _fill=
@@ -653,7 +659,7 @@ _cen_win_txtjoin() {
     else
         [ "${1:--}" = '-' ] && shift
         for _item in "$@" ; do
-            _cen_win_txtfold "$_wide" "$_frst" '' $'\n' "$_item" _item
+            _cen_win_txtfold "$_wide" "$_frst" 0 $'\n' "$_item" _item
             [ -z "$_text" ] && _text="$_item" || _text+=$'\n\n'"$_item"
         done
     fi
@@ -663,15 +669,19 @@ _cen_win_txtjoin() {
 
 # ------------------------------------------------------------------------------
 # call args: <width> <first> <fill> <delimiter> <input> <output>
+#
+#       fill        0 := no padding
+#                   1 := fill with spaces
+#                   2 := use &nbsp to fill
 # ------------------------------------------------------------------------------
 _cen_win_txtfold() {
     local _wide="$1" _frst="$2" _fill="$3" _deli="$4" _tinp="$5" _nout="$6" _leng _temp
     local -n _txtf
     _leng="${#_tinp}"
     if [ "$_leng" -le "$_wide" ] ; then             # no need to fold text
-        if [ -n "$_fill" ] && [ "$_leng" -le "$_wide" ] ; then
+        if [ "${_fill:-0}" -gt 0 ] && [ "$_leng" -le "$_wide" ] ; then
             printf -v _temp "%-60s" "$_tinp"
-            [ "${#_tinp}" -lt 60 ] && _temp="${_temp// /$_fill}"
+            [ "${#_tinp}" -lt 60 -a "$_fill" = 2 ] && _temp="${_temp// /\&nbsp;}"
             _txtf="$_nout" ; _txtf="$_temp"
         else
             _txtf="$_nout" ; _txtf="$_tinp"
@@ -692,12 +702,13 @@ _cen_win_txtfold() {
 #           -d +<time>  # notification window
 # ------------------------------------------------------------------------------
 _cen_windmesg() {
-    local _sfmt _args=() _argx=() _flib _fqui _ftwo _popw _verb="$CEN_VERB" _head _stat=0
+    local _sfmt _args=() _argx=() _flib _fqui _ftwo _popw _scal _verb="$CEN_VERB" _head _stat=0
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _argx+=("$1") ;;
       -b)   shift ;; # ignored here
+      -c)   _argx+=("$1" "$2") ; shift ; _scal="$1" ;;
       -d)   shift
             [ "$1" = "?" ] && _ftwo=1
             [ "$1" = "-" ] && _flib=1
@@ -736,6 +747,13 @@ _cen_windmesg() {
         _sfmt="$*" ; _sfmt="${_sfmt// \\n /$'\n'}" ; _sfmt="${_sfmt//\\n/$'\n'}"
         _sfmt="${_sfmt//\\t/$'\t'}"
     fi
+    if [ -n "$_scal" ] ; then               # option -c
+        _cen_shortfmt _scal - "$_scal"
+        _scal="${_scal//   / }" ; _scal="${_scal//  / }"
+        _scal="${_scal//  / }"  ; _scal="${_scal/ :/:}"
+        _sfmt="${_scal:1} $_sfmt"
+    fi
+
     [ -z "${_sfmt//$'\n'/}" ] && return 0   # discard empty dialog
 
     case "$_sfmt" in
@@ -874,8 +892,9 @@ _cen_windcheck() {
     CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
     [ -z "$CEN_KDE_VERSION" ] && CEN_KDE_VERSION=5
     [ "$CEN_KDE_VERSION" -gt 4 ] && export KDE_FULL_SESSION=true
-    $CEN_TRACE -a -m -p "KDE-version   : %s\nDialog-title  : %s\nDialog-caption: %s" \
-                        "$CEN_KDE_VERSION" "$CEN_WIN_DLG_TITLE" "$CEN_WIN_DLG_CAPTION"
+    $CEN_TRACE -a -c "KDE-version" -- "$CEN_KDE_VERSION"
+    $CEN_TRACE -a -c "Dialog-title" -- "$CEN_WIN_DLG_TITLE"
+    $CEN_TRACE -a -c "Dialog-caption" -- "$CEN_WIN_DLG_CAPTION"
     return "$CEN_WIN_GUISTAT"
 }
 
@@ -918,8 +937,8 @@ _cen_win_launch() {
 
     [ -z "$_titl" -a -n "$_tset" ] && _titl="$CEN_NAME"
     if [ -n "$_titl" ] ; then
-        [ -n "$CEN_WIN_USE_TITLE" ] && _args+=(--title "$_titl") ||
-                                       _args+=(--caption "$_titl")
+        [ -n "$CEN_WIN_USE_TITLE" ] && _args+=(--title "$_titl") #||
+                                     #  _args+=(--caption "$_titl")
     fi
 
     if [ "$_wait" = 0 ] ; then
@@ -930,7 +949,7 @@ _cen_win_launch() {
 }
 
 # ------------------------------------------------------------------------------
-# Hook the quit call to cancel progress(), override in/out
+# Hooks to override input / output
 # ------------------------------------------------------------------------------
 _cen_win_hook() {
     CEN_WIN_HOOK_GETLINE="$CEN_HOOK_GETLINE"
@@ -939,10 +958,8 @@ _cen_win_hook() {
     CEN_HOOK_MESSAGE='_cen_windmesg'
 }
 
-_cen_win_quit() {
-    [ -n "$CEN_WIN_PROGRESS" ] && progress              # close progress window
-    $CEN_WIN_HOOK_QUIT "$@"
-}
+# _cen_win_quit() is disabled in _centauri_bash_lib, progress dialogs will
+#                 closed via _cen_pro_quit
 
 # ------------------------------------------------------------------------------
 # Startup: [-n|-s]

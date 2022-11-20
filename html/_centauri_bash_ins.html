@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_ins</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_ins")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_ext.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_ins' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_ins</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Installation Helpers</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_ins</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Installation helpers</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_ins</b></div>
@@ -30,13 +30,13 @@ _cen_ins_library    NEW library installation
 _cen_ins_version    get OS and KDE versions</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>Copyright Dr. J. Pfennig (c) 2019-2022</div>
 </div>
 </section>
 <section id='section-2'>
 <div id='serviceanddaemon' class='item-topic'>
-<span>Topic</span><span> - </span><span>Service and Daemon</span><span> - </span><span>How centauri-bash-library supports Services and Daemons</span></div>
+<span>Topic</span><span> - </span><span>Service and Daemon</span><span> - </span><span>How <a href="index.html">centauri-bash-lib</a> supports Services and Daemons</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The library supports <b>SysV</b> and <b>systemd</b> system services. Services can be installed and removed via <a href="_centauri_bash_sys.html#syssetup">syssetup()</a>, which is implemented as <b>setup</b> verb. Other service verbs are <b>start</b>, <b>stop</b>, <b>restart</b> and <b>status</b>.</div>
@@ -294,18 +294,18 @@ _cen_ins_version    get OS and KDE versions</div>
 <span>Topic</span><span> - </span><span>Installation</span><span> - </span><span>Install/Update/Uninstall and Configuration</span></div>
 <div class='def-row'>
 <div class='def-label'>Install:</div>
-<div class='def-block'><a href="_centauri_bash_lib.html">_centauri_bash_lib</a> needs no complex setup program: just unpack the source archive and run one of the included tools with <b>--info install</b>.</div>
+<div class='def-block'>centauri-bash-lib itself needs no complex setup program: just unpack the source archive and run one of the included tools with <b>--info install</b>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>Shared installation (needs <b>root</b> rights):</div>
+<div class='def-text'>System-wide shared installation (needs <b>root</b> rights):</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-text'><pre>arch=<b>&quot;centauri_bash_lib.tgz&quot;</b>        # what to install
-dest=<b>&quot;/usr/local/share/centauri&quot;</b>    # where to install (CEN_ROOT)
+dest=<b>&quot;/usr/local/shared/centauri&quot;</b>   # where to install (CEN_ROOT)
 
 sudo mkdir <b>-p</b> <b>&quot;$dest&quot;</b>
 sudo tar <b>-C</b> <b>&quot;$dest&quot;</b> -xaf <b>&quot;$arch&quot;</b>
@@ -484,7 +484,7 @@ centauripaths <b>--info</b> uninstall <b>--yes</b>  # uninstall without prompt</
 </section>
 <section id='section-8'>
 <div id='libraryproxy' class='item-topic'>
-<span>Topic</span><span> - </span><span>Library Proxy</span><span> - </span><span>The <a href="index.html">_centauri_bash_lib</a> Proxy</span></div>
+<span>Topic</span><span> - </span><span>Library Proxy</span><span> - </span><span>The <a href="index.html">centauri-bash-lib</a> Proxy</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The library should not be loaded directly, instead a proxy is used. The proxy is generated at installation time and is located at:</div>
@@ -492,17 +492,17 @@ centauripaths <b>--info</b> uninstall <b>--yes</b>  # uninstall without prompt</
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>  <b>$CEN_ROOT/tools/_centauri_bash_lib</b></div>
+<div class='def-text'>  <b>$CEN_TOOLS/_centauri_bash_lib</b></div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>One responsibility of th proxy is to locate the library. This is why it should be sym-linked to <b>&quot;/usr/local/bin&quot;</b>. More details are covered by the <a href="_centauri_bash_doc.html#initialization">Initialization</a> topic.</div>
+<div class='def-block'>One responsibility of the proxy is to locate the library. This is why it should be sym-linked to <b>&quot;/usr/local/bin&quot;</b>. More details are covered by the <a href="_centauri_bash_doc.html#initialization">Initialization</a> topic.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Also the proxy loads the <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> main module from <b>&quot;$CEN_ROOT/library&quot;</b> and is responsible for setting up a suitable environment. The proxy contains <b>ALL</b> hard configurable library parameters, see <a href="#installation">Installation</a>.</div>
+<div class='def-block'>Also the proxy loads the <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> main module from <b>&quot;$CEN_LIBRARY&quot;</b> and is responsible for setting up a suitable environment. The proxy contains <b>ALL</b> hard configurable library parameters, see <a href="#installation">Installation</a>.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Environment:</div>
@@ -517,6 +517,11 @@ centauripaths <b>--info</b> uninstall <b>--yes</b>  # uninstall without prompt</
   <b>CEN_PATHS</b>           # an array of paths used by the library
   <b>TMPDIR</b>              # sanitized temp folders ...
   <b>TMP</b></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>CEN_LIBRARY</b> and <b>CEN_TOOLS</b> are sub-folders of <b>CEN_ROOT</b>.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Embedding:</div>
@@ -559,43 +564,6 @@ centauripaths <b>--info</b> uninstall <b>--yes</b>  # uninstall without prompt</
    │   └── ...              # more laguages
    ├── ...                  # other stuff
    └── tools                # user scripts ($CEN_TOOLS)</pre></div>
-</div>
-</section>
-<section id='section-10'>
-<div id='pathshortcuts' class='item-topic'>
-<span>Topic</span><span> - </span><span>Path Shortcuts</span><span> - </span><span>Shortcuts for filesystem paths</span></div>
-<div class='def-row'>
-<div class='def-label'>General:</div>
-<div class='def-block'>The library implements a user configurable shortcut system for paths by providing the <a href="_centauri_bash_run.html#shortpath">shortpath()</a> function and the <a href="centauripaths.html">centauripaths</a> tool. Some paths below <b>&quot;$CEN_ROOT&quot;</b> are provided by the library itself. For example:</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'><pre>shortpath <b>&quot;locale/de&quot;</b> <b>&quot;pers&quot;</b> ; message <b>&quot;${CEN_SHORTPATH[@]}&quot;</b></pre></div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'><pre>&gt; centauripaths <b>&quot;loca/de&quot;</b> <b>&quot;persistent&quot;</b></pre></div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-block'>will return <b>&quot;/var/centauri/locale/de&quot;</b> and <b>&quot;/var/centauri/persistent&quot;</b> if <b>CEN_ROOT</b> was set to <b>&quot;/var/centauri&quot;</b> at installation time.</div>
-</div>
-<div class='def-row'>
-<div class='def-label'>Config:</div>
-<div class='def-block'>Any number of user defined shortcuts can be added to the search list via <b>&quot;$CEN_ROOT/defaults/centauri_bash_lib&quot;</b>. The following example adds the shortcut <b>&quot;backup&quot;</b> (must be in section <b>&quot;[centauripaths]&quot;</b>):</div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-text'><pre>path <b>&quot;backup&quot;</b> <b>&quot;/mnt/backup/Backup|$ROOT/Backup&quot;</b> <b>&quot;Backup volume/folder&quot;</b></pre></div>
-</div>
-<div class='def-break'></div>
-<div class='def-row'>
-<div class='def-empty'></div>
-<div class='def-block'>The 1st argument of <b>&quot;path&quot;</b> is the shotcut name. The 2nd is a list of possible filesystem paths (separated by <b>&quot;|&quot;</b>). The last argument is a textual description. The shortcut will be resolved to the first existing filesystem path.</div>
 </div>
 </section>
 </article>

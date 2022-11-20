@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_use</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_use")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_txt.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_use' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_use</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> usage() and Completion</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_use</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Help usage() and bash completion</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_use</b> [<b>-h</b>|<b>-u</b>]</div>
@@ -136,16 +136,29 @@ $<b>CEN_USE_OPTIONS</b>
 <span>Function</span><span> - </span><span>usagecat</span><span> - </span><span>copy usage() text from stdin to sddout</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>usagecat</b> [<b>-l</b>] &lt;&lt;!EOF
+<div class='def-text'><b>usagecat</b> [<b>-l</b>] &lt;&lt;!EOF            # primary help text
+...text...
+!EOF</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><b>usagecat</b> [<b>-l</b>] <b>-v</b> <i>mesg</i>           # optional extra help: --help --verbose
 ...text...
 !EOF</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
-<div class='def-text'><b>-l</b>  no formatting, literal output</div>
+<div class='def-text'><b>-l</b>  no formatting, literal output
+<b>-v</b>  offer or output extra help (<b>--help</b> <b>--verbose</b>)</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Arguments:</div>
+<div class='def-text'><i>mesg</i>  Text displayed without <b>--verbose</b>. The 1st occurence of
+      <b>&quot;%%&quot;</b> is replaced with <b>&quot;$CEN_NAME --help --verbose&quot;</b>.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>The <b>-l</b> option is implied if the pager (<b>CEN_OPT_PAGER</b>) is <b>centaurihelp</b>, <b>usage</b> or <b>true</b>. Calling a tool with <b>--help</b> <b>--pager</b>=true can be used to inspect the data sent to <a href="_centauri_bash_doc.html">_centauri_bash_doc</a>.</div>
 </div>
 </section>

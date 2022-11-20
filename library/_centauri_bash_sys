@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_sys = Centauri Bash Library OS Integration Support
+# _centauri_bash_sys = centauri-bash-lib: OS integration support
 #
 # Call:     . _centauri_bash_sys [-n]
 #
@@ -146,22 +146,30 @@ sysversion() {
 
     # get state file path: -r|-w
     _cen_sys_state() {
-        if [ -d "$CEN_SYS_STATE_DIR" ] ; then               # after setup...
-            CEN_SYS_STATE_FILE="$CEN_SYS_STATE_DIR/centaurisystem"
-            if [ "$1" = "-w" ] ; then
-                [ "$EUID" = 0 ] && return 0                 # global dir ok
-            elif [ -r "$CEN_SYS_STATE_FILE" ] ; then
-                return 0                                    # global file ok
+        CEN_SYS_STATE_FILE="$CEN_SYS_STATE_DIR/centaurisystem"
+        if [ "$EUID" = 0 ] ; then               # root uses CEN_SYS_STATE_DIR
+            [ -r "$CEN_SYS_STATE_FILE" ] && return 0
+            if [ -d "$CEN_SYS_STATE_DIR" ] ; then
+                [ "$1" = '-w' ] && return 0
+                CEN_SYS_STATE_FILE= ; return 1  # must rewrite
             fi
-            CEN_SYS_STATE_FILE=
-            [ "$EUID" = 0 ] && return 1                     # error
+            $CEN_TRACE -c " missing" -- "$CEN_SYS_STATE_DIR"
         fi
-        if folder -u config ; then                          # try user cache
-            CEN_SYS_STATE_FILE="$CEN_FOLDER/centaurisystem"
-            [ "$1" = "-w" ] && return 0                     # cache dir ok
-            [ -r "$CEN_SYS_STATE_FILE" ] && return 0        # cache file ok
+
+        local _usta
+        if folder -s _usta -u config ; then     # user config folder
+            _usta+='/centaurisystem'
+            $CEN_TRACE2 -c " user" -- "$_usta"
+            if [ "$1" = '-w' ] ; then
+                CEN_SYS_STATE_FILE="$_usta" ; return 0
+            elif [ "$_usta" -nt "$CEN_SYS_STATE_FILE" ] ; then
+                CEN_SYS_STATE_FILE="$_usta" ; return 0
+            elif [ -r "$_usta" ] ; then
+                return 0
+            fi
         fi
-        CEN_SYS_STATE_FILE= ; return 1                      # error
+        $CEN_TRACE -c " failed" -- "$_usta"
+        CEN_SYS_STATE_FILE= ; return 1          # error
     }
 
     ### main ###
@@ -380,9 +388,13 @@ syssetup() {
 # ------------------------------------------------------------------------------
 sysinfo() {
     local _dopt _iopt _fnoq _stat=0
+    # help should not advertise the 'detailed' command
+    local _cmds='help install paths refresh setup uninstall update version'
     case "$1" in
-        "")         ;;
+        "")        ;;
+        help|-)    quit -m $"Valid --info arguments are:" '\n' "$_cmds" ;;
         install)   _iopt="-i" ;;
+        paths)     _iopt='-p' ;;
         refresh)   _iopt="-n" ;;
         setup)     _iopt="-n" ; CEN_OPT_FORCE=1 ;;
         uninstall) _iopt="-r" ;;
@@ -390,10 +402,17 @@ sysinfo() {
         detailed)  _dopt=1 ;;
         ver*)      sysversion -m -o -k ; quit ;;
         *)         fatal -m $"Bad --info argument. Valid commands are:" '\n' \
-                         "install refresh setup uninstall update detailed version"
+                            'detailed' "$_cmds"
     esac
 
-    if [ -n "$_iopt" ] ; then                       # setup actions
+    if [ "$_iopt" = '-p' ] ; then
+        for _stat in CEN_ROOT CEN_LIBRARY CEN_TOOLS CEN_INSTALL \
+                     CEN_PATHS[0] CEN_PATHS[1] CEN_PATHS[2] CEN_PATHS[3] CEN_PATHS[4] \
+                     XDG_RUNTIME_DIR TMPDIR PATH ; do
+           eval "message -a -c '$_stat' -- '\${$_stat}'"
+        done
+        quit
+    elif [ -n "$_iopt" ] ; then                     # setup actions
         syssetup $_iopt -- "$2" || _stat=$?
         [ "$3" = 'noquit' ] && return $_stat
         case $_stat in

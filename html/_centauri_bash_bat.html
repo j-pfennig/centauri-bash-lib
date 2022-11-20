@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_bat</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_bat")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='reference.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_bat' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_bat</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Batch Support</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_bat</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Batch job support</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_bat</b> [<b>-b</b>|<b>-l</b>|<b>-n</b>]</div>
@@ -61,8 +61,8 @@
 <b>--logfile</b>=<b>+</b>         # (default) use $CEN_NAME.log as &lt;file&gt;</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
-<div class='def-block'>Copyright Dr. J. Pfennig (c) 2017-2019</div>
+<div class='def-label'>Remarks:</div>
+<div class='def-block'>Copyright Dr. J. Pfennig (c) 2017-2022</div>
 </div>
 </section>
 <section id='section-2'>
@@ -76,7 +76,7 @@
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-c</b>  explicitly set batch arguments
 <b>-i</b>  enable batch, used by <a href="_centauri_bash_dbg.html#optionsuser">options()</a> or <a href="_centauri_bash_dbg.html#actionsuser">actions()</a>
-<b>-r</b>  run it, used by <a href="_centauri_bash_lib.html#quit">quit()</a> hook</div>
+<b>-r</b>  run it, used by <a href="_centauri_bash_lib.html#quit">quit()</a> callback</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Variable:</div>
@@ -92,17 +92,16 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Batches are always run from the quit hook. When the user script did not call <b>&quot;batchmode -c&quot;</b> or set <b>CEN_BAT_STATE</b> before action processing starts (or <a href="_centauri_bash_dbg.html#runuser">run()</a> gets called), a <a href="_centauri_bash_lib.html#quit">quit()</a> call is made by this code.</div>
+<div class='def-block'>Batches are always run from the quit callback. When the user script did not call <b>&quot;batchmode -c&quot;</b> or set <b>CEN_BAT_STATE</b> before action processing starts (or <a href="_centauri_bash_dbg.html#runuser">run()</a> gets called), a <a href="_centauri_bash_lib.html#quit">quit()</a> call is made by this code.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The quit hook checks if commands where queued (via &quot;<b>batchmode -c</b> <i>cmd</i>&quot;). If not the original script call is added as command. The queue is then executed via <b>/usr/bin/nohup</b> or <b>/usr/bin/at</b>.</div>
+<div class='def-block'>The quit callback checks if commands where queued (via &quot;<b>batchmode -c</b> <i>cmd</i>&quot;). If not the original script call is added as command. The queue is then executed via <b>/usr/bin/nohup</b> or <b>/usr/bin/at</b>.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Warning:</div>
-<div class='def-text'>Script options passed to <b>batchmode -c</b> must have long names and must use
-the <b>=</b> syntax for values (examples: <b>--hello</b> <b>--color=green</b>).</div>
+<div class='def-block'>Script options passed to <b>batchmode -c</b> must have long names and must use the <b>=</b> syntax for values (examples: <b>--hello</b> <b>--color=green</b>).</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Example:</div>
@@ -134,7 +133,7 @@ the <b>=</b> syntax for values (examples: <b>--hello</b> <b>--color=green</b>).<
 <div class='def-text'><b>true</b> on success, sets <b>CEN_OPT_LOGFILE</b> to path</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>This function implements the <b>--logfile</b> option and is usually called automatically by <a href="_centauri_bash_dbg.html#optionsuser">options()</a> or <a href="_centauri_bash_dbg.html#actionsuser">actions()</a>. It can be called explicitly to override the default behaviour.</div>
 </div>
 </section>

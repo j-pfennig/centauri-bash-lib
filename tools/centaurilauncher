@@ -97,7 +97,7 @@ launcher_html() {
         -f|-q)  oerr="$1" ;;
         -m)     shift ; mode="$1" ;;
         -o|-t)  shift ;;
-        -x)     ochk=1 ;;
+        -x)    return 0 ;; #### ochk=1 ;;
         *)
         esac ; shift
     done
@@ -112,7 +112,7 @@ launcher_html() {
         error -p $"Only one argument allowed (%s): %s" "${appl##*/}" "$*" ; return 1
     fi
 
-    # use --- to skip everything before
+    # skip command options, use --- to skip everything before
     if listsearch -c -n indx -- '---' "$@" ; then
         trace "found --- $indx +" "${@:1:indx}" + "${@:indx+2}"
         args=("${@:1:indx}") ; shift $((indx+1))
@@ -126,9 +126,22 @@ launcher_html() {
             esac ; shift
         done
     fi
+    # the remaining args should be html files or urls
 
-    if [ "$1" != '-' ] ; then
-        application_url "$1" || return 1
+    # search url/file list backwards until an existing file is found
+    local _coun="$#" _indx _strt
+    while ((_coun--)) ; do
+        _indx=$((_coun + 1))
+        _strt="${!_indx}"
+        case "$_strt" in
+            /*)     [ -s "${_strt%#*}" ] && break || _strt= ;;
+            *)      break                       # not a file, use this url
+        esac
+    done
+
+
+    if [ "${_strt:--}" != '-' ] ; then
+        application_url "$_strt" || return 1
         trace "html url:" "$DAT_URL"
         args+=("$DAT_URL")
     fi
@@ -310,13 +323,13 @@ server.modules += ( "mod_cgi" )
 # ------------------------------------------------------------------------------
 launcher_qmlweb() {
 $CEN_DEBUG -c -- "$@"
-    local oerr mode orun _ainf _titl
+    local oerr orun _mode _ainf _titl
     while [ $# -gt 0 ] ; do
         case "$1" in
         --)   shift ; break ;;
         -f)   oerr='-f' ;;
         -i)   shift ; splitjoin -s _ainf -d ':' -- "$1" ;; # _oinf="$1" ;;
-        -m)   shift ; mode="$1" ;;
+        -m)   shift ; _mode="$1" ;;
         -q)   oerr='-q' ;;
         -r)   orun='-r' ;;
         -t)   shift ; _titl="$1" ;;
@@ -326,33 +339,42 @@ $CEN_DEBUG -c -- "$@"
 
     $CEN_DEBUG -c -- "$*"
     local _pqml="$1" _titl ; shift
-    local _file _resx="${1:--}" _resy="${2:--}" _zoom="${3:--}" _strt="$4"
-    [ "$_resx" = '-' ] && _resx=1024
-    [ "$_resy" = '-' ] && _resy=768
-    [ "$_zoom" = '-' ] && _zoom=1
-   # if [ "${_oinf:--}" != '-' ] ; then
-   #     local _ainf
-   #     splitjoin -s _ainf -d ':' -i _oinf
-        [ "${_ainf[0]:--}" != '-' ] && _resx="${_ainf[0]}"
-        [ "${_ainf[1]:--}" != '-' ] && _resy="${_ainf[1]}"
-        [ "${_ainf[2]:--}" != '-' ] && _zoom="${_ainf[2]}"
-   # fi
+    local _file _resx="${1:--}" _resy="${2:--}" _zoom="${3:--}"
+    shift ; shift ; shift
 
+    # search url/file list backwards until an existing file is found
+    local _coun="$#" _indx _strt
+    while ((_coun--)) ; do
+        _indx=$((_coun + 1))
+        _strt="${!_indx}"
+        case "$_strt" in
+            /*)     [ -s "${_strt%#*}" ] && break || _strt= ;;
+            *)      break                       # not a file, use this url
+        esac
+    done
+
+    # qml window geometry
+    [ "${_ainf[0]:--}" != '-' ] && _resx="${_ainf[0]}"
+    [ "${_ainf[1]:--}" != '-' ] && _resy="${_ainf[1]}"
+    [ "${_ainf[2]:--}" != '-' ] && _zoom="${_ainf[2]}"
+    [ "$_resx" = '-' ] && _resx='(Screen.desktopAvailableWidth * 6) / 10'
+    [ "$_resy" = '-' ] && _resy='(Screen.desktopAvailableHeight * 4) / 5'
+    [ "$_zoom" = '-' ] && _zoom='Screen.pixelDensity / 4.5'
     if [ "${_titl:--}" = '-' ] ; then
         _titl="$CEN_NAME"
         [ -n "$CEN_EMBED" ] && _titl="$CEN_EMBED ⸺ $CEN_NAME"
     fi
 
-    local qvar='Q''t'                           # hide to avoid mime type qml
+    local _qvar='Q''t' _pipe                        # hide Qt to avoid mime type qml
     tmpfile -n -s _file -- "launcher.qml" || return 1
 
     # wait for synchronization pipe - see 'launcher_webapp'
     if [ -n "$DAT_SYNCPIPE" ] ; then
-        local _mode _wurl _dumy
+        local _flag _wurl _dumy
         trace -a $"wait for synchronization:" "$DAT_SYNCPIPE"
-        read -t 60 -u "$DAT_SYNCPIPE" _mode _wurl _dumy || return 1
-        trace -a $"synchronization message :" "$_mode" "$_wurl"
-        [ "$_mode" = 'OK' ] || return 1
+        read -t 60 -u "$DAT_SYNCPIPE" _flag _wurl _dumy || return 1
+        trace -a $"synchronization message :" "$_flag" "$_wurl"
+        [ "$_flag" = 'OK' ] || return 1
         if [ "${_wurl:--}" != '-' ] ; then
             DAT_URL= ; _strt="$_wurl"
         fi
@@ -362,29 +384,43 @@ $CEN_DEBUG -c -- "$@"
         trace -a $"generate config for qml :" "$_strt"
         application_url "$_strt" || return 1
     fi
-    trace $"qml web url:" "$DAT_URL"
+    trace -c $"qml web url" -- "$DAT_URL"
     create -r -t -c -- "$_file" 400 <<!EOF || return 1
- import ${qvar}Quick 2.0
- import ${qvar}Quick.Window 2.0
- import ${qvar}WebEngine 1.1
- Window {
-    width: $_resx
-    height: $_resy
+import ${_qvar}Quick 2.0
+import ${_qvar}Quick.Window 2.0
+import ${_qvar}WebEngine 1.2
+Window {
+    function cen_posx() { return (Screen.desktopAvailableWidth - $_resx) / 2; }
+    function cen_posy() { return (Screen.desktopAvailableHeight - $_resy) / 2; }
+    x: cen_posx() ; y: cen_posy()
+    width: $_resx ; height: $_resy
     visible: true
     title: "$_titl"
+
     WebEngineView {
-        zoomFactor: $_zoom
         anchors.fill: parent
         url: "$DAT_URL"
+        focus: true
+        zoomFactor: $_zoom
+        onJavaScriptConsoleMessage: {
+            if (message == 'QUIT') Qt.quit();
+            console.log(message);
+        }
    }
 }
 !EOF
 
-
-### rename to runcommand and document
-        launcher -x $oerr $orun -m "$mode" -- "$_pqml" --quiet "$_file"
-### TODO put this into runcommand
-        [ "${mode:-0}" = 0 ] || sleep 1
+    case "$_mode" in
+    # mode 1 makes no sense with qml, use mode=0
+    0|1)
+        launcher -x $oerr $orun -m 0 -- "$_pqml" --quiet "$_file" ;;
+    # for mode 2,3 we must wait until qml has read the script file. A pipe as
+    # dummy input file can be used for synchronization ...
+    *)
+        tmpfile -p -s _pipe 'pipe.qml'          # dummy input for qml
+        launcher -x $oerr $orun -m "$_mode" -- "$_pqml" --quiet "$_file" "$_pipe" &&
+            echo 2>/dev/null > "$_pipe"         # this is a blocking write
+    esac
     return 0
 }
 
@@ -642,7 +678,7 @@ actions() {
                     list+=("$1") ;;
             -i|-m|-o|-t|-y)                     # known value options ...
                     list+=("$1" "$2") ; shift ;;
-            *)      fatal $"Option '%s' is invalid (action '%s')" ;;
+            *)      fatal -p $"Option '%s' is invalid (action '%s')" "$1" "$CEN_ACTION" ;;
             esac ; shift
         done
 

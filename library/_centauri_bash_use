@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_use = Centauri Bash Library usage() and Completion
+# _centauri_bash_use = centauri-bash-lib: Help usage() and bash completion
 #
 # Call:     . _centauri_bash_use [-h|-u]
 #
@@ -83,7 +83,7 @@ usageparser() {
         if [ "$_file" = "/dev/stdin" ] ; then       # get from stdin
             splitjoin -s _ause -i - -n
         else                                        # get help text from tool
-            embed -v -a _ause -d '--' -- "$1" --help --verbose
+            LANG=C embed -a _ause -d '--' -- "$1" --help --verbose
         fi
 
         # expand left side to 12 cols, insert ' § ' marker at col31
@@ -141,7 +141,7 @@ usageparser() {
                 # lines containing " # " are handled by centaurihelp
                 if [ "${_text/ \# /}" != "$_text" ] ; then
                     _text="${_text//[[/[\'\'[\'\'}"         # avoid [[xxxx]]
-                    _body+=("$_lcnt:-$_text") ; continue
+                    _body+=("$_text") ; continue
                 fi
 
             if [ "${_text/§/}" = "$_text" ] ; then
@@ -166,12 +166,11 @@ usageparser() {
                 fi
             fi
                 _text="${_text//[[/[\'\'[\'\'}"             # avoid [[xxxx]]
-                _body+=("$_lcnt:-$_text") ; continue
+                _body+=("$_text") ; continue
             fi
 
             # --- remark block ---
 
-            #echo "MODE $_mode  TEXT '$_text'"
             if [ -z "$_text" -o "${_text::7}" != "       " ] ; then
                 _mode=
             elif [ "$_mode" = 1 ] ; then                    # running list
@@ -183,8 +182,9 @@ usageparser() {
             elif [ "${_text::7}" = "       " ] ; then       # 7 spaces - list
                 _text=",${_text:4}" ; _mode=1
             fi
-                _text="${_text//[[/[\'\'[\'\'}"             # avoid [[xxxx]]
-            _body+=("$_lcnt:-$_text")
+            _text="${_text//[[/[\'\'[\'\'}"                 # avoid [[xxxx]]
+            _body+=("$_text")
+
         done
         [ -n "$_left" ] && _cen_use_warning $"Orphaned label" "${_left%:*}"
     }
@@ -195,7 +195,7 @@ usageparser() {
     if [ "$_file" != "/dev/stdin" ] ; then
         # get info array: [0] title, [1] version, [2] license
         CEN_EXIT=0
-        embed -v -d $'\n' -a _ause -- "$_file" --info detailed
+        LANG=C embed -v -d $'\n' -a _ause -- "$_file" --info detailed
         if [ "$CEN_EXIT" != 0 ] ; then
             warning -a "$_file:" $"Bad exit status ignored" "($CEN_EXIT)"
             CEN_EXIT=0
@@ -210,14 +210,8 @@ usageparser() {
     # handle help text
     if [ -z "$_popt" ] ; then                   # help text formatting
         _cen_use_reformat "$_file"
-        if [ -n "$CEN_OPT_FORCE" ] ; then
-            local stxt
-            for stxt in "${_body[@]}" ; do
-                printf '%s\n' "${stxt#*:-}"
-            done ;
-            return
-        fi
-        _cen_use_worker "0:B1" "0:S$_name" "${_body[@]}"
+        CEN_DOC_BLOCK=(1 "${_body[@]}")
+        _cen_use_worker "0:B1" "0:S$_name" # "${_body[@]}"
         _cen_use_worker "$_lcnt:E"
     else                                        # content or modules list
         _cen_use_worker "0:S$_name"
@@ -368,6 +362,9 @@ _cen_completion() {
 # ------------------------------------------------------------------------------
 _cen_usage() {
     CEN_USE_USAGE=1                             # flag initialization
+    if [ "$CEN_VERB" -gt 1 ] ; then             # handle --help --verbose
+        context -v 1 ; CEN_USE_USAGE=2          #   no tracing, set flag
+    fi
 
     # support for bash completion using CEN_COMPLETION env variable ...
     local cmpl="${CEN_COMPLETION%%:*}" ctxt
@@ -483,23 +480,32 @@ _cen_usage() {
 # ------------------------------------------------------------------------------
 # usagecat - copy usage() text from stdin to sddout
 #
-# Call:     usagecat [-l] <<!EOF
+# Call:     usagecat [-l] <<!EOF            # primary help text
+#           ...text...
+#           !EOF
+#
+#           usagecat [-l] -v <mesg>         # optional extra help: --help --verbose
 #           ...text...
 #           !EOF
 #
 # Options:  -l  no formatting, literal output
+#           -v  offer or output extra help (--help --verbose)
+#
+# Arguments:<mesg>  Text displayed without --verbose. The 1st occurence of
+#                   "%%" is replaced with "$CEN_NAME --help --verbose".
 #
 # The -l option is implied if the pager (CEN_OPT_PAGER) is **centaurihelp**,
 # **usage** or **true**. Calling a tool with --help --pager=true can be used
 # to inspect the data sent to [[_centauri_bash_doc]].
 # ------------------------------------------------------------------------------
 usagecat() {
-    local _flit _pger="${CEN_OPT_PAGER##*/}"
+    local _flit _pger="${CEN_OPT_PAGER##*/}" _verb
 
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
         -l)   _flit=1 ;;
+        -v)   shift ; _verb="${1:--}" ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
@@ -509,6 +515,17 @@ usagecat() {
     [ "$_pger" = "usage" ] && _flit=1
     [ "$_pger" = "true" ] && _flit=1                    # for debug
     CEN_USE_OWNFLG=                                     # reset usageset() state
+
+    if [ -n "$_verb" ] ; then
+        if [ "$CEN_USE_USAGE" -gt 1 ] ; then
+            _verb=2
+        else
+            [ -z "$_flit" ] && _verb="${_verb//[°§]/ }"
+            _verb="${_verb/--/\"$CEN_NAME --help --verbose\"}"
+            [ "$_verb" = '-' ] || printf "${_verb//%/%%}\n"
+            return 1
+        fi
+    fi
 
     local _text _last
     while IFS= read -r _text ; do

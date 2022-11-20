@@ -7,7 +7,7 @@
 
 # installation defaults are: <root>[:<bin>[:<tools>[:<repo>]]]
 if [ -z "$CEN_INSTALL" ] ; then
-    if [ "$EUID" = "0" ] ; then
+    if [ "$EUID" = 0 ] ; then
         CEN_INSTALL="/usr/local/shared/centauri:/usr/local/bin:/opt/centauritools"
     else
         CEN_INSTALL="$HOME/.centauritools:$HOME/bin:$HOME/centauritools"
@@ -15,14 +15,14 @@ if [ -z "$CEN_INSTALL" ] ; then
 fi
 
 # find the library root folder
-if [ "${CEN_ROOT:-.}" = "." ] ; then
+if [ "${CEN_ROOT:-.}" = '.' ] ; then
     export CEN_ROOT="${CEN_INSTALL%%:*}"
     export CEN_TOOLS="$CEN_ROOT/tools"
     if [ ! "$CEN_TOOLS/_centauri_bash_lib" -ef "$BASH_SOURCE" ] ; then
         CEN_TOOLS=$(readlink -f "$(type -p _centauri_bash_lib)")
         CEN_TOOLS="${CEN_TOOLS%/*}" ; CEN_ROOT="${CEN_TOOLS%/*}"
     fi
-elif [ -z "$CEN_TOOLS" ] ; then
+elif [ "${CEN_TOOLS:--}" = '-' ] ; then
     export CEN_TOOLS="$CEN_ROOT/tools"
 fi
 export CEN_LIBRARY="$CEN_ROOT/library"

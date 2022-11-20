@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_mnt = Centauri Bash Library mount Support
+# _centauri_bash_mnt = centauri-bash-lib: Storage device mount support
 #
 # Call:     . _centauri_bash_mnt [-d|-m]
 #
@@ -40,8 +40,7 @@ CEN_MOUNT_EXC=(cgroup cgroup2 proc \
 CEN_MNT_OPT_D=              # automount options ...
 CEN_MNT_OPT_M=
 
-CEN_MNT_QUIT=               # for quit hook
-CEN_MNT_OLVL=               # quit output mode
+CEN_MNT_OLVL=               # unmount flag, output mode
 
 declare -g -A CEN_MNT_AMAP  # automount map
 
@@ -305,18 +304,8 @@ _cen_automount_mesg() {
 
 # register for quit hook: <kind> <dev> <desc> <levl>
 _cen_automount_register() {
-    if [ -z "$CEN_MNT_QUIT" ] ; then
-        CEN_MNT_QUIT="$CEN_HOOK_QUIT" ; CEN_HOOK_QUIT=_cen_automount_quit
-    fi
     CEN_MNT_AMAP["$1:$2"]="$3" ; CEN_MNT_OLVL="$4"
     $CEN_TRACE -a "Registered for unmount quit hook: $1 $2"
-}
-
-# hook called from quit() to unmount devices
-_cen_automount_quit() {
-    $CEN_TRACE -a "Running 'automount' quit hook ("${#CEN_MNT_AMAP[@]}" mounts)"
-    automount -q
-    $CEN_MNT_QUIT "$@"
 }
 
 # ------------------------------------------------------------------------------
@@ -656,6 +645,13 @@ _cen_mnt_add_opts() {
 # ------------------------------------------------------------------------------
 # Startup
 # ------------------------------------------------------------------------------
+
+# called from quit() to unmount devices
+_cen_mnt_quit() {
+    [ -z "$CEN_MNT_OLVL" ] && return
+    $CEN_TRACE -a "Running 'automount' quit hook ("${#CEN_MNT_AMAP[@]}" mounts)"
+    automount -q
+}
 
 while [ "${1::1}" = "-" ] ; do
     case "$1" in

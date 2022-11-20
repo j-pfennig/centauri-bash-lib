@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_win</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_win")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_web.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_win' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_win</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> GUI Windowing Support</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_win</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: GUI windowing Support</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_win</b></div>
@@ -85,6 +85,7 @@ message <b>-d</b> +3 <b>&quot;Hello&quot;</b> <b>&quot;$CEN_CONFIRM&quot;</b></p
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-c</b>  check for a GUI feature
 <b>-e</b>  error message if init to GUI is not possible
+<b>-f</b>  error are fatal
 <b>-g</b>  set GUI to be used (default is <b>&quot;kde&quot;</b>)
 <b>-i</b>  initialize GUI mode if possible
 <b>-l</b>  launch GUI application in background
@@ -99,6 +100,10 @@ message <b>-d</b> +3 <b>&quot;Hello&quot;</b> <b>&quot;$CEN_CONFIRM&quot;</b></p
 <i>title</i>     Window title for a launched application
 <i>app</i>       path or name or generic name <b>&quot;browser&quot;</b> <b>&quot;editor&quot;</b> <b>&quot;console&quot;</b>
 <i>feature</i>   GUI feature, see below. Use - to check for full support</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Init:</div>
+<div class='def-block'>initialization is controlled via option <b>-i</b>. If not used explicitly to turn GUI-Mode on/off (<b>-i</b> 1 or <b>-i</b> 0) the automatic detection mode (<b>-i</b> 2) is run implicitly. Auto detection calls <b>context -q</b> and may run <b>xsetroot</b> to create an X11 root window.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Support:</div>

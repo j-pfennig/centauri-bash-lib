@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_xml = Centauri Bash Library XML/HTML Support
+# _centauri_bash_xml = centauri-bash-lib: Support for generating XML/HTML
 #
 # Call:     . _centauri_bash_xml
 #
@@ -24,6 +24,7 @@
 CEN_MODULES["_centauri_bash_xml"]="0.20:1"
 
 CEN_XML_BUFFER=
+CEN_XML_ERROR=          # error flag
 CEN_XML_HTML=           # HTML version
 CEN_XML_INDENT=
 CEN_XML_DOCNODE=        # root node -- or "-"  -- or empty
@@ -255,8 +256,9 @@ xml_document() {
 
     # initialize output
     if [ -n "$_optb" ] ; then
-        if [ "${_oout:--}" = '-' ] ; then
-            CEN_XML_OUTPUT=
+        CEN_XML_ERROR=
+        if [ "${_oout:--}" = '-' -o "$_oout" = '/dev/stdout' ] ; then
+            CEN_XML_OUTPUT=1
         elif [ "$_oout" = '+' ] ; then
             CEN_XML_OUTPUT='+'
         elif [ -z "${_oout//[0-9]/}" ] ; then
@@ -337,7 +339,7 @@ xml_document() {
             xml_element "$CEN_XML_DOCNODE" -e -u
         fi
         xml_flush -n
-        [ "${CEN_XML_OUTPUT:-+}" = '+' ] || redirect -s -v CEN_XML_OUTPUT
+        [ -n "${CEN_XML_OUTPUT/[+12]/}" ] && redirect -s -v CEN_XML_OUTPUT
     fi
 }
 
@@ -548,6 +550,7 @@ xml_flush() {
     # reset state
     if [ -n "$_ores" ] ; then
         CEN_XML_BUFFER=
+        CEN_XML_ERROR=
         CEN_XML_HTML=
         CEN_XML_INDENT=
         CEN_XML_DOCNODE=
@@ -557,11 +560,14 @@ xml_flush() {
         CEN_XML_ARGS=() ; CEN_XML_ATTR=()
     fi
 
+    if [ -n "$CEN_XML_ERROR" ] ; then           # ignore after write error
+        CEN_XML_BUFFER= ; return 1
+    fi
     [ -n "$_over" ] && CEN_XML_HTML="$_over"
     [ -z "$CEN_XML_OUTPUT" ] && CEN_XML_OUTPUT="$_ohan"
 
     # right trim
-    [ -z "$CEN_XML_BUFFER" ] && return
+    [ -z "$CEN_XML_BUFFER" ] && return 0
     local _blen="${#CEN_XML_BUFFER}"
     while [ "$_blen" -gt 0 ] ; do
         [ "${CEN_XML_BUFFER:_blen-1:1}" = ' ' ] || break
@@ -586,10 +592,13 @@ xml_flush() {
             CEN_XML_BUFFER="${CEN_XML_BUFFER::_blen}"
             [ "$CEN_XML_FORMAT" = "1" ] && CEN_XML_BUFFER+="$CEN_XML_INDENT"
             return 0
-        elif [ "$_ohan" = '-' ] ; then          # send to stdout
-            printf '%s' "${CEN_XML_BUFFER::_blen}"
+        elif [ "$_ohan" = 1 ] ; then            # send to stdout
+            printf '%s' "${CEN_XML_BUFFER::_blen}" 2>/dev/null
         else
             printf '%s' "${CEN_XML_BUFFER::_blen}" >&$_ohan
+        fi
+        if [ $? != 0 ] ; then
+            CEN_XML_ERROR=1 ; $CEN_TRACE -c " error" "write failed" ; return 1
         fi
     fi
 
@@ -598,6 +607,7 @@ xml_flush() {
     else
         CEN_XML_BUFFER=
     fi
+    return 0
 }
 
 # ------------------------------------------------------------------------------

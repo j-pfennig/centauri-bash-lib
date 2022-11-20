@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_run = Centauri Bash Library Configuration related Functions
+# _centauri_bash_run = centauri-bash-lib: Configuration related functions
 #
 # Call:     . _centauri_bash_run
 #
@@ -64,7 +64,134 @@ CEN_SHORTPATH_DAT=      # dynamically loaded data
 CEN_TERMINAL_DAT=
 
 # ------------------------------------------------------------------------------
-# launcher config + Configuration section in centauri-bash-lib
+# Library configuration + The centauri-bash-lib configuration file
+#
+#+General:  In addition to built-in data some library functions can use information
+#           configured in the optional file "centauri-bash-lib" at folder
+#           "$CEN_ROOT/default". The file uses INI style syntax, e.g. is organized
+#           into sections. Empty lines and comments are ignored. Most of the data
+#           gets cached at run time, so feel free to use comments for documentation.
+#
+#+Sections: All sections are optional and may be missing or empty.
+#
+#,          - [shortpath]   for [[shortpath()]] and [[centauripaths]], see [[shortpath Config]]
+#,          - [launcher]    for [[launcher()]] and [[centaurilauncher]], see [[launcher Config]]
+#,          - [terminal]    for [[terminal()]] and [[centaurilauncher]], see [[terminal Config]]
+#,          - [library]     miscellaneous data, see [[prettypath]] and [[Installation]]
+#,          - [proxy]       script code added to the proxy, see [[Library Proxy]]
+#
+#+Any extra sections can be added for local needs. See [[configfile]] for details on how to
+# process configuration files.
+#
+# Examples: (1) A simple configuration for use with Termux (Linux on Android):
+#
+#.          [library]
+#.  °   # installation defaults (root, binaries, shortcut, repository, owner)
+#.  °   defaults    private  $HOME/.centauri $HOME/bin $HOME/centauritools
+#.  °   defaults    shared   /var/centauri /usr/local/bin /opt/centauritools
+#.
+#.  [launcher]
+#.  °   # desktop apps (- is for any desktop session, must be last)
+#.  °   editor      -       kwrite featherpad
+#.  °   files       -       dolphin
+#.  °   browser     -       firefox falkon qml
+#.  °   kiosk       -       qml falkon firefox
+#.  °   console     -       @terminal
+#.  °   httpd       -       lighttpd
+#.
+#.  °   # terminal apps (tty is for non-desktop mode)
+#.  °   editor      tty     nano vim
+#.  °   files       tty     mc
+#.  °   browser     tty     w3m
+#.
+#.  °   # qml needs a few hints (@_cen_win_qmlweb creates the qml script)
+#.  °   -ignore:qml         qtchooser
+#.  °   -path:qml           /usr/lib/*/qt5/bin/qml
+#.  °   browser:qml         @launcher_qmlweb 1024 768 1.2
+#.  °   kiosk:qml           @launcher_qmlweb  1000 800 1.2
+#.  °   httpd:lighttpd      @launcher_httpd 8080 /var/www
+#.
+#.  °   # command line args
+#.  °   kiosk:firefox       --fullscreen --new-window
+#.  °   browser:firefox     --new-window
+#.
+#.  °   kiosk:falkon        --fullscreen --new-window --no-extensions
+#.  °   browser:falkon      --new-window --no-extensions
+#.
+#.  °   # info text for apps (not commands)
+#.  °   info:editor         text editor
+#.  °   info:files          file manager
+#.  °   info:browser        web browser
+#.  °   info:kiosk          web browser in kiosk mode
+#.  °   info:console        command line terminal
+#.  °   info:httpd          launch a private web server
+#.
+#.  [terminal]
+#.  °   # emulators for KDE/Gnome sessions:
+#.  °   emulator    kde     konsole qterminal gnome-terminal xterm
+#.  °   emulator    gnome   gnome-terminal konsole qterminal xterm
+#.  °   # other session types (must be last emulator line):
+#.  °   emulator    -       qterminal gnome-terminal konsole  xterm
+#.
+#.  °   # options for emulator apps
+#.  °   -args:konsole       --hide-tabbar --hide-menubar --nofork
+#.  °   -title:konsole      --title
+#.
+#.  °   -args:gnome-terminal  --hide-menubar --wait --
+#.  °   -title:gnome-terminal --title
+#.
+#.  °   -args:xterm         -fa Monospace -fs 14 -geometry 100x30
+#.
+#.  °   # in many cases we don't need to run an emulator, so we check our ancestors until
+#.  °   # we find something blacklisted (start emulator) or whitelisted (no emulator):
+#.
+#.  °   # no emulator if we find a login shell
+#.  °   login               -bash|-dash|-csh|-sh
+#.  °   # continue search if ancestor is a shell
+#.  °   shell               bash|dash|csh|sh
+#.  °   # no emulator for these ...
+#.  °   white               sudo|kdeinit.*\ konsole.*|konsole.*|gnome.*|qterminal|xterm
+#.  °   # needing to launch emulator ...
+#.  °   black               krunner.*|lx.*-session|plasma.*
+#.  °   # no desktop, no xroot
+#.  °   black-startup       sddm.*|startkde.*|startplasma.*
+#.
+#.  [shortpath]
+#.  °   # These are examples of shortcuts for centauripaths (alias ccd)
+#.  °   path "export"    "$/export"                   "Export Folder"
+#.  °   path "docs"      "$/usr/share/doc"            "Linux Documentation"
+#.  °   path "bin"       "${CEN_PATHS[1]}"            "Linux Anwendungen"
+#.  °   path "etc"       "${CEN_PATHS[2]}"            "Linux Konfiguration"
+#.  °   path "docs"      "/share/doc|/usr/share/doc"  "Linux Dokumentation"
+#.
+#.  °   path "android"   "$HOME/storage"              "Android gemeinsamer Speicer"
+#.
+#.  °   path "export"    "$HOME/storage/shared/export"         "Export Verzeichnis"
+#.  °   path "bilder"    "$HOME/storage/shared/export/Bilder"  "Bilder (in export)"
+#.  °   path "musik"     "$HOME/storage/shared/export/Musik"   "Musik  (in export)"
+#.  °   path "rezepte"   "$HOME/storage/shared/export/Rezepte" "Kochrezepte"
+#
+#           (2) A more complex config for a native Linux system:
+#
+#.          [shortpath]
+#.  °       # ...
+#.  [launcher]
+#.  °       # ...
+#.  [terminal]
+#.  °       # ...
+#.  [library]
+#.  °   defaults shared  "/var/centauri" "/usr/local/bin" "/admin" \
+#.  °                    "/var/centauri/admin" "root:staff"
+#.  °   defaults private $HOME/.centauri $HOME/bin $HOME/centauritools
+#.  °   include "utilities/show-unattended-upgrades" "virtualbox/vbox"
+#.  °   exclude ""
+#.  °   obsolete "centaurigencfg" "centaurisync"
+#.  °   service "centauriswitch" "centauriroute"
+#.  °   repath -l "/dev/shm(/.*)?" "/tmp%1"
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# launcher Config + Section in centauri-bash-lib configuration file
 #
 #+General:  The [[launcher()]] function reads the (cached) configuration statements
 #           to find an executable command (or a function) for a generic name.
@@ -101,34 +228,34 @@ CEN_TERMINAL_DAT=
 #           °°<text>        § short command description
 #
 #           Configuration Example:
-#.          [launcher]
-#.              # desktop apps (- is for any desktop session, must be last)
-#.              editor      -       kwrite featherpad
-#.              browser     -       unfug firefox falkon qml
-#.              kiosk       -       qml falkon sauwetter firefox
-#.              terminal    -       @terminal quarkteig
+#.  °       [launcher]
+#.  °           # desktop apps (- is for any desktop session, must be last)
+#.  °           editor      -       kwrite featherpad
+#.  °           browser     -       unfug firefox falkon qml
+#.  °           kiosk       -       qml falkon sauwetter firefox
+#.  °           terminal    -       @terminal quarkteig
 #.
-#.              # terminal apps (tty is for non-desktop mode)
-#.              editor      tty     nano vim
-#.              browser     tty     w3m
+#.  °           # terminal apps (tty is for non-desktop mode)
+#.  °           editor      tty     nano vim
+#.  °           browser     tty     w3m
 #.
-#.              # qml needs some care (@launcher_qmlweb creates the qml script)
-#.              -ignore:qml         qtchooser
-#.              -path:qml           /usr/lib/*/qt5/bin/qml
-#.              browser:qml         @launcher_qmlweb 1024 768 1.2
-#.              kiosk:qml           @launcher_qmlweb 1000 800 1.2
+#.  °           # qml needs some care (@launcher_qmlweb creates the qml script)
+#.  °           -ignore:qml         qtchooser
+#.  °           -path:qml           /usr/lib/*/qt5/bin/qml
+#.  °           browser:qml         @launcher_qmlweb 1024 768 1.2
+#.  °           kiosk:qml           @launcher_qmlweb 1000 800 1.2
 #.
-#.              # command line args
-#.              kiosk:firefox       --fullscreen --new-window
-#.              browser:firefox     --new-window
-#.              kiosk:falkon        --fullscreen --new-window --no-extensions
-#.              browser:falkon      --new-window --no-extensions
+#.  °           # command line args
+#.  °           kiosk:firefox       --fullscreen --new-window
+#.  °           browser:firefox     --new-window
+#.  °           kiosk:falkon        --fullscreen --new-window --no-extensions
+#.  °           browser:falkon      --new-window --no-extensions
 #.
-#.              # info text for generic names (not commands)
-#.              info:editor         text editor
-#.              info:browser        web browser
-#.              info:kiosk          web browser in kiosk mode
-#.              info:terminal       terminal emulator
+#.  °           # info text for generic names (not commands)
+#.  °           info:editor         text editor
+#.  °           info:browser        web browser
+#.  °           info:kiosk          web browser in kiosk mode
+#.  °           info:terminal       terminal emulator
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
@@ -184,6 +311,7 @@ CEN_TERMINAL_DAT=
 # Call:     (1) launcher [-f|-q] [-m <mode>] [-t <titl>] -o <desk> [--] <what> <arg>...
 #           (2) launcher [-f|-q] [-t <titl>] -n -o <desk> -a <rslt> [--] <what> <arg>...
 #           (3) launcher [-f|-q] -l <lsel> -o <desk> -a <rslt>
+#           (4) launcher -x [-m <mode>] [-t <title>] [-y <desk>] <opt>... -- <arg>...
 #
 # Options:  -a  array of resulting command words (default is CEN_LAUNCHER)
 #           -f  errors are fatal
@@ -194,6 +322,7 @@ CEN_TERMINAL_DAT=
 #           -q  no error messages
 #           -r  ignore --dryrun
 #           -t  window title (supported by [[terminal()]] and callback)
+#           -x  run a command or function via system()
 #           -y  override session type
 #
 #           [*] these options are mutually exclusive
@@ -226,6 +355,9 @@ CEN_TERMINAL_DAT=
 # fields are delimited by "\a". The <tool>... names are separated by spaces
 # (as in the config line). The <flag> field is only present for **-flag:**<what>
 # statements.
+#
+#+Form (4) is used to run a command or function, typically from inside a launcher
+# function.
 #
 # Examples: (1) Launch browser as independent process
 #.          launcher -m 3 -- browser || quit -e - "failed to run browser"
@@ -368,11 +500,11 @@ launcher() {
 
     # find an executable command
     for _name in "${_apps[@]}" ; do
-        $CEN_TRACE -a "launcher: check:" "$_name"
+        $CEN_TRACE -a -c " check" -- "$_name"
         # comaand path or command is a function
         _path="${_pard[-path:$_name]}"                  # -path:xxx option
         if [ -n "$_path" ] ; then
-            $CEN_TRACE -a "launcher: path :" "$_path"
+            $CEN_TRACE -a -c " path" -- "$_path"
         elif [ "${_name::1}" = '@' ] ; then             # command function
              isfunction -c -- "${_name:1}" -x $_odsk || continue
             _path="$_name" ; break
@@ -388,7 +520,7 @@ launcher() {
             if ! prettypath -c -s _temp -q -- "$_path" ; then
                 _path= ; continue
             elif [ "${_temp##*/}" = "$_igno" ] ; then
-                $CEN_TRACE2 -a "launcher: igno.:" "$_name = $_igno"
+                $CEN_TRACE2 -a -c " ignore" -- "$_name = $_igno"
                 _path= ; continue
             fi
         fi
@@ -398,10 +530,10 @@ launcher() {
          if [ "${_temp::1}" = '@' ] ; then
             _temp="${_temp:1}" ; _temp="${_temp%% *}"
             if ! isfunction -- "$_temp" ; then
-                $CEN_TRACE2 -a "launcher: needs:" "$_temp"
+                $CEN_TRACE2 -a -c " needs" -- "$_temp"
                 _path= ; continue
             elif ! $_temp -x $_odsk -- "$_path" "${@:2}" ; then
-                $CEN_TRACE2 -a "launcher: error:" "$_temp"
+                $CEN_TRACE2 -a -c " error" -- "$_temp"
                 return 1
             fi
          fi
@@ -409,7 +541,7 @@ launcher() {
     done
 
     if [ -z "$_path" ] ; then
-        $CEN_TRACE2 -a "launcher: miss :" "$_what"
+        $CEN_TRACE2 -a -c " miss" -- "$_what"
         return 1
     fi
 
@@ -430,7 +562,7 @@ launcher() {
 }
 
 # ------------------------------------------------------------------------------
-# shortpath config + Configuration section in centauri-bash-lib
+# shortpath Config + Section in centauri-bash-lib configuration file
 #
 #+Format:   The [[shortpath()]] function reads the (cached) configuration statements.
 #           A shortcut is a short name that is resolved to the path of an existing
@@ -495,6 +627,29 @@ launcher() {
 #           -r  return raw string, not a path
 #
 # Return:   **true** at success or **false** otherwise.
+#
+#+General:  The library implements a user configurable shortcut system for paths
+#           by providing the [[shortpath()]] function and the [[centauripaths]] tool.
+#           Some paths below "$CEN_ROOT" are provided by the library itself. For
+#           example:
+#
+#.          shortpath "locale/de" "pers" ; message "${CEN_SHORTPATH[@]}"
+#
+#.          > centauripaths "loca/de" "persistent"
+#
+#+          will return "/var/centauri/locale/de" and "/var/centauri/persistent"
+#           if CEN_ROOT was set to "/var/centauri" at installation time.
+#
+#+Config:   Any number of user defined shortcuts can be added to the search list
+#           via "$CEN_ROOT/defaults/centauri_bash_lib". The following example
+#           adds the shortcut "backup" (must be in section "[centauripaths]"):
+#
+#.          path "backup" "/mnt/backup/Backup|$ROOT/Backup" "Backup volume/folder"
+#
+#+          The 1st argument of "path" is the shotcut name. The 2nd is a list
+#           of possible filesystem paths (separated by "|"). The last argument
+#           is a textual description. The shortcut will be resolved to the first
+#           existing filesystem path.
 #
 #+The function loops over a (chached) list of shorcut definition lines. These are
 # loaded at 1st call from "centauri-bash-lib" section "[shortpath]". The format is
@@ -673,7 +828,7 @@ shortpath() {
 }
 
 # ------------------------------------------------------------------------------
-# terminal config + Configuration section in centauri-bash-lib
+# terminal Config + Section in centauri-bash-lib configuration file
 #
 #+General: The [[terminal()]] function reads the (cached) configuration statements
 #          to find an executable command to be run as a console emulator.
@@ -738,6 +893,7 @@ shortpath() {
 #           (2) terminal [-f|-q] [-m <mode>] [-o <over>] [-t <titl>] [-y <desl>] [--] <arg>...
 #
 # Options:  -a  array of resulting command words (default is CEN_TERMINAL)
+#           -b
 #           -c  force check if a terminal emulator must be run
 #           -f  error are fatal
 #           -m  lauch per exec or in background
@@ -781,7 +937,7 @@ shortpath() {
 #,          °°CEN_IS_DESKTOP=1      # have desktop need emulator
 #,          °°CEN_IS_DESKTOP=2      # have no desktop but need emulator
 #
-#+All common terminal emulators seen to support command line option "-e" that is
+#+All common terminal emulators seem to support command line option "-e" that is
 # followed by a list of arguments that are to be executed in a shell.
 #
 # Examples: xxx
@@ -918,7 +1074,7 @@ terminal() {
             local _pcmd="/proc/$_ppid/cmdline" ; [ -r "$_pcmd" ] || break
             read -r -d '' _pcmd <"$_pcmd"
             [ "${_pcmd::1}" = "/" -o "${_pcmd::2}" = "./" ] && _pcmd="${_pcmd##*/}" ;
-            $CEN_TRACE2 -a "terminal: PARENT=$_pcmd"
+            $CEN_TRACE2 -a -c " parent" -- "$_pcmd"
 
             # login: no emulator needed
             if [[ "$_pcmd" =~ ^(${CEN_TERMINAL_DAT[4]})$ ]] ; then
@@ -946,30 +1102,31 @@ terminal() {
                 CEN_IS_DESKTOP=2
             # black: must launch emulator
             elif [[ "$_pcmd" =~ ^(${CEN_TERMINAL_DAT[7]})$ ]] ; then
-                    CEN_IS_DESKTOP=1
+                CEN_IS_DESKTOP=1
 
             # don't know, don't launch a konsole
             elif [ "$CEN_VERB" -gt 2 ] ; then
-                system -r -q -- logger -t "centauri_bash_lib" "terminal: PARENT=$_pcmd"
+                $CEN_TRACE -c " parent" -- "$_pcmd"
+                #system -r -q -- logger -t "centauri_bash_lib" "terminal: PARENT=$_pcmd"
             fi
             break
         done
     fi
-    $CEN_TRACE2 -a "terminal: CEN_IS_DESKTOP=$CEN_IS_DESKTOP"
+    $CEN_TRACE2 -a -c " result" "CEN_IS_DESKTOP=$CEN_IS_DESKTOP"
     [ -n "$_ochk" ] && return 0
 
-    # no emulator or shell, just run
 
     local _strt="$CEN_IS_DESKTOP" _xopt _sepa='-e'
     [ "$_over" = 1 ] && _strt=1
     [ "$_over" = 2 ] && _strt=0
 
+    # no emulator or shell, just run
     if [ "$_strt" = 0 ] ; then
         [ "$#" = 0 ] && _acmd=(bash -i)
         _acmd+=("$@")
-    else
 
     # build console command
+    else
         set -f ; _acmd=("$CEN_RUN_EMULATOR" ${CEN_TERMINAL_DAT[1]}) ; set +f
         if [ "${_acmd[-1]}" = '--' ] ; then
             unset _acmd[-1] ; _sepa='--'
@@ -996,9 +1153,9 @@ terminal() {
 }
 
 # ------------------------------------------------------------------------------
-# use system to run a command: -m <mode> -t <title> -y <desk> <opt>... -- <ag>...
+# use system to run a command: -m <mode> -t <title> -y <desk> <opt>... -- <arg>...
 #
-# The '--' separator is required, all parameters befor are options or option args.
+# The '--' separator is required, all parameters before are options or option args.
 # The 1st argument must be a full path (starts with /) or a function (starts with @)
 #
 # mode: 0=just run   1=exec (no return)  2=background   3=disown
@@ -1108,14 +1265,14 @@ _cen_run_proxy() {
 CEN_INSTALL="${CEN_INSTALL:-$CEN_ROOT}"
 
 # find the library root folder
-if [ "\${CEN_ROOT:-.}" = "." ] ; then
+if [ "\${CEN_ROOT:-.}" = '.' ] ; then
     export CEN_ROOT="\${CEN_INSTALL%%:*}"
     export CEN_TOOLS="\$CEN_ROOT/tools"
     if [ ! "\$CEN_TOOLS/_centauri_bash_lib" -ef "\$BASH_SOURCE" ] ; then
         CEN_TOOLS=\$(readlink -f "\$(type -p _centauri_bash_lib)")
         CEN_TOOLS="\${CEN_TOOLS%/*}" ; CEN_ROOT="\${CEN_TOOLS%/*}"
     fi
-elif [ -z "\$CEN_TOOLS" ] ; then
+elif [ "\${CEN_TOOLS:--}" = '-' ] ; then
     export CEN_TOOLS="\$CEN_ROOT/tools"
 fi
 export CEN_LIBRARY="\$CEN_ROOT/library"
@@ -1130,9 +1287,9 @@ $_rexp$_prox
 
 # load real lib, use packed version if newer
 if [ "\$CEN_LIBRARY/_centauri_bash_lib.p" -nt "\$CEN_LIBRARY/_centauri_bash_lib" ] ; then
-    . \$CEN_LIBRARY/_centauri_bash_lib.p "\$@" || exit 2
+    . "\$CEN_LIBRARY/_centauri_bash_lib.p" "\$@" || exit 2
 else
-    . \$CEN_LIBRARY/_centauri_bash_lib "\$@" || exit 2
+    . "\$CEN_LIBRARY/_centauri_bash_lib" "\$@" || exit 2
 fi
 
 # init transient folder after boot (root only)

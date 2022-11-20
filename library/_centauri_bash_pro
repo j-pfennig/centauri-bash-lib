@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_pro = Centauri Bash Library Progress Display Support
+# _centauri_bash_pro = centauri-bash-lib: Progress display support
 #
 # Call:     . _centauri_bash_pro
 #
@@ -17,10 +17,12 @@
 # Copyright Dr. J. Pfennig (c) 2022
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_pro"]="0.01:1"
+CEN_MODULES["_centauri_bash_pro"]="0.02:1"
 
 # CEN_CONSOLE           # imported ...
 # CEN_WINDOWS
+
+CEN_PROGRESS=           # 0:disabled  1:enbabled  2:active
 
 # ------------------------------------------------------------------------------
 # progress - progress bar or incremental progress reporting
@@ -147,9 +149,11 @@ CEN_MODULES["_centauri_bash_pro"]="0.01:1"
 #
 # ------------------------------------------------------------------------------
 progress() {
+    # default is -e (remove progress message/window)
+    [ $# = 0 ] && _fend=0
 
     # parse options
-    local _prog _fdel _fend _flin _find _ftxt _foff _step _work _stat=0 _aind="$CEN_AUTOIND"
+    local _prog _fdel _fend _flin _find _ftxt _step _work _stat=0 _aind="$CEN_AUTOIND"
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       -)    break ;;
@@ -163,7 +167,7 @@ progress() {
       -p)   _ftxt=2 ;;
       -s)   shift ; _step="$1" ;;
       -t)   _ftxt=1 ;;
-      -v)   [ "$CEN_VERB" -gt 1 ] && _foff=1 ;;
+      -v)   [ "$CEN_VERB" -gt 1 ] && CEN_PROGRESS=0 ;;
       -w)   shift ; _work="$1" ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -171,35 +175,43 @@ progress() {
 
     # get console / windows status, init console mode
 
-    if [ -z "$CEN_CONSOLE" ] ; then             # console() has not run
-        if [ "$CEN_OPT_GUI" = 0 ] ; then        # disables auto-init
-            _foff=   # 1
+    if [ -z "$CEN_PROGRESS" ] ; then            # not yet initialized
+        if [ -n "$CEN_PAGER" -o "$CEN_VERB" -lt 1 -o "$CEN_CONSOLE" = 0 ] ; then
+            # disable for --quiet or output not to console
+            CEN_PROGRESS=0                      # no error return!
+        elif [ "$CEN_OPT_GUI" = 0 ] ; then      # disables auto-init
+            _stat=1
+            trace -c ' disabled' "option --gui=0"
         elif [ -z "${CEN_MODULES["_centauri_bash_win"]}" ] ; then
             console || _stat=$?
         elif [ -z "$CEN_WINDOWS" ] ; then       # _centauri_bash_win is loaded
             windows || _stat=$?                 # must run windows()
         fi
-        if [ -n "$_work" ] ; then               # must always run
-            :
-        elif [ "$_stat" != 0 ] ; then           # failed to init
-            return $_stat
-        elif [ -n "$CEN_WINDOWS" ] ; then       # foreward to _centauri_bash_win
-            _cen_win_prog "$_prog" "$_fdel" "$_fend" "$_flin" "$_step" "$_ftxt" "$@" || _stat=$?
-            return $_stat
+
+        if [ "$_stat" != 0 ] ; then             # failed to init
+            CEN_PROGRESS=0
+            [ -z "$_work" ] && return $_stat    # worker must always run
         fi
     fi
 
-    # disable for --quiet or output not to console
-    [ -n "$CEN_PAGER" ] && _foff=1
-    [ "${CEN_CONSOLE:-1}" = 0 ] && _foff=1
+    # flag open progress message / window
+    if [ "$CEN_PROGRESS" != 0 ] ;then
+        [ -z "$_fend" ] && CEN_PROGRESS=2 || CEN_PROGRESS=1
+    fi
+    [ "$_fend" = 0 ] && _fend=
 
+    # run worker (always) or progress implementation
     if [ -n "$_work" ] ; then                   # worker mode
         local _mini="${_step#*:}" ; [ "$_mini" = "$_step" ] && _mini=1
-        [ -n "$_foff" ] && _mini=0
+        [ "$CEN_PROGRESS" = 0 ] && _mini=0
         _cen_pro_work "$_work" "$_fdel" "${_step%:*}" "$_mini" "$_prog" "$@" || _stat=$?
-    elif [ -z "$_foff" ] ; then
-         _cen_con_prog "$_prog" "$_fend" "$_flin" "$_find" "$_step" "$_ftxt" "$@" || _stat=$?
-        [ -n "$_fdel" ] && sleep "$_fdel"
+    elif [ "$CEN_PROGRESS" != 0 ] ; then
+        if [ -n "$CEN_WINDOWS" ] ; then         # foreward to _centauri_bash_win
+            _cen_win_prog "$_prog" "$_fdel" "$_fend" "$_flin" "$_step" "$_ftxt" "$@" || _stat=$?
+        else
+            _cen_con_prog "$_prog" "$_fend" "$_flin" "$_find" "$_step" "$_ftxt" "$@" || _stat=$?
+            [ -n "$_fdel" ] && sleep "$_fdel"
+        fi
     fi
     return "$_stat"
 }
@@ -261,6 +273,13 @@ _cen_pro_work() {
     [ -n "$_fdel" ] && sleep "$_fdel"
     [ -n "$CEN_CONSOLE" ] && context -t -       # reset trap handler
     return "$_stat"
+}
+
+# ------------------------------------------------------------------------------
+# quit callback to cancel progress()
+# ------------------------------------------------------------------------------
+_cen_pro_quit() {
+    [ "${CEN_PROGRESS:-0}" -gt 1 ] && progress  # remove progress message/window
 }
 
 :

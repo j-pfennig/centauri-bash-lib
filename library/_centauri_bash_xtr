@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_xtr = Self-extractor for standalone scripts
+# _centauri_bash_xtr = centauri-bash-lib: Self-extractor for standalone scripts
 #
 # Call:    . _centauri_bash_xtr [-d] [-n]
 #

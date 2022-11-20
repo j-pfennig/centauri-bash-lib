@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_ins = Centauri Bash Library Installation Helpers
+# _centauri_bash_ins = centauri-bash-lib: Installation helpers
 #
 # Call:     . _centauri_bash_ins
 #
@@ -662,6 +662,7 @@ _cen_ins_systemd() {
         for farg in "$orig"/*.wants ; do
             [ -e "$farg" ] || continue
             forg="$farg" ; farg="$1/${farg##*/}"
+            trace -c "Processing" "$farg  =>  $fdir"
 
             # create wants folder/file
             fdir="$dest/${farg%.*}.wants"
@@ -672,12 +673,15 @@ _cen_ins_systemd() {
             local skey snam pref
             while read skey snam ; do                   # loop over .wants file
                 case "$skey" in
-                -)  remove -- "$fdir/$snam" ;;
+                -)  trace -a -c "... remove" -- "$snam"
+                    remove -- "$fdir/$snam" ;;
                 +)  [ "${snam::1}" = "/" ] && pref="${snam%/*}" || pref="$orig"
                     snam="${snam##*/}"
                     if [ -z "$_remove" ] ; then
+                        trace -a -c "... symlink" -- "$pref/${snam/@*./@.} => $snam"
                         symlink -i -s -- "$pref/${snam/@*./@.}" "$fdir/$snam"
                     else
+                        trace -a -c "... remove" -- "$snam"
                         remove -- "$fdir/$snam"
                     fi ;;
                 esac
@@ -1055,10 +1059,10 @@ _cen_ins_version() {
                           ___version_deb CEN_SYS_VERSION "$CEN_SYS_NICKNAME" ;;
         esac
 
-        $_otra -a $"System version:" "$CEN_SYS_VERSION ($CEN_SYS_DISTRO $CEN_SYS_NICKNAME)"
-        $_otra -a $"System family :" "$CEN_SYS_FAMILY"
-        $_otra -a -p $"%-6s version: %s" 'Bash'   "$BASH_VERSION"
-        $_otra -a -p $"%-6s version: %s" 'lib'    "${CEN_MODULES["_centauri_bash_lib"]}"
+        $_otra -a -c $"System version"  -- "$CEN_SYS_VERSION ($CEN_SYS_DISTRO $CEN_SYS_NICKNAME)"
+        $_otra -a -c $"System family"   -- "$CEN_SYS_FAMILY"
+        $_otra -a -c $"Bash    version" -- "$BASH_VERSION"
+        $_otra -a -c $"library version" -- "${CEN_MODULES["_centauri_bash_lib"]}"
     }
 
     ___version_kde() {
@@ -1087,10 +1091,10 @@ _cen_ins_version() {
             [ -z "$CEN_SYS_QTVERS"  ] && CEN_SYS_QTVERS="000.000.000"
             [ -z "$CEN_SYS_PLASMA"  ] && CEN_SYS_PLASMA="000.000.000"
 
-            $_otra -a -p $"%-6s version: %s" 'KDE'    "$CEN_SYS_KDEVERS"
-            $_otra -a -p $"%-6s version: %s" 'Qt'     "$CEN_SYS_QTVERS"
-            $_otra -a -p $"%-6s version: %s" 'Plasma' "$CEN_SYS_PLASMA"
-            $_otra -a $"Session type  :" "${CEN_DISPLAY:-tty}"
+            $_otra -a -c $"KDE     version" -- "$CEN_SYS_KDEVERS"
+            $_otra -a -c $"Qt      version" -- "$CEN_SYS_QTVERS"
+            $_otra -a -c $"Plasma  version" -- "$CEN_SYS_PLASMA"
+            $_otra -a -c $"Session type"    -- "${CEN_DISPLAY:-tty}"
         else
             $_otra -a $"No known KDE version found."
         fi
@@ -1119,7 +1123,7 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 }
 
 # ------------------------------------------------------------------------------
-# Service and Daemon + How centauri-bash-library supports Services and Daemons
+# Service and Daemon + How centauri-bash-lib supports Services and Daemons
 #
 #+General:  The library supports **SysV** and **systemd** system services. Services can be
 #           installed and removed via [[syssetup()]], which is implemented as **setup**
@@ -1311,13 +1315,13 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 # ------------------------------------------------------------------------------
 # Installation + Install/Update/Uninstall and Configuration
 #
-#+Install:  [[_centauri_bash_lib]] needs no complex setup program: just unpack the
+#+Install:  centauri-bash-lib itself needs no complex setup program: just unpack the
 #           source archive and run one of the included tools with **--info install**.
 #
-#           Shared installation (needs **root** rights):
+#           System-wide shared installation (needs **root** rights):
 #
 #.          arch="centauri_bash_lib.tgz"        # what to install
-#.          dest="/usr/local/share/centauri"    # where to install (CEN_ROOT)
+#.          dest="/usr/local/shared/centauri"   # where to install (CEN_ROOT)
 #.
 #.          sudo mkdir -p "$dest"
 #.          sudo tar -C "$dest" -xaf "$arch"
@@ -1446,19 +1450,19 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 # from the configuration file is compiled into the proxy during setup.
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-# Library Proxy + The _centauri_bash_lib Proxy
+# Library Proxy + The centauri-bash-lib Proxy
 #
 #+General:  The library should not be loaded directly, instead a proxy is used.
 #           The proxy is generated at installation time and is located at:
 #
-#,          **$CEN_ROOT/tools/_centauri_bash_lib**
+#,          **$CEN_TOOLS/_centauri_bash_lib**
 #
-#+          One responsibility of th proxy is to locate the library. This is
+#+          One responsibility of the proxy is to locate the library. This is
 #           why it should be sym-linked to "/usr/local/bin". More details are
 #           covered by the [[Initialization]] topic.
 #
 #+          Also the proxy loads the [[_centauri_bash_lib]] main module from
-#           "$CEN_ROOT/library" and is responsible for setting up a suitable
+#           "$CEN_LIBRARY" and is responsible for setting up a suitable
 #           environment. The proxy contains **ALL** hard configurable library
 #           parameters, see [[Installation]].
 #
@@ -1471,6 +1475,8 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #,          CEN_PATHS           # an array of paths used by the library
 #,          **TMPDIR**          # sanitized temp folders ...
 #,          **TMP**
+#
+#           CEN_LIBRARY and CEN_TOOLS are sub-folders of CEN_ROOT.
 #
 #+Embedding:When CEN_ROOT is non-empty and has any other value than "." the library
 #           search can be omitted. For setting up CEN_ROOT an expensive call to
@@ -1502,32 +1508,6 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #.             │   └── ...              # more laguages
 #.             ├── ...                  # other stuff
 #.             └── tools                # user scripts ($CEN_TOOLS)
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# Path Shortcuts + Shortcuts for filesystem paths
-#
-#+General:  The library implements a user configurable shortcut system for paths
-#           by providing the [[shortpath()]] function and the [[centauripaths]] tool.
-#           Some paths below "$CEN_ROOT" are provided by the library itself. For
-#           example:
-#
-#.          shortpath "locale/de" "pers" ; message "${CEN_SHORTPATH[@]}"
-#
-#.          > centauripaths "loca/de" "persistent"
-#
-#+          will return "/var/centauri/locale/de" and "/var/centauri/persistent"
-#           if CEN_ROOT was set to "/var/centauri" at installation time.
-#
-#+Config:   Any number of user defined shortcuts can be added to the search list
-#           via "$CEN_ROOT/defaults/centauri_bash_lib". The following example
-#           adds the shortcut "backup" (must be in section "[centauripaths]"):
-#
-#.          path "backup" "/mnt/backup/Backup|$ROOT/Backup" "Backup volume/folder"
-#
-#+          The 1st argument of "path" is the shotcut name. The 2nd is a list
-#           of possible filesystem paths (separated by "|"). The last argument
-#           is a textual description. The shortcut will be resolved to the first
-#           existing filesystem path.
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------

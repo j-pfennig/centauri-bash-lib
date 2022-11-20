@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_lib</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_lib")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_iom.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_lib' class='item-module'>
-<span>Module</span><span> - </span><span><a href="index.html">_centauri_bash_lib</a></span><span> - </span><span><a href="index.html">Centauri Bash Library</a> (main module)</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_lib</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Main module</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'><b>. _centauri_bash_lib</b> <i>opt</i>... [<b>-m</b> <i>name</i>]... [<b>--</b>] <b>&quot;$0&quot;</b> <i>vers</i> [<i>amin</i> [<i>amax</i>]]</div>
@@ -150,7 +150,7 @@ message <b>-m</b> <b>&quot;Line #1\nLine #2&quot;</b>       # same as above</pre
 <span>Function</span><span> - </span><span>error</span><span> - </span><span>output error message, set/test error status</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>error</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>-x</b>] [<b>-z</b>] [<b>--</b>] <i>msg</i>...
+<div class='def-text'><b>error</b> [<b>-a</b>|<b>-i</b>] [<b>-m</b>|<b>-n</b>] [<b>-p</b>] [<b>-r</b>] [<b>-x</b>] [<b>-f</b>|<b>-z</b>] [<b>--</b>] <i>msg</i>...
 <b>error</b> <b>-s</b> <i>exit</i>
 <b>error</b> [<b>-c</b>|<b>-t</b>|<b>-x</b>]
 <b>error</b> <b>-q</b> <i>msg</i>...</div>
@@ -159,6 +159,7 @@ message <b>-m</b> <b>&quot;Line #1\nLine #2&quot;</b>       # same as above</pre
 <div class='def-label'>Options:</div>
 <div class='def-text'>... most <a href="#message">message()</a> options (the implementation calls <b>message -e</b>)
 <b>-c</b>  clear <b>error</b> state (resets <b>CEN_EXIT</b> and <b>CEN_DONE</b> from 2 to 1)
+<b>-f</b>  make <b>error</b> fatal - same as calling <a href="#fatal">fatal()</a>
 <b>-s</b>  set exit code, saved as variable <b>CEN_EXIT</b>. The minimum value is 2,
     lower values are stored as 2. Updates <b>CEN_DONE</b> from 1 to 2.
 <b>-t</b>  silently check for pending <b>error</b> termination. Returns <b>false</b> for
@@ -322,7 +323,7 @@ my_quit() {
 </section>
 <section id='section-8'>
 <div id='apicheck' class='item-function'>
-<span>Function</span><span> - </span><span>apicheck</span><span> - </span><span>get/check api version</span></div>
+<span>Function</span><span> - </span><span>apicheck</span><span> - </span><span>Get/check library api version</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'><b>apicheck</b> [<b>-v</b> array] [<b>-c</b>|<b>-e</b>|<b>-f</b>] <b>-m</b> <i>module</i>
@@ -342,9 +343,31 @@ my_quit() {
 <i>module</i>    a module name like <b>&quot;_centauri_bash_ext&quot;</b>
 <i>version</i>   a version string <i>vers</i>[:<i>api</i>[:<i>min</i>]]</div>
 </div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><i>vers</i>      version string like N.MM (not interpreted by library)
+<i>api</i>       reqired minimum api level for a script or library api
+          level when used by <a href="_centauri_bash_lib.html">_centauri_bash_lib</a>
+<i>min</i>       minimum compatibility level of the library</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Return:</div>
+<div class='def-text'><b>true</b> on successs and <b>false</b> on failure.</div>
+</div>
 <div class='def-row'>
 <div class='def-label'>Remark:</div>
-<div class='def-block'>Return    <b>true</b> on successs and <b>false</b> on failure.</div>
+<div class='def-block'>Version checking happens automatically on module load. See <a href="_centauri_bash_doc.html#versioning">versioning</a> for details of the implementation.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>Parse (and check) a version string<pre><b>apicheck</b> <b>-v</b> flds <b>&quot;1.03:1&quot;</b>               # no check
+<b>apicheck</b> <b>-v</b> flds <b>-f</b> <b>&quot;1.03:1&quot;</b>            # check against library</pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>Get version of a loaded library module<pre><b>apicheck</b> <b>-v</b> flds <b>-m</b> _myname_mymode_usr  # check usr module</pre></div>
 </div>
 </section>
 <section id='section-9'>
@@ -482,7 +505,7 @@ done</pre></div>
 <div class='def-label'>Call:</div>
 <div class='def-text'>(1) <b>context</b> <b>-e</b> <i>mask</i> ...
 (2) <b>context</b> <b>-g</b> <i>mode</i> ...
-(2) <b>context</b> <b>-h</b> <i>hook</i> <i>vnam</i> ...
+(2) <b>context</b> <b>-h</b> <i>hnam</i> <i>vnam</i> <i>hook</i> ...
 (4) <b>context</b> <b>-t</b> [<i>trap</i>|<b>+</b>|<b>-</b>] ...
 (5) <b>context</b> <b>-v</b> [0-3] ...
 (6) <b>context</b> ... [<b>-r</b>] [<b>-s</b>] [<b>-c</b>|<b>-q</b>|<b>-x</b>] [<b>--</b>] <i>arg</i>...</div>
@@ -513,6 +536,9 @@ done</pre></div>
 <i>mode</i>   gui mode
 <i>text</i>   window title text
 <i>trap</i>   callback for trapped signals
+<i>hnam</i>   hook chain: <b>CEN_HOOK_MAIN</b> ... <b>CEN_HOOK_QUIT</b>
+<i>hvar</i>   variable receiving next hook entry
+<i>hook</i>   a hook function
 <i>arg</i>... arguments passed to <b>sudo</b> or console</div>
 </div>
 <div class='def-row'>
@@ -537,6 +563,11 @@ done</pre></div>
 <div class='def-row'>
 <div class='def-empty'></div>
 <div class='def-block'>Form (2): The <b>-g</b> option will load the <a href="_centauri_bash_con.html">_centauri_bash_con</a> or <a href="_centauri_bash_win.html">_centauri_bash_win</a> module, depending on <i>mode</i>.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (3): Adds a hook function to a hook chain if variable <i>vnam</i> is empty.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -622,7 +653,7 @@ quit <b>&quot;OK&quot;</b></pre></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
-<div class='def-text'><b>-a</b>  <b>create</b> new file or append to existing file
+<div class='def-text'><b>-a</b>  create new file or append to existing file
 <b>-c</b>  copy from /dev/stdin
 <b>-d</b>  create a folder (default is <b>create</b> file)
 <b>-f</b>  make errors fatal
@@ -648,7 +679,7 @@ quit <b>&quot;OK&quot;</b></pre></div>
 <div class='def-text'><b>true</b> on successs and <b>false</b> on failure.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remarks:</div>
+<div class='def-label'>Remark:</div>
 <div class='def-block'>When <i>path</i> exists and without <b>-t</b> (truncate) the function returns <b>true</b>. The <i>mode</i> of an existing folder will never be changed. An existing file will not be modified unless the <b>-t</b> option is used. See <a href="_centauri_bash_ext.html#attributes">attributes()</a> on how to change modes or owner of an existing file or folder.</div>
 </div>
 <div class='def-row'>
@@ -762,7 +793,7 @@ fi</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>A <i>script</i> must implement some default options like <b>--dryrun</b>, <b>--verbose</b>, <b>--quiet</b> and <b>--embed</b>.</div>
+<div class='def-block'>A <i>script</i> must implement some default options like <b>--dryrun</b>, <b>--verbose</b>, <b>--quiet</b> and <b>--embed</b>. If <i>script</i> cannot be executed a fatal error results.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -1189,7 +1220,7 @@ create <b>-t</b> <b>-v</b> <b>&quot;$data&quot;</b> <b>-h</b> - <b>&quot;$CEN_FO
 <span>Function</span><span> - </span><span>sysfind</span><span> - </span><span>check for commands and builtins</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>sysfind</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b>] [<b>-i</b>] [<b>-e</b>|<b>-f</b>|<b>-w</b>|<b>-q</b>] [<b>-p</b> <i>path</i>] [<b>-s</b> <i>var</i>] <i>cmd</i>...</div>
+<div class='def-text'><b>sysfind</b> [<b>-b</b>] [<b>-c</b>] [<b>-d</b>] [<b>-i</b>] [<b>-e</b>|<b>-f</b>|<b>-w</b>|<b>-q</b>] [<b>-p</b> <i>path</i>] [<b>-s</b> <i>var</i>] [<b>--</b>] <i>cmd</i>...</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -1266,12 +1297,10 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <span>Function</span><span> - </span><span>system</span><span> - </span><span>run a command, builtin or function optinally capturing the output</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
-<div class='def-text'><b>system</b> [<b>-e</b>|<b>-f</b>] [<b>-b</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-p</b>|<b>-q</b>|<b>-v</b>] [<b>-x</b>] <i>opt</i>... [<b>--</b>] <i>cmd</i> <i>arg</i>...
-<b>system</b> <i>opt</i>... <b>-u</b> <i>user</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
-<b>system</b> <i>opt</i>... <b>-s</b> <i>var</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
-<b>system</b> <i>opt</i>... <b>-a</b> <i>var</i> [<b>-d</b> <i>del</i>] [<b>--</b>] <i>cmd</i> <i>arg</i>...
-<b>system</b> <i>opt</i>... <b>-b</b> <i>inp</i> <i>out</i> [<b>--</b>] <i>cmd</i> <i>arg</i>...
-<b>system</b> [<b>-e</b>|<b>-f</b>] <b>-c</b> [<b>--</b>] <i>cmd</i>...</div>
+<div class='def-text'>(1) <b>system</b> [<b>-e</b>|<b>-f</b>] [<b>-b</b>] [<b>-i</b>] [<b>-n</b>] [<b>-m</b>|<b>-p</b>|<b>-q</b>|<b>-v</b>] [<b>-x</b>]
+           [<b>-s</b> <i>var</i>|<b>-a</b> <i>var</i>] [<b>-d</b> <i>del</i>] [<b>-g</b> <i>good</i>]
+           [<b>-u</b> <i>user</i>] [<b>--</b>] <i>cmd</i> <i>arg</i>...            # run command (or builtin)
+(2) <b>system</b> [<b>-e</b>|<b>-f</b>] <b>-c</b> [<b>--</b>] <i>cmd</i>...               # check commands</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -1281,6 +1310,7 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <b>-d</b>  array item delimiters, use with <b>-a</b>, default <b>&quot;\t\n&quot;</b>
 <b>-e</b>  print error message on error
 <b>-f</b>  call <a href="#fatal">fatal()</a> on error
+<b>-g</b>  no error processing if <i>cmd</i> exit code is less or equal <i>good</i>
 <b>-i</b>  add <b>-i</b> option to <a href="#message">message()</a> call
 <b>-m</b>  message for all output (implies <b>-s</b> and <b>-q</b>)
 <b>-n</b>  do not check command (implied if <i>cmd</i> is <b>eval</b>), allow script calls
@@ -1303,12 +1333,11 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 </div>
 <div class='def-row'>
 <div class='def-label'>Arguments:</div>
-<div class='def-text'><i>cmd</i>     command to be run
+<div class='def-text'><i>cmd</i>     external command (or builtin) to be run or checked
 <i>arg</i>...  options and arguments passed to <i>cmd</i>
-<i>inp</i>     command for input  (use &apos;:&apos; as noop)
-<i>out</i>     command for output (use &apos;:&apos; as noop)
 <i>var</i>     variable or array name to return a result
 <i>del</i>     element delimiters for result array
+<i>good</i>    highest non-error exit code (default: 0)
 <i>user</i>    a user name or <b>&quot;-&quot;</b> for <b>root</b></div>
 </div>
 <div class='def-row'>
@@ -1317,12 +1346,12 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 </div>
 <div class='def-row'>
 <div class='def-label'>Commands:</div>
-<div class='def-block'>The primary purpose of <b>system</b> is to run external commands. For bash builtins option <b>-b</b> must be used. A script function is executed only if option <b>-n</b> is used. In other words: by default builtins or functions are ignored and do not shadow external commands.</div>
+<div class='def-block'>Form (1): The primary purpose of <b>system</b> is to run external commands. For bash builtins option <b>-b</b> must be used. A script function is executed only if option <b>-n</b> is used. In other words: by default builtins or functions are ignored and do not shadow external commands.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>On execution without option <b>-n</b> external comands are prefixed with a filesystem path and bash builtins are run as <b>&quot;builtin &lt;cmd&gt;&quot;</b>.</div>
+<div class='def-block'>Option <b>-n</b> bypasses all <i>cmd</i> checks (and therefore also run builtins). Without option <b>-n</b> external comands are prefixed with a filesystem path. and bash builtins (see option <b>-b</b>) are run as <b>&quot;builtin &lt;cmd&gt;&quot;</b>.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -1332,11 +1361,11 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>Scripts that use external tools should use <b>&quot;system -c &lt;cmd&gt;...&quot;</b> early to check if the required tools are available.</div>
+<div class='def-block'>Form (2): Scripts that use external tools should use <b>&quot;system -c &lt;cmd&gt;...&quot;</b> early to check if the required tools are available.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Builtins:</div>
-<div class='def-block'>Loadable bash builtins are not automatically loaded, see module <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> and the <a href="autoload.html">autoload</a> tool. The bash <b>enable</b> command options <b>-a</b>/<b>-n</b> have no effect for the <b>system</b> function.</div>
+<div class='def-block'>Without option <b>-b</b> builtins are ignored. When using option <b>-b</b> loadable bash builtins may be loaded automatically, see module <a href="_centauri_bash_dyn.html">_centauri_bash_dyn</a> and the <a href="autoload.html">autoload</a> tool. The bash <b>enable</b> command  options <b>-a</b>/<b>-n</b> have no effect for the <b>system</b> function.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Caching:</div>
@@ -1377,7 +1406,7 @@ system <b>-e</b> <b>-n</b> <b>-z</b> <b>--</b> <b>&quot;$edit&quot;</b> &apos;my
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><pre><b>system</b> <b>-b</b> sleep 1                       # run builtin or program
+<div class='def-text'><pre><b>system</b> <b>-b</b> sleep 1                       # run builtin or command
 <b>system</b> rename <b>&quot;s/a/b/&quot;</b> *.tmp            # tool (/usr/bin/rename)
 <b>system</b> <b>-n</b> rename one two                # call a script function</pre></div>
 </div>

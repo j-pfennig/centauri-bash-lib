@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_con</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_con")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_cgi.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_con' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_con</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Console Support</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_con</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Console mode support</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_con</b> [<b>-n</b>|<b>-i</b>]</div>
@@ -106,25 +106,25 @@
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-a</b>  append result to <i>rslt</i>
-<b>-d</b>  deco style
+<b>-d</b>  decoration style
 <b>-l</b>  add new-line
 <b>-m</b>  multi-line mode, repeat decoration per line
 <b>-s</b>  save result to <i>rslt</i> (default is <b>CEN_DECORATE</b>)</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Modes:</div>
-<div class='def-block'>The mode can be -, a digit or a keyword. Most modes prepend the data with a starting escape sequence and append an escape to go back to normal text mode.</div>
+<div class='def-label'>Style:</div>
+<div class='def-block'>The <i>deco</i> paramater can be <b>&quot;-&quot;</b>, a digit or a keyword. Most modes prepend the data with a starting escape sequence and append an escape to go back to normal text mode.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'><b>-        </b>   just copy, no decoration
-<b>1  bold  </b>   bold text, back to normal
-<b>2  mark  </b>   inverted text, back to normal
-<b>3  italic</b>   italics text, back to normal
-<b>4  uline </b>   undelined text, back to normal
-<b>9  remove</b>   remove escape sequences from input
-<b>0  normal</b>   back to normal, than text</div>
+<div class='def-text'>  <b>-        </b>   just copy, no decoration
+  <b>1  bold  </b>   bold text, back to normal
+  <b>2  mark  </b>   inverted text, back to normal
+  <b>3  italic</b>   italics text, back to normal
+  <b>4  uline </b>   undelined text, back to normal
+  <b>9  remove</b>   remove escape sequences from input
+  <b>0  normal</b>   back to normal, than text</div>
 </div>
 </section>
 <section id='section-4'>

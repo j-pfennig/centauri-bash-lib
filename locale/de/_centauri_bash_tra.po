@@ -17,23 +17,23 @@ msgstr "weiter abbrechen"
 msgid "No trash folder, deleted items cannot be restored"
 msgstr "Kein Müll-Verzeichnis, gelöschte Daten nicht wiederherstellbar"
 
-#: /var/centauri/library/_centauri_bash_tra:141
-#: /var/centauri/library/_centauri_bash_tra:163
+#: /var/centauri/library/_centauri_bash_tra:135
+#: /var/centauri/library/_centauri_bash_tra:157
 msgid "Trash method:"
 msgstr "Trash Methode:"
 
-#: /var/centauri/library/_centauri_bash_tra:162
+#: /var/centauri/library/_centauri_bash_tra:156
 msgid "Cannot find usable a trash folder"
 msgstr "Kann kein Müll-Verzeichnis finden"
 
-#: /var/centauri/library/_centauri_bash_tra:171
+#: /var/centauri/library/_centauri_bash_tra:165
 msgid "Trash remove: 1 item"
 msgstr "Trash entferne: 1 Element"
 
-#: /var/centauri/library/_centauri_bash_tra:173
+#: /var/centauri/library/_centauri_bash_tra:167
 msgid "Trash remove: %s items"
 msgstr "Trash enterne: %s Elemente"
 
-#: /var/centauri/library/_centauri_bash_tra:207
+#: /var/centauri/library/_centauri_bash_tra:201
 msgid "trash folder mode (0:=off  1:=on  2:=auto)"
 msgstr "Müll-Verzeichnis Modus (0:=aus  1:=an  2:=auto)"

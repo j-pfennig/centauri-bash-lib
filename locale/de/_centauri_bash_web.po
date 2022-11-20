@@ -20,7 +20,7 @@ msgstr "Erzeugte AppID   :"
 #: /var/centauri/library/_centauri_bash_web:276
 #: /var/centauri/library/_centauri_bash_web:285
 msgid "Missing option:"
-msgstr ""
+msgstr "Fehlende Option:"
 
 #: /var/centauri/library/_centauri_bash_web:301
 msgid "Folder not empty, no HTML created"
@@ -32,7 +32,7 @@ msgstr "Kein schreibbares Verzeichnis:"
 
 #: /var/centauri/library/_centauri_bash_web:307
 msgid "Create Web folder:"
-msgstr ""
+msgstr "Erstelle Web Verzeichnis:"
 
 #: /var/centauri/library/_centauri_bash_web:326
 msgid "Left panel"

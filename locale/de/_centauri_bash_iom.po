@@ -185,35 +185,51 @@ msgstr "Datei ausführen"
 msgid "invalid data"
 msgstr "Unbrauchbare Daten"
 
+#: /var/centauri/library/_centauri_bash_iom:1147
+msgid " writing"
+msgstr " schreibe"
+
+#: /var/centauri/library/_centauri_bash_iom:1157
+msgid " reading"
+msgstr " lesen"
+
 #: /var/centauri/library/_centauri_bash_iom:1159
 msgid "Failed to deserialize data from:"
 msgstr "Kann Daten nicht deserialisieren:"
 
-#: /var/centauri/library/_centauri_bash_iom:1207
+#: /var/centauri/library/_centauri_bash_iom:1163
+msgid " missing"
+msgstr " fehlend"
+
+#: /var/centauri/library/_centauri_bash_iom:1165
+msgid "Cannot deserialize data from:"
+msgstr "Kann Daten nicht deserialisieren:"
+
+#: /var/centauri/library/_centauri_bash_iom:1209
 msgid "No output path provided"
 msgstr "Kein Ausgabepfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1214
-#: /var/centauri/library/_centauri_bash_iom:1221
+#: /var/centauri/library/_centauri_bash_iom:1216
+#: /var/centauri/library/_centauri_bash_iom:1223
 msgid "No folder path provided"
 msgstr "Kein Ordnerpfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1228
+#: /var/centauri/library/_centauri_bash_iom:1230
 msgid "No input path provided"
 msgstr "Kein Eingabepfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1274
+#: /var/centauri/library/_centauri_bash_iom:1276
 msgid "Open file for input"
 msgstr "Datei als Eingabe öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1275
+#: /var/centauri/library/_centauri_bash_iom:1277
 msgid "Open file for output"
 msgstr "Datei als Ausgabe öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1276
+#: /var/centauri/library/_centauri_bash_iom:1278
 msgid "Open file for reading"
 msgstr "Datei zum Lesen öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1277
+#: /var/centauri/library/_centauri_bash_iom:1279
 msgid "Open file for writing"
 msgstr "Datei zum Schreiben öffnen"

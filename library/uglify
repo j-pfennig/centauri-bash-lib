@@ -4,17 +4,19 @@ CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE="Pack centauri-bash-lib sources, create packaged script"
 
 # cannot use autoload - might autolod .p before being written completely ...
-PATH+=":${0%/*}" . _centauri_bash_lib -d -f -m ext -r -y "$0" "0.23:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -d -f -m ext -r -y "$0" "0.24:1" || exit 2
 
 embed -m _centauri_bash_iom -o
 
 # Data
-CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
-CEN_RUN_MAX_ARGS=+              # max arg count
+#CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
+#CEN_RUN_MAX_ARGS=+              # max arg count
 
 CEN_OPT_CONFIG=                 # see --config
+CEN_OPT_DOCU=                   # see --docu
 CEN_OPT_NODEPS=                 # see --nodeps
 CEN_OPT_EXTRACT=                # see --extractor
+CEN_OPT_UGLY=                   # see --uglify
 
 DAT_FLG_PACKAGE=                # build a self-contained package
 DAT_DEC_PACKAGE=                # declare -A statements
@@ -77,7 +79,7 @@ do_regex() {
             # ok if right side has no quotes
             local ncom="${rlin##* \#}"                      # get right side
             if [ "${ncom/[\'\"]/}" = "$ncom" ] ; then       # ok, no quotes
-                $CEN_TRACE2 -a "COMMENT1 $nlin $rlin"
+                $CEN_TRACE2 -a -c "COMMENT1 $nlin" -- "$rlin"
                 trimjoin -s ncom -- "${rlin%% \#*}"         # strip and trim
                 rlin="$ncom" ; do_simple
 
@@ -85,12 +87,12 @@ do_regex() {
             else
                 trimjoin -s ncom -- "${rlin%% \#*}"         # strip and trim
                 if [ "${ncom/[\'\"]/}" = "$ncom" ] ; then   # ok, no quotes
-                    $CEN_TRACE2 -a "COMMENT2 $nlin $rlin"
+                    $CEN_TRACE2 -a -c "COMMENT2 $nlin" -- "$rlin"
                     rlin="$ncom" ; do_simple
 
                 # could not remove a comment
                 else
-                    $CEN_TRACE2 -a "COMMENT3 $nlin $rlin"
+                    $CEN_TRACE2 -a -c "COMMENT3 $nlin" -- "$rlin"
                 fi
             fi
         fi
@@ -103,7 +105,7 @@ do_regex() {
         [ "${rlin/\"/}" != "$rlin" ] && ftwo=1
         [ "${rlin/\'/}" != "$rlin" ] && fone=1
         if [ -z "$fone" -a -z "$ftwo" ] ; then
-            $CEN_TRACE2 -a "SIMPLE $nlin $rlin"
+            $CEN_TRACE2 -a -c "SIMPLE   $nlin" -- "$rlin"
             do_simple ; return
         fi
 
@@ -112,7 +114,7 @@ do_regex() {
         # ----------------------------------------------------------------------
 
         if [ "${rlin/\\[\'\"]/}" != "$rlin" ] ; then
-                $CEN_TRACE2 -a "ESCAPE $nlin $rlin"
+                $CEN_TRACE2 -a -c "ESCAPE   $nlin" -- "$rlin"
                 fesc=1
         fi
 
@@ -121,7 +123,7 @@ do_regex() {
                 local _tmp1="${BASH_REMATCH[1]}"
                 local _tmp2="${BASH_REMATCH[2]}"
                 rlin="$_tmp1" ; do_simple ; rlin+="$_tmp2"
-                $CEN_TRACE2 -a -i "NESTED $nlin $rlin"
+                $CEN_TRACE2 -a -i -c "NESTED   $nlin" -- "$rlin"
                 return
             fi
         fi
@@ -138,7 +140,7 @@ do_regex() {
             local _tmp1="${BASH_REMATCH[1]}"
             local _tmp2="${BASH_REMATCH[2]}"
             local _tmp3="${BASH_REMATCH[3]}"
-            $CEN_TRACE2 -a "SINGLE: $nlin $_tmp1|$_tmp2|$_tmp3"
+            $CEN_TRACE2 -a -c "SINGLE   $nlin" -- "$_tmp1|$_tmp2|$_tmp3"
 
             rlin="$_tmp1" ; do_regex ; _tmp1="$rlin"
             rlin="$_tmp3" ; do_regex ; _tmp3="$rlin"
@@ -154,7 +156,7 @@ do_regex() {
         local _tmp1="${BASH_REMATCH[1]}"
         local _tmp2="${BASH_REMATCH[2]}"
         local _tmp3="${BASH_REMATCH[3]}"
-        $CEN_TRACE2 -a "DOUBLE: $nlin $_tmp1|$_tmp2|$_tmp3"
+        $CEN_TRACE2 -a -c "DOUBLE   $nlin" -- "$_tmp1|$_tmp2|$_tmp3"
 
         # convert simple strings to single quotes (slightly faster in bash)
         case "$_tmp2" in
@@ -163,7 +165,7 @@ do_regex() {
             *\$*)           ;;
             *[\{\}\[\]]*)   ;;
             *)              _tmp2="${_tmp2//\"/\'}"
-                            $CEN_TRACE2 -a "GOOD: $nlin $_tmp2" ;
+                            $CEN_TRACE2 -a -c "GOOD     $nlin" -- "$_tmp2" ;
         esac
 
         rlin="$_tmp1" ; do_regex ; _tmp1="$rlin"
@@ -565,6 +567,21 @@ do_config_update() {
 }
 
 # ------------------------------------------------------------------------------
+#
+# ------------------------------------------------------------------------------
+do_docu() {
+    if [ -n "$CEN_DOC_BLOCK" ] ; then
+        local _leng="${#CEN_DOC_BLOCK[@]}" ; ((_leng -= 1))
+        if [ "$_leng" -gt -0 ] ; then
+            echo "$CEN_DOC_BLOCK:-$_leng"
+            printf "%s\n" "${CEN_DOC_BLOCK[@]:1}"
+        fi
+        CEN_DOC_BLOCK=()
+    fi
+    printf "%s\n" "${@:2}"
+}
+
+# ------------------------------------------------------------------------------
 # The one and only action
 # ------------------------------------------------------------------------------
 run() {
@@ -587,8 +604,8 @@ run() {
     fi
     folder -c -f "$CEN_LIBRARY"                         # set library folder
 
-    if [ "$finp" = '-' ] ; then
-        [ $# = 1 ] || fatal "Extra arguments"
+    if [ "${finp:--}" = '-' ] ; then
+        [ $# -gt 1 ] && fatal "Extra arguments"
         set -- _centauri_bash_??? $DAT_LIB_USER
     fi
 
@@ -636,9 +653,9 @@ run() {
                 if [ "$item" = '_centauri_bash_dyn' ] ; then
                         mdyn=1 ; continue
                 elif [ -n "$msta" ] ; then
-                    message -a "Processing:" "$item" "(static)"
+                    message -a -c "Processing" -- "$item" "(static)"
                 else
-                    message -a "Processing:" "$item"
+                    message -a -c "Processing" -- "$item"
                 fi
                 if ! [ -f "$item" -a -r "$item" ] ; then
                     warning "No such module: $item" ; continue
@@ -656,7 +673,7 @@ run() {
             for item in "${!DAT_MAP_MODULE[@]}" ; do
                 [ "${DAT_MAP_MODULE["$item"]}" = 2 ] && continue
                 item="_centauri_bash_$item"
-                trace -a "Add module: $item"
+                trace -a -c "Add module" -- "$item"
                 list+=("$item")
             done
         done
@@ -664,7 +681,7 @@ run() {
         # finally customize the dyn module
         if [ -n "$mdyn" ] ; then
             item='_centauri_bash_dyn'
-            message -a "Processing:" "$item"
+            message -a -c "Processing" -- "$item"
             if ! [ -f "$item" -a -r "$item" ] ; then
                 error "No such module:" "$item" ; return
             fi
@@ -695,19 +712,37 @@ run() {
 
         [ "${CEN_OUTFILE::5}" = "/dev/" ] || attributes -m 775 -- "$CEN_OUTFILE"
         [ "${#DAT_MAP_EMBED[@]}" -gt 0 ] &&
-            message -a "External scripts:" "${!DAT_MAP_EMBED[@]}"
+            message -a -c "External scripts" -- "${!DAT_MAP_EMBED[@]}"
         [ -n "$DAT_FLG_DYNAMIC" -a -z "$CEN_OPT_CONFIG" ] &&
-            message -a "Dynamic loading: extra modules must be added to argument list"
+            message -a -c "Dynamic loading" "extra modules must be added to argument list"
         do_config_update "${mods[@]}"
 
     # --- library processing ---
 
     else
+        [ -n "$CEN_OPT_DOCU" ] && embed -m '_centauri_bash_doc'
+
+        local spre sdoc
         for item in "${list[@]}" ; do
-            [ "$item.p" -nt "$item" -a -z "$CEN_OPT_FORCE" ] && continue
-            if ! dryrun "do_ugly $item >$item.p" ; then
-                message -a "Processing: $item"
+            [ -z "$CEN_OPT_UGLY" ] && spre= || spre=" (uglify)"
+            [ -z "$CEN_OPT_DOCU" ] && sdoc= || sdoc=" (docu)"
+            if [ -z "$CEN_OPT_FORCE" ] ; then
+                [ -n "$spre" ] && [ "$item.p" -nt "$item" ] && spre=
+                [ -n "$sdoc" ] && [ "$item.d" -nt "$item" ] && sdoc=
+            fi
+            [ -z "$spre" -a -z "$sdoc" ] && continue
+
+            message -a -c "Processing" -- "$item" "$spre$sdoc"
+            if [ -n "$spre" ] && ! dryrun "do_ugly $item >$item.p" ; then
                 do_ugly <"$item" >"$item.p"
+            fi
+            if [ -n "$sdoc" ] && ! dryrun "do_docu $item >$item.d" ; then
+                remove "$item.d"
+                if documentation do_docu "$item" >"$item.d$$" ; then
+                    move "$item.d$$" "$item.d"
+                else
+                    remove "$item.d$$"
+                fi
             fi
         done
     fi
@@ -720,6 +755,11 @@ options() {
     case "$1" in
 
     "")
+        if [ -n "$CEN_OPT_DOCU" -o -n "$CEN_OPT_UGLY" ] ; then
+            [ -z "$CEN_OUTFILE" ] || optarg - - -m '--output --docu|--uglify'
+        elif [ -z "$CEN_OUTFILE" ] ; then
+            CEN_OPT_UGLY=1
+        fi
         if [ -n "$CEN_OPT_CONFIG" ] ; then
             if [ -z "$CEN_OUTFILE" ] ; then
                 optarg 'output' '' -e "is required"
@@ -732,8 +772,14 @@ options() {
     -C|--con*)
         optarg 'config' -   -w  ;;      # any text
 
+    -D|--doc*)
+        optarg 'docu'   -   -f  ;;      # simple flag
+
     -N|--nod*)
         optarg 'nodeps' -   -f  ;;      # simple flag
+
+    -U|--ugl*)
+        optarg 'ugly'   -   -f  ;;      # simple flag
 
     -X|--ext*)
         optarg 'extract' -  -f  ;;      # simple flag
@@ -749,21 +795,28 @@ usage() {
 usage: (1)  $CEN_NAME <option>... -|<module>...
        (2)  $CEN_NAME [-N] [-X] --output <packed> <script> [<module>...]
 
-       This tool strips comments and extra spaces from bash sources. Modules
-       with lots of comments load a little bit faster when stripped. The proxy
-       of centauri-bash-lib and the embed function load stripped sources if
-       they are up to date:
+       This tool removes comments and extra spaces from bash sources. Modules
+       with large comments load a little bit faster when 'uglified'. The proxy
+       of centauri-bash-lib and the embed function load stripped files if they
+       are up to date (newer than the source).
 
-       Usage (1) creates packed <module>.p files. The recommended usage is:
+       A simalar pre-processing can be done to speed up centaurihelp. This is
+       implemented by removing the script code and saving only documentation.
 
-           $ $CEN_NAME -             # use all modules
+       Usage (1) creates packed <module>.p and/or <module.d> files:
 
-       To generate <module>.p files for some modules only use:
+           $ $CEN_NAME -U             # use all modules, uglify only
+           $ $CEN_NAME -D -U          # also process documentation
+           $ $CEN_NAME -D             # only process documentation
 
-           $ $CEN_NAME <module>...   # where <module> is a file name
+       To generate <module>.p or .d files for some modules only use:
+
+           $ $CEN_NAME <module>...    # where <module> is a file name
+           $ $CEN_NAME -D <module>...
 
        Usage (2) packs a script and the used modules (stripped) into a single
        file. Modules that are not auto-detected can be specified as arguments.
+       The centauribuild tool runs $CEN_NAME for building stand-alone scripts.
 
 $CEN_USE_OPTIONS
 
@@ -771,8 +824,14 @@ $CEN_USE_OPTIONS
        -N --nodeps          (packaging) ignore "embed -[cmq]" in library modules
        -X --extractor       (packaging) add self-extractor (_centauri_bash_xtr)
 
+       -D --docu            (pre-processing) create *.d files for centaurihelp
+       -U --uglify          (pre-processing) create *.p files for faster loading
+
+       Option --uglify is implied if no other option is specified
+
 arguments:
        <module>             a module name (3 letter or full name)
+       <file>               configuration file, see centaurilauncher
        <packed>             generated packed script
        <script>             a script to be packaged with centauri-bash-lib
 
@@ -784,7 +843,7 @@ limits:
        - lines with nested strings will not be optimized
 
 dependencies:
-       Form (2) tries to auto-detect module dendencies (see --nodeps). To hide
+       Form (2) tries to auto-detect module dependencies (see --nodeps). To hide
        a dependency use 'embed -r ...' with '-r' being the 1st option. To add a
        dependency without actually initializing the module use 'embed -c ...'.
        Custom modules are always ignored but can be added using command args.

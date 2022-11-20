@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_dyn</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_dyn")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_doc.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,19 +12,19 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_dyn' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_dyn</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Dynamic Module loading</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_dyn</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Dynamic Module loading</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>only via <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> <b>-a</b></div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>This module is created by the <b>autoload</b> utility at installation time. It contains proxy function definitions to dynamically load modules and to enable loadable bash builtins.</div>
 </div>
 </section>
 <section id='section-2'>
 <div id='dynamicloading' class='item-topic'>
-<span>Topic</span><span> - </span><span>Dynamic loading</span><span> - </span><span>Dynamic loading of <a href="index.html">_centauri_bash_lib</a> modules</span></div>
+<span>Topic</span><span> - </span><span>Dynamic loading</span><span> - </span><span>Dynamic loading of <a href="index.html">centauri-bash-lib</a> modules</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The library is split into modules and these modules need to be loaded somehow. The main module <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> must be loaded explicitly from the user script. For additional modules there exist four methods of loading them:</div>
@@ -135,12 +135,12 @@ PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>-a</b> <b>-d</b> <b>-r
 <span>Topic</span><span> - </span><span>Preprocessing</span><span> - </span><span>Preprocessing modules sources to reduce startup time</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
-<div class='def-block'>The modules contain a lot of documentation and other comments. In order to load faster, these can be removed using <a href="uglify.html">uglify</a>. This tool also removes extra spaces and replaces some strings that are noted using quotes by strings using apostrophes.</div>
+<div class='def-block'>The modules contain a lot of documentation and other comments. In order to load faster, these can be removed or extracted using <a href="uglify.html">uglify</a>. For script code this tool also removes extra spaces and replaces some strings that are noted using quotes by strings using apostrophes. When preprocessing documentation only the neccessary data is retained.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>The resulting files receive a <b>&quot;.p&quot;</b> ending and are loaded via proxy or <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> whenever the preprocessed file is newer than the source.</div>
+<div class='def-block'>The resulting files receive a <b>&quot;.p&quot;</b> (script) or <b>&quot;.d&quot;</b> (documentation) ending. Preprocessed code is loaded via proxy or <a href="_centauri_bash_lib.html">_centauri_bash_lib</a> whenever the preprocessed file is newer than the source. For documentation <a href="_centauri_bash_doc.html">_centauri_bash_doc</a> does the same with <b>&quot;.d&quot;</b> files.</div>
 </div>
 <div class='def-break'></div>
 <div class='def-row'>
@@ -149,7 +149,7 @@ PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>-a</b> <b>-d</b> <b>-r
 </div>
 <div class='def-row'>
 <div class='def-label'>Setup:</div>
-<div class='def-text'>&gt; <b>$CEN_ROOT/library/uglify -</b></div>
+<div class='def-text'>&gt; <b>$CEN_ROOT/library/uglify -U -D</b></div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Warning:</div>
@@ -158,7 +158,7 @@ PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>-a</b> <b>-d</b> <b>-r
 </section>
 <section id='section-5'>
 <div id='custommodules' class='item-topic'>
-<span>Topic</span><span> - </span><span>Custom Modules</span><span> - </span><span>Extending <a href="index.html">_centauri_bash_lib</a> with custom library modules</span></div>
+<span>Topic</span><span> - </span><span>Custom Modules</span><span> - </span><span>Extending _centauri_bash_lib with custom library modules</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-text'>Two kinds of custom library modules are supported</div>
@@ -188,7 +188,7 @@ PATH+=<b>&quot;:${0%/*}&quot;</b> . _centauri_bash_lib <b>-a</b> <b>-d</b> <b>-r
 </div>
 <div class='def-row'>
 <div class='def-label'>Example:</div>
-<div class='def-text'>See <b>$CEN_TOOLS\templates\_custom_module_usr</b></div>
+<div class='def-text'>See <a href="centauricreate.html">centauricreate</a> and <b>$CEN_TOOLS\templates\_custom_module_usr</b></div>
 </div>
 </section>
 </article>

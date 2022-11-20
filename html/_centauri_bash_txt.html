@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_txt</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_txt")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_tra.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,7 +12,7 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_txt' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_txt</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Text Tools (grep, sort)</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_txt</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Text tools (grep, sort)</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_txt</b></div>
@@ -46,7 +46,7 @@ txtsort <b>-a</b> data <b>--</b> Franziska Johan John Marc Mary</pre></div>
 txtgrep <b>-i</b> data <b>-s</b> - <b>-x</b> <b>&quot;^([A-M]|[a-m])&quot;</b> &gt; <b>&quot;$my_file&quot;</b></pre></div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>Copyright Dr. J. Pfennig (c) 2021-2022</div>
 </div>
 </section>
@@ -135,7 +135,7 @@ txtgrep <b>-i</b> data <b>-s</b> - <b>-x</b> <b>&quot;^([A-M]|[a-m])&quot;</b> &
 <div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>The function runs the <b>/usr/bin/sort</b> and <b>/usr/bin/uniq</b> utilities by calling <a href="_centauri_bash_pip.html#syspipe">syspipe()</a>.</div>
 </div>
 </section>
@@ -177,7 +177,7 @@ txtgrep <b>-i</b> data <b>-s</b> - <b>-x</b> <b>&quot;^([A-M]|[a-m])&quot;</b> &
 <div class='def-text'>With option <b>-a</b> -or <b>-s</b> are used always <b>true</b> is returned.</div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>The function works on text, line by line. Bash regular expressions can be slow. For larger amounts of data <a href="#extgrep">extgrep()</a> may perform better.</div>
 </div>
 </section>

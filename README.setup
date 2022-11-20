@@ -74,13 +74,13 @@ PATH="$PORG" centauricreate --embed="$SELF" --info install "$INFO" || exit $?
 PATH="$PDES" $DEST/library/autoload --builtin --embed="$SELF:a" -
 
 # create *.p files to optimize loading speed
-PATH="$PDES" $DEST/library/uglify --embed="$SELF:a" -
+PATH="$PDES" $DEST/library/uglify --embed="$SELF:a" -U -D
 
 # ------------------------------------------------------------------------------
 # create an example library config file
 # ------------------------------------------------------------------------------
 
-[ "$EUID" != 0 ] && mkdir "$DEST/default"
+[ "$EUID" != 0 -a ! -d "$DEST/default" ] && mkdir "$DEST/default"
 if [ -d "$DEST/default" ] && [ ! -e "$DEST/default/centauri-bash-lib" ] ; then  
 cat >"$DEST/default/centauri-bash-lib" <<!EOF
 # This is configuration data for centauriXXXX --info install|uninstall|update
@@ -94,37 +94,57 @@ cat >"$DEST/default/centauri-bash-lib" <<!EOF
     # desktop apps (- is for any desktop session, must be last)
     editor      -       kwrite featherpad
     files       -       dolphin
-    browser     -       unfug firefox falkon qml
+    browser     -       firefox falkon qml
     kiosk       -       qml falkon firefox
-    console     -       @terminal
     httpd       -       lighttpd
+    webapp      -       .
+
+    viewer      -       qml falkon firefox
+
+    # run a function to start the app (see terminal function)
+    console     -       @terminal
 
     # terminal apps (tty is for non-desktop mode)
     editor      tty     nano vim
     files       tty     mc
     browser     tty     w3m
+    library     -       .
 
     # qml needs a few hints (@_cen_win_qmlweb creates the qml script)
     -ignore:qml         qtchooser
     -path:qml           /usr/lib/*/qt5/bin/qml
-    browser:qml         @launcher_qmlweb 1024 768 1.2
-    kiosk:qml           @launcher_qmlweb  1000 800 1.2
-    httpd:lighttpd      @launcher_httpd 8080 /var/www
+    browser:qml         @launcher_qmlweb - - -
+    kiosk:qml           @launcher_qmlweb 1200 800 1.2
+    viewer:qml          @launcher_qmlweb - - - /var/www/html/index.html /var/centauri/html/index.html
+
+    # lighttpd needs a script that gets the configuration
+    httpd:lighttpd      @launcher_lighttpd 8080 /var/www
+    -path:lighttpd      /usr/*bin/lighttpd
 
     # command line args
-    kiosk:firefox       --fullscreen --new-window
-    browser:firefox     --new-window
+    kiosk:firefox       @launcher_html  --new-window --kiosk
+    browser:firefox     @launcher_html --new-window
+                        # firefox problem: if an instance is already open, a new window is created but the new
+                        # process that was launched will exit. Thus we cannot wait for the window to be closed
+    viewer:firefox      @launcher_html --new-window /var/www/html/index.html /var/centauri/html/index.html
 
-    kiosk:falkon        --fullscreen --new-window --no-extensions
-    browser:falkon      --new-window --no-extensions
+    kiosk:falkon        @launcher_html --fullscreen --new-window --no-extensions --profile=kiosk
+    browser:falkon      @launcher_html --new-window --no-extensions
+    viewer:falkon       @launcher_html --new-window --no-extensions --profile=viewer /var/www/html/index.html /var/centauri/html/index.html
+
+    webapp:.            @launcher_webapp
+    library:.           @launcher_library
 
     # info text for apps (not commands)
-    info:editor         text editor
-    info:files          file manager
-    info:browser        web browser
-    info:kiosk          web browser in kiosk mode
-    info:console        command line terminal
-    info:httpd          launch a private web server
+    -info:editor        open a text editor
+    -info:files         open a file manager
+    -info:browser       open a web browser
+    -info:kiosk         web browser in kiosk mode
+    -info:viewer        html viewer (qml or browser)
+    -info:console       command line terminal
+    -info:httpd         launch a private web server
+    -info:webapp        run a centauri-bash-lib web application
+    -info:library       interactive centauri-bash-lib console
 
 [terminal]
     # emulators for KDE/Gnome sessions:
@@ -133,12 +153,13 @@ cat >"$DEST/default/centauri-bash-lib" <<!EOF
     # other session types (must be last emulator line):
     emulator    -       qterminal gnome-terminal konsole  xterm
 
-    # options for emulator apps
+    # options for emualator applications. Traditionally option -e is used to
+    # run a program, add option -- for emulators that use -- instead ...
     -args:konsole       --hide-tabbar --hide-menubar --nofork
     -title:konsole      --title
 
-    -args:gnome-terminal  --hide-menubar --wait --
-    -title:gnome-terminal --title
+    -args:gnome-terminal    --hide-menubar --wait --
+    -title:gnome-terminal   --title
 
     -args:xterm         -fa Monospace -fs 14 -geometry 100x30
 
@@ -150,11 +171,13 @@ cat >"$DEST/default/centauri-bash-lib" <<!EOF
     # continue search if ancestor is a shell
     shell               bash|dash|csh|sh
     # no emulator for these ...
-    white               sudo|kdeinit.*\ konsole.*|konsole.*|gnome.*|qterminal|xterm 
+    white               sudo|kdeinit.*\ konsole.*|konsole.*|gnome.*|qterminal|xterm
     # needing to launch emulator ...
-    black               krunner.*|lx.*-session|plasma.*
+    black               krunner.*|lx.*-session|plasma.*|xinit
                         # no desktop, no xroot
     black-startup       sddm.*|startkde.*|startplasma.*
+                        # embedded konsole, check KONSOLE_DBUS_SERVICE
+    black-konsole       dolphin.*|kde.*
 
 [shortpath]
 

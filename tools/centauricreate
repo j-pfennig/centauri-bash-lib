@@ -1,16 +1,17 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2021; BSD License"
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE=$"Create a centauri-bash-lib user script from a template"
 
 # Import the bash library, set name and version
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -t -y "$0" "0.04:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -s -t -y "$0" "0.10:1" || exit 2
 
 # Data
 CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
 CEN_RUN_MAX_ARGS=1              # max arg count
 
 CEN_OPT_AUTHOR=                 # see --author
+CEN_OPT_CHECK=                  # see --check
 CEN_OPT_DESCR=                  # see --descr
 CEN_OPT_LICENSE=                # see --license
 CEN_OPT_NOCONF=                 # see --noconf
@@ -63,12 +64,13 @@ get_templates() {
 # Create from template: <template>
 # ------------------------------------------------------------------------------
 do_create() {
-    local _line _skip _year ; system -q -s _year -- date +' (c) %Y'
+    local _line _skip _year
+    printf -v _year "%(%Y)T" -1                 # get current 4-digit year
 
     # define option variables
     for _line in "${CEN_OPT_OPTION[@]^^}" ; do
         _line="${_line//[!A-Z]/}"
-        [ -n "$_line" ] && eval ${_line}=true
+        [ -n "$_line" ] && eval "$_line"=true
     done
 
     # copy template code
@@ -98,9 +100,21 @@ do_create() {
 }
 
 # ------------------------------------------------------------------------------
+# Run shellcheck
+# ------------------------------------------------------------------------------
+do_check() {
+    local warn
+    [ -n "$CEN_OPT_SILENT" ] && warn='-Swarning'
+    sysfind -f 'shellcheck'
+    system -e -p -g 1 -z -- shellcheck -x -e 2128,2166,2178,2247 $warn -W0 -P"$CEN_LIBRARY" "$@"
+    quit
+}
+
+# ------------------------------------------------------------------------------
 # The one and only action
 # ------------------------------------------------------------------------------
 run() {
+    [ -n "$CEN_OPT_CHECK" ] && do_check "$@"             # run shellcheck, no return
     local _tmpl _name="$1"
     [ -n "$DAT_NAME_REG" ] || get_templates
     _tmpl="${DAT_NAME_MAP["${CEN_OPT_TEMPLATE:-$DAT_NAME_DEF}"]}"
@@ -136,7 +150,7 @@ run() {
         attributes -c -m 775 -- "$DAT_FILE" || return
     fi
     dryrun "do_create <&$_ihan >'$DAT_FILE'" && return  # debug
-    do_create <&$_ihan >>"$DAT_FILE" && quit -a $"Script created"
+    do_create <&"$_ihan" >>"$DAT_FILE" && quit -a $"Script created"
 }
 
 # ------------------------------------------------------------------------------
@@ -145,21 +159,30 @@ run() {
 options() {
     case "$1" in
 
+    '')         if [ -n "$CEN_OPT_CHECK" ] ; then
+                    CEN_RUN_MAX_ARGS=+
+                    [ -n "$CEN_OPT_NOCONF$CEN_OPT_OPTION$CEN_OPT_SHELL$CEN_OPT_TEMPLATE" ] &&
+                        optarg - - -m "--check --noconf|--option|--shell|--template"
+                fi
+                ;;
+
     -A|--aut*)
-        optarg "author"   - -t ;;   # any text
+        optarg 'author'   - -t ;;   # any text
+    -C|--che*)
+        optarg 'check'    -    ;;   # flag
     -D|--des*)
-        optarg "descr"    - -t ;;   # any text
+        optarg 'descr'    - -t ;;   # any text
     -L|--lic*)
-        optarg "license"  - -t ;;   # any text
+        optarg 'license'  - -t ;;   # any text
     -N|--noc*)
-        optarg "noconf"        ;;   # flag
+        optarg 'noconf'   -    ;;   # flag
     -O|--opt*)
-        optarg "option"  [] -t ;;   # text array
+        optarg 'option'  [] -t ;;   # text array
     -S|--she*)
-        optarg "shell"    - -t ;;   # any text
+        optarg 'shell'    - -t ;;   # any text
     -T|--tem*)
         get_templates
-        optarg "template" - "($DAT_NAME_REG)" ;;
+        optarg 'template' - "($DAT_NAME_REG)" ;;
     esac
 }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_ext = Centauri Bash Library Sort and IO Extension
+# _centauri_bash_ext = centauri-bash-lib: Filesystem extension
 #
 # Call:     . _centauri_bash_ext
 #
@@ -26,9 +26,7 @@ CEN_MODULES["_centauri_bash_ext"]="0.22:1"
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
 CEN_EXT_TPID=               # ... subshell pid
-CEN_EXT_QUIT=               # hook, see tmpfile
 CEN_EXT_REALP=              # 0:=use external  1:=use realpath builtin
-
 
 # ------------------------------------------------------------------------------
 # get logical path (into <logi>): [-e] [-e] <logi> <path>
@@ -1003,9 +1001,9 @@ remove() {
     elif [ $# = 0 ] ; then
         return 0
     else                                        # use coreutils remove
-        _oitm=$"files/folders"
+        _oitm=$"entries"
     fi
-    $_omsg -a -p $"Removing %s: %s" "$_oitm" "$*"
+    $_omsg -a -c " $_oitm" -- "$*"
 
     # bash builtins might be unable to handle options or --
     if [ -n "$_oone" ] ; then
@@ -1085,7 +1083,7 @@ rename() {
         fi
     fi
 
-    $_omsg -a -p $"Renaming '%s' to '%s'" "$1" "$_dest"
+    $_omsg -a -c " " -- "$1 => $_dest"
     sysrun -b $_orun $_osys -- mv -f -- "$1" "$_dest" && return 0
     [ -n "$CEN_OPT_DRYRUN" ]                     # --dryrun always returns 0
 }
@@ -1172,7 +1170,7 @@ resolve() {
     # get executable - use _centauri_bash_lib paths and resolve argv0 if needed
     if [ -n "$_oexe" ] ; then
         local _logi _self="$CEN_TOOLS:$CEN_LIBRARY:${BASH_ARGV0%/*}"
-        PATH="$PATH:$_self" sysrun -q -r -s -a _logi -- type -f -p -- "$1"
+        PATH="$PATH:$_self" sysrun -q -r -a _logi -- type -f -p -- "$1"
         if [ -z "$_logi" ] ; then
             [ -h "$BASH_ARGV0" ] && _cen_path_realp -c "$BASH_ARGV0"
             _self="${_logi%/*}"
@@ -1236,22 +1234,23 @@ resolve() {
 }
 
 # ------------------------------------------------------------------------------
-# splitcall - run commands or funtions splitting long arguments lists
+# splitcall - run commands or functions splitting long arguments lists
 #
-# Call:     splitcall -c|-s <what> [-e|-f|-q] [-p] [-r]
+# Call:     splitcall -c|-s <what> [-e|-f|-q] [-g <good>] [-p] [-r]
 #           °         <>           [-a <para>] [-m <maxi>] [-d <deli>] -i <data>
-#           splitcall -c|-s <what> [-e|-f|-q] [-r]
+#           splitcall -c|-s <what> [-e|-f|-q] [-g <good>] [-r]
 #           °         <>           [-a <para>] [-m <maxi>] [-p] [-d <deli>] -- <arg>...
 #
-#           ***not yet implented***
+#           ***implentation is incomplete***
 #
 # Options:  -a  parameter array, see below
 #           -c  call a script function
 #           -d  delimiter passed to [[splitjoin()]]
 #           -e  add option -e (report errors)
 #           -f  add option -f (make errors fatal)
+#           -g  stop processing if exit code of <what> is greater <good>
 #           -i  input variable name (can be an array)
-#           -m  maximum chunk size or parallel processes
+#           -m  maximum chunk size for parallel processes
 #           -p  parallel processing, see below
 #           -q  add option -q (no messages)
 #           -r  add option -r (ignore --dryrun)
@@ -1259,7 +1258,9 @@ resolve() {
 #
 # Arguments:<arg>   list of fields that get added to <data>
 #           <data>  list to be split into chunks
-#           <func>  a function to be invoked for chunks of <data>
+#           <deli>  used to split strings into items, see [[splitjoin()]]
+#           <good>  maximum non-error return code (default is using "error°-t")
+#           <what>  a function/command to be invoked for chunks of <data>
 #           <para>  parameters passed to <func>, can be string or array, '@'
 #           °       stands for a chunk of <data>. If no '@' field is passed,
 #           °       it automatically gets appended to <para>.
@@ -1282,27 +1283,75 @@ resolve() {
 #.          splitcall -p -c "wrapper" -e -r -- '1.dat' '2.dat' '3.dat'
 # ------------------------------------------------------------------------------
 splitcall() {
-    local _oerr _vnam _call _deli _fdry _ivar _maxi _ppar _srun
+    local _oerr _vnam _call _deli _fdry _fpre _good _ivar _maxi _ppar _srun
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vnam="$1" ;;
-      -c)   shift ; _call="$1" ;;
+      -c)   shift ; _call="$1" ; isfunction -f -- "$1" ;;
       -d)   shift ; _deli="$1" ;;
-      -e)   _oerr='-e' ;;
-      -f)   _oerr='-f' ;;
+      -e)   _oerr='-e' ; _fpre='-p' ;;
+      -f)   _oerr='-f' ; _fpre='-p' ;;
+      -g)   shift ; _good="$1" ;;
       -i)   shift ; _ivar="$1" ;;
       -m)   shift ; _maxi="$1" ;;
       -p)   _ppar=1 ;;
       -q)   _oerr='-q' ;;
       -r)   _fdry='-r' ;;
-      -s)   shift ; _srun="$1" ;;
+      -s)   shift ; local _cen_splitcall
+            sysfind -f -s _cen_splitcall -- "$1" ; _srun="$_cen_splitcall" ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
     [ -z "$_call" -a -z "$_srun" ] && _cen_abort = '-c|-s'
-    [ -n "$1" ] && _cen_abort - "$1"
-    fatal -t "Not yet implented"
+
+    local _offs= _leng _coun="$#" _aidx _args _stat _save _savd _rval=0
+    _leng="${_maxi:-1024}"
+
+    if [ -n "$_vnam" ] ; then                       # find '@' in param list
+        listsearch -c -n _aidx -i "$_vnam" -- '@' ||
+            _cen_abort $"No '@' in arguments array:" '-a'
+        local -n _cen_splitcall="$_vnam"
+    fi
+
+    [ -n "$_ppar" ] && fatal -t "Not yet implented:" '-p'
+    [ -n "$_deli" ] && fatal -t "Not yet implented:" '-d'
+    [ -n "$_ivar" ] && fatal -t "Not yet implented:" '-i'
+
+    if [ "${_good:--}" = '-' ] ; then               # save/reset error state
+        _save="$CEN_ERROR" ; _savd="$CEN_DONE"
+        error -c
+    fi
+
+    while [[ "$_offs" -lt "$_coun" ]] ; do
+        if [ -n "$_vnam" ] ; then                   # make argument list
+            _args=("${_cen_splitcall[@]::_aidx}")
+            _args+=("${@:_offs+1:_leng}")
+            _args+=("${_cen_splitcall[@]:_aidx+1}")
+        else
+            _args=("${@:_offs+1:_leng}")
+        fi
+
+        if [ -n "$_srun" ] ; then
+            sysrun -n $_fdry $_fpre $_oerr -- "$_srun" "${_args[@]}"
+        else
+            $_call $_fdry $_oerr "${_args[@]}"
+        fi
+        _stat="$?" ; ((_offs+=_leng))
+        [ "$_stat" = 0 ] && continue
+
+        if [ "${_good:--}" = '-' ] ; then           # stop after any error
+            error -t && continue
+        elif [ "$_stat" -le "${_good:-0}" ] ; then  # stop if $? > _good
+            continue
+        fi
+        _rval="$_stat" ; break                      # stop with error code
+    done || :
+
+    if [ "${_good:--}" = '-' -a "$CEN_ERROR" = '0' ] ; then
+        CEN_ERROR="$_save" ; CEN_DONE="$_savd"      # restore error state
+    fi
+    return $_rval
 }
 
 # ------------------------------------------------------------------------------
@@ -1617,14 +1666,14 @@ symlink() {
             [ -n "$_fign" ] && _oftl="$_mesg"
             $_oftl $"Link target does not exist:" "$_targ" ; return 1
         elif [ "$_targ" -ef "$_link" ] ; then
-            $_mesg -a $"Target '$_targ', link is current"": $_link" ; return 0
+            $_mesg -a -c $" valid" -- "$_link => $_targ" ; return 0
         else
             [ -n "$_ocan" ] && _cen_path_realp -c "$_targ" && _targ="$_logi"
         fi
 
         if [ -h "$_link" ] ; then
-            $_mesg -a $"Removing existing link"": $_link"
             remove -s -- "$_link" || return 2
+            $_mesg -a -c $" removed" -- "$_link"
         elif [ -e "$_link" ] ; then
             if [ "$_move" = 0 ] ; then
                 remove -d -s -- "$_link" || return 2
@@ -1647,7 +1696,8 @@ symlink() {
     else
         sysrun $_osys -b -m "$_etxt" -d -- ln $_onck -s "$_targ" "$_link" || return 1
     fi
-    $_mesg -a -p $"Target '%s', created link '%s'" "$_targ" "$_link" ; return 0
+   # $_mesg -a -p $"Target '%s', created link '%s'" "$_targ" "$_link" ; return 0
+    $_mesg -a -c $" created" -- "$_link => $_targ" ; return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -1746,7 +1796,7 @@ symlink() {
 # ------------------------------------------------------------------------------
 sysrun() {
     $CEN_NOTRACE set +x
-    local _ecmd="$CEN_TRACE" _emsg _ofmt _oign _osta _opre _orun _oout _owho _ffnd=1 _vnam
+    local _ecmd="$CEN_TRACE" _emsg _ofmt _oign _osta _opre _orun _oout _owho _fqui _ffnd=1 _vnam
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -1760,7 +1810,7 @@ sysrun() {
       -m)   shift ; _emsg="$1" ; [ -z "$_oout" ] && _oout=0 ;;
       -n)   _ffnd= ;;
       -p)   _ofmt=1 ; [ -z "$_oout" ] && _oout=0 ;;
-      -q)   [ -z "$_oout" ] && _oout=0 ;;
+      -q)   _fqui=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -r)   _orun="-r" ;;
 #      -s)   ;;
       -w)   shift ; _owho="$1" ;;
@@ -1852,6 +1902,7 @@ sysrun() {
 
     # error reporting ...
     [ -z "$_osta" ] && _osta=1                  # must have a value here
+    [ -n "$_fqui" ] && return $_osta
     case "$_osta" in
     0)      $CEN_NOTRACE set -x ; return 0 ;;
     1)      ;;
@@ -1867,7 +1918,7 @@ sysrun() {
 
     [ "${_emsg:--}" = '-' ] && _emsg=$"Running '%s%s' failed"
     [ -n "$_xmsg" ] && _xmsg=": $_xmsg"
-    if [ -z "$_ecmd" -a -n "$_ofmt" ] ; then            # system -p style
+    if [ "$_ecmd" = "$CEN_TRACE" -a -n "$_ofmt" ] ; then    # system -p style
         splitjoin -j _xtmp -d '\n' -i "${_vnam:-_xerr}"
         message -m "$_xtmp"
         $CEN_NOTRACE set -x ; return $_osta
@@ -1877,10 +1928,10 @@ sysrun() {
         for _xtmp in "${_xtmp[@]}" ; do
             _xarg+="${_xtmp#/*: *: }"$'\n'              # strip bash error prefix
         done
-        $_ecmd -m -p "${_emsg} %s\n%s" "${_owho:-($_xcmd)}" "" "$_xmsg" "$_xarg"
+        [ "$_xcmd" = 'builtin' ] && _xtmp=" $1" || _xtmp=
+        $_ecmd -m -p "${_emsg} %s\n%s" "${_owho:-($_xcmd)}" "$_xtmp" "$_xmsg" "$_xarg"
     else                                                # simple ...
-        # [ $# -gt 0 ] && _xarg=" $*"
-        $_ecmd -p "$_emsg$_xmsg" "${_owho:-($_xcmd)}" "$_xarg"
+        $_ecmd -p "$_emsg$_xmsg" "${_owho:-($_xcmd)}" "$_xtmp"
     fi
     $CEN_NOTRACE set -x ; return $_osta
 }
@@ -2011,7 +2062,7 @@ tmpfile() {
         if [ -z "$_odel" ] ; then
             if [ -n "$CEN_EXT_TEMP" ] ; then
                 _updt="${CEN_EXT_TEMP%/*}"
-                [ "$_updt" = "$_base" ] || $CEN_TRACE2 "tmpfile: update $_updt -> $_base"
+                [ "$_updt" = "$_base" ] || $CEN_TRACE2 -c $" update" -- "$_updt => $_base"
             fi
             folder $_oftl $_orun -m -s _base -- "$_base" 700 || return 1
         fi
@@ -2025,18 +2076,17 @@ tmpfile() {
 
     if [ -n "$_odel" ] ; then
         [ -z "$_base" ] && return 0                     # not initialized
-        $CEN_TRACE2 "tmpfile: remove $_base$_ssuf*"
+        $CEN_TRACE2 -c $" remove" -- "$_base$_ssuf*"
         CEN_EXT_TEMP= ; CEN_TMPFILE=
         [ -d "$_base" ] && return 0                     # don't remove folder
         set +f ; set -- "$_base$_ssuf"*                 # make sure glob is on
         [ "$1" = "$_base$_ssuf*" ] && return 0          # nothing to remove
-        sysrun -q -b -- rm -f -- "$@" ; return          # return status
+        sysrun $_orun -q -b -- rm -f -- "$@" ; return   # return status
     fi
 
     # create folder / file
 
     if [ -z "$CEN_EXT_TEMP" ] ; then                    # create folder, set hook
-        context -h _cen_ext_quit CEN_EXT_QUIT
         CEN_EXT_TEMP="$_base"
     fi
     [ -n "$_onoc" -a -z "$_snam" ] && return 0          # init only
@@ -2280,11 +2330,10 @@ walk() {
 # Startup - module init
 # ------------------------------------------------------------------------------
 
-# hook to delete temp files created by tmpfile
+# delete temp files created by tmpfile
 _cen_ext_quit() {
-    $CEN_NOTRACE set +x ; tmpfile -d ; $CEN_NOTRACE set -x
-    $CEN_EXT_QUIT "$@"
-} || :
+    [ "$CEN_EXT_TEMP" ] && tmpfile -d -r
+}
 
 :
 # end

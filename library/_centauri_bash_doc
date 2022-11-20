@@ -1,45 +1,58 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-# _centauri_bash_doc = Centauri Bash Library Documentation Support
+# _centauri_bash_doc = centauri-bash-lib: Inline documentation support
 #
 # Call:     . _centauri_bash_doc
 #
-#+The [[documentation()]] function of this module can extract documentation
-# blocks from **_centauri_bash_xxx** modules and pass them to a user supplied
-# callback function for output formatting.
+#+          Inline documentation is used to document **centauri-bash-lib**. The [[documentation()]]
+#           function of this module can extract **documentation** **block**s from
+#           **_centauri_bash_xxx** module sources and pass them to a caller defined callback
+#           function for output formatting, see [[centaurihelp]].
 #
-#+The module also contains some <topic> documentation blocks for general
-# information about **_centauri_bash_lib**.
+#+          The module also contains some <topic> documentation blocks for general
+#           information about **_centauri_bash_lib**.
 #
-#+Syntax:   Document blocks are sequences of bash comments all starting
-#           in column 1. A block must contain at least four comment lines
-#           and must start and end with a marker comment.
+#+          The following text describes the **documentation** **block** syntax. Documentation
+#           blocks always contain at least one **header** **entry** and any amount of **body**
+#           **text**:
 #
-#+          A marker comment is made of at least 8 hyphens. The 1st marker
-#           starts a documentation block, any non-comment line or another
-#           marker end a documentation block.
+#           °    documentation block
+#           °        header entry ...          see  [[documentation (worker)]]
+#           °        body text                      [[documentation (text)]]
+#           °            text block ...             [[Formatting]]
+#           °        body text ...
 #
-#+          The marker must be followed by one or more subject lines.
+#+Syntax:   **Documentation blocks** are sequences of bash comments all starting in column 1.
+#           A block must contain at least four comment lines and must start and end with a
+#           marker comment. Blank lines are not allowed.
+#
+#+          A **marker comment** is made of at least 8 hyphens. The 1st marker starts a
+#           documentation block, any non-comment line or another marker stop processing,
+#           discarding the partial documentation block.
+#
+#+          The marker must be followed by one or more <subject> **header entries**.
 #
 #+          Each <subject> starts with a <key>, followed by a subject <kind> and
 #           a subject <text> (space separated):
 #
-#           ''<subject> := <key> <kind> <text>''
+#           °   ''<subject> := <key> <kind> <text>''
 #
-#           ''<kind>'' :=  **-**  for a function doc block
-#           ''<kind>'' :=  **=**  for a module doc block
-#           ''<kind>'' :=  **+**  for a topic doc block
+#           °   ''<kind>'' :=  **-**  for a function documentation block
+#           °   ''<kind>'' :=  **=**  for a module documentation block
+#           °   ''<kind>'' :=  **+**  for a topic documentation block
 #
 #+          The subject list is closed by an empty comment and is followed by the
 #           documentation body. See [[Documentation (worker)]] for the proposed body
-#           syntax. This module itself implies no body syntax.
+#           syntax. This module itself implies no body syntax, the body is just seen
+#           as a sequence of text lines.
 #
 #+          Invalid, unrecognized syntax is silently ignored.
 #
 #.Examples: # ------------------------------------------------------------------
-#.          # Introduction + Example of a topic block
+#.          # Introduction + Example of a topic documentation block
 #.          #
 #.          # This is the documentation block body.
+#.          # A block must have at least 4 comments lines.
 #.          # ------------------------------------------------------------------
 #
 #.          # ------------------------------------------------------------------
@@ -87,8 +100,9 @@
 # Copyright Dr. J. Pfennig (c) 2019-2022
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_doc"]="0.10:1"
+CEN_MODULES["_centauri_bash_doc"]="0.20:1"
 
+CEN_DOC_VERSION=1       # serialized data format
 CEN_DOC_FLIST=()        # file list, see _cen_doc_flist
 CEN_DOC_CACHE=          # cache enable flag
 CEN_DOC_CLIST=()        # cached items
@@ -98,17 +112,956 @@ CEN_DOC_CINDEX=         # cache items signature for md5sum
 CEN_DOC_MD5SUM=         # md5sum of cache
 CEN_DOC_APICHANGE=      # cache md5sum changed
 CEN_DOC_QMATCH=         # match count/flag, option -q
+CEN_DOC_BLOCK=()        # text of documentation block
 
 # ------------------------------------------------------------------------------
-# Command Syntax + Options, Verbs and Arguments
+# Formatting + How to format inline documentation for centaurihelp
 #
-#+General: The [[main()]] function parses the bash command line arguments. It
+#+General:  This topic describes the formatting rules (markup) in library sources
+# that are understood by [[centaurihelp]]. A source file can contain any number
+# of **documentation** **blocks** as described in [[_centauri_bash_doc]]. Documentation
+# blocks are extracted by [[documentation()]] and then passed to a parser. The
+# built-in default parser extracts **header entries** and **body text**. The body text
+# is divided into **text** **blocks** that are separated by empty lines:
+#
+#           °    documentation block           see  [[_centauri_bash_doc]]
+#           °        header entry ...               [[documentation (worker)]]
+#           °        body text                      [[documentation (text)]]
+#           °            text block ...
+#           °        body text ...
+#
+#+          The parsed documentation is processed by [[centaurihelp]], which performs
+# formatting on a per **text** **block** base and additionally some 'markup'. The
+# blocks (or paragraphs) are sequences of non-empty lines that are separated by empty
+# lines. The formatting rules for text blocks are discussed in the following sections.
+#
+#+Rules: The 1st character of each line is a **marker**. Usually the text is indented.
+# A block optionally can start with a **label** line and can have any number of
+# non-empty **continuation** lines. The **label** ends with a colon. The colon and
+# the spaces up to the 1st non-blanc character are removed. For a
+# **continuation** line up to 12 blank characters are removed. Example:
+#
+#.          #+Label:    The 1st line is followed by continuation lines. The label
+#.          #           is this example is 'Label'. The plus sign is a marker.
+#.          #
+#.          # Label°#2: This is a 2nd block. Labels can only contain letters,
+#.          #           numbers and some special characters (but no spaces).
+#
+#       A paragraph that is not indented implicitly get the **label** 'Remark':
+#
+#.          #+Example:  A paragraph ...
+#.          #
+#.          #           Another paragraph (same label)
+#.          #
+#.          #+This starts a new paragraph with the label 'Remark' because it is
+#.          # not indented.
+#.          #
+#.          #+Another paragraph (same 'Remark' label).
+#
+#+      Blocks do not need to have a **marker**, the examples used "+" for some of
+#       the paragraphs to control the layout. See below.
+#
+#+Markup:   Some characters have a special interpretation (unless escaped via double apstrophs):
+#
+#,          ''°'' (degree)      works a a non-breaking space
+#,          ''§'' (paragraph)   is used in definition lists for indenting
+#
+#+          There are also a few markup sequences (which may have no effect on a dumb terminal
+#           or for plain text output):
+#
+#,          '<>'<>'             literal apostroph: '''
+#,          '<>'xxx'<>'         literal: xxx
+#,          ''**xxx**''         bold: **xxx**
+#,          ''"xxx"''           quoted: "xxx"
+#,          ''<<xxx>>''         italics: <<xxx>>
+#,          ''[[xxx]]''         hyperlink, shown underlined
+#,          ''<>''              placeholder (no output)
+#
+#+      Implied syntax notation formatting for smart  displays affects some things that
+# cannot be used for plain text. They are output literally for text (or a dumb
+# terminal). On a **linux console** or for **html** they get decorated:
+#
+#,          ''<name>''          (only letters) brackets removed, italics: <name>
+#,          ''-X''              (single letter option) bold: -X
+#,          ''--xxx''           (long option) bold: --xxx
+#,          ''--''              bold: --
+#,          ''MY_TEXT''         (uppercase letters) bold: MY_TEXT
+#
+#+Markers:  Usually a comment line starts with "# ", e.g. the first character is
+#           a hash and the second character is a space. Instead of the space a
+#           **marker** can be used. The hash and the marker character get removed
+#           before further processing. The following **markers** are defined:
+#
+#,          " "  **Simple**     full decoration, auto formatting
+#,          "+"  **Justify**    full decoration, auto formatting    (HTML: justify)
+#,          ","  **List**       full decoration, minimal formatting (HTML: preformatted)
+#,          "-"  **Literal**    minimal decoration, no formatting   (HTML: preformatted)
+#,          "."  **Example**    minimal decoration, no formatting   (HTML: preformatted)
+#
+# Trimming:         This text starts at column 21, but all leading spaces are
+#               removed. The 1st **continuation** lines starts at column 17,
+#               but only the 1st 12 leading space are removed. The follow-up
+#           line starts at column 13 and is not modified. The 3rd
+#       **continuation** starts at col 9 and 8 leading spaces are removed.
+# The last **continuation** line starts at column 3.
+#
+#.      # Trimming:         This text starts at column 21, but all leading spaces are
+#.      #               removed. The 1st **continuation** lines starts at column 17,
+#.      #               but only the 1st 12 leading space are removed. The follow-up
+#.      #           line starts at column 13 and is not modified. The 3rd
+#.      #       **continuation** starts at col 9 and 8 leading spaces are removed.
+#.      # The last **continuation** line starts at column 3.
+#
+# Indenting:  This shows indenting for text lines starting beyond column 13.
+#               This is indented by 4 (text starts at column 17)
+# °   Starts at column 3 but is indented because it uses the **degree** char
+#   ''    The '' **quoting** syntax can also be used to indent
+#           A text starting at column 13 (or before) is not indented.
+#
+#.      # Indenting:  This shows indenting for text lines starting beyond column 13.
+#.      #               This is indented by 4 (text starts at column 17)
+#.      # ''°''   Starts at column 3 but is indented because it uses the **degree** char
+#.      #   ''    The '' **quoting** syntax can also be used to indent
+#.      #           A text starting at column 13 (or before) is not indented.
+#
+#   A remark block, which is automatically right justified in HTML output
+#       is started by a text line (without a label) in colum 1 .. 8. All leading
+#               spaces are trimmed.
+#
+#   Multiple remark blocks are automatically labeled as "Remark:" or "Remarks:"
+#   and are by default justified (line-breaks are ignored).
+#
+#.      #   A remark block, which is automatically right justified in HTML output
+#.      #       is started by a text line (without a label) in colum 1 .. 8. All leading
+#.      #               spaces are trimmed.
+#.
+#.      #   Multiple remark blocks are automatically labeled as "Remark:" or "Remarks:"
+#.      #   and are by default justified (line-breaks are ignored).
+#
+#+Justify: The "+" marker
+#       explicitly adjusts a block (line-breaks are ignored).
+#
+# Lists:    There are three simple ways to create lists:
+#
+#,          one    # This is a list with multiple item lines (one per item)
+#,          two    # using the "," marker.
+#
+#,          - This list uses the "-" as 1st character to produce bullets
+#,          - Very long lines can be continued in a very intuitive way,
+#,            just by indenting them.
+#,          - This is it.
+#
+#-          [1] This output is using the "-" marker.
+#-          [2] This is called **literal** output (no formatting).
+#-          [3] The ''[n]'' decoration was added manually. There is
+#-              nothing like automatic numbering.
+#
+#+Examples: Usually code examples a output as a preformatted box in HTML.
+#           In text mode the ''┃'' character flags a preformatted line. Such
+#           text is never justified. This is how it looks:
+#
+#.          Using "#." produces a special
+#.                     layout for code examples.
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# documentation - A bash source code documentation extractor
+#
+# Call:     # single file mode, enumerate ''documentation'' blocks ...
+#           documentation [-a] [-s] <worker> <file>      # parse text
+#           documentation -c|-m [-s] <worker> <file>     # content/module only
+#
+#           # invoke block body text callback ...
+#           documentation -b [-s] <text>                 # get text indices
+#           documentation -b [-s] -|+ <text>             # get text lines
+#
+#           # cache handling ...
+#           documentation [-e] -f <list>                 # set file list
+#           documentation -e|-d [<cache>]                # enable/drop cache
+#           documentation -i <file>...                   # (re)set include list
+#           documentation -l [-c|-m] <worker> [<prep>]   # run file list
+#           documentation -q <pattern>...                # set query filter
+#           documentation -t <name> <pattern>...         # query test
+#           documentation [-d] -x                        # clear list/cache
+#
+# Options:  -a  pass all data including text lines to <worker>
+#           -b  invoke the text block callback
+#           -c  Produce table-of-content, parse no block bodies
+#           -d  Delete table-of-content cache file
+#           -e  Enable/create table-of-content cache
+#           -f  Setup file list mode (does not override non-empty list)
+#           -i  Set a file filter for option -l
+#           -l  Run file list set via -f option
+#           -m  Produce module list, stops after 1st block in file
+#           -p  Alternate parser (used by [[_centauri_bash_use]])
+#           -s  do not generate trace messages
+#           -q  Set filter (in file list) for <pattern>
+#           -t  Test if <name> matches any <pattern>...
+#           -x  Clear file list and in-memory cache
+#
+# Arguments:<worker>  worker callback, see [[documentation (worker)]]
+#           <text>    text callback, see [[documentation (text)]]
+#
+#           <file>    input file name
+#           <prep>    per-file callback for list mode
+#           <list>    list of <file>... for list mode
+#           <name>    name of a cache entry
+#           <pattern> pattern to be searched in cache
+#           <cache>   set cache file path
+#
+#+          Any sequence of -/+/= in the file list sets a filter on element kind
+#           function/topic/module.
+#
+#+Return:   **true** at success or **false** otherwise. When caching is enabled, the
+#           variable CEN_DOC_APICHANGE indicates if index pages must be rebuilt:
+#
+#               **0**    § current, no changes
+#               **1**    § at least one module changed but api not changed
+#               **2**    § no cache data, api state unkown
+#               **3**    § api did change
+#
+#+Caching:  Table-of-content data can be cached to speed up calls with -c and -m
+#           options. Caching works only in multi file mode (option -f) and must be
+#           explicitly enabled via option -e. When caching is not enabled the -i
+#           option is ignored. The -q option searches the toc cache for matching
+#           files and adds the files to the filter list (-i option). The cache is
+#           saved to a file (folder **~/.cache** or **~/.config**).
+#
+# Example:  (1) extract toc and documentation blocks in single file mode
+#.          documentation -c toc_function _centauri_bash_ext
+#.          documentation -a blk_function _centauri_bash_ext
+#
+#.          (2) use a body text callback (only from inside block callback)
+#.          blk_function() {
+#.              # ...
+#.              documentation -b txt_function
+#.          }
+#.          documentation blk_function _centauri_bash_doc
+#
+#           (3) use file list mode and caching for toc and doc blocks
+#.          documentation -s -e -f _centauri_bash_lib _centauri_bash_ext
+#.          documentation -s -l -c toc_function
+#.          documentation -s -l    blk_function
+#.          documentation -s -d -x              # delete cache file too
+#
+#           (4) search in toc for patterns '*folder*', '*file*', '*path*'
+#.          documentation -e -f _centauri_bash_lib _centauri_bash_ext
+#.          documentation -q folder file
+#.          documentation -q += path            # no functions (see -+= filter)
+#.          documentation -l blk_function
+#.          documentation -x
+#
+#+Parsing:  The documentation function reads from <file>, extracts ''documentation''
+#           blocks and passes them to the caller supplied <worker> callback.  Reading
+#           stops if the worker returns a non-zero status.  The last worker status
+#           is used as return value.
+#
+#+          The [[_centauri_bash_lib]] source code ''documentation'' is formatted in blocks,
+#           each block having a kind. These are the defined kinds (no other allowed):
+#
+#               **module**    - a **_centauri_bash_lib** module
+#               **function**  - ''documentation'' for a function
+#               **topic**     - some other ''documentation''
+#
+#+          The first ''documentation'' block should always be a module block and each
+#           module must have a version line that follows the module block:
+#
+#.          CEN_MODULES["_centauri_bash_doc"]="0.10"   # version example
+# ------------------------------------------------------------------------------
+documentation() {
+    # $CEN_DEBUG -c -- "$@"
+    local _abdy=:               # call option -a
+    local _blck                 # text block callback
+    local _popt                 # call option -c|-m
+    local _sopt                 # call option -s
+    local _pars                 # call option -p
+    local _fopt=()              # file list options
+    local _otra="$CEN_TRACE"    # for option -s
+    local _sfil                 # start file flag
+    local _vers="-"             # signal module version if empty
+    local _lnum=0               # line number
+    local _bcnt=0               # block counter
+    local _stat=0               # worker exit code
+
+    while [ "${1::1}" = "-" ] ; do
+        case "$1" in
+        --)   shift ; break ;;
+        -a)   _abdy='_cen_doc_body' ;;
+        -b)   shift ; _cen_doc_block "$@" ; return ;;
+        -d|-e)
+              _fopt+=("$1") ; shift ; CEN_DOC_CFILE="${1:--}"
+              [ "$1" = '-' ] && CEN_DOC_CFILE="$CEN_NAME.cache" ;;
+        -f|-i|-l|-q|-t|-x)
+              _fopt+=("$1") ;;
+        -c)   _popt="$1" ;;
+        -m)   _popt="$1" ; _vers= ;;
+        -p)   shift ; _pars="$1" ;;
+        -s)   _sopt="$1" ; _otra=: ;;
+        *)    _cen_abort - "$1"
+        esac ; shift
+    done
+
+    local _work="${1:-:}" _file="$2"
+
+    # run explicit file list mode commands
+    if [ -n "$_fopt" ] ; then
+        [ -n "$_pars" ] && _fopt+=("-p" "$_pars")
+        _cen_doc_flist "${_fopt[@]}" $_sopt $_popt -- "$@" ; return
+    fi
+
+    # do caching
+    if [ "$_work" = ":" ] ; then
+        _popt="-c" ; _vers=             # all header and versions
+        CEN_DOC_CACHE=1
+        $_otra -a -c "documentation" "cache filling:" "$_file"
+    elif [ -n "$CEN_DOC_CACHE" -a -n "$_popt" ] ; then
+        $_otra -a -c "documentation" "cache playback:" "$_file"
+        _cen_doc_cplay "$_file" "$_popt" "$_work" ; return
+    fi
+
+    # alternate parser
+    if [ -n "$_pars" ] ; then
+        $_pars $_popt $_sopt -- "$_work" "$_file" _cen_doc_citem ; return
+    fi
+
+    # read file
+    if [ ! -r "$_file" ] ; then
+        error -z "Cannot read documentation file:" "$_file" ; return 1
+    elif [ -z "$CEN_DOC_CACHE" ] ; then
+        $_otra -a -c "documentation" "processing:" "$_file"
+    fi
+
+    # --------------------------------------------------------------------------
+    # find documentation entries and pass them to ___output
+    # --------------------------------------------------------------------------
+
+    local asub=()           # array of lines for doc entry
+    local arun=0            # block length counter
+    local fhdr              # block processing flag (header ok)
+
+    # input parser: 0|1 <line>
+    _cen_doc_parser() {
+
+        # open doc, flush it or add text line
+        if [ "$1" = 0 ] ; then
+            if [ "$arun" -gt 3 ] ; then
+                if [ -z "$_sfil" ] ; then               # signal begin of data
+                    if [ "$_popt" = "-m" ] ; then
+                        _sfil=0
+                    else
+                        _sfil=1
+                        [ -n "$_popt" ] && $_work "$_file" "0:B0"
+                    fi
+                fi
+                ((_bcnt += 1))
+                if [ -z "$_popt" ] ; then
+                    $_work "$_file" "$_lnum:B$_bcnt"
+                elif [ "$_popt" = "-m" ] ; then         # module listing only
+                    if [[ "$asub" == *:M* ]] ; then
+                        [ -z "$_vers" ] && _vers="-"    # end version wait
+                        return 0                        # ignore this block
+                    fi
+                    [ -z "$_vers" ] && _cen_doc_version # find version
+                else
+                    [ -z "$_vers" ] && _cen_doc_version # find version
+                fi
+                if [ "$_work" = ":" ] ; then            # fill cache ...
+                    local _temp
+                    for _temp in "${asub[@]}" ; do
+                        _cen_doc_citem "$_file:$_temp"
+                    done
+                else                                    # process doc block
+                    $_work "$_file" "${asub[@]}" || _stat=$?
+                    $_abdy "$_work" "$_file" || _stat=$?
+                fi
+            fi
+            asub=() ; fhdr= ; arun=0
+            [ "$_stat" = 0 ] || return 1
+
+        # documentation body
+        elif [ -n "$fhdr" ] ; then
+            ((arun += 1))
+            [ -z "$_popt" ] && CEN_DOC_BLOCK+=("$2")
+
+        # expecting one or more headers
+        elif [ "$arun" != '-1' ] ; then
+            ((arun += 1))
+            local aadd="-" tnam text="$2"
+            case "$text" in
+                "")     aadd=
+                        if [ -n "$asub" ] ; then
+                            # this line is ignred, so add 1 to line number
+                            fhdr=1 ; CEN_DOC_BLOCK=("$((_lnum + 1))")
+                        fi ;;
+
+                # use bash globbing as pre-filter - regexp are slow!
+                *\ [-=+]\ *)
+                        if [[ "$text" =~ ^([a-zA-Z_\ \(\)]*)([-+=])\ *(.*) ]] ; then
+                            tnam="${BASH_REMATCH[1]}"
+                            tnam="${tnam%"${tnam##*[![:space:]]}"}"
+                            case "${BASH_REMATCH[2]}" in
+                            -)  aadd="$_lnum:F${tnam}:${BASH_REMATCH[3]}" ;;
+                            =)  aadd="$_lnum:M${tnam}:${BASH_REMATCH[3]}" ;;
+                            *)  aadd="$_lnum:T${tnam}:${BASH_REMATCH[3]}" ;;
+                            esac
+                        fi
+                        ;;
+            esac
+            if [ "$aadd" = "-" ] ; then             # not a header -> not a doc block
+                asub=() ; arun=-1
+            elif [ -n "$aadd" ] ; then              # ok, expecting more headers
+                asub+=("$aadd")
+            fi
+        fi
+        return 0
+    }
+
+    # search the module version and call worker
+    _cen_doc_version() {
+        local _rlin _warn _what="CEN_MODULES[${_file##*/}]="
+        while IFS= read -r _rlin ; do
+            ((_lnum += 1))
+            case "$_rlin" in
+                \#\ --------*)  _warn=1 ; continue ;;
+                \#--------*)    _warn=1 ; continue ;;
+                \#*)            continue ;;
+                *\[*\]=*)       ;;
+                *)              continue ;;
+            esac
+            _rlin="${_rlin%%#*}"
+            _rlin="${_rlin//[ \'\"]/}"
+            [ "${#_rlin}" -lt 10 ] && continue      # line to short or comment
+            [ "${_rlin/"$_what"/}" = "$_rlin" ] && continue
+            _vers="${_rlin##*=}"
+            _cen_doc_citem "$_file:$_lnum:V$_vers"  # add to cache
+            [ "$_popt" = "-m" ] &&
+                $_work "$_file" "$_lnum:V$_vers"    # signal module version
+            [ -n "$_warn" ] &&
+                error -m -p $"Marker comment before version: %s[%s]:\n%s" "$_file" "$_lnum" "$_rlin"
+            return
+        done
+        _vers=-
+    }
+
+    # --------------------------------------------------------------------------
+    # read pre-parsed documentation file, call worker
+    # --------------------------------------------------------------------------
+
+    local _rlin _rblk
+
+    if [ -z "$_popt" ] && [ "$_file.d" -nt "$_file" ] ; then
+        local _ldat=0 ; _asub=() ; _stat=1
+        while IFS= read -r _rlin ; do
+            case "$_rlin" in
+            *:-*)   $_work "$_file" "${_asub[@]}" ; _asub=()
+                    $_abdy "$_work" "$_file" || break
+                    _lnum="${_rlin%%:*}"                # source code line#
+                    _ldat="${_rlin#*:-}"                # number of text lines
+                    CEN_DOC_BLOCK=("$_lnum")
+                    mapfile -O 1 -n "$_ldat" -t CEN_DOC_BLOCK || break
+                    continue
+                    ;;
+            *:[MFT]*)
+                    _asub+=("$_rlin") ; continue
+                    ;;
+            *:E*)   $_work "$_file" "${_asub[@]}" || break
+                    $_abdy "$_work" "$_file" || break
+                    _asub=() ; _stat=0
+                    ;;
+            esac
+            if [ -n "$_asub" ] ; then                    # flush header list
+                $_work "$_file" "${_asub[@]}" ; _asub=()
+            else                                        # single entry
+                $_work "$_file" "$_rlin"
+            fi
+        done < "$_file.d"
+        return $_stat
+    fi
+
+    # --------------------------------------------------------------------------
+    # read source code input file, call worker
+    # --------------------------------------------------------------------------
+
+    while [ "$_stat" = 0 ] ; do
+
+        # process comment blocks
+        if [ -n "$_rblk" ] ; then
+            while read -r _rlin ; do
+                ((_lnum += 1))
+                case "$_rlin" in
+                    \#\ --------*)  ;;
+                    \#--------*)    ;;
+                    \#\ *)          _cen_doc_parser 1 "${_rlin:2}" ; continue ;;
+                    \#*)            _cen_doc_parser 1 "${_rlin:1}" ; continue ;;
+                    *)              _rblk= ;;
+                esac
+                [ -n "$_rblk" ] && _cen_doc_parser 0 ; _rblk= ; break
+            done
+            [ "$_popt" = "-m" -a -n "$_vers" ] && break
+
+        # wait for comment
+        else
+            while read -r _rlin ; do
+                ((_lnum += 1))
+                case "$_rlin" in
+                    \#\ --------*)  ;;
+                    \#--------*)    ;;
+                    *)              _rblk= ; continue
+                esac
+                _rblk=1 ; break
+            done
+            [ -z "$_rblk" ] && break
+        fi
+    done < "$_file"
+
+    [ "$_sfil" = "1" ] && $_work "$_file" "$_lnum:E"    # signal end of data
+    return $_stat
+}
+
+# ------------------------------------------------------------------------------
+# _cen_doc_body -- pass body text to worker
+#
+# Call:     _cen_doc_body <worker> <file>
+# ------------------------------------------------------------------------------
+_cen_doc_body() {
+    local _body=()
+    local _lnum="$CEN_DOC_BLOCK"
+
+    for _line in "${CEN_DOC_BLOCK[@]:1}" ; do
+        _body+=("$_lnum:-$_line")
+        ((_lnum += 1))
+    done
+    [ "${#_body[@]}" -le 0 ] && return 0
+    CEN_DOC_BLOCK=()
+    $1 "$2" "${_body[@]}"               # call worker, return status
+}
+
+# ------------------------------------------------------------------------------
+# _cen_doc_block -- body text block callbacks
+#
+# Call:      (1) _cen_doc_block -|+ <func>      # pass text lines
+#            (2) _cen_doc_block <func>          # use CEN_DOC_BLOCK only
+#
+#            <func> <nblk> <indx> <text>...     # for (1)
+#            <func> <nblk> <indx> <leng>        # for (2)
+# ------------------------------------------------------------------------------
+_cen_doc_block() {
+    local _leng="${#CEN_DOC_BLOCK[@]}"  # body line count + 1
+    [ "$_leng" -le 1 ] && return 1
+    ((leng -= 1))
+
+    local _indx=1                       # array index
+    local _nblk=0                       # block index
+    local _line="$CEN_DOC_BLOCK"        # start line
+    local _deco=()
+    local _pref=0                       # prefix flag
+    if [ "$1" = '-' ] ; then
+        shift ; _pref=1
+    elif [ "$1" = '+' ] ; then
+        shift ; _pref=2
+    fi
+    local _blck="$1"                    # text block callback
+    local _ibeg=1 _coun
+
+    if [ "$_pref" = 0 ] ; then
+        while [ "$_indx" -le "$_leng" ] ; do
+            if [ -z "${CEN_DOC_BLOCK[_indx]}" ] ; then
+                [ "$_indx" -gt "$_ibeg" ]  && $_blck "$_nblk" "$_ibeg" "$((_indx - _ibeg))"
+                ((_nblk+=1)) ; _ibeg="$_indx" ; ((_ibeg+=1))
+            fi
+            ((_indx+=1))
+        done
+        [  "$_indx" -gt "$_ibeg" ] && $_blck "$_nblk" "$_ibeg" "$((_indx - _ibeg))"
+    else
+        while [ "$_indx" -le "$_leng" ] ; do
+            if [ -z "${CEN_DOC_BLOCK[_indx]}" ] ; then
+                [ -n "$_deco" ] && $_blck "$_nblk" "$_ibeg" "${_deco[@]}"
+                ((_nblk+=1)) ; _ibeg="$_indx" ; ((_ibeg+=1)) ; _deco=()
+            elif [ "$_pref" = 1 ] ; then
+                _deco+=("${CEN_DOC_BLOCK[_indx]}")
+            else
+                _deco+=("$_line:-${CEN_DOC_BLOCK[_indx]}") ; ((_line+=1))
+            fi
+            ((_indx+=1))
+        done
+    [ -n "$_deco" ] && $_blck "$_nblk" "$_ibeg" "${_deco[@]}"
+    fi
+    CEN_DOC_BLOCK=()
+    return 0
+}
+
+# ------------------------------------------------------------------------------
+# _cen_doc_flist -- handle file lists and caching
+#
+# Call:      _cen_doc_flist -f [-c|-m] <list>              # set file list
+#            _cen_doc_flist -l [-c|-m] <worker> [<prep>]   # run file list
+#            _cen_doc_flist [-s] -x                        # clear file list
+#            _cen_doc_flist [-s] [-e|-d|-i|-q|-t]          # cache operations
+# ------------------------------------------------------------------------------
+_cen_doc_flist() {
+    local _copt _fopt _popt _sopt _pars
+    local _curr _item _skip _otra="$CEN_TRACE"
+
+    while [ "${1::1}" = "-" ] ; do
+        case "$1" in
+        --)   shift ; break ;;
+        -c)   _popt="$1" ;;
+        -d)   _copt="$1" ;;
+        -e)   _copt="$1" ;;                     # enable cache
+        -f)   _fopt="$1" ;;
+        -i)   _copt="$1" ;;
+        -l)   _fopt="$1" ;;
+        -m)   _popt="$1" ;;
+        -p)   _pars="$1 $2" ; shift ;;
+        -q)   _copt="$1" ;;
+        -s)   _sopt="$1" ; _otra=: ;;
+        -t)   _copt="$1" ;;
+        -x)   _fopt="$1" ;;
+        *)    _cen_abort - "$1"
+        esac ; shift
+    done
+
+    # add filter
+    if [ "$_copt" = "-i" ] ; then
+        if [ $# = 0 ] ; then                    # empty list: reset
+            CEN_DOC_FILTER=() ; return 0
+        fi
+        for _curr in "$@" ; do                  # add args to filters
+            _skip=
+            for _item in "${CEN_DOC_FILTER[@]}" ; do
+                [ "$_curr" = "$_item" ] || continue
+                _skip=1 ; break
+            done
+            [ -z "$_skip" ] && CEN_DOC_FILTER+=("$_curr")
+        done
+        return 0
+
+    # cache query
+    elif [ "$_copt" = "-q" ] ; then
+        if [ "$#" = 0 ] ; then                      # clear query
+            CEN_DOC_QMATCH= ; return 0
+        elif [ -z "$CEN_DOC_CACHE" ] ; then         # no cache data
+            CEN_DOC_QMATCH=-1 ; return 1
+        fi
+
+        local _file _mesg _ksel _kind ; CEN_DOC_QMATCH=0
+        for _curr in "$@" ; do                      # loop over query args
+            # any sequence of -+= is a function/topic/module selector
+            if [ -z "${_curr//[-+=]/}" ] ; then
+                _ksel=
+                [ "${_curr//-/}" != "$_curr" ] && _ksel+='F'
+                [ "${_curr//+/}" != "$_curr" ] && _ksel+='T'
+                [ "${_curr//=/}" != "$_curr" ] && _ksel+='M'
+                continue
+            fi
+            _curr="${_curr,,}"
+            for _item in "${CEN_DOC_CLIST[@]}" ; do
+                # example: _centauri_bash_lib:133:Fmessage:output a message
+                _skip="${_item#*:}" ; _skip="${_skip#*:}"
+                _skip="${_skip%%:*}" ; _kind="${_skip::1}" ; _skip="${_skip:1}"
+                [ "${_ksel/$_kind/}" = "${_ksel:- }" ] && continue
+                [[ "${_skip,,}" == *$_curr* ]] || continue
+                if [ -n "$_fopt" ] ; then
+                    _cen_doc_flist $_sopt -i "$_item"
+                else
+                    _cen_doc_flist $_sopt -i "${_item%%:*}"
+                fi
+                ((CEN_DOC_QMATCH += 1))
+                $_otra -a -c "documentation" -p $"match '%s' in file '%s'" "$_skip" ${_item%%:*}
+            done
+        done
+        [ "$CEN_DOC_QMATCH" = 0 ] && return 1
+        $_otra -a -c "documentation" -p $"got %s match(es)" "$CEN_DOC_QMATCH" ; return 0
+
+    # cache test
+    elif [ "$_copt" = "-t" ] ; then
+        [ "$#" = 0 ] && return 0                        # no filter
+        [ -z "$CEN_DOC_QMATCH" ] && return 0            # no previous query
+        if [ -n "$CEN_DOC_CACHE" ] ; then               # using cache
+            [ "${CEN_DOC_QMATCH:-0}" -gt 0 ] || return 1 # no more matches
+        fi
+        _curr="${1,,}" ; shift
+        for _item in "$@" ; do
+            [[ "$_curr" == *${_item,,}* ]] || continue
+            ((CEN_DOC_QMATCH -= 1)) ; return 0          # OK!
+        done
+        return 1                                        # not found
+
+    # delete cache file
+    elif [ "$_copt" = "-d" ] ; then
+        serialize $_sopt -d -n "$CEN_DOC_CFILE" ; _fopt="-x"
+    fi
+
+    # clear file list and cache
+    if [ "$_fopt" = "-x" ] ; then
+        CEN_DOC_FLIST=() ; CEN_DOC_CLIST=() ; CEN_DOC_FILTER=()
+        CEN_DOC_CACHE= ; CEN_DOC_QMATCH=
+        $_otra -a -c "documentation" $"file list cleared"
+        return
+    fi
+
+    if [ $# = 0 -a "$_copt" != "-e" ] ; then
+       _cen_abort $"Missing arg(s)" $_fopt $_copt $_popt
+
+    # processing file list
+    elif [ "$_fopt" = "-l" ] ; then
+        local _work="${1:-:}" _prep="${2:--}" _fcnt=0 _stat
+
+        $_otra -a -c "documentation" $"start file list"
+        for _item in "${CEN_DOC_FLIST[@]}" ; do
+
+            # filtering
+            if [ -n "$CEN_DOC_FILTER" ] ; then
+                _skip=1
+                for _curr in "${CEN_DOC_FILTER[@]}" ; do
+                    [ "$_curr" = "$_item" ] || continue
+                    _skip= ; break
+                done
+                if [ -n "$_skip" ] ; then              # not in list, skip
+                    $_otra -a -c "documentation" $"run file list:" "$_item" $"[skipped, filter]"
+                    continue
+                fi
+            fi
+
+            # user callback <prep>
+            if [ "$_prep" != "-" ] ; then
+                $_otra -a -c "documentation" $"run file list:" "$_item"
+                $_prep "$_fcnt" "$_item" ; _stat=$?
+                if [ "$_stat" = 1 ] ; then
+                    $_otra -a -c "documentation" $"run file list:" "$_item" $"[skipped, status 1]"
+                    continue
+                elif [ "$_stat" -gt 0 ] ; then
+                    $_otra -a -c "documentation" $"run file list:" "$_item" $"[stopped, status $_stat]"
+                    return $_stat
+                fi
+            fi
+
+            # process this file
+            # dryrun "documentation $_sopt $_popt $_pars '$_work' '$_item'" && continue
+            _fcnt=$((_fcnt + 1))
+            if [ "$_fcnt" = 1 ] ; then                  # signal begin of processing
+                $_work "" "0:A" || return 1
+            fi
+            documentation $_sopt $_popt $_pars -- "$_work" "$_item"
+        done
+        [ "$_fcnt" != 0 ] && $_work "" "0:Z$_fcnt"      # signal end of processing
+        $_otra -a -c "documentation" $"done file list"
+
+    # set file list (1st time only)
+    elif [ "$_fopt" = "-f" ] && [ "${#CEN_DOC_FLIST[@]}" = 0 ] ; then
+        CEN_DOC_FLIST=("$@")
+        $_otra -a -c "documentation" -p $"file list set [%s files]" "${#CEN_DOC_FLIST[@]}"
+    fi
+
+    # enable cache
+    if [ "$_copt" = "-e" ] ; then
+        $_otra -a -c "documentation" $"enable cache:" "$CEN_DOC_CFILE"
+        _cen_doc_cinit                                  # deserialize cache
+        case $? in
+        0)  return 0 ;;                                 # cache valid
+        2)  return 2 ;;                                 # error
+        esac
+        CEN_DOC_CLIST=()
+        _cen_doc_flist $_sopt -l $_pars :               # fill cache
+        _cen_doc_cdone ; return                         # serialize, return status
+    fi
+    return 0
+}
+
+# ------------------------------------------------------------------------------
+# cache helper functions:
+#
+#       _cen_doc_cinit                              # initialise cache
+#       _cen_doc_cdone                              # finish cache run
+#       _cen_doc_citem <item>                       # add cache entry
+#       _cen_doc_cplay <file> <popt> <work>         # playback
+# ------------------------------------------------------------------------------
+
+# initialise cache
+_cen_doc_cinit() {
+    system -f -c md5sum                         # is part of gnu coreutils
+    CEN_DOC_CINDEX= ; CEN_DOC_QMATCH=
+    CEN_DOC_APICHANGE=2                         # no api status
+    serialize -q -r -n "$CEN_DOC_CFILE"
+    error -t || return 2                        # deserialize error
+    [ -z "$CEN_DOC_CACHE" ] && return 1         # no data
+    if [ "$CEN_DOC_VERSION" != "$CEN_DOC_CACHE" ] ; then
+        $CEN_TRACE -c "documentation" $"wrong cache data version:" "$CEN_DOC_CACHE"
+        CEN_DOC_MD5SUM= ; CEN_DOC_CLIST=()
+    else
+        CEN_DOC_APICHANGE=0                     # flag cache as valid
+    fi
+
+    # check if any file is newer than cache
+    local _item
+    for _item in "${CEN_DOC_FLIST[@]}" ; do
+        [ "$_item" -nt "$CEN_SERIALIZE" ] || continue
+        [ "$CEN_DOC_APICHANGE" = 0 ] && CEN_DOC_APICHANGE=1
+        return 1                                # files updated
+    done
+    return 0                                    # cache is valid
+}
+
+# finish cache run
+_cen_doc_cdone() {
+    local _omd5="$CEN_DOC_MD5SUM"
+    system -s CEN_DOC_MD5SUM -e -p -- md5sum <<< "$CEN_DOC_CINDEX"
+    CEN_DOC_MD5SUM="${CEN_DOC_MD5SUM%% *}"
+    CEN_DOC_CACHE="$CEN_DOC_VERSION"
+    serialize -w -n "$CEN_DOC_CFILE" CEN_DOC_MD5SUM CEN_DOC_CACHE CEN_DOC_CLIST
+
+    if [ "$CEN_DOC_APICHANGE" = 1 ] ; then      # use md5sum
+        [ "$_omd5" = "$CEN_DOC_MD5SUM" ] || CEN_DOC_APICHANGE=3
+    fi
+    return 0
+}
+
+# cache playback: <file> <popt> <work>
+_cen_doc_cplay() {
+    local _farg="$1" _popt="$2" _work="$3"
+    local _frun _item _file _kind
+
+    for _item in "${CEN_DOC_CLIST[@]}" - ; do
+        _file="${_item%%:*}"
+
+        # signal "B" (begin) and "E" (end)
+        if [ -z "$_frun" ] ; then
+            [ "$_farg" = "$_file" ] || continue
+            _frun=1
+            if [ "$_popt" = "-c" ] ; then
+                $_work "$_file" "0:B0" || return 1
+            fi
+        elif [ "$_farg" != "$_file" ] ; then
+            if [ "$_popt" = "-c" ] ; then
+                $_work "$_file" "0:E" ; return          # return status
+            fi
+            break
+        fi
+
+        # content mode, do not signal "V" (version)
+        _item="${_item#*:}" ; _kind="${_item#*:}" ; _kind="${_kind::1}"
+        if [ "$_popt" = "-c" ] ; then
+            [ "${_kind::1}" = "V" ] && continue
+            $_work "$_file" "$_item" || return 1
+
+        # module mode, only "V", "M" (module) and "S" (tool)
+        elif [ "$_kind" = "V" -o "$_kind" = "M" -o "$_kind" = "S" ] ; then
+            $_work "$_file" "$_item" || return 1
+        fi
+    done
+    return 0
+}
+
+# add item to cache: <item>
+_cen_doc_citem() {
+    [ -n "$CEN_DOC_CACHE" ] || return 1
+
+    local _modu="${1%%:*}" _tspl="${1#*:}"          # get module
+          _tspl="${_tspl#*:}"                       # remove line#
+    local _kspl="${_tspl::1}" ; _tspl="${_tspl:1}"  # kind and text
+
+    CEN_DOC_CINDEX+="$_modu|$_kspl|$_tspl"$'\n'
+    CEN_DOC_CLIST+=("$1")
+}
+
+# ------------------------------------------------------------------------------
+# documentation (worker) - Documentation block callback
+#
+# Call:     <worker> <file> <start>        # start of doc block
+#           <worker> <file> <entry>...     # documentation block
+#           <worker> <file> <end>          # end of file
+#
+# Arguments:<file>     input file name
+#           <entry>    <header> or <body> line belonging to a block
+#           <start>    specical start-of-block <entry>
+#           <end>      specical end-of-file <entry>
+#
+#+Format:   Before the each documentation block and after the last block of
+#           the file the processor calls the <worker> with a special <entry>.
+#
+#+          The <worker> receives a numer of <entry> lines, belonging to one
+#           documentation block. The block starts with a least one <header>
+#           <entry> followed by any number of <body> <entries>.
+#
+#           Each <header> <entry> is a line consisting of up to four fields:
+#
+#           ''    <line-number>''**:**''<kind-char><name>''**:**''<text>''
+#
+#           Each <body> <entry> has three fields (body follows header):
+#
+#           ''    <line-number>''**:-**''<text>''
+#
+#           The <start> <entry> has a block count (starting with **0**):
+#
+#           ''    <line-number>''**:B**''<block-count>''
+#
+#           The <end> <entry> just passes the total line count:
+#
+#           ''    <total-lines>''**:E**
+#
+#+          The option -c is used, before each module <entry> the module
+#           version is signaled:
+#
+#           ''    <line-number>''**:V**''<version>''
+#
+#.Decoding: # the following code snippet can be used to split entries
+#.          for entr in "$@" ; do
+#.              local text="${entr#*:}"  line="${entr%%:*}"
+#.              local kind="${text::1}"  text="${text:1}"
+#.              local name="${text%%:*}" mesg="${text#*:}"
+#.              case "$kind" in
+#.                  -) text_out "$line" "text" ;;
+#.                  M) head_out "$line" "Module"   "$name" "$mesg" ;;
+#.                  T) head_out "$line" "Topic"    "$name" "$mesg" ;;
+#.                  F) head_out "$line" "Function" "$name" "$mesg" ;;
+#.              esac
+#.          done
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# documentation (text) - Documentation text block callback
+#
+# Call:     (1) <func> <nblk> <ibeg> <text>...
+#           (2) <func> <nblk> <ibeg> <leng>
+#
+#           line="$CEN_DOC_BLOCK"           # CEN_DOC_BLOCK[0]
+#
+#+          From a worker callback a recursive call to [[documentation()]]
+#           with option -b can be used the fetch paragraphs of body text.
+#
+#           Form (1) returns all lines of a text paragraph as arguments, see
+#
+#           °   documentation -b + <func>   # decorated text
+#           °   documentation -b - <func>   # raw text
+#
+#+          Form (2) does not pass text lines rather than an index and a line
+#           count. Text data is passed via CEN_DOC_BLOCK[index]...
+#
+#           °   documentation -b <func>     # pass line count
+#
+#           "Decorated text" stands for "<line>:-<text>" formatted entries.
+#
+# Arguments:<func>     user define callback function
+#           <nblk>     paragraph count, starts with 0
+#           <line>     line number of 1st text line in block
+#           <ibeg>     start index in CEN_DOC_BLOCK array
+#           <leng>     number of text lines in paragraph
+#           <text>     text line (raw or decorated)
+#
+#+For perfomance reasons the parser of of [[documentation()]] does not pass text
+# lines to the <worker> callback unless called with option -a.
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# Command Syntax + Options, verbs and arguments
+#
+#+General: This topic describes how centauri-bash-lib handles the command line of
+# a script. The [[main()]] function parses the bash command line arguments. It
 # knows about **options**, **verbs** (optional) and **arguments**.
 #
-#.Options:  **-**<letter> [<value>]     § short name, optional argument
+#.Options:  **-**<letter> [<value>]     § short option name, optional argument
 #.          **-**<letter>[<value>]
 #.
-#.          --<name> [<value>]          § long name, optional argument
+#.          --<name> [<value>]          § long long name, optional argument
 #.          --<name>=<value>
 #.          --<name>:<value>
 #.          --<name>=''"''<value>''"''  § <value> may contain spaces
@@ -150,7 +1103,7 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #
 #+Command line processing first removes the **options** and their values from
 # the invokation arguments and then calls [[run()]] or does **verb** processing.
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Command Line + How main() uses options(), actions() or run() and usage()
 #
@@ -229,26 +1182,34 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-# Initialization + How _centauri_bash_lib and modules are found
+# Initialization + How centauri-bash-lib and its modules are found
 #
-#+General: The library is loaded using a proxy named **_centauri_bash_lib**. That file
-# should be sym-linked to "/usr/local/bin". And the later should be in the
-# current PATH environment. This is the most simple way.
+#+General: The library should always be loaded using an autogenerated proxy in the
+# $CEN_TOOLS folder. It is named **_centauri_bash_lib** but is not the main module
+# itself. The "$CEN_TOOLS/_centauri_bash_lib" proxy script should be sym-linked to
+# "/usr/local/bin". And the later should be in the current PATH environment. This
+# is the most simple way to locate modules.
 #
-#+Path: Any user script is either linked via "/usr/local/bin" or is called with
+#+Path: If the proxy is not yet in $PATH the following fallbacks apply:
+# Any user script is either linked via "/usr/local/bin" or is called with
 # an explicit path. In the later case that path is added to PATH environment
-# in the hope to locate **_centauri_bash_lib** that way.
+# in the hope to locate **_centauri_bash_lib** this way. Example:
 #
-#+Environment: °Most important is the environment variable CEN_ROOT. It is used internally
-# to locate most components and data. If CEN_ROOT is not yet set, the loading
-# of **_centauri_bash_lib** causes it to set CEN_ROOT.  All modules and scripts are
-# installed at CEN_ROOT or its children CEN_TOOLS and CEN_LIBRARY, see [[Installation]].
+#.          PATH+=":${0%/*}" . _centauri_bash_lib -a "$0" "0.12:1" || exit 2
 #
-#+If CEN_ROOT is not set at load time, **_centauri_bash_lib** proxy also sanitizes
+#+Note: The "$CEN_LIBRARY" folder **must°not°be°added** to $PATH!
+#
+#+Environment: °Very important is the environment variable CEN_ROOT. It is used internally
+# to locate most components and data. It may be preset for example in ".bashrc". Otherwise,
+# if CEN_ROOT is not yet set, the loading of the **_centauri_bash_lib** proxy causes it to
+# set CEN_ROOT.  All modules and scripts are installed at CEN_ROOT or its children CEN_TOOLS
+# and CEN_LIBRARY, see [[Installation]].
+#
+#+Only if CEN_ROOT is not set at load time, the **_centauri_bash_lib** proxy also sanitizes
 # **TMP**, **TMPDIR** and XDG_RUNTIME_DIR.
 #
-#+A slight speed-up can be achived by presetting CEN_ROOT - for example in
-# bash ".profile" or ".bashrc".
+#+At script start time a slight speed-up can be achived by presetting CEN_ROOT - for example
+# in bash ".profile" or ".bashrc".
 #
 #+Modules are loaded via "embed -m <name>" where name is a full name like
 # **_centauri_bash_use** or an absolute path. See [[embed()]].
@@ -556,743 +1517,7 @@ CEN_DOC_QMATCH=         # match count/flag, option -q
 #
 #.         declare -g -A CEN_WALK_DMAP # declare a map (use -g for global)
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# documentation - The source code documentation extractor
-#
-# Call:     documentation [-s] [-c|-m] <worker> <file>   # single file mode
-#
-#           documentation [-e] -f <list>                 # set file list
-#           documentation -e|-d [<cache>]                # enable/drop cache
-#           documentation -i <file>...                   # (re)set include list
-#           documentation -l [-c|-m] <worker> [<prep>]   # run file list
-#           documentation -q <pattern>...                # set query filter
-#           documentation -t <name> <pattern>...         # query test
-#           documentation [-d] -x                        # clear list/cache
-#
-# Options:  -c  Produce table-of-content, parse no block bodies
-#           -d  Delete table-of-content cache file
-#           -e  Enable/create table-of-content cache
-#           -f  Setup file list mode (does not override non-empty list)
-#           -i  Set a file filter for option -l
-#           -l  Run file list set via -f option
-#           -m  Produce module list, stops after 1st block in file
-#           -p  Alternate parser
-#           -s  do not generate trace messages
-#           -q  Set filter (in file list) for <pattern>
-#           -t  Test if <name> matches any <pattern>...
-#           -x  Clear file list and in-memory cache
-#
-# Arguments:<worker>  worker callback, see [[documentation (worker)]]
-#           <file>    input file name
-#           <prep>    per-file callback for list mode
-#           <list>    list of <file>... for list mode
-#           <name>    name of a cache entry
-#           <pattern> pattern to be searched in cache
-#           <cache>   set cache file path
-#
-#+          Any sequence of -/+/= in the file list sets a filter on element kind
-#           function/topic/module.
-#
-#+Return:   **true** at success or **false** otherwise. When caching is enabled, the
-#           variable CEN_DOC_APICHANGE indicates if index pages must be rebuilt:
-#
-#               <empty>  § current, no changes
-#               **0**    § at least one module changed but api not changed
-#               **1**    § don't know, no data: regenerate index
-#               **2**    § api was changed: regenerate index
-#
-#+Caching:  Table-of-content data can be cached to speed up calls with -c and -m
-#           options. Caching works only in multi file mode (option -f) and must be
-#           explicitly enabled via option -e. When caching is not enabled the -i
-#           option is ignored. The -q option searches the toc cache for matching
-#           files and adds the files to the filter list (-i option). The cache is
-#           saved to a file (folder **~/.cache** or **~/.config**).
-#
-# Example:  (1) extract toc and documentation blocks in single file mode
-#.          documentation -c toc_function _centauri_bash_ext
-#.          documentation    elt_function _centauri_bash_ext
-#
-#           (2) use file list mode and caching for toc and doc blocks
-#.          documentation -s -e -f _centauri_bash_lib _centauri_bash_ext
-#.          documentation -s -l -c toc_function
-#.          documentation -s -l    elt_function
-#.          documentation -s -d -x              # delete cache file too
-#
-#           (3) search in toc for patterns '*folder*', '*file*', '*path*'
-#.          documentation -e -f _centauri_bash_lib _centauri_bash_ext
-#.          documentation -q folder file
-#.          documentation -q += path            # no functions (see -+= filter)
-#.          documentation -l elt_function
-#.          documentation -x
-#
-#+Parsing:  The documentation function reads from <file>, extracts ''documentation''
-#           blocks and passes them to the caller supplied <worker> callback.  Reading
-#           stops if the worker returns a non-zero status.  The last worker status
-#           is used as return value.
-#
-#+          The [[_centauri_bash_lib]] source code ''documentation'' is formatted in blocks,
-#           each block having a kind. These are the defined kinds (no other allowed):
-#
-#               **module**    - a **_centauri_bash_lib** module
-#               **function**  - ''documentation'' for a function
-#               **topic**     - some other ''documentation''
-#
-#+          The first ''documentation'' block should always be a module block and each
-#           module must have a version line that follows the module block:
-#
-#.          CEN_MODULES["_centauri_bash_doc"]="0.10"   # version example
-# ------------------------------------------------------------------------------
-documentation() {
-    local _popt                 # call option -c|-m
-    local _sopt                 # call option -s
-    local _pars                 # call option -p
-    local _fopt=()              # file list options
-    local _otra="$CEN_TRACE"    # for option -s
-    local _sfil                 # start file flag
-    local _vers="-"             # signal module version if empty
-    local _lnum=0               # line number
-    local bcnt=0                # block counter
-    local stat=0                # worker exit code
 
-    while [ "${1::1}" = "-" ] ; do
-        case "$1" in
-        --)   shift ; break ;;
-        -d|-e)
-              _fopt+=("$1")
-              shift ; CEN_DOC_CFILE="${1:-$CEN_NAME.cache}" ;;
-        -f|-i|-l|-q|-t|-x)
-              _fopt+=("$1") ;;
-        -c)   _popt="$1" ;;
-        -m)   _popt="$1" ; _vers= ;;
-        -p)   shift ; _pars="$1" ;;
-        -s)   _sopt="$1" ; _otra=: ;;
-        *)    _cen_abort - "$1"
-        esac ; shift
-    done
-
-    local _work="${1:-:}" _file="$2"
-
-    # run explicit file list mode commands
-    if [ -n "$_fopt" ] ; then
-        [ -n "$_pars" ] && _fopt+=("-p" "$_pars")
-        _cen_doc_flist "${_fopt[@]}" $_sopt $_popt -- "$@" ; return
-    fi
-
-    # do caching
-    if [ "$_work" = ":" ] ; then
-        _popt="-c" ; _vers=             # all header and versions
-        CEN_DOC_CACHE=1
-        $_otra -a "documentation: cache filling:" "$_file"
-    elif [ -n "$CEN_DOC_CACHE" -a -n "$_popt" ] ; then
-        $_otra -a "documentation: cache playback:" "$_file"
-        _cen_doc_cplay "$_file" "$_popt" "$_work" ; return
-    fi
-
-    # alternate parser
-    if [ -n "$_pars" ] ; then
-        $_pars $_popt $_sopt -- "$_work" "$_file" _cen_doc_citem ; return
-    fi
-
-    # read file
-    if [ ! -r "$_file" ] ; then
-        error -z "Cannot read documentation file:" "$_file" ; return 1
-    elif [ -z "$CEN_DOC_CACHE" ] ; then
-        $_otra -a "documentation: is processing:" "$_file"
-    fi
-
-    # --------------------------------------------------------------------------
-    # find documentation entries and pass them to ___output
-    # --------------------------------------------------------------------------
-
-    local asub=()           # array of lines for doc entry
-    local arun=0            # block length counter
-    local fhdr              # block processing flag (header ok)
-
-    # input parser: 0|1 <line>
-    _cen_doc_parser() {
-
-        # open doc, flush it or add text line
-        if [ "$1" = 0 ] ; then
-            if [ "$arun" -gt 3 ] ; then
-                if [ -z "$_sfil" ] ; then               # signal begin of data
-                    if [ "$_popt" = "-m" ] ; then
-                        _sfil=0
-                    else
-                        _sfil=1
-                        [ -n "$_popt" ] && $_work "$_file" "0:B0"
-                    fi
-                fi
-                bcnt=$((bcnt + 1))
-                if [ -z "$_popt" ] ; then
-                    $_work "$_file" "$_lnum:B$bcnt"
-                elif [ "$_popt" = "-m" ] ; then         # module listing only
-                    if [[ "$asub" == *:M* ]] ; then
-                        [ -z "$_vers" ] && _vers="-"    # end version wait
-                        return 0                        # ignore this block
-                    fi
-                    [ -z "$_vers" ] && _cen_doc_version # find version
-                else
-                    [ -z "$_vers" ] && _cen_doc_version # find version
-                fi
-
-                if [ "$_work" = ":" ] ; then            # fill cache ...
-                    local _temp
-                    for _temp in "${asub[@]}" ; do
-                        _cen_doc_citem "$_file:$_temp"
-                    done
-                else                                    # process doc block
-                    $_work "$_file" "${asub[@]}" || stat=$?
-                fi
-            fi
-            asub=() ; fhdr= ; arun=0
-            [ "$stat" = 0 ] || return 1
-
-        # documentation body
-        elif [ -n "$fhdr" ] ; then
-            ((arun += 1))
-            [ -z "$_popt" ] && asub+=("$_lnum:-$2")
-
-        # expecting one or more headers
-        elif [ "$arun" != '-1' ] ; then
-            ((arun += 1))
-            local aadd="-" tnam text="$2"
-            case "$text" in
-                "")     aadd= ; [ -n "$asub" ] && fhdr=1 ;;
-
-                # use bash globbing as pre-filter - regexp are slow!
-                *\ [-=+]\ *)
-                        if [[ "$text" =~ ^([a-zA-Z_\ \(\)]*)([-+=])\ *(.*) ]] ; then
-                            tnam="${BASH_REMATCH[1]}"
-                            tnam="${tnam%"${tnam##*[![:space:]]}"}"
-                            case "${BASH_REMATCH[2]}" in
-                            -)  aadd="$_lnum:F${tnam}:${BASH_REMATCH[3]}" ;;
-                            =)  aadd="$_lnum:M${tnam}:${BASH_REMATCH[3]}" ;;
-                            *)  aadd="$_lnum:T${tnam}:${BASH_REMATCH[3]}" ;;
-                            esac
-                        fi
-                       #elif [[ "$text" =~ ^[a-zA-Z_\ \(\)]*\ -\ .* ]] ; then
-                       #    tnam="${text%% -*}" ; tnam="${tnam%"${tnam##*[![:space:]]}"}"
-                       #    aadd="$_lnum:F${tnam}:${text#*- }"
-                       #elif [[ "$text" =~ ^[a-zA-Z_\ ]*\ =\ .* ]] ; then
-                       #    tnam="${text%% =*}" ; tnam="${tnam%"${tnam##*[![:space:]]}"}"
-                       #    aadd="$_lnum:M${tnam}:${text#*= }"
-                       #elif [[ "$text" =~ ^[a-zA-Z_\ \(\)]*\ \+\ .* ]] ; then
-                       #    tnam="${text%% +*}" ; tnam="${tnam%"${tnam##*[![:space:]]}"}"
-                       #    aadd="$_lnum:T${tnam}:${text#*+ }"
-                       #fi
-                       ;;
-            esac
-            if [ "$aadd" = "-" ] ; then             # not a header -> not a doc block
-                asub=() ; arun=-1
-            elif [ -n "$aadd" ] ; then              # ok, expecting more headers
-                asub+=("$aadd")
-            fi
-        fi
-        return 0
-    }
-
-    # search the module version and call worker
-    _cen_doc_version() {
-        local _rlin _what="CEN_MODULES[${_file##*/}]="
-        while read -r _rlin ; do
-            [[ "$_rlin" == \#* ]] && continue
-            _rlin="${_rlin%%#*}"
-            _rlin="${_rlin//[ \'\"]/}"
-            [ "${#_rlin}" -lt 10 ] && continue      # line to short or comment
-            [ "${_rlin/"$_what"/}" = "$_rlin" ] && continue
-            _vers="${_rlin##*=}"
-            _cen_doc_citem "$_file:$_lnum:V$_vers"  # add to cache
-            [ "$_popt" = "-m" ] &&
-                $_work "$_file" "$_lnum:V$_vers"    # signal module version
-            return
-        done
-        _vers=-
-    }
-
-    # --------------------------------------------------------------------------
-    # read input file, call parser
-    # --------------------------------------------------------------------------
-
-    local _rlin _rblk
-    while [ "$stat" = 0 ] ; do
-
-        # process comment blocks
-        if [ -n "$_rblk" ] ; then
-            while read -r _rlin ; do
-                ((_lnum += 1))
-                case "$_rlin" in
-                    \#\ --------*)  ;;
-                    \#--------*)    ;;
-                    \#\ *)          _cen_doc_parser 1 "${_rlin:2}" ; continue ;;
-                    \#*)            _cen_doc_parser 1 "${_rlin:1}" ; continue ;;
-                    *)              _rblk= ;;
-                esac
-                [ -n "$_rblk" ] && _cen_doc_parser 0 ; _rblk= ; break
-            done
-            [ "$_popt" = "-m" -a -n "$_vers" ] && break
-
-        # wait for comment
-        else
-            while read -r _rlin ; do
-                ((_lnum += 1))
-                case "$_rlin" in
-                    \#\ --------*)  ;;
-                    \#--------*)    ;;
-                    *)              _rblk= ; continue
-                esac
-                _rblk=1 ; break
-            done
-            [ -z "$_rblk" ] && break
-        fi
-    done < "$_file"
-
-    [ "$_sfil" = "1" ] && $_work "$_file" "$_lnum:E"    # signal end of data
-    return $stat
-}
-
-# ------------------------------------------------------------------------------
-# _cen_doc_flist -- handle file lists and caching
-#
-# Call:      _cen_doc_flist -f [-c|-m] <list>              # set file list
-#            _cen_doc_flist -l [-c|-m] <worker> [<prep>]   # run file list
-#            _cen_doc_flist [-s] -x                        # clear file list
-#            _cen_doc_flist [-s] [-e|-d|-i|-q|-t]          # cache operations
-# ------------------------------------------------------------------------------
-_cen_doc_flist() {
-    local _copt _fopt _popt _sopt _pars
-    local _curr _item _skip _otra="$CEN_TRACE"
-
-    while [ "${1::1}" = "-" ] ; do
-        case "$1" in
-        --)   shift ; break ;;
-        -c)   _popt="$1" ;;
-        -d)   _copt="$1" ;;
-        -e)   _copt="$1" ;;                     # enable cache
-        -f)   _fopt="$1" ;;
-        -i)   _copt="$1" ;;
-        -l)   _fopt="$1" ;;
-        -m)   _popt="$1" ;;
-        -p)   _pars="$1 $2" ; shift ;;
-        -q)   _copt="$1" ;;
-        -s)   _sopt="$1" ; _otra=: ;;
-        -t)   _copt="$1" ;;
-        -x)   _fopt="$1" ;;
-        *)    _cen_abort - "$1"
-        esac ; shift
-    done
-
-    # add filter
-    if [ "$_copt" = "-i" ] ; then
-        if [ $# = 0 ] ; then                    # empty list: reset
-            CEN_DOC_FILTER=() ; return 0
-        fi
-        for _curr in "$@" ; do                  # add args to filters
-            _skip=
-            for _item in "${CEN_DOC_FILTER[@]}" ; do
-                [ "$_curr" = "$_item" ] || continue
-                _skip=1 ; break
-            done
-            [ -z "$_skip" ] && CEN_DOC_FILTER+=("$_curr")
-        done
-        return 0
-
-    # cache query
-    elif [ "$_copt" = "-q" ] ; then
-        [ -n "$CEN_DOC_CACHE" ] || return 1     # no cache data
-        local _file _mesg _ksel _kind ; CEN_DOC_QMATCH=0
-        for _curr in "$@" ; do                  # loop over args
-            # any sequence of -+= is a function/topic/module selector
-            if [ -z "${_curr//[-+=]/}" ] ; then
-                _ksel=
-                [ "${_curr//-/}" != "$_curr" ] && _ksel+='F'
-                [ "${_curr//+/}" != "$_curr" ] && _ksel+='T'
-                [ "${_curr//=/}" != "$_curr" ] && _ksel+='M'
-                continue
-            fi
-            _curr="${_curr,,}"
-            for _item in "${CEN_DOC_CLIST[@]}" ; do
-                # example: _centauri_bash_lib:133:Fmessage:output a message
-                _skip="${_item#*:}" ; _skip="${_skip#*:}"
-                _skip="${_skip%%:*}" ; _kind="${_skip::1}" ; _skip="${_skip:1}"
-                [ "${_ksel/$_kind/}" = "${_ksel:- }" ] && continue
-                [[ "${_skip,,}" == *$_curr* ]] || continue
-                _cen_doc_flist $_sopt -i "${_item%%:*}" ; ((++CEN_DOC_QMATCH))
-                $_otra -a -p "documentation: "$"match '%s' in file '%s'" "$_skip" ${_item%%:*}
-            done
-        done
-        [ "$CEN_DOC_QMATCH" = "0" ] && return 1
-        $_otra -a -p "documentation: "$"got %s match(es)" "$CEN_DOC_QMATCH" ; return 0
-
-    # cache test
-    elif [ "$_copt" = "-t" ] ; then
-        [ -z "$CEN_DOC_QMATCH" ] && return 0            # no previous query
-        [ "${CEN_DOC_QMATCH:-0}" -gt "0" ] || return 1  # no more matches
-        [ "$#" = 0 ] && return 0                        # no filter
-        _curr="${1,,}" ; shift
-        for _item in "$@" ; do
-            [[ "$_curr" == *${_item,,}* ]] || continue
-            ((--CEN_DOC_QMATCH)) ; return 0             # OK!
-        done
-        return 1                                        # not found
-
-    # delete cache file
-    elif [ "$_copt" = "-d" ] ; then
-        serialize -d -n "$CEN_DOC_CFILE" ; _fopt="-x"
-    fi
-
-    # clear file list and cache
-    if [ "$_fopt" = "-x" ] ; then
-        CEN_DOC_FLIST=() ; CEN_DOC_CLIST=() ; CEN_DOC_FILTER=()
-        CEN_DOC_CACHE= ; CEN_DOC_QMATCH=
-        $_otra -a "documentation:" $"file list cleared"
-        return
-    fi
-
-    if [ $# = 0 -a "$_copt" != "-e" ] ; then
-       _cen_abort $"Missing arg(s)" $_fopt $_copt $_popt
-
-    # processing file list
-    elif [ "$_fopt" = "-l" ] ; then
-        local _work="${1:-:}" _prep="${2:--}" _fcnt=0 _stat
-
-        $_otra -a "documentation:" $"start file list"
-        for _item in "${CEN_DOC_FLIST[@]}" ; do
-
-            # filtering
-            if [ -n "$CEN_DOC_FILTER" ] ; then
-                _skip=1
-                for _curr in "${CEN_DOC_FILTER[@]}" ; do
-                    [ "$_curr" = "$_item" ] || continue
-                    _skip= ; break
-                done
-                if [ -n "$_skip" ] ; then              # not in list, skip
-                    $_otra -a "documentation:" $"run file list:" "$_item" $"[skipped, filter]"
-                    continue
-                fi
-            fi
-
-            # user callback <prep>
-            if [ "$_prep" != "-" ] ; then
-                $_otra -a "documentation:" $"run file list:" "$_item"
-                $_prep "$_fcnt" "$_item" ; _stat=$?
-                if [ "$_stat" = 1 ] ; then
-                    $_otra -a "documentation:" $"run file list:" "$_item" $"[skipped, status 1]"
-                    continue
-                elif [ "$_stat" -gt 0 ] ; then
-                    $_otra -a "documentation:" $"run file list:" "$_item" $"[stopped, status $_stat]"
-                    return $_stat
-                fi
-            fi
-
-            # process this file
-            dryrun "documentation $_sopt $_popt $_pars '$_work' '$_item'" && continue
-            _fcnt=$((_fcnt + 1))
-            if [ "$_fcnt" = 1 ] ; then                  # signal begin of processing
-                $_work "" "0:A" || return 1
-            fi
-            documentation $_sopt $_popt $_pars -- "$_work" "$_item"
-        done
-        [ "$_fcnt" != 0 ] && $_work "" "0:Z$_fcnt"      # signal end of processing
-        $_otra -a "documentation:" $"done file list"
-
-    # set file list (1st time only)
-    elif [ "$_fopt" = "-f" ] && [ "${#CEN_DOC_FLIST[@]}" = 0 ] ; then
-        CEN_DOC_FLIST=("$@")
-        $_otra -a -p "documentation:" $"file list set [%s files]" "${#CEN_DOC_FLIST[@]}"
-    fi
-
-    # enable cache
-    if [ "$_copt" = "-e" ] ; then
-        $_otra -a "documentation:" $"enable cache:" "$CEN_DOC_CFILE"
-        _cen_doc_cinit                                  # deserialize cache
-        case $? in
-        0)  return 0 ;;                                 # cache valid
-        2)  return 2 ;;                                 # error
-        esac
-        CEN_DOC_CLIST=()
-        _cen_doc_flist $_sopt -l $_pars :               # fill cache
-        _cen_doc_cdone ; return                         # serialize, return status
-    fi
-    return 0
-}
-
-# ------------------------------------------------------------------------------
-# cache helper functions:
-#
-#       _cen_doc_cinit                              # initialise cache
-#       _cen_doc_cdone                              # finish cache run
-#       _cen_doc_citem <item>                       # add cache entry
-#       _cen_doc_cplay <file> <popt> <work>         # playback
-# ------------------------------------------------------------------------------
-
-# initialise cache
-_cen_doc_cinit() {
-    system -f -c md5sum
-    CEN_DOC_CINDEX= ; CEN_DOC_QMATCH=
-    CEN_DOC_APICHANGE=1                         # no api info
-    serialize -q -r -n "$CEN_DOC_CFILE"
-    error -t || return 2                        # deserialize error
-    [ -z "$CEN_DOC_CACHE" ] && return 1         # no data
-    CEN_DOC_APICHANGE=                          # api current
-
-    # check if any file is newer than cache
-    local _item
-    for _item in "${CEN_DOC_FLIST[@]}" ; do
-        [ "$_item" -nt "$CEN_SERIALIZE" ] || continue
-        CEN_DOC_APICHANGE=0 ; return 1          # files updated
-    done
-    return 0                                    # cache is valid
-}
-
-# finish cache run
-_cen_doc_cdone() {
-    local _omd5="$CEN_DOC_MD5SUM"
-    system -s CEN_DOC_MD5SUM -e -p -- md5sum <<< "$CEN_DOC_CINDEX"
-    CEN_DOC_MD5SUM="${CEN_DOC_MD5SUM%% *}"
-    serialize -w -n "$CEN_DOC_CFILE" CEN_DOC_MD5SUM CEN_DOC_CACHE CEN_DOC_CLIST
-
-    if [ "$CEN_DOC_APICHANGE" = "0" ] ; then    # use md5sum
-        [ "$_omd5" = "$CEN_DOC_MD5SUM" ] || CEN_DOC_APICHANGE=2
-    fi
-    return 0
-}
-
-# cache playback: <file> <popt> <work>
-_cen_doc_cplay() {
-    local _farg="$1" _popt="$2" _work="$3"
-    local _frun _item _file _kind
-
-    for _item in "${CEN_DOC_CLIST[@]}" - ; do
-        _file="${_item%%:*}"
-
-        # signal "B" (begin) and "E" (end)
-        if [ -z "$_frun" ] ; then
-            [ "$_farg" = "$_file" ] || continue
-            _frun=1
-            if [ "$_popt" = "-c" ] ; then
-                $_work "$_file" "0:B0" || return 1
-            fi
-        elif [ "$_farg" != "$_file" ] ; then
-            if [ "$_popt" = "-c" ] ; then
-                $_work "$_file" "0:E" ; return          # return status
-            fi
-            break
-        fi
-
-        # content mode, do not signal "V" (version)
-        _item="${_item#*:}" ; _kind="${_item#*:}" ; _kind="${_kind::1}"
-        if [ "$_popt" = "-c" ] ; then
-            [ "${_kind::1}" = "V" ] && continue
-            $_work "$_file" "$_item" || return 1
-
-        # module mode, only "V", "M" (module) and "S" (tool)
-        elif [ "$_kind" = "V" -o "$_kind" = "M" -o "$_kind" = "S" ] ; then
-            $_work "$_file" "$_item" || return 1
-        fi
-    done
-    return 0
-}
-
-# add item to cache: <item>
-_cen_doc_citem() {
-    [ -n "$CEN_DOC_CACHE" ] || return 1
-
-    local _modu="${1%%:*}" _tspl="${1#*:}"          # get module
-          _tspl="${_tspl#*:}"                       # remove line#
-    local _kspl="${_tspl::1}" ; _tspl="${_tspl:1}"  # kind and text
-
-    CEN_DOC_CINDEX+="$_modu|$_kspl|$_tspl"$'\n'
-    CEN_DOC_CLIST+=("$1")
-}
-
-# ------------------------------------------------------------------------------
-# documentation (worker) - Documentation block processor
-#
-# Call:     <worker> <file> <start>        # start of doc block
-#           <worker> <file> <entry>...     # documentation block
-#           <worker> <file> <end>          # end of file
-#
-# Arguments:<file>     input file name
-#           <entry>    <header> or <body> line belonging to a block
-#           <start>    specical start-of-block <entry>
-#           <end>      specical end-of-file <entry>
-#
-# Format:   Before the each documentation block and after the last block of
-#           the file the processor calls the <worker> with a special <entry>.
-#
-#           The <worker> receives a numer of <entry> lines, belonging to one
-#           documentation block. The block starts with a least one <header>
-#           <entry> followed by any number of <body> <entries>.
-#
-#           Each <header> <entry> is a line consisting of up to four fields:
-#
-#           ''    <line-number>''**:**''<kind-char><name>''**:**''<text>''
-#
-#           Each <body> <entry> has tree fields (body follows header):
-#
-#           ''    <line-number>''**:-**''<text>''
-#
-#           The <start> <entry> has a block count (starting with **0**):
-#
-#           ''    <line-number>''**:B**''<block-count>''
-#
-#           The <end> <entry> just passes the total line count:
-#
-#           ''    <total-lines>''**:E**
-#
-#           The option -c is used, before each module <entry> the module
-#           version is signaled:
-#
-#           ''    <line-number>''**:V**''<version>''
-#
-#.Decoding: # the following code snippet can be used to split entries
-#.          for entr in "$@" ; do
-#.              local text="${entr#*:}"  line="${entr%%:*}"
-#.              local kind="${text::1}"  text="${text:1}"
-#.              local name="${text%%:*}" mesg="${text#*:}"
-#.              case "$kind" in
-#.                  -) text_out "$line" "text" ;;
-#.                  M) head_out "$line" "Module"   "$name" "$mesg" ;;
-#.                  T) head_out "$line" "Topic"    "$name" "$mesg" ;;
-#.                  F) head_out "$line" "Function" "$name" "$mesg" ;;
-#.              esac
-#.          done
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# Formatting + How to Format Code Documentation for centaurihelp
-#
-#+General:  The Code Documentation is processed by [[centaurihelp]], which performs
-#       formatting on a 'per block' base and additionally some 'markup'. The blocks
-#       (or paragraphs) are groups of lines (obtained via [[documentation()]] that
-#       are separated by empty lines).
-#
-#+      The 1st character of each line is a **marker**. Usually the text is indented.
-# A block optionally can start with a **label** line and can have any number of
-# non-empty **continuation** lines. The **label** ends with a colon. The colon and
-# the spaces up to the 1st non-blanc character are removed. For a
-# **continuation** line up to 12 blank characters are removed. Example:
-#
-#.          #+Label:    The 1st line is followed by continuation lines. The label
-#.          #           is this example is 'Label'. The plus sign is a marker.
-#.          #
-#.          # Label°#2: This is a 2nd block. Labels can only contain letters,
-#.          #           numbers and some special characters (but no spaces).
-#
-#       A paragraph that is not indented implicitly get the **label** 'Remark':
-#
-#.          #+Example:  A paragraph ...
-#.          #
-#.          #           Another paragraph (same label)
-#.          #
-#.          #+This starts a new paragraph with the label 'Remark' because it is
-#.          # not indented.
-#.          #
-#.          #+Another paragraph (same 'Remark' label).
-#
-#+      Blocks do not need to have a **marker**, the examples used "+" for some of
-#       the paragraphs to control the layout. See below.
-#
-#+Markup:   Some characters have a special interpretation (unless escaped via double apstrophs):
-#
-#,          ''°'' (degree)      works a a non-breaking space
-#,          ''§'' (paragraph)   is used in definition lists for indenting
-#
-#+          There are also a few markup sequences (which may have no effect on a dumb terminal
-#           or for plain text output):
-#
-#,          '<>'<>'             literal apostroph: '''
-#,          '<>'xxx'<>'         literal: xxx
-#,          ''**xxx**''         bold: **xxx**
-#,          ''"xxx"''           quoted: "xxx"
-#,          ''<<xxx>>''         italics: <<xxx>>
-#,          ''[[xxx]]''         hyperlink, shown underlined
-#,          ''<>''              placeholder (no output)
-#
-#+      Implied syntax notation formatting for smart  displays affects some things that
-# cannot be used for plain text. They are output literally for text (or a dumb
-# terminal). On a **linux console** or for **html** they get decorated:
-#
-#,          ''<name>''          (only letters) brackets removed, italics: <name>
-#,          ''-X''              (single letter option) bold: -X
-#,          ''--xxx''           (long option) bold: --xxx
-#,          ''--''              bold: --
-#,          ''MY_TEXT''         (uppercase letters) bold: MY_TEXT
-#
-#+Markers:  Usually a comment line starts with "# ", e.g. the first character is
-#           a hash and the second character is a space. Instead of the space a
-#           **marker** can be used. The hash and the marker character get removed
-#           before further processing. The following **markers** are defined:
-#
-#,          " "  **Simple**     full decoration, auto formatting
-#,          "+"  **Justify**    full decoration, auto formatting    (HTML: justify)
-#,          ","  **List**       full decoration, minimal formatting (HTML: preformatted)
-#,          "-"  **Literal**    minimal decoration, no formatting   (HTML: preformatted)
-#,          "."  **Example**    minimal decoration, no formatting   (HTML: preformatted)
-#
-# Trimming:         This text starts at column 21, but all leading spaces are
-#               removed. The 1st **continuation** lines starts at column 17,
-#               but only the 1st 12 leading space are removed. The follow-up
-#           line starts at column 13 and is not modified. The 3rd
-#       **continuation** starts at col 9 and 8 leading spaces are removed.
-# The last **continuation** line starts at column 3.
-#
-#.      # Trimming:         This text starts at column 21, but all leading spaces are
-#.      #               removed. The 1st **continuation** lines starts at column 17,
-#.      #               but only the 1st 12 leading space are removed. The follow-up
-#.      #           line starts at column 13 and is not modified. The 3rd
-#.      #       **continuation** starts at col 9 and 8 leading spaces are removed.
-#.      # The last **continuation** line starts at column 3.
-#
-# Indenting:  This shows indenting for text lines starting beyond column 13.
-#               This is indented by 4 (text starts at column 17)
-# °   Starts at column 3 but is indented because it uses the **degree** char
-#   ''    The '' **quoting** syntax can also be used to indent
-#           A text starting at column 13 (or before) is not indented.
-#
-#.      # Indenting:  This shows indenting for text lines starting beyond column 13.
-#.      #               This is indented by 4 (text starts at column 17)
-#.      # ''°''   Starts at column 3 but is indented because it uses the **degree** char
-#.      #   ''    The '' **quoting** syntax can also be used to indent
-#.      #           A text starting at column 13 (or before) is not indented.
-#
-#   A remark block, which is automatically right justified in HTML output
-#       is started by a text line (without a label) in colum 1 .. 8. All leading
-#               spaces are trimmed.
-#
-#   Multiple remark blocks are automatically labeled as "Remark:" or "Remarks:"
-#   and are by default justified (line-breaks are ignored).
-#
-#.      #   A remark block, which is automatically right justified in HTML output
-#.      #       is started by a text line (without a label) in colum 1 .. 8. All leading
-#.      #               spaces are trimmed.
-#.
-#.      #   Multiple remark blocks are automatically labeled as "Remark:" or "Remarks:"
-#.      #   and are by default justified (line-breaks are ignored).
-#
-#+Justify: The "+" marker
-#       explicitly adjusts a block (line-breaks are ignored).
-#
-# Lists:    There are three simple ways to create lists:
-#
-#,          one    # This is a list with multiple item lines (one per item)
-#,          two    # using the "," marker.
-#
-#,          - This list uses the "-" as 1st character to produce bullets
-#,          - Very long lines can be continued in a very intuitive way,
-#,            just by indenting them.
-#,          - This is it.
-#
-#-          [1] This output is using the "-" marker.
-#-          [2] This is called **literal** output (no formatting).
-#-          [3] The ''[n]'' decoration was added manually. There is
-#-              nothing like automatic numbering.
-#
-#+Examples: Usually code examples a output as a preformatted box in HTML.
-#           In text mode the ''┃'' character flags a preformatted line. Such
-#           text is never justified. This is how it looks:
-#
-#.          Using "#." produces a special
-#.                     layout for code examples.
 # ------------------------------------------------------------------------------
 # Startup
 # ------------------------------------------------------------------------------

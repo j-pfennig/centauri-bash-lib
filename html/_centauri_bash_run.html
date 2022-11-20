@@ -3,7 +3,7 @@
 <title>centaurihelp ─ _centauri_bash_run</title>
 <link rel='stylesheet' type='text/css' href='default.css'></link>
 <script type='text/javascript' src='default.js'></script>
-</head><body><article id='top'>
+</head><body onload='initialize("_centauri_bash_run")'><article id='top'>
 <nav><div class='nav-row'>
 <div class='nav-left'><a href='_centauri_bash_pro.html'>[&lt;&lt; previous]</a></div>
 <div class='nav-mid'><a href='content.html#top'>[Content]</a></div>
@@ -12,13 +12,13 @@
 </div></nav>
 <section id='section-1'>
 <div id='_centauri_bash_run' class='item-module'>
-<span>Module</span><span> - </span><span>_centauri_bash_run</span><span> - </span><span><a href="index.html">Centauri Bash Library</a> Configuration related Functions</span></div>
+<span>Module</span><span> - </span><span>_centauri_bash_run</span><span> - </span><span><a href="index.html">centauri-bash-lib</a>: Configuration related functions</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>. <b>_centauri_bash_run</b></div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remarks:</div>
+<div class='def-label'>Remark:</div>
 <div class='def-block'>Functions in this module are related to the <b>&quot;centauri-bash-lib&quot;</b> configuration file and depend on module <a href="_centauri_bash_iom.html">_centauri_bash_iom</a>, see <a href="_centauri_bash_iom.html#configfile">configfile()</a>.</div>
 </div>
 <div class='def-row'>
@@ -45,13 +45,155 @@
   <b>CEN_TERMINAL</b>    default result variable of <a href="#terminal">terminal()</a></div>
 </div>
 <div class='def-row'>
-<div class='def-label'>Remark:</div>
+<div class='def-label'>Remarks:</div>
 <div class='def-block'>Copyright Dr. J. Pfennig (c) 2022</div>
 </div>
 </section>
 <section id='section-2'>
+<div id='libraryconfiguration' class='item-topic'>
+<span>Topic</span><span> - </span><span>Library configuration</span><span> - </span><span>The <a href="index.html">centauri-bash-lib</a> configuration file</span></div>
+<div class='def-row'>
+<div class='def-label'>General:</div>
+<div class='def-block'>In addition to built-in data some library functions can use information configured in the optional file <b>&quot;centauri-bash-lib&quot;</b> at folder <b>&quot;$CEN_ROOT/default&quot;</b>. The file uses INI style syntax, e.g. is organized into sections. Empty lines and comments are ignored. Most of the data gets cached at run time, so feel free to use comments for documentation.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Sections:</div>
+<div class='def-block'>All sections are optional and may be missing or empty.</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>  • [shortpath]   for <a href="#shortpath">shortpath()</a> and <a href="centauripaths.html">centauripaths</a>, see <a href="#shortpathconfig">shortpath Config</a>
+  • [launcher]    for <a href="#launcher">launcher()</a> and <a href="centaurilauncher.html">centaurilauncher</a>, see <a href="#launcherconfig">launcher Config</a>
+  • [terminal]    for <a href="#terminal">terminal()</a> and <a href="centaurilauncher.html">centaurilauncher</a>, see <a href="#terminalconfig">terminal Config</a>
+  • [library]     miscellaneous data, see <a href="_centauri_bash_ext.html#prettypath">prettypath</a> and <a href="_centauri_bash_ins.html#installation">Installation</a>
+  • [proxy]       script code added to the proxy, see <a href="_centauri_bash_ins.html#libraryproxy">Library Proxy</a></div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Remark:</div>
+<div class='def-block'>Any extra sections can be added for local needs. See <a href="_centauri_bash_iom.html#configfile">configfile</a> for details on how to process configuration files.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Examples:</div>
+<div class='def-text'>(1) A simple configuration for use with Termux (Linux on Android):</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>[library]
+    # installation defaults (root, binaries, shortcut, repository, owner)
+    defaults    private  $HOME/.centauri $HOME/bin $HOME/centauritools
+    defaults    shared   /var/centauri /usr/local/bin /opt/centauritools
+
+[launcher]
+    # desktop apps (- is for any desktop session, must be last)
+    editor      -       kwrite featherpad
+    files       -       dolphin
+    browser     -       firefox falkon qml
+    kiosk       -       qml falkon firefox
+    console     -       @terminal
+    httpd       -       lighttpd
+
+    # terminal apps (tty is for non-desktop mode)
+    editor      tty     nano vim
+    files       tty     mc
+    browser     tty     w3m
+
+    # qml needs a few hints (@_cen_win_qmlweb creates the qml script)
+    -ignore:qml         qtchooser
+    -path:qml           /usr/lib/*/qt5/bin/qml
+    browser:qml         @launcher_qmlweb 1024 768 1.2
+    kiosk:qml           @launcher_qmlweb  1000 800 1.2
+    httpd:lighttpd      @launcher_httpd 8080 /var/www
+
+    # command line args
+    kiosk:firefox       <b>--fullscreen</b> <b>--new</b>-window
+    browser:firefox     <b>--new</b>-window
+
+    kiosk:falkon        <b>--fullscreen</b> <b>--new</b>-window <b>--no</b>-extensions
+    browser:falkon      <b>--new</b>-window <b>--no</b>-extensions
+
+    # info text for apps (not commands)
+    info:editor         text editor
+    info:files          file manager
+    info:browser        web browser
+    info:kiosk          web browser in kiosk mode
+    info:console        command line terminal
+    info:httpd          launch a private web server
+
+[terminal]
+    # emulators for KDE/Gnome sessions:
+    emulator    kde     konsole qterminal gnome-terminal xterm
+    emulator    gnome   gnome-terminal konsole qterminal xterm
+    # other session types (must be last emulator line):
+    emulator    -       qterminal gnome-terminal konsole  xterm
+
+    # options for emulator apps
+    -args:konsole       <b>--hide</b>-tabbar <b>--hide</b>-menubar <b>--nofork</b>
+    -title:konsole      <b>--title</b>
+
+    -args:gnome-terminal  <b>--hide</b>-menubar <b>--wait</b> <b>--</b>
+    -title:gnome-terminal <b>--title</b>
+
+    -args:xterm         -fa Monospace -fs 14 -geometry 100x30
+
+    # in many cases we don&apos;t need to run an emulator, so we check our ancestors until
+    # we find something blacklisted (start emulator) or whitelisted (no emulator):
+
+    # no emulator if we find a login shell
+    login               -bash|-dash|-csh|-sh
+    # continue search if ancestor is a shell
+    shell               bash|dash|csh|sh
+    # no emulator for these ...
+    white               sudo|kdeinit.*\ konsole.*|konsole.*|gnome.*|qterminal|xterm
+    # needing to launch emulator ...
+    black               krunner.*|lx.*-session|plasma.*
+    # no desktop, no xroot
+    black-startup       sddm.*|startkde.*|startplasma.*
+
+[shortpath]
+    # These are examples of shortcuts for centauripaths (alias ccd)
+    path <b>&quot;export&quot;</b>    <b>&quot;$/export&quot;</b>                   <b>&quot;Export Folder&quot;</b>
+    path <b>&quot;docs&quot;</b>      <b>&quot;$/usr/share/doc&quot;</b>            <b>&quot;Linux Documentation&quot;</b>
+    path <b>&quot;bin&quot;</b>       <b>&quot;${CEN_PATHS[1]}&quot;</b>            <b>&quot;Linux Anwendungen&quot;</b>
+    path <b>&quot;etc&quot;</b>       <b>&quot;${CEN_PATHS[2]}&quot;</b>            <b>&quot;Linux Konfiguration&quot;</b>
+    path <b>&quot;docs&quot;</b>      <b>&quot;/share/doc|/usr/share/doc&quot;</b>  <b>&quot;Linux Dokumentation&quot;</b>
+
+    path <b>&quot;android&quot;</b>   <b>&quot;$HOME/storage&quot;</b>              <b>&quot;Android gemeinsamer Speicer&quot;</b>
+
+    path <b>&quot;export&quot;</b>    <b>&quot;$HOME/storage/shared/export&quot;</b>         <b>&quot;Export Verzeichnis&quot;</b>
+    path <b>&quot;bilder&quot;</b>    <b>&quot;$HOME/storage/shared/export/Bilder&quot;</b>  <b>&quot;Bilder (in export)&quot;</b>
+    path <b>&quot;musik&quot;</b>     <b>&quot;$HOME/storage/shared/export/Musik&quot;</b>   <b>&quot;Musik  (in export)&quot;</b>
+    path <b>&quot;rezepte&quot;</b>   <b>&quot;$HOME/storage/shared/export/Rezepte&quot;</b> <b>&quot;Kochrezepte&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'>(2) A more complex config for a native Linux system:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>[shortpath]
+        # ...
+[launcher]
+        # ...
+[terminal]
+        # ...
+[library]
+    defaults shared  <b>&quot;/var/centauri&quot;</b> <b>&quot;/usr/local/bin&quot;</b> <b>&quot;/admin&quot;</b> \
+                     <b>&quot;/var/centauri/admin&quot;</b> <b>&quot;root:staff&quot;</b>
+    defaults private $HOME/.centauri $HOME/bin $HOME/centauritools
+    include <b>&quot;utilities/show-unattended-upgrades&quot;</b> <b>&quot;virtualbox/vbox&quot;</b>
+    exclude <b>&quot;&quot;</b>
+    obsolete <b>&quot;centaurigencfg&quot;</b> <b>&quot;centaurisync&quot;</b>
+    service <b>&quot;centauriswitch&quot;</b> <b>&quot;centauriroute&quot;</b>
+    repath <b>-l</b> <b>&quot;/dev/shm(/.*)?&quot;</b> <b>&quot;/tmp%1&quot;</b></pre></div>
+</div>
+</section>
+<section id='section-3'>
 <div id='launcherconfig' class='item-topic'>
-<span>Topic</span><span> - </span><span>launcher config</span><span> - </span><span>Configuration section in centauri-bash-lib</span></div>
+<span>Topic</span><span> - </span><span>launcher Config</span><span> - </span><span>Section in <a href="index.html">centauri-bash-lib</a> configuration file</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The <a href="#launcher">launcher()</a> function reads the (cached) configuration statements to find an executable command (or a function) for a generic name.</div>
@@ -103,37 +245,37 @@
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-text'>Configuration Example:<pre>[launcher]
-    # desktop apps (- is for any desktop session, must be last)
-    editor      -       kwrite featherpad
-    browser     -       unfug firefox falkon qml
-    kiosk       -       qml falkon sauwetter firefox
-    terminal    -       @terminal quarkteig
+<div class='def-text'>Configuration Example:<pre>        [launcher]
+            # desktop apps (- is for any desktop session, must be last)
+            editor      -       kwrite featherpad
+            browser     -       unfug firefox falkon qml
+            kiosk       -       qml falkon sauwetter firefox
+            terminal    -       @terminal quarkteig
 
-    # terminal apps (tty is for non-desktop mode)
-    editor      tty     nano vim
-    browser     tty     w3m
+            # terminal apps (tty is for non-desktop mode)
+            editor      tty     nano vim
+            browser     tty     w3m
 
-    # qml needs some care (@launcher_qmlweb creates the qml script)
-    -ignore:qml         qtchooser
-    -path:qml           /usr/lib/*/qt5/bin/qml
-    browser:qml         @launcher_qmlweb 1024 768 1.2
-    kiosk:qml           @launcher_qmlweb 1000 800 1.2
+            # qml needs some care (@launcher_qmlweb creates the qml script)
+            -ignore:qml         qtchooser
+            -path:qml           /usr/lib/*/qt5/bin/qml
+            browser:qml         @launcher_qmlweb 1024 768 1.2
+            kiosk:qml           @launcher_qmlweb 1000 800 1.2
 
-    # command line args
-    kiosk:firefox       <b>--fullscreen</b> <b>--new</b>-window
-    browser:firefox     <b>--new</b>-window
-    kiosk:falkon        <b>--fullscreen</b> <b>--new</b>-window <b>--no</b>-extensions
-    browser:falkon      <b>--new</b>-window <b>--no</b>-extensions
+            # command line args
+            kiosk:firefox       <b>--fullscreen</b> <b>--new</b>-window
+            browser:firefox     <b>--new</b>-window
+            kiosk:falkon        <b>--fullscreen</b> <b>--new</b>-window <b>--no</b>-extensions
+            browser:falkon      <b>--new</b>-window <b>--no</b>-extensions
 
-    # info text for generic names (not commands)
-    info:editor         text editor
-    info:browser        web browser
-    info:kiosk          web browser in kiosk mode
-    info:terminal       terminal emulator</pre></div>
+            # info text for generic names (not commands)
+            info:editor         text editor
+            info:browser        web browser
+            info:kiosk          web browser in kiosk mode
+            info:terminal       terminal emulator</pre></div>
 </div>
 </section>
-<section id='section-3'>
+<section id='section-4'>
 <div id='launchercallback' class='item-function'>
 <span>Function</span><span> - </span><span>launcher (callback)</span><span> - </span><span>Implementing a user defined command</span></div>
 <div class='def-row'>
@@ -188,14 +330,15 @@
 }</pre></div>
 </div>
 </section>
-<section id='section-4'>
+<section id='section-5'>
 <div id='launcher' class='item-function'>
 <span>Function</span><span> - </span><span>launcher</span><span> - </span><span>Run an external application using a generic name</span></div>
 <div class='def-row'>
 <div class='def-label'>Call:</div>
 <div class='def-text'>(1) <b>launcher</b> [<b>-f</b>|<b>-q</b>] [<b>-m</b> <i>mode</i>] [<b>-t</b> <i>titl</i>] <b>-o</b> <i>desk</i> [<b>--</b>] <i>what</i> <i>arg</i>...
 (2) <b>launcher</b> [<b>-f</b>|<b>-q</b>] [<b>-t</b> <i>titl</i>] <b>-n</b> <b>-o</b> <i>desk</i> <b>-a</b> <i>rslt</i> [<b>--</b>] <i>what</i> <i>arg</i>...
-(3) <b>launcher</b> [<b>-f</b>|<b>-q</b>] <b>-l</b> <i>lsel</i> <b>-o</b> <i>desk</i> <b>-a</b> <i>rslt</i></div>
+(3) <b>launcher</b> [<b>-f</b>|<b>-q</b>] <b>-l</b> <i>lsel</i> <b>-o</b> <i>desk</i> <b>-a</b> <i>rslt</i>
+(4) <b>launcher</b> <b>-x</b> [<b>-m</b> <i>mode</i>] [<b>-t</b> <i>title</i>] [<b>-y</b> <i>desk</i>] <i>opt</i>... <b>--</b> <i>arg</i>...</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
@@ -208,6 +351,7 @@
 <b>-q</b>  no error messages
 <b>-r</b>  ignore <b>--dryrun</b>
 <b>-t</b>  window title (supported by <a href="#terminal">terminal()</a> and callback)
+<b>-x</b>  run a command or function via system()
 <b>-y</b>  override session type</div>
 </div>
 <div class='def-break'></div>
@@ -248,6 +392,11 @@
 <div class='def-empty'></div>
 <div class='def-block'>Form (3) can be used to get a list of commands. The list entries are made up of four or five fields: <i>what</i> <i>desk</i> <i>path</i>|<i>tool</i>... <i>info</i> [<i>flag</i>] . The fields are delimited by <b>&quot;\a&quot;</b>. The <i>tool</i>... names are separated by spaces (as in the config line). The <i>flag</i> field is only present for <b>-flag:</b><i>what</i> statements.</div>
 </div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>Form (4) is used to run a command or function, typically from inside a <b>launcher</b> function.</div>
+</div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
 <div class='def-text'>(1) Launch browser as independent process<pre><b>launcher</b> <b>-m</b> 3 <b>--</b> browser || quit <b>-e</b> - <b>&quot;failed to run browser&quot;</b>
@@ -269,9 +418,9 @@ for item in <b>&quot;${CEN_LAUNCHER[@]}&quot;</b> ; do
 done</pre></div>
 </div>
 </section>
-<section id='section-5'>
+<section id='section-6'>
 <div id='shortpathconfig' class='item-topic'>
-<span>Topic</span><span> - </span><span>shortpath config</span><span> - </span><span>Configuration section in centauri-bash-lib</span></div>
+<span>Topic</span><span> - </span><span>shortpath Config</span><span> - </span><span>Section in <a href="index.html">centauri-bash-lib</a> configuration file</span></div>
 <div class='def-row'>
 <div class='def-label'>Format:</div>
 <div class='def-block'>The <a href="#shortpath">shortpath()</a> function reads the (cached) configuration statements. A shortcut is a short name that is resolved to the path of an existing folder. Multiple destination paths per shortcut can be given in a list and the 1st existing path is used.</div>
@@ -325,7 +474,7 @@ done</pre></div>
    path temporary  <b>&quot;$XDG_RUNTIME_DIR|${CEN_PATHS[4]}|$TMPDIR&quot;</b>   <b>&quot;user tmp folder&quot;</b></pre></div>
 </div>
 </section>
-<section id='section-6'>
+<section id='section-7'>
 <div id='shortpath' class='item-function'>
 <span>Function</span><span> - </span><span>shortpath</span><span> - </span><span>Resolve shortcut names for file system paths</span></div>
 <div class='def-row'>
@@ -358,6 +507,39 @@ done</pre></div>
 <div class='def-row'>
 <div class='def-label'>Return:</div>
 <div class='def-text'><b>true</b> at success or <b>false</b> otherwise.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>General:</div>
+<div class='def-block'>The library implements a user configurable shortcut system for paths by providing the <a href="#shortpath">shortpath()</a> function and the <a href="centauripaths.html">centauripaths</a> tool. Some paths below <b>&quot;$CEN_ROOT&quot;</b> are provided by the library itself. For example:</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre><b>shortpath</b> <b>&quot;locale/de&quot;</b> <b>&quot;pers&quot;</b> ; message <b>&quot;${CEN_SHORTPATH[@]}&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>&gt; centauripaths <b>&quot;loca/de&quot;</b> <b>&quot;persistent&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>will return <b>&quot;/var/centauri/locale/de&quot;</b> and <b>&quot;/var/centauri/persistent&quot;</b> if <b>CEN_ROOT</b> was set to <b>&quot;/var/centauri&quot;</b> at installation time.</div>
+</div>
+<div class='def-row'>
+<div class='def-label'>Config:</div>
+<div class='def-block'>Any number of user defined shortcuts can be added to the search list via <b>&quot;$CEN_ROOT/defaults/centauri_bash_lib&quot;</b>. The following example adds the shortcut <b>&quot;backup&quot;</b> (must be in section <b>&quot;[centauripaths]&quot;</b>):</div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-text'><pre>path <b>&quot;backup&quot;</b> <b>&quot;/mnt/backup/Backup|$ROOT/Backup&quot;</b> <b>&quot;Backup volume/folder&quot;</b></pre></div>
+</div>
+<div class='def-break'></div>
+<div class='def-row'>
+<div class='def-empty'></div>
+<div class='def-block'>The 1st argument of <b>&quot;path&quot;</b> is the shotcut name. The 2nd is a list of possible filesystem paths (separated by <b>&quot;|&quot;</b>). The last argument is a textual description. The shortcut will be resolved to the first existing filesystem path.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Remark:</div>
@@ -395,9 +577,9 @@ esac</pre></div>
 <b>shortpath</b> <b>-m</b> <b>&quot;&quot;</b> <b>-n</b> <b>&quot;dash&quot;</b> ; splitjoin <b>-i</b> <b>CEN_SHORTPATH</b></pre></div>
 </div>
 </section>
-<section id='section-7'>
+<section id='section-8'>
 <div id='terminalconfig' class='item-topic'>
-<span>Topic</span><span> - </span><span>terminal config</span><span> - </span><span>Configuration section in centauri-bash-lib</span></div>
+<span>Topic</span><span> - </span><span>terminal Config</span><span> - </span><span>Section in <a href="index.html">centauri-bash-lib</a> configuration file</span></div>
 <div class='def-row'>
 <div class='def-label'>General:</div>
 <div class='def-block'>The <a href="#terminal">terminal()</a> function reads the (cached) configuration statements to find an executable command to be run as a console emulator.</div>
@@ -474,7 +656,7 @@ esac</pre></div>
     black-konsole       dolphin.*|kde.*</pre></div>
 </div>
 </section>
-<section id='section-8'>
+<section id='section-9'>
 <div id='terminal' class='item-function'>
 <span>Function</span><span> - </span><span>terminal</span><span> - </span><span>Run a terminal emulator if needed</span></div>
 <div class='def-row'>
@@ -485,6 +667,7 @@ esac</pre></div>
 <div class='def-row'>
 <div class='def-label'>Options:</div>
 <div class='def-text'><b>-a</b>  array of resulting command words (default is <b>CEN_TERMINAL</b>)
+<b>-b</b>
 <b>-c</b>  force check if a <b>terminal</b> emulator must be run
 <b>-f</b>  error are fatal
 <b>-m</b>  lauch per exec or in background
@@ -551,7 +734,7 @@ esac</pre></div>
 <div class='def-break'></div>
 <div class='def-row'>
 <div class='def-empty'></div>
-<div class='def-block'>All common <b>terminal</b> emulators seen to support command line option <b>&quot;-e&quot;</b> that is followed by a list of arguments that are to be executed in a shell.</div>
+<div class='def-block'>All common <b>terminal</b> emulators seem to support command line option <b>&quot;-e&quot;</b> that is followed by a list of arguments that are to be executed in a shell.</div>
 </div>
 <div class='def-row'>
 <div class='def-label'>Examples:</div>
