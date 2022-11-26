@@ -10,7 +10,7 @@ msgid "Only one argument allowed (%s): %s"
 msgstr "Nur ein Argument erlaubt (%s): %s"
 
 #: /var/centauri/tools/centaurilauncher:151
-#: /var/centauri/tools/centaurilauncher:374
+#: /var/centauri/tools/centaurilauncher:380
 msgid "wait for synchronization:"
 msgstr "Auf Synchronisation warten:"
 
@@ -38,79 +38,79 @@ msgstr "Der Server antwortet nicht:"
 msgid "Stopped unexpectedly:"
 msgstr "Unerwartet beendet:"
 
-#: /var/centauri/tools/centaurilauncher:376
+#: /var/centauri/tools/centaurilauncher:382
 msgid "synchronization message :"
 msgstr "Synchronisationsnachricht:"
 
-#: /var/centauri/tools/centaurilauncher:384
+#: /var/centauri/tools/centaurilauncher:390
 msgid "generate config for qml :"
 msgstr "Erstelle 'qml' Konfiguration:"
 
-#: /var/centauri/tools/centaurilauncher:387
+#: /var/centauri/tools/centaurilauncher:393
 msgid "qml web url"
 msgstr "'qml' Web URL"
 
-#: /var/centauri/tools/centaurilauncher:455
+#: /var/centauri/tools/centaurilauncher:461
 msgid "<webapp> or <webdir> required"
 msgstr "Angabe von <webapp> oder <webdir> nötig"
 
-#: /var/centauri/tools/centaurilauncher:479
+#: /var/centauri/tools/centaurilauncher:485
 msgid "needing no web server"
 msgstr "Brauche keinen Web Server"
 
-#: /var/centauri/tools/centaurilauncher:482
+#: /var/centauri/tools/centaurilauncher:488
 msgid "using web server"
 msgstr "Benutze Web Server"
 
-#: /var/centauri/tools/centaurilauncher:488
+#: /var/centauri/tools/centaurilauncher:494
 msgid "no configured web server"
 msgstr "Kein Web Server konfiguriert"
 
-#: /var/centauri/tools/centaurilauncher:584
+#: /var/centauri/tools/centaurilauncher:590
 msgid "Found no free port"
 msgstr "Keinen freien Port gefunden"
 
-#: /var/centauri/tools/centaurilauncher:592
+#: /var/centauri/tools/centaurilauncher:598
 msgid "Stopping HTTP server"
 msgstr "HTTP Server wird beendet"
 
-#: /var/centauri/tools/centaurilauncher:609
+#: /var/centauri/tools/centaurilauncher:615
 msgid "allowed 'list' modes are:"
 msgstr "Mögliche 'list' Modi sind:"
 
-#: /var/centauri/tools/centaurilauncher:681
+#: /var/centauri/tools/centaurilauncher:689
 msgid "Option '%s' is invalid (action '%s')"
 msgstr "Option '%s' in ungültig (Action '%s')"
 
-#: /var/centauri/tools/centaurilauncher:696
+#: /var/centauri/tools/centaurilauncher:705
 msgid "start mode (run in background)"
 msgstr "Start Modus (in Hintergrund laufen)"
 
-#: /var/centauri/tools/centaurilauncher:697
+#: /var/centauri/tools/centaurilauncher:706
 msgid "override desktop configuration to use"
 msgstr "Verwendendete Desktopeinstellung ändern"
 
-#: /var/centauri/tools/centaurilauncher:700
+#: /var/centauri/tools/centaurilauncher:709
 msgid "actions"
 msgstr "Aktionen"
 
-#: /var/centauri/tools/centaurilauncher:702
+#: /var/centauri/tools/centaurilauncher:711
 msgid "show detailed information about actions"
 msgstr "Detailinformationen zu Aktionen anzeigen"
 
-#: /var/centauri/tools/centaurilauncher:705
+#: /var/centauri/tools/centaurilauncher:714
 msgid "arguments"
 msgstr "Argumente"
 
-#: /var/centauri/tools/centaurilauncher:706
+#: /var/centauri/tools/centaurilauncher:715
 msgid "a desktop name like: tty kde lxqt gnome"
 msgstr "Ein Desktop Name wie: tty kde lxqt gnome"
 
-#: /var/centauri/tools/centaurilauncher:707
+#: /var/centauri/tools/centaurilauncher:716
 msgid "one out of:"
 msgstr "einer von:"
 
-#: /var/centauri/tools/centaurilauncher:708
+#: /var/centauri/tools/centaurilauncher:717
 msgid "0:wait (default)  1:exec  2:background  3:disown"
 msgstr "0:warten (Voreinst.)  1:exec  2:Hintergrund  3:disown"
 

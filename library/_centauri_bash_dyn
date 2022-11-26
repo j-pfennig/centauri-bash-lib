@@ -199,6 +199,7 @@ remove() { _cen_dyn_load ext "$@" ; }
 rename() { _cen_dyn_load ext "$@" ; }
 resolve() { _cen_dyn_load ext "$@" ; }
 splitcall() { _cen_dyn_load ext "$@" ; }
+spliteval() { _cen_dyn_load ext "$@" ; }
 splitpath() { _cen_dyn_load ext "$@" ; }
 suffixpath() { _cen_dyn_load ext "$@" ; }
 symlink() { _cen_dyn_load ext "$@" ; }

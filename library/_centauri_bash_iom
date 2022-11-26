@@ -592,7 +592,7 @@ outfile() {
         # handle file
         if [ -s "$_varg" -a ! -c "$_varg" ] ; then
             if ! [ -n "$_fexi" -o -n "$_fook" -o -n "$CEN_OPT_DRYRUN" ] ; then
-                confirm -n $"Overwrite existing output file" "'$_varg'" || return 1
+                confirm -n $"Overwrite existing output file" "'$_varg'" || return 2
             fi
         elif [ -n "$_fexi" ] ; then
             _cen_iom_error "$_oerr" $"Output file does not exist" "$_varg" ; return 1
@@ -741,12 +741,12 @@ cachefile() {
 #
 # Call:     (1) configfile [-q] [-i <init>] [-n <name>]             # get file path
 #
-#           (2) configfile [-q] -a|-r <reader> [-c] [-i <init>] [-m] [-n <name>] [--] <sect>...
-#               configfile [-q] -l <reader> [-c] [-i <init>] [-n <name>]
+#           (2) configfile [-q] -a|-r <reader> [-c|-x] [-i <init>] [-m] [-n <name>] [--] <sect>...
+#               configfile [-q] -l <reader> [-c|-x] [-i <init>] [-n <name>]
 #               configfile [-q] -l . [-i <init>] [-n <name>]
 #
-#           (3) configfile [-q] -v -r <array> [-c] [-i <init>] [-m] [-n <name>] [--] <sect>...
-#               configfile [-q] -v -l <array> [-c] [-i <init>] [-n <name>]
+#           (3) configfile [-q] -v -r <array> [-c|-x] [-i <init>] [-m] [-n <name>] [--] <sect>...
+#               configfile [-q] -v -l <array> [-c|-x] [-i <init>] [-n <name>]
 #
 #           (4) configfile [-e|-f|-w] <origin> <min> <max> <argc> # arg count check
 #               configfile [-e|-f|-w] [<origin> [<mesg>...]]      # error reporting
@@ -754,7 +754,7 @@ cachefile() {
 # Options:  -a  multi argument callback (see below)
 #           -c  simplify white space
 #           -i  callback if config was not found
-#           -l  line-by-line callback
+#           -l  literal mode callback -or- source input file using '-l .'
 #           -m  call reader also for section lines (option -a and -r)
 #           -n  file name or a path containing "/", see remark below
 #           -p  try private file 1st in **~/.config**, **~/.local** then ***~.<name>**
@@ -762,6 +762,7 @@ cachefile() {
 #           -r  read callback             (use '.' to source the file)
 #           -s  silent, no trace messages
 #           -v  save data to an array variable (no reader callback)
+#           -x
 #
 #           -e  generate error message    (from <reader> callback only)
 #           -f  generate fatal error      (from <reader> callback only)
@@ -875,6 +876,7 @@ configfile() {
       -r)   shift ; _read="$1" ;;
       -s)   _sopt="$1" ; _otra=":" ;;
       -v)   _ovar=1 ;;
+      -x)   _ocom=2 ;;
       -w)   _oerr='warning' ; shift ; _rlin="$1" ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -932,11 +934,14 @@ configfile() {
     _cen_configfile_call() {
         local _stat=0
         CEN_CONFIGFILE[1]="$_line" ; CEN_CONFIGFILE[2]="$_lnum"
-        CEN_CONFIGFILE_RUN=1                                # inside callback
 
-        if [ -n "$_ocom" ] ; then
+        if [ "$_ocom" = 2 ] ; then
+            local _cen_config_lin
+            spliteval -s _cen_config_lin -- "$_line"
+            _line="$_cen_config_lin"
+        elif [ -n "$_ocom" ] ; then
             local _comp
-            _line="${_line//$'/t'/ }"
+            _line="${_line//[[:space:]]/ }"
             while [ "$_comp" != "$_line" ] ; do
                 _comp="$_line"
                 _line="${_line//   / }"
@@ -945,7 +950,7 @@ configfile() {
         fi
         if [ -n "$_aflg" ] ; then
             local _args ; set -f
-            if ! eval _args=( $_line ) &>/dev/null ; then   # handle vars and quotes
+            if ! eval _args=("$_line") &>/dev/null ; then   # handle vars and quotes
                 set +f ; _stat=2
                 [ -z "$_oqui" ] && configfile -e - $"syntax error" "$_line"
             else
@@ -1022,7 +1027,7 @@ configfile() {
                 fi
                 [ "${_line::1}" = "#" ] && continue         # things to ignore...
                 _line="${_line% #*}"
-                [ -z "${_line// /}" ] && continue
+                [ -z "${_line//[[:space:]]/}" ] && continue
 
                 if [ "${_line%\\}" != "$_line" ] ; then     # continuation ...
                     _join="${_line%\\}" ; continue

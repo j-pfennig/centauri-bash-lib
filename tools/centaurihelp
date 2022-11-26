@@ -2126,8 +2126,9 @@ run_process() {
 
     if [ "$popt" = "-m" ] && [ -d "$CEN_OPT_HTML" ] ; then  # copy header cache
         serialize -n "$DAT_HDR_CACHE"
-        if [ -n "$CEN_OPT_FORCE" -o "$CEN_SERIALIZE" -nt "$CEN_OPT_HTML" ] ; then
-            copy -- "$CEN_SERIALIZE" "$CEN_OPT_HTML" || return 1
+        html="$CEN_OPT_HTML/${DAT_HDR_CACHE##*/}"
+        if [ -n "$CEN_OPT_FORCE" -o "$CEN_SERIALIZE" -nt "$html" ] ; then
+            copy -- "$CEN_SERIALIZE" "$html" || return 1
         fi
     fi
     return 0

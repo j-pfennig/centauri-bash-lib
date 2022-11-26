@@ -23,7 +23,7 @@
 # Copyright Dr. J. Pfennig (c) 2022
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_run"]="0.01:1"
+CEN_MODULES["_centauri_bash_run"]="0.10:1"
 
 embed -c '_centauri_bash_iom'           # reference declaration
 
@@ -39,7 +39,7 @@ CEN_RUN_TERMINAL=       #        [terminal] lines
 CEN_RUN_SHORTPATH=      #        [shortpath] lines
 
 # TODO --embed=<name>:<idnt>:<desktop>
-# TODO windows -i <mininmal-mode>
+# TODO windows -i <minimal-mode>
 # TODO search centauri-bash-lib  also in CEN_ROOT
 # TODO quit exit message should use "signal" for exit-code > 128
 # TODO terminal -c|-x not really implemented
@@ -63,6 +63,9 @@ CEN_SHORTPATH_LIB=(
 CEN_SHORTPATH_DAT=      # dynamically loaded data
 CEN_TERMINAL_DAT=
 
+#CEN_LAUNCHER_APPS=()
+# declare -g -A CEN_LAUNCHER_PARS
+
 # ------------------------------------------------------------------------------
 # Library configuration + The centauri-bash-lib configuration file
 #
@@ -82,6 +85,10 @@ CEN_TERMINAL_DAT=
 #
 #+Any extra sections can be added for local needs. See [[configfile]] for details on how to
 # process configuration files.
+#
+#+The [[centauricreate]] tool can be used to generate a default configuration. See:
+#
+#.          centauriconfig --template config -
 #
 # Examples: (1) A simple configuration for use with Termux (Linux on Android):
 #
@@ -194,10 +201,9 @@ CEN_TERMINAL_DAT=
 # launcher Config + Section in centauri-bash-lib configuration file
 #
 #+General:  The [[launcher()]] function reads the (cached) configuration statements
-#           to find an executable command (or a function) for a generic name.
-#
-#+          "$CEN_ROOT/default" is the preferred location for "centauri-bash-lib",
-#           see [[configfile()]] for more details.
+#           from section **[launcher]** in file "centauri-bash-lib". The preferred
+#           location of this file in "$CEN_ROOT/default", see [[configfile()]] for
+#           more details.
 #
 #+Config:   Valid "centauri-bash-lib" configuration lines are:
 #
@@ -229,11 +235,11 @@ CEN_TERMINAL_DAT=
 #
 #           Configuration Example:
 #.  °       [launcher]
-#.  °           # desktop apps (- is for any desktop session, must be last)
-#.  °           editor      -       kwrite featherpad
-#.  °           browser     -       unfug firefox falkon qml
-#.  °           kiosk       -       qml falkon sauwetter firefox
-#.  °           terminal    -       @terminal quarkteig
+#.  °           # desktop apps (* is for any desktop session, must be last)
+#.  °           editor      *       kwrite featherpad
+#.  °           browser     *       unfug firefox falkon qml
+#.  °           kiosk       *       qml falkon sauwetter firefox
+#.  °           terminal    *       @terminal quarkteig
 #.
 #.  °           # terminal apps (tty is for non-desktop mode)
 #.  °           editor      tty     nano vim
@@ -328,7 +334,7 @@ CEN_TERMINAL_DAT=
 #           [*] these options are mutually exclusive
 #
 # Arguments:<arg>   arguments to be passed to the application
-#           <lsel>  0:all  1:session  2:executable
+#           <lsel>  0:all  1:session  2:paths  3:valids generic names
 #           <mode>  0:just run   1:exec   2:background   3:disown
 #           <rslt>  variable name, receives returned data as array
 #           <desk>  "tty", "kde", "lxqt", ... (see $XDG_SESSION_DESKTOP)
@@ -380,7 +386,7 @@ CEN_LAUNCHER=
 launcher() {
     $CEN_DEBUG -c -- "$*"
     local _flst _oerr='-e' _ofun='-e' _onot _odsk _orun=() _temp
-    local _desk="$CEN_DESKTOP" _warn="_cen_run_config -m launcher" _vnam='CEN_LAUNCHER'
+    local _desk="${CEN_DESKTOP:-tty}" _warn="_cen_run_config -m launcher" _vnam='CEN_LAUNCHER'
 
     # do we have an -x option?
     for _temp in "$@" ; do
@@ -402,18 +408,17 @@ launcher() {
         -n)   _onot=1  ;;
         -q)   _oerr='-q' ; _ofun= ; _warn=':' ;;
         -r)   _orun+=('-r') ;;
-        -y)   shift ; _desk="${1:-tty}" ; _odsk="-y $_desk" ;;
+        -y)   shift ; _desk="${1:--}"
+              [ "$_desk" = '-' ] && _desk='tty' ; _odsk="-y $_desk" ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
     local -n _vres="$_vnam" ; _vres=()
 
     # fetch configuration for [launcher]
-    local _what="$1" _apps _line _skey _sval _name _path _igno _fltr
-    local -A _argd _pard _appd _flgd _ifod
-
-    [ -z "$_desk" ] && _desk='tty'
-    #$CEN_TRACE2 "launcher: parse:" "$_what" "$_desk"
+    local _what="$1" _apps _line _larr _name _path _igno _fltr
+    local -A _pard
+    $CEN_TRACE2 -c " parsing" -- "${_what:--} (mode=$_desk)"
     _cen_run_config $_oerr 'launcher' || return 1
 
     # generic-name filtering if not listing
@@ -422,158 +427,207 @@ launcher() {
         [ "$_flst" = 0 ] && _desk=
     fi
 
-    # loop over config lines
-    for _line in "${CEN_RUN_LAUNCHER[@]}" ; do
-       _skey="${_line%% *}" ; _sval="${_line#* }"
-       # $CEN_TRACE2 "launcher: parse:" "($_what) $_line"
-       [ -n "$_sval" ] || _skey=                    # need value, flag error
+    # _pard keys:
+    #
+    #   '-<flag>:<exec>'        # flags for executable
+    #   '<what>:<exec>'         # commandline args for executable
+    #   '<what>'                # executable names
+    #   '<what::>'              # flag for match
+    #   '<what:<fltr>'          # list of executables
+    #   '<exec>/'               # executable fs path
 
-        case "$_skey" in
+    # --- evaluate configuration ---
+
+    for _line in "${CEN_RUN_LAUNCHER[@]}" ; do
+
+        # All data should have been correctly quoted at caching time. So we use eval
+        # directly without error handling. The slower equivalent is: spliteval -u
+        eval _larr=("$_line")
+        [ -z "${_larr[1]}" ] && _larr=                   # need value, flag error
+
+        # On an intermedeate level the quote cache strings are converted back to an
+        # array (see '_larr'). Only '-path:*' and '-wants:*' handle fs paths. All
+        # others use names as arguments that cannot contain spaces.
+
+        case "$_larr" in
             *-)
-                $_warn -- "$_line" ; continue ;;    # warning, ignore this line
-            -ignore:*)
-                _pard["$_skey"]="$_sval" ;;
+                $_warn -- "$_line" ; continue ;;        # warning, ignore this line
+
+            # All arguments are joined to a single string:
+
             -info:*)
-                [ -n "$_flst" ] && _ifod["${_skey#*:}"]="$_sval" ;;
-            -flags:*)
-                [ -n "$_flst" ] && _flgd["${_skey#*:}"]="$_sval" ;;
-            -path:*)
-                sysfind -o -q -s _pard["$_skey"] -- $_sval ;;
+                [ -n "$_flst" ] && _pard["$_larr"]="${_larr[*]:1}" ;;
+            -flags:*|-ignore:*)
+                _pard["$_larr"]="${_larr[*]:1}" ;;
+
+            # In _cen_run_tools these strings are expanded by globbing. This can be
+            # used to escape spaces, see [:space:] - this will work in most cases:
+
+            -path:*|-wants:*)
+                local _aarr=("${_larr[@]:1}")                   # arguments ony
+                _pard["$_larr"]="${_aarr[@]// /[[:space:]]}" ;; # keep spaces
+
+            # No path names used, join args to a single string:
+
             $_what:*)
-                _argd["${_skey##*:}"]="$_sval" ;;
+                _pard["$_larr"]="${_larr[*]:1}" ;;
             $_what)
-                _fltr="${_sval%% *}"                # session name
-                if [ -n "$_desk" ] ; then           # session filtering...
-                    [ "$_fltr" = '-' -a "$_desk" = 'tty' ] && continue
-                    [ "$_fltr" != '-' -a "$_fltr" != "$_desk" ] && continue
+                _fltr="${_larr[1]}"                     # session name
+                if [ -n "$_desk" ] ; then               # session filtering...
+                    case "$_fltr" in
+                    -)      ;;                                  # all sessions
+                    \*)     [ "$_desk" = 'tty' ] && continue ;; # any desktop
+                    $_desk) ;;                                  # this desktop
+                    *)      continue
+                    esac
                 fi
-                if [ -z "$_flst" ] ; then           # 1st match only
-                    [ -z "$_apps" -o "$_fltr" != '-' ] && _apps=(${_sval#* })
-                else                                # list takes all
-                    _apps+=("$_skey:$_fltr")
-                    _appd["$_skey:$_fltr"]="${_sval#* }"
+
+                if [ -z "$_flst" ] ; then               # 1st match only
+                    [ -z "$_apps" -o "$_fltr" != '*' ] || continue
+                    _apps=("$_larr:$_fltr")
+                elif [ "$_flst" = 0 ] ; then            # list everything
+                    _apps+=("$_larr:$_fltr")
+                elif [ -z "${_pard["$_larr::"]}" ] ; then
+                    _pard["$_larr::"]="${_larr[*]:2}"   # filter 1st match
+                    _apps+=("$_larr:$_fltr")
                 fi
+                _pard["$_larr:$_fltr"]="${_larr[*]:2}"
                 ;;
-            [a-z]*[a-z0-9.])                        # looks ok, no warning
+            [a-z]*[a-z0-9.])                            # looks ok, no warning
                 continue ;;
             *)
-                $_warn -- "$_line" ; continue ;;    # warning, ignore this line
+                $_warn -- "$_line" ; continue ;;        # warning, ignore this line
         esac
     done
 
-    # debug _apps ; debug _appd ; debug _pard
+    # --- return a command list or find command ---
 
-    # return a command list
-    if [ -n "$_flst" ] ; then
-        local _cen_run_exe
-        for _line in "${_apps[@]}" ; do
-            _cen_run_exe="${_appd["$_line"]}"           # application name
-            [ "$_cen_run_exe" = '.' ] && _cen_run_exe='centaurilauncher'
-            if [ "$_flst" -gt 1 ] ; then                # app installed?
-                set -f ; set -- $_cen_run_exe ; set +f
-                if [ "${1::1}" = '@' ] ; then           # tool function
-                    isfunction -c $_ofun -- "${1:1}" -x -y $_odsk || continue
-                else                                    # command
-                    _cen_run_exe=
-                    for _temp in "$@" ; do              # try -path:xxx option
-                        _cen_run_exe="${_pard[-path:$_temp]}"
-                        [ -x "$_cen_run_exe" ] && break # match, stop search
-                    done
-                    if [ -z "$_cen_run_exe" ] ; then    # try via PATH
-                        sysfind -q -o -s _cen_run_exe -- "$@" || continue
-                    fi
-                fi
-            fi
-            _skey="${_line%%:*}" ; _sval="${_line#*:}"
-            if [ "$_sval" = '-' -a -n "$_desk" ] ; then # session filter
-                [ -n "${_appd["$_skey:$_desk"]}" ] && continue
-            fi
-            if [ "$_flst" -gt 2 ] ; then
-                _vres+=("$_skey")
-            else
-                _vres+=("$_skey"$'\a'"$_sval"$'\a'"$_cen_run_exe"$'\a'"${_ifod["$_skey"]}")
-                _temp="${_flgd["$_skey"]}" ; [ -n "$_temp" ] && _vres+=($'\a'"$_temp")
-            fi
-        done
-        return 0
-    fi
-
-    # find an executable command
-    for _name in "${_apps[@]}" ; do
-        $CEN_TRACE -a -c " check" -- "$_name"
-        # comaand path or command is a function
-        _path="${_pard[-path:$_name]}"                  # -path:xxx option
-        if [ -n "$_path" ] ; then
-            $CEN_TRACE -a -c " path" -- "$_path"
-        elif [ "${_name::1}" = '@' ] ; then             # command function
-             isfunction -c -- "${_name:1}" -x $_odsk || continue
-            _path="$_name" ; break
-        elif [ "$_name" = '.' ] ; then
-            _path="$CEN_TOOLS/centaurilauncher"
-        else                                            # command
-            sysfind -c -q -s _path -- "$_name" || continue
-        fi
-
-        # ignore statement
-        _igno="${_pard[-ignore:$_name]}"
-        if [ -n "$_igno" ] && [ -h "$_path" ] ; then
-            if ! prettypath -c -s _temp -q -- "$_path" ; then
-                _path= ; continue
-            elif [ "${_temp##*/}" = "$_igno" ] ; then
-                $CEN_TRACE2 -a -c " ignore" -- "$_name = $_igno"
-                _path= ; continue
-            fi
-        fi
-
-        # function instead of command arguments
-         _temp="${_argd[$_name]}"
-         if [ "${_temp::1}" = '@' ] ; then
-            _temp="${_temp:1}" ; _temp="${_temp%% *}"
-            if ! isfunction -- "$_temp" ; then
-                $CEN_TRACE2 -a -c " needs" -- "$_temp"
-                _path= ; continue
-            elif ! $_temp -x $_odsk -- "$_path" "${@:2}" ; then
-                $CEN_TRACE2 -a -c " error" -- "$_temp"
+    local _fldr="$PWD" ; folder -c -f "${CEN_PATHS:-/}"
+    for _line in "${_apps[@]}" ; do
+        _fltr="${_line#*:}" ; _name="${_line%%:*}"
+        if _cen_run_tools "$_flst" "$_name" ${_pard[$_name:$_fltr]} ; then
+            $CEN_TRACE -c " tool" -p "%-18s => %s" "$_line" "${CEN_RUN_TOOLS[1]}"
+            case "$_flst" in
+            '')     break
+                    ;;
+            2)      _vres+=("$_name"$'\a'"$_fltr"$'\a'"${CEN_RUN_TOOLS[1]}"$'\a'"${CEN_RUN_TOOLS[2]}")
+                    ;;
+            3)      _vres+=("$_name")
+                    ;;
+            *)      _temp="${_pard[$_name:$_fltr]}"
+                    [ "$_temp" = '.' ] && _temp='centaurilauncher'
+                    _vres+=("$_name"$'\a'"$_fltr"$'\a'"$_temp"$'\a'"${CEN_RUN_TOOLS[2]}")
+            esac
+        else
+            $CEN_TRACE -c " tool" -p "%-18s    NO MATCH" "$_line"
+            if [ -z "$_flst" ] ; then
+                folder -c -f "$_fldr"
                 return 1
             fi
-         fi
-        break
+        fi
     done
+    folder -c -f "$_fldr"
+    [ -n "$_flst" ] && return 0                         # return a command list
 
-    if [ -z "$_path" ] ; then
-        $CEN_TRACE2 -a -c " miss" -- "$_what"
-        return 1
+    # --- run a command ---
+
+    if [ -z "$_name" ] ; then
+        $CEN_TRACE -c " miss" -- "$_what" ; return 1
     fi
 
-    # unquote arguments via eval
-    _temp="${_argd[$_name]}"
-    if ! eval _vres=($_temp) 2>/dev/null ; then
+    # split and unquote arguments via eval
+    _temp="${CEN_RUN_TOOLS[2]}"
+    if ! eval _vres=("$_temp") 2>/dev/null ; then
         _vres=($_temp)
-        $_warn "Syntax error:" "$_temp"
+        $_warn $"Syntax error:" "$_temp"
     fi
+
     if [ "${_temp::1}" = '@' ] ; then           # argument function
-        _vres=("${_temp%% *}" "$_path" "${_vres[@]:1}" "${@:2}")
+        _vres=("${_temp%% *}" "${CEN_RUN_TOOLS[1]}" "${_vres[@]:1}" "${@:2}")
     else                                        # command or function
-        _vres=("$_path" "${_vres[@]}" "${@:2}")
+        _vres=("${CEN_RUN_TOOLS[1]}" "${_vres[@]}" "${@:2}")
     fi
+
+    $CEN_TRACE2 -c " exec" -- "$_name  =>  ${_vres[*]}"
     [ -n "$_onot" ] && return 0
     _cen_run_command  $_oerr "${_orun[@]}" $_odsk -- "${_vres[@]}" || return $?
     return 0
 }
 
+# check if tool can be run: <list> <tool> <name>...    (using variable _pard)
+CEN_RUN_TOOLS=()                # (<tool> <path>)
+_cen_run_tools() {
+    local _list="$1" _tool="$2" _name _path _igno _want _args _nice
+    shift ; shift
+    if [ "${1::1}" = '@' ] ; then
+        CEN_RUN_TOOLS=('@' "$1" "${_pard[-info:$_tool]}") ; return 0
+    fi
+    CEN_RUN_TOOLS=()
+
+    for _name in "$@" ; do
+        [ "$_name" = '.' ] && _nice='centaurilauncher' || _nice="$_name"
+
+        if [ -z "$_list" ] ; then
+            _args="${_pard[$_tool:$_name]}"
+        else
+            _args="${_pard[-info:$_tool]}"
+            if [ "$_list" = 0 ] ; then
+                CEN_RUN_TOOLS=("$_nice" - "$_args") ; return 0
+            fi
+        fi
+        _path="${_pard[$_nice/]}"
+        [ "$_path" = '-' ] && return 1                      # negative cache entry
+
+        if [ -n "$_path" ] ; then
+            $CEN_TRACE2 -a -c "launcher CACHED" -p "%-18s => %s" "$_nice" "$_path"
+            CEN_RUN_TOOLS=("$_nice" "$_path" "$_args") ; return 0
+        fi
+
+
+        _path="${_pard[-path:$_name]}"
+        [ -n "$_path" ] && sysfind -q -s _path -o -- $_path # try -path:*
+        [ -z "$_path" ] && sysfind -q -s _path -- "$_nice"  # fallback
+        [ -z "$_path" ] && continue                         # no executable
+
+        _igno="${_pard[-ignore:$_name]}"
+        if [ -n "$_igno" ] && [ "$_igno" = "${_path##*/}" ] ; then
+            $CEN_TRACE2 -c "launcher IGNORED" -p "%-18s => %s" "$_nice" "$_path"
+            continue
+        fi
+
+        _want="${_pard[-wants:$_name]}"
+        if [ -n "$_want" ] ; then
+            for _want in $_want "" ; do
+                [ -e "$_want" ] && break
+            done
+            $CEN_TRACE2 -c "launcher WANTS" -p "%-18s => %s" "$_nice" "${_want:--miss-}"
+            [ -z "$_want" ] && continue
+        fi
+
+        $CEN_TRACE2 -a -c "launcher FOUND" -p "%-18s => %s" "$_nice" "$_path"
+        CEN_RUN_TOOLS=("$_nice" "$_path" "$_args")
+        _pard[$_nice/]="$_path" ; return 0
+    done
+    _pard[$_nice/]='-' ; return 1                           # nothing found
+}
+
 # ------------------------------------------------------------------------------
 # shortpath Config + Section in centauri-bash-lib configuration file
 #
-#+Format:   The [[shortpath()]] function reads the (cached) configuration statements.
-#           A shortcut is a short name that is resolved to the path of an existing
-#           folder. Multiple destination paths per shortcut can be given in a list
-#           and the 1st existing path is used.
+#+General:  The [[shortpath()]] function reads the (cached) configuration statements
+#           from section **[shortpath]** in file "centauri-bash-lib". The preferred
+#           location of this file in "$CEN_ROOT/default", see [[configfile()]] for
+#           more details.
 #
-#+          Each shortcut definition is stored as a text line made of the literal word
+#+Format:   A shortpath is a short name that is resolved to the path of an existing
+#           folder. Multiple destination paths per shortpath definition can be given
+#           in a list and only the 1st existing path is used.
+#
+#+          Each shortpath definition is stored as a text line made of the literal word
 #           **path** followed by three fields of (quoted) text that are separated by
 #           spaces (e.g. the fields are bash words):
 #
-#,          <shortcut> := **path** <name> **"**<paths>**"** **"**<info>**"**
+#,          <shortpath> := **path** <name> **"**<paths>**"** **"**<info>**"**
 #
 #+          No ":" characters must appear in <name> or <paths> fields, they are internally
 #           used as field delimiters. The list of paths can contain any number of paths
@@ -603,7 +657,7 @@ launcher() {
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# shortpath - Resolve shortcut names for file system paths
+# shortpath - Resolve short alias names for file system paths
 #
 # Call:     shortpath [-q] [-f] [-e] [-g] [-a <rslt>] [-n <ndir>]
 #           shortpath ... [-r] -m <part>                # get matching data
@@ -824,6 +878,19 @@ shortpath() {
         fi
         shift ; [ "$#" = 0 ] && break
     done
+
+    # fix paths if we have a FS prefix
+    if [ -n "$CEN_PATHS" -a -z "$_fraw" ] ; then
+        local _curr=0 _clen="${#_vvar[@]}"
+        while [ "$_curr" -lt "$_clen" ] ; do
+            _item="${_vvar[_curr]}"
+            case "$_item" in
+                //*)    ;;                      # ignore samba path
+                /*)     _vvar[_curr]="$CEN_PATHS${_item#$CEN_PATHS}"
+            esac
+            ((_curr += 1))
+        done
+    fi
     return "$_stat"
 }
 
@@ -975,7 +1042,6 @@ terminal() {
     done
     local -n _acmd="$_vnam" ; _acmd=()
 
-
 [ "$_ochk" = 2 ] && return 0
     [ -z "$CEN_DISPLAY" ] && CEN_IS_DESKTOP=0
     [ -n "$CEN_IS_DESKTOP" -a "$_ochk" = 1 ] && return 0    # valid status
@@ -985,35 +1051,36 @@ terminal() {
     if [ -z "$CEN_TERMINAL_DAT" ] ; then
         _cen_run_config $_oerr 'launcher' || return 1
 
-        local _line _temp _indx
+        local _line _temp _indx _sarr
         [ -z "$_desk" ] && _desk='tty'
-        #$CEN_TRACE2 "terminal: parse  :" "$_desk"
-
+        #$CEN_TRACE2 -a -c " parse" -- "$_desk"
         for _line in "${CEN_RUN_TERMINAL[@]}" ; do
-            local _skey="${_line%% *}" _sval="${_line#* }"
-            #$CEN_TRACE2 -a -p "%-12s %s\n" "$_skey" "$_sval"
-            [ -z "$_sval" ] && _skey=                   # no argument -> incrorrect
+            # All data should have been correctly quoted at caching time. So we use eval
+            # directly without error handling. The slower equivalent is: spliteval -u
+            eval _sarr=("$_line")
+            #$CEN_TRACE2 -a -c " key val" -p "%-20s %s\n" "$_sarr" "${_sarr[*]:1}"
+            [ -z "${_sarr[1]}" ] && _sarr=                  # no argument -> incrorrect
 
             _indx=
-            case "$_skey" in
+            case "$_sarr" in
                 emulator)
                     [ -n "$CEN_RUN_EMULATOR" ] && continue
-                    _temp="${_sval%% *}" ; _temp="${_temp,,}"
+                    _temp="${_sarr[1],,}"                   # desktop filter
                     [ "$_temp" = '-' -o "$_temp" = "$_desk" ] || continue
-                    if ! sysfind $_oerr -o -s CEN_RUN_EMULATOR -- ${_sval#* } ; then
+                    if ! sysfind $_oerr -o -s CEN_RUN_EMULATOR -- ${_sarr[@]:2} ; then
                         _stat=2 ; break
                     fi
                     CEN_TERMINAL_DAT[0]="${CEN_RUN_EMULATOR##*/}"
                     #$CEN_TRACE2 -a "terminal: session: $_temp: $CEN_RUN_EMULATOR"
                     ;;
                 -args:*)
-                    [ "$_skey" = "-args:$CEN_TERMINAL_DAT" ] || continue
+                    [ "$_sarr" = "-args:$CEN_TERMINAL_DAT" ] || continue
                     _indx=1 ;;
                 -flags:*)
-                    [ "$_skey" = "-flags:$CEN_TERMINAL_DAT" ] || continue
+                    [ "$_sarr" = "-flags:$CEN_TERMINAL_DAT" ] || continue
                     _indx=2 ;;
                 -title:*)
-                    [ "$_skey" = "-title:$CEN_TERMINAL_DAT" ] || continue
+                    [ "$_sarr" = "-title:$CEN_TERMINAL_DAT" ] || continue
                     _indx=3 ;;
                 login)
                     _indx=4 ;;
@@ -1030,8 +1097,8 @@ terminal() {
                 *)  $_warn -- "$_line" ; _stat=1    # warning, ignore this line
             esac
             if [ -n "$_indx" ] ; then
-                CEN_TERMINAL_DAT[_indx]="$_sval"
-                #$CEN_TRACE2 -a -p "terminal: %-7s: %s" "${_skey%%-*}" "$_sval"
+                CEN_TERMINAL_DAT[_indx]="${_sarr[*]:1}"
+                #$CEN_TRACE2 -a -p "terminal: %-7s: %s" "${_sarr%%-*}" "${_sarr[*]:1}"
             fi
         done
         unset CEN_RUN_TERMINAL                      # drop config data
@@ -1169,6 +1236,7 @@ _cen_run_command() {
         -m)   shift ; _mode="${1:-0}" ;;
         -t)   shift ; [ -n "$1" ] && _opts+=('-t' "$1") ;;
         -x)   ;;
+        -y)   shift ; $CEN_TRACE -c " -y" "not implemented" ;;
         -e|-f|-w)
               _opts+=("$1") ; _oerr="$1" ;;
         *)    _opts+=("$1") ;;
@@ -1233,9 +1301,9 @@ _cen_run_config() {
         configfile -i true -p $_ropt $_read -n "$_path" -- "$@" || _stat=$?
     elif [ -z "$CEN_RUN_CONFIG" ] ; then
         if ! cachefile $_ferr -s -w 'centauri-bash-lib.dat' "$_path" ; then
-            configfile $_fqui -r CEN_RUN_LAUNCHER -v -c -n "$CEN_CONFIGFILE" 'launcher'
-            configfile $_fqui -r CEN_RUN_TERMINAL -v -c -n "$CEN_CONFIGFILE" 'terminal'
-            configfile $_fqui -r CEN_RUN_SHORTPATH -v -c -n "$CEN_CONFIGFILE" 'shortpath'
+            configfile $_fqui -r CEN_RUN_LAUNCHER  -v -x -n "$CEN_CONFIGFILE" 'launcher'
+            configfile $_fqui -r CEN_RUN_TERMINAL  -v -x -n "$CEN_CONFIGFILE" 'terminal'
+            configfile $_fqui -r CEN_RUN_SHORTPATH -v -x -n "$CEN_CONFIGFILE" 'shortpath'
             CEN_RUN_CONFIG="$CEN_CONFIGFILE"
             serialize $_ferr -w -n "$CEN_CACHEFILE" -m 664 -- CEN_RUN_CONFIG \
                       CEN_RUN_LAUNCHER CEN_RUN_TERMINAL CEN_RUN_SHORTPATH
@@ -1262,7 +1330,7 @@ _cen_run_proxy() {
 # --- Proxy for _centauri_bash_lib (autogenerated, see centauri-bash-lib) ---
 
 # installation defaults: <root>:<bin>:<tools>)
-CEN_INSTALL="${CEN_INSTALL:-$CEN_ROOT}"
+CEN_INSTALL='${CEN_INSTALL:-$CEN_ROOT}'
 
 # find the library root folder
 if [ "\${CEN_ROOT:-.}" = '.' ] ; then
@@ -1278,7 +1346,7 @@ fi
 export CEN_LIBRARY="\$CEN_ROOT/library"
 
 # paths that can be installation dependent
-CEN_PATHS=("$CEN_PATHS" "${CEN_PATHS[1]}" "${CEN_PATHS[2]}" "${CEN_PATHS[3]}" "${CEN_PATHS[4]}")
+CEN_PATHS=('$CEN_PATHS' '${CEN_PATHS[1]}' '${CEN_PATHS[2]}' '${CEN_PATHS[3]}' '${CEN_PATHS[4]}')
 $_rexp$_prox
 
 # sanitize environment (bash needs TMPDIR)
@@ -1293,7 +1361,7 @@ else
 fi
 
 # init transient folder after boot (root only)
-[ "\$EUID" = "0" ] && [ ! -d "\$CEN_ROOT/transient" ] && embed -m "_centauri_bash_sys"
+[ "\$EUID" = 0 ] && [ ! -d "\$CEN_ROOT/transient" ] && embed -m '_centauri_bash_sys'
 :
 !EOF
     sysrun -e -p -- chmod 775 "$CEN_TOOLS/_centauri_bash_lib" || :

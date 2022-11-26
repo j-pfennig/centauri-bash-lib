@@ -1064,6 +1064,7 @@ rename() {
     local _dest="$2"
     if [ -n "$_suff" -a $# -ge 1 ] ; then
         [ $# -gt 1 ] && _cen_abort $"Extra arg(s)" "$_dest"
+        [ -e "$1" ] || return 0
         _dest="$1.$_suff"
     elif [ $# -gt 2 ] ; then
         _cen_abort $"Extra arg(s)" "$*"
@@ -1267,6 +1268,8 @@ resolve() {
 #           <maxi>  maximum chunk size (default: -c uses 100, -p uses number of cpus)
 #           <deli>  field delimiter if <data> is a string, not used for array
 #
+# Return:   **true** at success or **false** otherwise.
+#
 #.Examples: # call function: symlink -e -r -- "$@" "dest-folder"
 #.          local para("--" "@" "$dest-folder")
 #.          splitcall -c symlink -e -r -m 1024 -a para -- "$@"
@@ -1352,6 +1355,119 @@ splitcall() {
         CEN_ERROR="$_save" ; CEN_DONE="$_savd"      # restore error state
     fi
     return $_rval
+}
+
+# ------------------------------------------------------------------------------
+# spliteval - Split strings using the bash eval builtin
+#
+# Call:     (1) spliteval -a|-s <var> [-g|-n] [-q|-w] -i <var>
+#               spliteval -a|-s <var> [-g|-n] [-q|-w] [--] <data> ...
+#           (3) spliteval -u <var> [-g] [-q|-w] -i <var>
+#               spliteval -u <var> [-g] [-q|-w] [--] <data> ...
+#
+# Options:  -a  result array
+#           -g  enable bash globbing
+#           -i  input from <var>, can be array or string
+#           -n  no eval, just smart quoting (use with -s only)
+#           -q  do not report eval errors
+#           -s  result string (smart quoted)
+#           -u  simplified 'unquote' to result array
+#           -w  print warning on eval errors
+#
+#
+# Return:   **true** at success or **false** otherwise.
+#
+#.Examples: # do globbing and eval
+#.          local dest=() data=("*.conf" '1st example' "$CEN_PATH/etc")
+#.          spliteval -a dest -g -i data
+#
+#.          # do globbing and eval, smart quoting
+#.          local dest data=("*.conf" '1st example' "$CEN_PATH/etc")
+#.          spliteval -s dest -g -i data
+#
+#.          # smart quoting arguments to string
+#.          local dest
+#.          spliteval -s dest -n -- "*.conf" '1st example' "$CEN_PATH/etc"
+#
+#.          # simplified unquote of a quoted string
+#.          local quot uquo=()
+#.          spliteval -s quot -- " one * 'two tree'   four '|'" "\"five\"  \$HOME"
+#.          spliteval -u uquo -i quot
+# ------------------------------------------------------------------------------
+spliteval() {
+    local _oinp _oset _oerr=error _oglo _onoe _oset _stat=0
+    local -n _vvei _vveo
+    while [ "${1::1}" = "-" ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -a|-u)
+            _oset="$1" ; shift ; _vveo="$1" ; _vveo=() ;;
+      -g)   _oglo=1 ;;
+      -i)   shift ; _oinp=1 ; _vvei="$1" ;;
+      -n)   _onoe=1 ;;
+      -q)   _oerr="$CEN_TRACE" ;;
+      -s)   _oset="$1" ; shift ; _vveo="$1" ; _vveo= ;;
+      -w)   _oerr=warning ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+    [ -n "$_oinp" ] && set -- "${_vvei[@]}"
+
+    # simple 'unquote' eval, fast path
+    if [ "$_oset" = '-u' ] ; then
+        if [ -n "$_oglo" ] ; then
+            eval _vveo=("$*") ; _stat=$?
+        else
+            set -f ; eval _vveo=("$*") ; _stat=$? ; set +f
+        fi 2>/dev/null
+        [ "$_stat" = 0 ] && return 0
+        _vveo=("$*")
+        $_oerr $"Syntax error:" "$_vveo" ; return 1
+    fi
+    [ -z "$_oset" ] && _cen_abort = '-a|-s|-u'
+
+    # full eval
+    local _line _item _ugly _args=()
+    [ -z "$_oglo" ] && set -f
+    for _item in "$@" ; do
+       # _ugly=
+        if [ -n "$_onoe" ] ; then
+            _args+=("$_item")
+        else
+            # fix-ups to make eval happy
+            if [ "$_item" != "${_item/[(|)]/}" ] ; then
+                _item="${_item//|/\\|}" ; _item="${_item//(/\\(}"
+                _item="${_item//)/\\)}" ; _ugly=1
+            fi
+            # use eval to append to array
+            if ! eval _args+=("$_item") 2>/dev/null ; then
+                [ -z "$_oglo" ] && set +f
+                $_oerr $"Syntax error:" "$_item"
+                _args+=("$_item") ; _stat=1
+            fi
+        fi
+    done
+    [ -z "$_oglo" ] && set +f
+
+    # smart quoting
+    for _item in "${_args[@]}" ; do
+        if [ -n "$_ugly" ] ; then                   # undo fix-ups
+            _item="${_item//\\\|/|}" ; _item="${_item//\\\(/(}"
+            _item="${_item//\\\)/)}"
+        fi
+        if [ "$_oset" = '-a' ] ; then               # array output
+            _vveo+=("$_item")
+            continue
+        fi
+        case "$_item" in                            # smart quoting
+        '')     _item="''" ;;
+        *[![:alnum:]]*)
+                [ -n "${_item//[[:alnum:]-+=_.:@\/\[\]]/}" ] && _item="${_item@Q}" ;;
+        esac
+        [ -z "$_line" ] && _line="$_item" || _line+=" $_item"
+    done
+    [ "$_oset" = '-s' ] && _vveo="$_line"
+    return $_stat
 }
 
 # ------------------------------------------------------------------------------

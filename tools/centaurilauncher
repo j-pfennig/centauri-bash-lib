@@ -342,6 +342,12 @@ $CEN_DEBUG -c -- "$@"
     local _file _resx="${1:--}" _resy="${2:--}" _zoom="${3:--}"
     shift ; shift ; shift
 
+    ### TODO check qt installation
+    #   qt5-qtdeclarative (termux)
+    #   qt5-qml5
+    #   qt5-qtquickcontrols2
+    #   qt5-webengine5
+
     # search url/file list backwards until an existing file is found
     local _coun="$#" _indx _strt
     while ((_coun--)) ; do
@@ -660,17 +666,22 @@ options() {
 actions() {
     case "$1" in
 
+    '')                                         # end processing must be ignored
+        ;;
+
     lis|list)
         invoke 'list'   -           0 1 ;;
 
-    *)
+    *)                              # get list of configured actions
         local actn list
         launcher -l 3 -a list || return 1
         listsearch -m actn -u -- "$1" "${list[@]}" || return 1
+
         list=() ; shift
         [ "${CEN_OPT_DESKTOP:--}" != '-' ] && list+=(-y "$CEN_OPT_DESKTOP")
         [ "${CEN_OPT_MODE:--}" != '-' ] && list+=(-m "$CEN_OPT_MODE")
 
+        # only accept option arguments that are valid for launcher()
         while [ "${1::1}" = '-' ] ; do
             case "$1" in
             --)     shift ; break ;;
@@ -682,6 +693,7 @@ actions() {
             esac ; shift
         done
 
+        # this calls launcher() as an action
         invoke "$actn" 'launcher' - - "${list[@]}" -- "$actn" "$@"
         ;;
     esac

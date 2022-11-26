@@ -1,6 +1,10 @@
 # This is configuration data for 'Centauri Bash Library'. See documentation for
 # library module "_centauri_bash_run".
 
+# WARNING about bash variable use:
+#   The content of this file will be preprocessed and cached, unquoted variables
+#   resolved at preprocessing. Do not use '$HOME' (try '~<loginname>' instead.
+ 
 # ------------------------------------------------------------------------------
 # The sections [shortpaths] [launcher] and [terminal] are processed at runtime
 # by the functions with the same names as the sections.
@@ -9,6 +13,7 @@
 # "~/.config/centauri-bash-lib" or at "~/.centauri-bash-lib".
 # ------------------------------------------------------------------------------
 [shortpath]
+
     # paths defined/overridden by the library
     #path "root"       "$CEN_ROOT"          "centauritools installation root"
     #path "library"    "$CEN_LIBRARY"       "centauri_bash_lib library files"
@@ -18,9 +23,54 @@
     #path "persistent" "$CEN_ROOT/persistent" "centauritools persistent cache"
     #path "transient"  "$CEN_ROOT/transient" "centauritools volatile cache"
     #path "temporary"  "$XDG_RUNTIME_DIR|$TMPDIR|$TMP" "the user's temporary folder"
+MINIMAL="${MINIMAL:-false}" ####################################################
+if $MINIMAL ; then #############################################################
+else ###########################################################################
+
+    # repository paths (most installations wan't have this) ...
+    path "repository" "$CEN_ROOT/configs"       "repository root"
+    path "shared"     "$CEN_ROOT/shared"        "repository branch - shared files"
+    path "private"    "$CEN_ROOT/private"       "repository branch - private files"
+    path "configs"    ".. $CEN_ROOT/shared"     "repository branch - for machine"
+
+    # network
+    path "network"    "$CEN_PATHS/data"         "Network shared data"
+    path "server"     "$CEN_PATHS/data/alpha"   "Network server data"
+
+    # backup paths
+    path "backup"     "$CEN_PATHS/backup|$CEN_PATHS/mnt/backup/Backup|~root/Backup" \
+                                                "Backup volume/folder"
+
+    # virtual box paths
+    path "vbox"       "~vbox"                   "Virtualbox home folder"
+    path "drives"     "~vbox/Drives"            "Virtualbox virtual drives"
+    path "machines"   "~vbox/Machines"          "Virtualbox virtual machines"
 
     # others
-    path "docs"      "/usr/share/doc"      "Linux documentation"
+    path "docs"      "$CEN_PATHS/usr/share/doc" "Linux Dokumentation"
+fi #############################################################################
+: CEN_PATHS is PREFIX in TERMUX (android linux) ################################
+if [ -z "$CEN_PATHS" ] ; then ##################################################
+    path "export"    "/export"             "Export Folder"
+else ###########################################################################
+
+    # NOTE: shortpath() adds FSH prefixes (e.g. CEN_PATHS[0]) automatically
+
+    # some helpers for non-FSH systems
+    path "bin"       "${CEN_PATHS[1]}"     "Linux Applications"
+    path "etc"       "${CEN_PATHS[2]}"     "Linux Config Files"
+    path "files"     "/"                   "Linux FSH base"
+fi #############################################################################
+: Some examples for TERMUX ##################################################### 
+if [ -d "$HOME/storage" -a -n "$CEN_PATHS" ] ; then ############################ 
+
+   path "android"   "$HOME/storage"              "Android gemeinsamer Speicher"
+
+   path "export"    "$HOME/storage/shared/export"         "Export Verzeichnis"
+   path "bilder"    "$HOME/storage/shared/export/Bilder"  "Bilder (in export)"
+   path "musik"     "$HOME/storage/shared/export/Musik"   "Musik  (in export)"
+   path "rezepte"   "$HOME/storage/shared/export/Rezepte" "Kochrezepte"
+fi #############################################################################
 
 # ------------------------------------------------------------------------------
 # Configuration for launcher() - run application by generic name
@@ -31,18 +81,19 @@
     # desktop apps (* is for any desktop session)
     editor      kde     kwrite featherpad
     editor      *       featherpad kwrite
-    files       *       dolphin
-    browser     *       firefox falkon qml
-    kiosk       *       qml falkon firefox
+    files       *       dolphin pcmanfm-qt
+    browser     gnome   firefox epiphany falkon qml
+    browser     *       firefox falkon epiphany qml
+    kiosk       *       qml falkon epiphany firefox
     webapp      *       .
-    viewer      *       qml falkon firefox
+    viewer      *       qml falkon epiphany firefox
 
     # run a function to start the app (see terminal function)
     console     *       @terminal
 
     # terminal apps (tty is for non-desktop mode)
     editor      tty     editor nano vim
-    files       tty     mc
+    files       tty     mc ls
     browser     tty     w3m
 
     # apps for all session types (- used to flag this)
@@ -51,40 +102,43 @@
 
     ### part 2: information texts (for apps, not commands)
 
-    -info:editor        open a text editor
-    -info:files         open a file manager
-    -info:browser       open a web browser
-    -info:kiosk         web browser in kiosk mode
-    -info:viewer        html viewer (qml or browser)
-    -info:console       command line terminal
-    -info:httpd         launch a private web server
-    -info:webapp        run a centauri-bash-lib web application
-    -info:library       interactive centauri-bash-lib console
+    -info:editor        "open a text editor"
+    -info:files         "open a file manager"
+    -info:browser       "open a web browser"
+    -info:kiosk         "web browser in kiosk mode"
+    -info:viewer        "html viewer (qml or browser)"
+    -info:console       "command line terminal"
+    -info:httpd         "launch a private web server"
+    -info:webapp        "run a centauri-bash-lib web application"
+    -info:library       "interactive centauri-bash-lib console"
 
     ### part 3: quirks and application options
 
     # qml needs a few hints (@_cen_win_qmlweb creates the qml script)
     -ignore:qml         qtchooser
+    -wants:qml          /usr/lib/*/libQt5WebEngineWidgets.so.?
     -path:qml           /usr/lib/*/qt5/bin/qml
     browser:qml         @launcher_qmlweb - - -
     kiosk:qml           @launcher_qmlweb 1200 800 1.2
-    viewer:qml          @launcher_qmlweb - - - /var/www/html/index.html /var/centauri/html/index.html
+    viewer:qml          @launcher_qmlweb - - - "$CEN_PATHS/var/www/html/index.html" "$CEN_ROOT/html/index.html"
 
     # lighttpd needs a script that gets the configuration
     httpd:lighttpd      @launcher_lighttpd 8080 /var/www
     -path:lighttpd      /usr/*bin/lighttpd
 
     # command line args
-    ##kiosk:firefox       @launcher_html --fullscreen --new-window
+    files:ls            "--color=auto --time-style='+%F %H:%M' -l"      # needs double quoting
+
     kiosk:firefox       @launcher_html  --new-window --kiosk
     browser:firefox     @launcher_html --new-window 
                         # firefox problem: if an instance is already open, a new window is created but the new
                         # process that was launched will exit. Thus we cannot wait for the window to be closed
-    viewer:firefox      @launcher_html --new-window /var/www/html/index.html /var/centauri/html/index.html
+    viewer:firefox      @launcher_html --new-window "$CEN_PATHS/var/www/html/index.html" "$CEN_ROOT/html/index.html"
 
     kiosk:falkon        @launcher_html --fullscreen --new-window --no-extensions --profile=kiosk
     browser:falkon      @launcher_html --new-window --no-extensions
-    viewer:falkon       @launcher_html --new-window --no-extensions --profile=viewer /var/www/html/index.html /var/centauri/html/index.html
+    viewer:falkon       @launcher_html --new-window --no-extensions --profile=viewer \
+                                       "$CEN_PATHS/var/www/html/index.html" "$CEN_ROOT/html/index.html"
 
     webapp:.            @launcher_webapp 
     library:.           @launcher_library
@@ -123,7 +177,6 @@
                         # no desktop, no xroot
     black-startup       sddm.*|startkde.*|startplasma.*
                         # embedded konsole, check KONSOLE_DBUS_SERVICE
-    #black-konsole       dolphin*|kde*|plasma*
     black-konsole       dolphin.*|kde.*
 
 # ------------------------------------------------------------------------------
@@ -132,10 +185,11 @@
 # The sections [library] and [proxy] are used at install time to generate the
 # library proxy. It makes no sense to have these in a private configuration
 # ------------------------------------------------------------------------------
-
 [library]
     # installation defaults (root, binaries, shortcut, repository, owner)
-#####    defaults "/var/centauri" "/usr/local/bin" "/admin" "/var/centauri/admin" "root:staff"
+
+    # defaults shared  "/var/centauri" "/usr/local/bin" "/admin" "" "root:staff"
+    # defaults private $HOME/.centauri $HOME/bin $HOME/centauritools
 
     # include list for tool links (centauri* and _centauri_bash_lib are default)
     # include "utilities/show-unattended-upgrades" "virtualbox/vbox"

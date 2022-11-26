@@ -2266,7 +2266,7 @@ splitjoin() {
 #+For scripts that use external commands, it is recommended to validate the
 # command availability by calling "sysfind°-c°<cmd>..." early. The -c option
 # will cause the full command paths to be cached. [[system()]] and [[sysrun()]]
-# automatically use the cached paths idependently of the actual PATH setting.
+# automatically use the cached paths independently of the actual PATH setting.
 #
 #+Unless option -p is used, CEN_PATHS[1] (core binary path) is appended
 # to **PATH**.

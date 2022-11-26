@@ -409,7 +409,8 @@ sysinfo() {
         for _stat in CEN_ROOT CEN_LIBRARY CEN_TOOLS CEN_INSTALL \
                      CEN_PATHS[0] CEN_PATHS[1] CEN_PATHS[2] CEN_PATHS[3] CEN_PATHS[4] \
                      XDG_RUNTIME_DIR TMPDIR PATH ; do
-           eval "message -a -c '$_stat' -- '\${$_stat}'"
+           eval set -- \${$_stat}
+           message -a -c "$_stat" -- "$1"
         done
         quit
     elif [ -n "$_iopt" ] ; then                     # setup actions

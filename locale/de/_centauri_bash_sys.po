@@ -33,30 +33,30 @@ msgstr "Gültige --info Kommandos sind:"
 msgid "Bad --info argument. Valid commands are:"
 msgstr "Falsches --info Kommando. Gültig sind:"
 
-#: /var/centauri/library/_centauri_bash_sys:419
+#: /var/centauri/library/_centauri_bash_sys:420
 msgid "succeeded"
 msgstr "erfolgreich"
 
-#: /var/centauri/library/_centauri_bash_sys:421
+#: /var/centauri/library/_centauri_bash_sys:422
 msgid "failed"
 msgstr "fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_sys:425
+#: /var/centauri/library/_centauri_bash_sys:426
 msgid "<unknown author/license>"
 msgstr "<unbekannter Autor/Lizenz"
 
-#: /var/centauri/library/_centauri_bash_sys:556
+#: /var/centauri/library/_centauri_bash_sys:557
 msgid "Using 'systemd' (got 'systemctl' and '%s')"
 msgstr "Benutze 'systemd' (habe 'systemctl' und '%s')"
 
-#: /var/centauri/library/_centauri_bash_sys:563
+#: /var/centauri/library/_centauri_bash_sys:564
 msgid "Using 'systemd' ('%s' is symlink to systemd)"
 msgstr "Benutze 'systemd' ('%s' ist Verweis auf systemd)"
 
-#: /var/centauri/library/_centauri_bash_sys:567
+#: /var/centauri/library/_centauri_bash_sys:568
 msgid "Using 'SysV' init"
 msgstr "Benutze 'SysV' Initialisierung"
 
-#: /var/centauri/library/_centauri_bash_sys:592
+#: /var/centauri/library/_centauri_bash_sys:593
 msgid "Using bootstrap config:"
 msgstr "Verwende Urkonfiguration:"

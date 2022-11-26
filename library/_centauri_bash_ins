@@ -1387,7 +1387,7 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #           a configuration statement that looks like this:
 #
 #.          export CEN_ROOT_DEF=("/usr/local/share/centauri" "/usr/local/bin"
-#.          °                    "/opt/centauri" "root:staff")
+#.          °                    "/opt/centauri" "" "root:staff")
 #
 #+          This defines a bash array variable with three or four elements (<empty>
 #           stands for a minus sign or an empty string):

@@ -139,7 +139,7 @@ msgstr "Ausgabedatei existiert nicht"
 
 #: /var/centauri/library/_centauri_bash_iom:612
 msgid "Output not writable"
-msgstr "Ausgabe kann kein Ordner sein"
+msgstr "Ausgabe nicht schreibbar"
 
 #: /var/centauri/library/_centauri_bash_iom:898
 msgid "not in callback"
