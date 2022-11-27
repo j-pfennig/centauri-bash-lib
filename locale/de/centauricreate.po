@@ -2,8 +2,8 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
 #: /var/centauri/tools/centauricreate:4
-msgid "Create a centauri-bash-lib user script from a template"
-msgstr "Ein centauri-bash-lib Benutzerskript aus Vorlage erstellen"
+msgid "Create a script, module or configuration from a template"
+msgstr "Skript, Modul oder Konfiguration aus Vorlage erstellen"
 
 #: /var/centauri/tools/centauricreate:151
 msgid "Saving new config to:"
@@ -138,5 +138,13 @@ msgid "create script without demo code"
 msgstr "Erstelle Skript ohne Demo Code"
 
 #: /var/centauri/tools/centauricreate:264
+msgid "create a custom library module"
+msgstr "Erstelle ein Anwender-Bibliotheksmodul"
+
+#: /var/centauri/tools/centauricreate:267
+msgid "create centauri-bash-lib configuration file"
+msgstr "Erstelle eine centauri-bash-lib Konfigurationsdatei"
+
+#: /var/centauri/tools/centauricreate:270
 msgid "run the 'shellcheck' tool (a bash lint)"
 msgstr "Programm 'spellcheck' ausführen (ein 'lint' für Bash)"

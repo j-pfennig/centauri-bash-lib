@@ -1,62 +1,64 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_sys:198
+#: /var/centauri/library/_centauri_bash_sys:206
 msgid "Loading OS and KDE versions:"
 msgstr "Lade OS und KDE Versionen:"
 
-#: /var/centauri/library/_centauri_bash_sys:203
+#: /var/centauri/library/_centauri_bash_sys:211
 msgid "Must query OS and KDE versions (no state file)"
 msgstr "Muss OS und KDE Versionen abfragen (keine Statusdatei)"
 
-#: /var/centauri/library/_centauri_bash_sys:228
+#: /var/centauri/library/_centauri_bash_sys:236
 msgid "Cannot write version info:"
 msgstr "Kann Versionsinformation nicht schreiben:"
 
-#: /var/centauri/library/_centauri_bash_sys:230
+#: /var/centauri/library/_centauri_bash_sys:238
 msgid "Writing version info:"
 msgstr "Schreibe Versionsinformation:"
 
-#: /var/centauri/library/_centauri_bash_sys:322
-msgid "Unknown installation destination"
-msgstr "Installationsziel nicht bekannt"
-
-#: /var/centauri/library/_centauri_bash_sys:336
+#: /var/centauri/library/_centauri_bash_sys:315
 msgid "Installation configuration:"
 msgstr "Installationskonfiguration:"
 
-#: /var/centauri/library/_centauri_bash_sys:395
+#: /var/centauri/library/_centauri_bash_sys:377
 msgid "Valid --info arguments are:"
 msgstr "Gültige --info Kommandos sind:"
 
-#: /var/centauri/library/_centauri_bash_sys:404
+#: /var/centauri/library/_centauri_bash_sys:386
 msgid "Bad --info argument. Valid commands are:"
 msgstr "Falsches --info Kommando. Gültig sind:"
 
-#: /var/centauri/library/_centauri_bash_sys:420
+#: /var/centauri/library/_centauri_bash_sys:400
+#: /var/centauri/library/_centauri_bash_sys:401
+msgid "Missing argument:"
+msgstr "Fehlendes Argument:"
+
+#: /var/centauri/library/_centauri_bash_sys:408
 msgid "succeeded"
 msgstr "erfolgreich"
 
-#: /var/centauri/library/_centauri_bash_sys:422
+#: /var/centauri/library/_centauri_bash_sys:410
 msgid "failed"
 msgstr "fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_sys:426
+#: /var/centauri/library/_centauri_bash_sys:414
 msgid "<unknown author/license>"
 msgstr "<unbekannter Autor/Lizenz"
 
-#: /var/centauri/library/_centauri_bash_sys:557
+#: /var/centauri/library/_centauri_bash_sys:546
 msgid "Using 'systemd' (got 'systemctl' and '%s')"
 msgstr "Benutze 'systemd' (habe 'systemctl' und '%s')"
 
-#: /var/centauri/library/_centauri_bash_sys:564
+#: /var/centauri/library/_centauri_bash_sys:553
 msgid "Using 'systemd' ('%s' is symlink to systemd)"
 msgstr "Benutze 'systemd' ('%s' ist Verweis auf systemd)"
 
-#: /var/centauri/library/_centauri_bash_sys:568
+#: /var/centauri/library/_centauri_bash_sys:557
 msgid "Using 'SysV' init"
 msgstr "Benutze 'SysV' Initialisierung"
 
-#: /var/centauri/library/_centauri_bash_sys:593
+#: /var/centauri/library/_centauri_bash_sys:582
 msgid "Using bootstrap config:"
 msgstr "Verwende Urkonfiguration:"
+

@@ -59,17 +59,17 @@ else ###########################################################################
     # some helpers for non-FSH systems
     path "bin"       "${CEN_PATHS[1]}"     "Linux Applications"
     path "etc"       "${CEN_PATHS[2]}"     "Linux Config Files"
-    path "files"     "/"                   "Linux FSH base"
+    path "files"     "$CEN_PATHS/"         "Linux FSH base"
 fi #############################################################################
 : Some examples for TERMUX ##################################################### 
 if [ -d "$HOME/storage" -a -n "$CEN_PATHS" ] ; then ############################ 
 
-   path "android"   "$HOME/storage"              "Android gemeinsamer Speicher"
+   path "android"   "~/storage"             "Android gemeinsamer Speicher"
 
-   path "export"    "$HOME/storage/shared/export"         "Export Verzeichnis"
-   path "bilder"    "$HOME/storage/shared/export/Bilder"  "Bilder (in export)"
-   path "musik"     "$HOME/storage/shared/export/Musik"   "Musik  (in export)"
-   path "rezepte"   "$HOME/storage/shared/export/Rezepte" "Kochrezepte"
+   path "export"    "~/storage/shared/export"         "Export Verzeichnis"
+   path "bilder"    "~/storage/shared/export/Bilder"  "Bilder (in export)"
+   path "musik"     "~/storage/shared/export/Musik"   "Musik  (in export)"
+   path "rezepte"   "~/storage/shared/export/Rezepte" "Kochrezepte"
 fi #############################################################################
 
 # ------------------------------------------------------------------------------
@@ -186,10 +186,15 @@ fi #############################################################################
 # library proxy. It makes no sense to have these in a private configuration
 # ------------------------------------------------------------------------------
 [library]
-    # installation defaults (root, binaries, shortcut, repository, owner)
+    # Installation defaults, set: root, binaries, shortcut, repository, owner
+    # --------------------------------------------------------------------------
+    # The 'defaults shared ...' statement is used for a shared installation and
+    # 'defaults private ...' for a non-root private installation. The root field
+    # defines CEN_ROOT (installation location) and is mandatory. All others are
+    # optional or can be empty. The data built into the proxy at setup time.
 
-    # defaults shared  "/var/centauri" "/usr/local/bin" "/admin" "" "root:staff"
-    # defaults private $HOME/.centauri $HOME/bin $HOME/centauritools
+    # defaults shared  "/var/centauri" "/usr/local/bin" "/admin" - "root:staff"
+    # defaults private "~/.centauri" "~/bin" "~/centauritools"
 
     # include list for tool links (centauri* and _centauri_bash_lib are default)
     # include "utilities/show-unattended-upgrades" "virtualbox/vbox"

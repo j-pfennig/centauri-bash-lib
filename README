@@ -1,13 +1,13 @@
 ──────────────────────────────────────────────────────────────────────────────────────────────
 Topic - Installation - Install/Update/Uninstall and Configuration
 ──────────────────────────────────────────────────────────────────────────────────────────────
-Install:   _centauri_bash_lib needs no complex setup program: just unpack the source archive
-           and run one of the included tools with --info install.
+Install:   centauri-bash-lib itself needs no complex setup program: just unpack the source
+           archive and run one of the included tools with --info install.
 
-           Shared installation (needs root rights):
+           System-wide shared installation (needs root rights):
 
            ┃ arch="centauri_bash_lib.tgz"        # what to install
-           ┃ dest="/usr/local/share/centauri"    # where to install (CEN_ROOT)
+           ┃ dest="/usr/local/shared/centauri"   # where to install (CEN_ROOT)
            ┃ 
            ┃ sudo mkdir -p "$dest"
            ┃ sudo tar -C "$dest" -xaf "$arch"
@@ -66,25 +66,27 @@ Proxy:     Loading _centauri_bash_lib into a user script always invokes a proxy,
            The proxy at $CEN_ROOT/tools is recreated by the installation process. If you are
            using multiple binary folders symlink the proxy rather than creating copies.
 
-Config:    The proxy source is $CEN_ROOT/tools/_centauri_bash_lib and it contains a
-           configuration statement that looks like this:
+Config:    The proxy source is $CEN_ROOT/tools/_centauri_bash_lib and it contains two
+           configuration statements that looks like these:
 
-           ┃ export CEN_ROOT_DEF=("/usr/local/share/centauri" "/usr/local/bin"
-           ┃                      "/opt/centauri" "root:staff")
+           ┃ defaults shared  "/var/centauri" "/usr/local/bin" "/admin" "+" "root:staff"
+           ┃ defaults private "~/.centauri" "~/bin" "~/centauritools"
 
-           This defines a bash array variable with three or four elements (<empty> stands for a
-           minus sign or an empty string):
+           This internally defines an array with up to five elements (<empty> stands for a minus
+           sign or an empty string):
 
-               [0]     The installation root $CEN_ROOT (should be the path of
-                       the installation folder)
-               [1]     <empty> -or- folder to symlink user scripts (a folder
-                       contained in $PATH simplifies calling user scripts).
-                       This field is ignored if the folder is not writable.
-               [2]     <empty> -or- symlink to $CEN_ROOT/tools (just an
-                       alias that should be easy to remember). This field is
-                       ignored if the base folder is not writable.
-               [3]     <empty> or a [user][:group], sets the ownership of created
-                       folders.
+               [0]     The installation root $CEN_ROOT (should be the path of the
+                       installation folder)
+               [1]     <empty> -or- folder to symlink user scripts (a folder contained in
+                       $PATH simplifies calling user scripts).  This field is ignored
+                       if the folder is not writable.
+               [2]     <empty> -or- symlink to $CEN_ROOT/tools (just an  alias that should
+                       be easy to remember). This field is ignored if the base folder is
+                       not writable.
+               [3]     An optional repository path -or- <empty> for no repository. A value
+                       of '+' tries $CEN_ROOT/admin. The setup code will symlink tools,
+                       library and locale to an existing repository.
+               [4]     <empty> or a [user][:group], sets the ownership of created folders.
 
 Setup:     Parts of the folder tree shown below are added by _centauri_bash_sys. An automatic
            setup of the tree is done on the 1st execution (as root user) if the persistent

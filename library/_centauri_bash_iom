@@ -762,7 +762,7 @@ cachefile() {
 #           -r  read callback             (use '.' to source the file)
 #           -s  silent, no trace messages
 #           -v  save data to an array variable (no reader callback)
-#           -x
+#           -x  process lines by [[spliteval()]]
 #
 #           -e  generate error message    (from <reader> callback only)
 #           -f  generate fatal error      (from <reader> callback only)

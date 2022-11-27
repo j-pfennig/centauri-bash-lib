@@ -141,95 +141,95 @@ msgstr "Ausgabedatei existiert nicht"
 msgid "Output not writable"
 msgstr "Ausgabe nicht schreibbar"
 
-#: /var/centauri/library/_centauri_bash_iom:898
+#: /var/centauri/library/_centauri_bash_iom:900
 msgid "not in callback"
 msgstr "nicht in Callback"
 
-#: /var/centauri/library/_centauri_bash_iom:901
+#: /var/centauri/library/_centauri_bash_iom:903
 msgid "invalid statement:"
 msgstr "Ungültige Anweisung:"
 
-#: /var/centauri/library/_centauri_bash_iom:910
+#: /var/centauri/library/_centauri_bash_iom:912
 msgid "%s [file='%s']\\n%s"
 msgstr "%s [Datei='%s']\\n%s"
 
-#: /var/centauri/library/_centauri_bash_iom:912
+#: /var/centauri/library/_centauri_bash_iom:914
 msgid "%s [file='%s' line=%s]\\n%s"
 msgstr "%s [Datei='%s' Zeile=%s]\\n%s"
 
-#: /var/centauri/library/_centauri_bash_iom:950
+#: /var/centauri/library/_centauri_bash_iom:955
 msgid "syntax error"
 msgstr "Syntaxfehler"
 
-#: /var/centauri/library/_centauri_bash_iom:966
+#: /var/centauri/library/_centauri_bash_iom:971
 msgid "Configuration file not found:"
 msgstr "Konfigurationsdatei nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_iom:994
+#: /var/centauri/library/_centauri_bash_iom:999
 msgid "Configuration file not readable:"
 msgstr "Konfigurationsdatei nicht lesbar:"
 
-#: /var/centauri/library/_centauri_bash_iom:997
+#: /var/centauri/library/_centauri_bash_iom:1002
 msgid "Configuration path is a folder:"
 msgstr "Konfigurationspfad ist ein Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_iom:1010
+#: /var/centauri/library/_centauri_bash_iom:1015
 msgid "reading file"
 msgstr "Datei lesen"
 
-#: /var/centauri/library/_centauri_bash_iom:1040
+#: /var/centauri/library/_centauri_bash_iom:1045
 msgid "running file"
 msgstr "Datei ausführen"
 
-#: /var/centauri/library/_centauri_bash_iom:1042
+#: /var/centauri/library/_centauri_bash_iom:1047
 msgid "invalid data"
 msgstr "Unbrauchbare Daten"
 
-#: /var/centauri/library/_centauri_bash_iom:1147
+#: /var/centauri/library/_centauri_bash_iom:1152
 msgid " writing"
 msgstr " schreibe"
 
-#: /var/centauri/library/_centauri_bash_iom:1157
+#: /var/centauri/library/_centauri_bash_iom:1162
 msgid " reading"
 msgstr " lesen"
 
-#: /var/centauri/library/_centauri_bash_iom:1159
+#: /var/centauri/library/_centauri_bash_iom:1164
 msgid "Failed to deserialize data from:"
 msgstr "Kann Daten nicht deserialisieren:"
 
-#: /var/centauri/library/_centauri_bash_iom:1163
+#: /var/centauri/library/_centauri_bash_iom:1168
 msgid " missing"
 msgstr " fehlend"
 
-#: /var/centauri/library/_centauri_bash_iom:1165
+#: /var/centauri/library/_centauri_bash_iom:1170
 msgid "Cannot deserialize data from:"
 msgstr "Kann Daten nicht deserialisieren:"
 
-#: /var/centauri/library/_centauri_bash_iom:1209
+#: /var/centauri/library/_centauri_bash_iom:1214
 msgid "No output path provided"
 msgstr "Kein Ausgabepfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1216
-#: /var/centauri/library/_centauri_bash_iom:1223
+#: /var/centauri/library/_centauri_bash_iom:1221
+#: /var/centauri/library/_centauri_bash_iom:1228
 msgid "No folder path provided"
 msgstr "Kein Ordnerpfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1230
+#: /var/centauri/library/_centauri_bash_iom:1235
 msgid "No input path provided"
 msgstr "Kein Eingabepfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1276
+#: /var/centauri/library/_centauri_bash_iom:1281
 msgid "Open file for input"
 msgstr "Datei als Eingabe öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1277
+#: /var/centauri/library/_centauri_bash_iom:1282
 msgid "Open file for output"
 msgstr "Datei als Ausgabe öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1278
+#: /var/centauri/library/_centauri_bash_iom:1283
 msgid "Open file for reading"
 msgstr "Datei zum Lesen öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1279
+#: /var/centauri/library/_centauri_bash_iom:1284
 msgid "Open file for writing"
 msgstr "Datei zum Schreiben öffnen"

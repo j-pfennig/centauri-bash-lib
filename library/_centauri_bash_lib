@@ -177,12 +177,13 @@ fi
 # message - output a message
 # warning - output a warning message
 #
-# Call:     <msg_function> [<cls>] [-a|-i] [-l] [-m|-n] [-r] -p [--] <fmt> <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-m|-n] [-r] [--] <arg>...
+# Call:     <msg_function> [<cls>] [-a|-i] [-c <pre>] [-l] [-m|-n] [-r] -p [--] <fmt> <arg>...
+#           <msg_function> [<cls>] [-a|-i] [-c <pre>] [-l] [-m|-n] [-r] [--] <arg>...
 #
 #           <msg_function> := trace | message | warning | error | fatal
 #
 # Options:  -a  print application name on 1st output, indent otherwise
+#           -c  output fixed size text prefix/function-name (intended for trace)
 #           -b  used by console module, ignored here, see [[output()]]
 #           -d  modules only, ignored here, see [[decorate()]] and [[_centauri_bash_win]]
 #           -i  indent (no program name)
@@ -194,6 +195,7 @@ fi
 #
 # Arguments:<cls>   internal use: -e|-f|-t|-w. Do not use in own script code
 #           <fmt>   a printf format string
+#           <prf>   prefix text (function-name printed if 1st char is space)
 #           <arg>   data to be output
 #
 # Return:   **error** returns the value of CEN_EXIT,
@@ -597,6 +599,7 @@ _cen_message() {
 # format short message: <vnam> <orig>|- <mesg>
 _cen_shortfmt() {
     local _temp="$2" _asci _ugly
+    [ "$3" = '-' ] && set -- "$1" "$2" " "
     [ "${3::1}" = ' ' ] || _temp=
     [ "${3::2}" = '()' ] && _temp='-'
     [ "$_temp" = '-' ] &&
@@ -611,11 +614,11 @@ _cen_shortfmt() {
     # printf %s does not handle utf-8 correctly
     _temp+="$3"
     if [ -z "${_temp//[[:ascii:]]/}" ] ; then
-        printf -v $1 "$CEN_SHORTFMT" "$_temp"           # is pure ascii
+        printf -v "$1" "$CEN_SHORTFMT" "$_temp"         # is pure ascii
     else
         _asci="${_temp//[[:alpha:]]/.}"   # this is unicode aware
         printf -v _ugly "$CEN_SHORTFMT" "$_asci"        # get correct padding
-        printf -v $1 "%s" "${_ugly/$_asci/$_temp}"      # back to unicode
+        printf -v "$1" "%s" "${_ugly/$_asci/$_temp}"    # back to unicode
     fi
 }
 
@@ -1263,7 +1266,7 @@ context() {
 #.Examples: create -d /etc/hello 750        # create folder with mode 0750
 #.          create "myfile" 644 root:staff  # create file if non-existent
 #
-#.          create -t -c -h - "file" <<!EOF # create and copy to file
+#.          create -t -h - "file" <<!EOF    # create and copy to file
 #.              blabla
 #.          !EOF
 #

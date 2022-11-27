@@ -39,77 +39,125 @@ fi
 # TODO: systemd folder and repo install
 # TODO: systemd .wants folders not empty for delete
 
-embed -c "_centauri_bash_ext"               # dependency
+embed -c '_centauri_bash_ext'               # dependency
+
+# ------------------------------------------------------------------------------
+# fill CEN_ROOTDEFS from CEN_INSTALL: [<defs>]
+# ------------------------------------------------------------------------------
+_cen_sys_rootdefs() {
+    [ -n "$CEN_ROOTDEFS" -a "${1--}" = '-' ] && return 0
+    $CEN_TRACE2 -c 'CEN_ROOTDEFS' -- "call: $1"
+
+    # init install config is expected in CEN_ROOTDEFS
+    [ -n "$CEN_INSTALL" ] && splitjoin -s CEN_ROOTDEFS -d ':' -- "$CEN_INSTALL"
+    # override CEN_ROOTDEFS by call argument
+    if [ "${1:--}" != '-' ] ; then
+        splitjoin -s CEN_ROOTDEFS -d ':' -- "$1"
+        # <root> <bin> <link> <repo> <owner> <group>
+        if [ -n "${CEN_ROOTDEFS[5]}" ] ; then   # join to <owner>:<group>
+            CEN_ROOTDEFS[4]+=":${CEN_ROOTDEFS[5]}"
+            unset CEN_ROOTDEFS[5]
+        fi
+    fi
+
+    # make nice path names
+    prettypath -s CEN_ROOTDEFS[0]
+    prettypath -s CEN_ROOTDEFS[1]
+    prettypath -s CEN_ROOTDEFS[2]
+
+    if [ "${CEN_ROOTDEFS:--}" = '-' ] ; then
+        error -$"Unknown installation destination"
+        return 1
+    fi
+
+    # try to autodetect default repositiory
+    [ "${CEN_ROOTDEFS[3]}" = '+' ] && CEN_ROOTDEFS[3]="$CEN_ROOTDEFS/admin"
+    prettypath -s CEN_ROOTDEFS[3]
+    $CEN_TRACE2 -c 'CEN_ROOTDEFS' -- "done: ${CEN_ROOTDEFS[@]}"
+
+    local _fldr
+    for _fldr in "${CEN_ROOTDEFS[@]::3}" ; do   # warning if a folder is not writable
+        [ "${_fldr:--}" = '-' ] && continue
+        [ -d "$_fldr" -a -w "$_fldr" ] && continue
+        [ -w "${_fldr%/*}" ] && continue
+        [ "$EUID" = 0 ] && fatal $"Folder not writable:" "$_fldr"
+        warning -m $"Install/uninstall without root rights" "\n" \
+                   $"Folder not writable:" "$_fldr"
+        break
+    done
+    return 0
+}
 
 # ------------------------------------------------------------------------------
 # Copy library files: <dest>
 # ------------------------------------------------------------------------------
 _cen_ins_files() {
-        local _conf _copy _fldr _fcur _mesg _stat=0
-        if ! [ -d 'tools' -a -d 'library' -a -d 'locale' ] ; then
-            error -p $"Current folder '%s' is not a centauri-bash-lib root" "$PWD"
-            return 1
-        fi
-        if [ -e "$1" ] ; then               # dest should be a folder
-            folder -- "$1" || return 1
-        else                                # must create
-            confirm -a -y $"Install centauri-bash-lib at"" '$1'" || return 128
-            _conf=1
-            remove -- "$1" || return 1      # remove stale link
-            folder -m "$1" || return 1
-        fi
-        if [ "$PWD" -ef "$1" ] ; then
-            error -p $"Folder '%s' must not be the current folder" "$1"
-            return 1
-        fi
+    local _conf _copy _dest="${1:--}" _fldr _fcur _mesg _stat=0
+    if ! [ -d 'tools' -a -d 'library' -a -d 'locale' ] ; then
+        error -p $"Current folder '%s' is not a centauri-bash-lib root" "$PWD"
+        return 1
+    fi
+    [ "$_dest" = '-' ] && _dest="${CEN_ROOTDEFS:-$CEN_ROOT}"
+    if [ -e "$_dest" ] ; then               # dest should be a folder
+        folder -- "$_dest" || return 1
+    else                                # must create
+        confirm -a -y $"Install centauri-bash-lib at"" '$_dest'" || return 128
+        _conf=1
+        remove -- "$_dest" || return 1      # remove stale link
+        folder -m "$_dest" || return 1
+    fi
+    if [ "$PWD" -ef "$_dest" ] ; then
+        error -p $"Destination '%s' must not be the current folder" "$_dest"
+        return 1
+    fi
 
-        # use walk with excludes to build file list
-        local _sinc=("${CEN_OPT_INCLEXCL[@]}")
-        CEN_OPT_INCLEXCL=('' '.p$' '' '~$' '' '^_centauri_bash_completion$')
-        walk -c -- tools/* tools/templates/* library/* locale/ locale/* locale/*/* locale/*/LC_MESSAGES/*
-        CEN_OPT_INCLEXCL=("${_sinc[@]}")
+    # use walk with excludes to build file list
+    local _sinc=("${CEN_OPT_INCLEXCL[@]}")
+    CEN_OPT_INCLEXCL=('' '.[dp]$' '' '~$' '' '^_centauri_bash_completion$')
+    walk -c -- tools/* tools/templates/* library/* locale/ locale/* locale/*/* locale/*/LC_MESSAGES/*
+    CEN_OPT_INCLEXCL=("${_sinc[@]}")
 
-        for _item in "${CEN_WALK_FILES[@]}" ; do
-            # do never copy the proxy
-            [ "$_item" = 'tools/_centauri_bash_lib' ] && continue
+    for _item in "${CEN_WALK_FILES[@]}" ; do
+        # do never copy the proxy
+        [ "$_item" = 'tools/_centauri_bash_lib' ] && continue
 
-            # create folder, get copy mode
-            _fldr="${_item%/*}"
-            if [ "$_fldr" != "$_fcur" ] ; then
-                _fcur="$_fldr" ; _full=
-                if [ -d "$1/$_fldr" ] ; then
-                    _copy=1
-                elif folder -m -- "$1/$_fldr" 775 ; then
-                    _copy=2
-                else
-                    _copy= ; _stat=1
-                fi
-            fi
-
-            # install or update files
-            [ -z "$_copy" ] && continue                 # do not copy
-            if [ "$_copy" = 1 ] ; then                  # updating ...
-                _mesg=$"Update:"
-                if [ ! -e "$1/$_item" ] ; then          # skip if not forced
-                    [ -z "$CEN_OPT_FORCE" ] && continue
-                    _mesg=$"Setup :"
-                fi
+        # create folder, get copy mode
+        _fldr="${_item%/*}"
+        if [ "$_fldr" != "$_fcur" ] ; then
+            _fcur="$_fldr" ; _full=
+            if [ -d "$_dest/$_fldr" ] ; then
+                _copy=1
+            elif folder -m -- "$_dest/$_fldr" 775 ; then
+                _copy=2
             else
+                _copy= ; _stat=1
+            fi
+        fi
+
+        # install or update files
+        [ -z "$_copy" ] && continue                 # do not copy
+        if [ "$_copy" = 1 ] ; then                  # updating ...
+            _mesg=$"Update:"
+            if [ ! -e "$_dest/$_item" ] ; then      # skip if not forced
+                [ -z "$CEN_OPT_FORCE" ] && continue
                 _mesg=$"Setup :"
             fi
+        else
+            _mesg=$"Setup :"
+        fi
 
-            if [ -s "$1/$_item" ] ; then
-                [ "$_item" -nt "$1/$_item" ] || continue
-            fi
+        if [ -s "$_dest/$_item" ] ; then
+            [ "$_item" -nt "$_dest/$_item" ] || continue
+        fi
 
-            if [ -z "$_conf" ] ; then
-                confirm -a -y $"Install centauri-bash-lib at"" '$1'" || return 128
-                _conf=1
-            fi
-            message -a -d +1 -- "$_mesg" "$_item"
-            copy -a -- "$_item" "$1/$_item" || _stat=$?
-        done
-        return $_stat
+        if [ -z "$_conf" ] ; then
+            confirm -a -y $"Install centauri-bash-lib at"" '$_dest'" || return 128
+            _conf=1
+        fi
+        message -a -d +1 -- "$_mesg" "$_item"
+        copy -a -- "$_item" "$_dest/$_item" || _stat=$?
+    done
+    return $_stat
 }
 
 # ------------------------------------------------------------------------------
@@ -730,7 +778,7 @@ _cen_ins_systemd() {
 # ------------------------------------------------------------------------------
 _cen_ins_library() {
     local _remove _update _updsrv
-    local _owner="${CEN_ROOT_DEF[4]:--}"
+    local _owner="${CEN_ROOTDEFS[4]:--}"
 
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
@@ -810,7 +858,7 @@ _cen_ins_library() {
     else
         confirm -a -y $"Install 'centauritools' to"": $CEN_TOOLS" || return 128
         _cen_ins_paths -f -i || return 1
-        local _lopt="${CEN_ROOT_DEF[2]:--}" ; local _lbas="${_lopt%/*}"
+        local _lopt="${CEN_ROOTDEFS[2]:--}" ; local _lbas="${_lopt%/*}"
         if [ "$_lopt" != "-" -a -w "${_lbas:-/}" ] &&
            [ ! "$CEN_TOOLS" -ef "$_lopt" ] ; then
             confirm -a -y $"Symlink 'centauritools' to"": $_lopt" &&
@@ -825,7 +873,7 @@ _cen_ins_library() {
     $CEN_TRACE -a -p $"Tools setup (%s items)" "${#CEN_SYS_TOOLS[@]}"
 
     ___setup_misc
-    ___setup_tools   "${CEN_ROOT_DEF[1]:--}"
+    ___setup_tools   "${CEN_ROOTDEFS[1]:--}"
     ___setup_desktop "$CEN_PATHS/usr/share/kde4/services/ServiceMenus"
 
     if [ "$EUID" = "0" ] ; then
@@ -840,8 +888,8 @@ _cen_ins_library() {
     fi
 
     if [ -n "$_remove" ] ; then
-        [ "$CEN_TOOLS" -ef "${CEN_ROOT_DEF[2]}" ] &&
-            remove -- "${CEN_ROOT_DEF[2]}"
+        [ "$CEN_TOOLS" -ef "${CEN_ROOTDEFS[2]}" ] &&
+            remove -- "${CEN_ROOTDEFS[2]}"
         #[ -d "config" ] && system -e -p -- rm -f "admin" "shared" "private"
         _cen_ins_paths -f -r
 ###        if [ -d "$CEN_ROOT/configs" ] &&
@@ -856,7 +904,7 @@ _cen_ins_library() {
 }
 
 # ------------------------------------------------------------------------------
-# For _centauri_bash_sys, paths setup: [-f] [-i|-u] [-r]
+# For _cen_ins_library, paths setup: [-f] [-i|-u] [-r]
 #
 # Options:  -f  force setup of runtime folders
 #           -i  ignored
@@ -864,8 +912,9 @@ _cen_ins_library() {
 #           -u  ignored
 # ------------------------------------------------------------------------------
 _cen_ins_paths() {
-    local _repo="${CEN_ROOT_DEF[3]:--}"         # optional repository
-    local _sgrp="${CEN_ROOT_DEF[4]:--}"         # optional group owner
+#_cen_sys_rootdefs
+    local _repo="${CEN_ROOTDEFS[3]:--}"         # optional repository
+    local _sgrp="${CEN_ROOTDEFS[4]:--}"         # optional group owner
     local _ffrc _frem
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
@@ -1384,24 +1433,26 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #           creating copies.
 #
 #+Config:   The proxy source is **$CEN_ROOT/tools/_centauri_bash_lib** and it contains
-#           a configuration statement that looks like this:
+#           two configuration statements that looks like these:
 #
-#.          export CEN_ROOT_DEF=("/usr/local/share/centauri" "/usr/local/bin"
-#.          °                    "/opt/centauri" "" "root:staff")
+#.          defaults shared  "/var/centauri" "/usr/local/bin" "/admin" "+" "root:staff"
+#.          defaults private "~/.centauri" "~/bin" "~/centauritools"
 #
-#+          This defines a bash array variable with three or four elements (<empty>
+#+          This internally defines an array with up to five elements (<empty>
 #           stands for a minus sign or an empty string):
 #
-#               [0]     The installation root $CEN_ROOT (should be the path of
-#                       the installation folder)
-#               [1]     <empty> -or- folder to symlink user scripts (a folder
-#                       contained in $PATH simplifies calling user scripts).
-#                       This field is ignored if the folder is not writable.
-#               [2]     <empty> -or- symlink to **$CEN_ROOT/tools** (just an
-#                       alias that should be easy to remember). This field is
-#                       ignored if the base folder is not writable.
-#               [3]     <empty> or a [user][:group], sets the ownership of created
-#                       folders.
+#               [0]     The installation root $CEN_ROOT (should be the path of the
+#                       installation folder)
+#               [1]     <empty> -or- folder to symlink user scripts (a folder contained in
+#                       $PATH simplifies calling user scripts).  This field is ignored
+#                       if the folder is not writable.
+#               [2]     <empty> -or- symlink to **$CEN_ROOT/tools** (just an  alias that should
+#                       be easy to remember). This field is ignored if the base folder is
+#                       not writable.
+#               [3]     An optional repository path -or- <empty> for no repository. A value
+#                       of '+' tries **$CEN_ROOT/admin**. The setup code will symlink **tools**,
+#                       **library** and **locale** to an existing repository.
+#               [4]     <empty> or a [user][:group], sets the ownership of created folders.
 #
 #+Setup:    Parts of the folder tree shown below are added by [[_centauri_bash_sys]].
 #           An automatic setup of the tree is done on the 1st execution (as root
@@ -1452,22 +1503,25 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 # ------------------------------------------------------------------------------
 # Library Proxy + The centauri-bash-lib Proxy
 #
-#+General:  The library should not be loaded directly, instead a proxy is used.
-#           The proxy is generated at installation time and is located at:
+#+General:  The proxy sets configuration variables and locates the main library
+#           module. The main module must not be loaded directly, using the proxy
+#           is mandatory. This is why it should be sym-linked to "/usr/local/bin".
+#           More details are covered by the [[Initialization]] topic.
+#
+#+          The proxy is generated at installation time, see [[Installation]].
+#           The installation path is:
 #
 #,          **$CEN_TOOLS/_centauri_bash_lib**
 #
-#+          One responsibility of the proxy is to locate the library. This is
-#           why it should be sym-linked to "/usr/local/bin". More details are
-#           covered by the [[Initialization]] topic.
+#+Environment:°When loading time the proxy always sets the following variables to
+#           fixed values that were set at installation time:
 #
-#+          Also the proxy loads the [[_centauri_bash_lib]] main module from
-#           "$CEN_LIBRARY" and is responsible for setting up a suitable
-#           environment. The proxy contains **ALL** hard configurable library
-#           parameters, see [[Installation]].
+#           CEN_INSTALL         # installation defaults
+#           CEN_PATHS           # FS-prefix, FSH standard locations
+#           CEN_PATH_REXP       # definitions for [[prettypath()]]
 #
-#+Environment:°When loading and if CEN_ROOT is not yet defined, the proxy sets
-#           and exports the following variables:
+#+Environment:°When loading and if CEN_ROOT is not yet set as an environment
+#           variable, the proxy sets and exports the following variables:
 #
 #,          CEN_ROOT            # library root/installation folder
 #,          CEN_LIBRARY         # _centauri_bash_lib modules
@@ -1477,6 +1531,10 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #,          **TMP**
 #
 #           CEN_LIBRARY and CEN_TOOLS are sub-folders of CEN_ROOT.
+#
+#+          CEN_ROOT and CEN_TOOLS can be overridden by environment variables.
+#           This feature is intended for use by setup scripts to bypass defaults
+#           from CEN_INSTALL.
 #
 #+Embedding:When CEN_ROOT is non-empty and has any other value than "." the library
 #           search can be omitted. For setting up CEN_ROOT an expensive call to
@@ -1513,10 +1571,6 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 # ------------------------------------------------------------------------------
 # Module Init
 # ------------------------------------------------------------------------------
-
-if [ "$1" = '-w' ] ; then
-    [ "$EUID" = 0 ] || warning $"install/uninstall without root rights"
-fi
 
 :
 

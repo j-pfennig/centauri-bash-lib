@@ -33,32 +33,36 @@ msgstr "flüchtiger Cache"
 msgid "the userʼs temporary folder"
 msgstr "temporärer Ordner des Benutzers"
 
-#: /var/centauri/library/_centauri_bash_run:715
+#: /var/centauri/library/_centauri_bash_run:542
+msgid "Syntax error:"
+msgstr "Syntaxfehler:"
+
+#: /var/centauri/library/_centauri_bash_run:764
 msgid "1st argument must be 'path':"
 msgstr "Erstes Argument muss 'path' sein:"
 
-#: /var/centauri/library/_centauri_bash_run:722
+#: /var/centauri/library/_centauri_bash_run:771
 msgid "syntax error:"
 msgstr "Syntaxfehler:"
 
-#: /var/centauri/library/_centauri_bash_run:730
-#: /var/centauri/library/_centauri_bash_run:1058
+#: /var/centauri/library/_centauri_bash_run:779
+#: /var/centauri/library/_centauri_bash_run:1107
 msgid "Error(s) in [%s] configuration: %s"
 msgstr "Fehler in [%s] configuration: %s"
 
-#: /var/centauri/library/_centauri_bash_run:794
+#: /var/centauri/library/_centauri_bash_run:843
 msgid "No folder for shortcut:"
 msgstr "Kein Verzeichnis für Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:817
-#: /var/centauri/library/_centauri_bash_run:827
+#: /var/centauri/library/_centauri_bash_run:866
+#: /var/centauri/library/_centauri_bash_run:876
 msgid "Not a valid shortcut:"
 msgstr "Keine gültige Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:1066
+#: /var/centauri/library/_centauri_bash_run:1115
 msgid "No terminal configuration, see:"
 msgstr "Keine 'terminal' Konfiguration, siehe:"
 
-#: /var/centauri/library/_centauri_bash_run:1071
+#: /var/centauri/library/_centauri_bash_run:1120
 msgid "No desktop running, see $DISPLAY or $XDG_SESSION_DESKTOP"
 msgstr "Kein Desktop aktiv, siehe $DISPLAY oder $XDG_SESSION_DESKTOP"

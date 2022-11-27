@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 
 # ------------------------------------------------------------------------------
-# This is just an example for a library installer/updater
+# README + This is just an example for a library installer/updater
 #
 # Use it like:
-#       tar -xaf centauri_bash_lib-NN.tgz
-#       centauri_bash_lib-NN/README.setup
+#
+# °     $ tar -xaf centauri-bash-lib_N.NN.tgz
+# °     $ centauri-bash-lib_N.NN/README.setup
+# °     $ rm -r centauri-bash-lib_N.NN
 #
 # Or for a shared installation via sudo (use fakeroot on termux):
-#       tar -xaf centauri_bash_lib-NN.tgz
-#       sudo centauri_bash_lib-NN/README.setup
+#
+# °     $ tar -xaf centauri-bash-lib_N.NN.tgz
+# °     $ sudo centauri-bash-lib_N.NN/README.setup
+# °     $ rm -r centauri-bash-lib_N.NN
 #
 # The default paths can be overridden by passing install info as argument.
 # The info argument is a string of up to 3 colon separated fields:
 #
-#       <base>:<tools>:<link>
+# °     <base>:<tools>:<link>
 #
-#       <base>      # the base folder           (/var/centauri)
-#       <tools>     # a folder to symlink tools (/usr/local/bin)
-#       <links>     # symlink for tools folder  (/opt/centauritools)
+# °     <base>      # the base folder           (/var/centauri)
+# °     <tools>     # a folder to symlink tools (/usr/local/bin)
+# °     <links>     # symlink for tools folder  (/opt/centauritools)
 # ------------------------------------------------------------------------------
 
 # A root FS prefix can be set here (not needed for termux):
@@ -27,9 +31,9 @@
 # Installation defaults for shared and private install - can be edited
 
 if [ "$EUID" = 0 ] ; then                               # shared (root)
-    INFO="/var/centauri:/usr/local/bin:/opt/centauritools"
+    INFO=/var/centauri:/usr/local/bin:/opt/centauritools
 else                                                    # private
-    INFO="$HOME/.centauri:$HOME/bin:$HOME/centauritools" 
+    INFO=~/.centauri::~/centauritools 
 fi
 
 # ------------------------------------------------------------------------------
@@ -64,7 +68,7 @@ PORG="$ROOT/tools:$PATH"
 PDES="$DEST/tools:$PATH"
 
 # setup/update installation destination
-PATH="$PORG" centauricreate --embed="$SELF:a" --info setup "$INFO" || exit $?
+PATH="$PORG" centauricreate --embed="$SELF:a" --info setup - "$INFO" || exit $?
 
 # run library installer (creates real poxy and bash completion)
 echo 1>&2
@@ -80,6 +84,7 @@ PATH="$PDES" $DEST/library/uglify --embed="$SELF:a" -U -D
 # Optional: create an example library config file
 # ------------------------------------------------------------------------------
 
+echo 1>&2
 [ "$EUID" != 0 -a ! -d "$DEST/default" ] && mkdir "$DEST/default"
 PATH="$PDES" $DEST/tools/centauricreate --embed="$SELF" --template=config -
 
@@ -87,6 +92,7 @@ PATH="$PDES" $DEST/tools/centauricreate --embed="$SELF" --template=config -
 # Optional: generate HTML documentation
 # ------------------------------------------------------------------------------
 
+echo 1>&2
 PATH="$PDES" $DEST/tools/centaurihelp --embed="$SELF" --generate=all --delete
 if [ ! -s "$DEST/html/index.html" ] ; then
     PATH="$PDES" $DEST/tools/centaurihelp --embed="$SELF" --generate=dummy --yes

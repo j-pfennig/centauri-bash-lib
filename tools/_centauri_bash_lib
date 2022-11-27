@@ -10,7 +10,7 @@ if [ -z "$CEN_INSTALL" ] ; then
     if [ "$EUID" = 0 ] ; then
         CEN_INSTALL="/usr/local/shared/centauri:/usr/local/bin:/opt/centauritools"
     else
-        CEN_INSTALL="$HOME/.centauritools:$HOME/bin:$HOME/centauritools"
+        CEN_INSTALL="~/.centauritools:~/mytools:~/centauritools"
     fi
 fi
 
