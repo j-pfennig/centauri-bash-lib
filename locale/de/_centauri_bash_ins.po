@@ -1,214 +1,223 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_ins:68
+#: /var/centauri/library/_centauri_bash_ins:69
 msgid "Unknown installation destination"
 msgstr "Unbekanntes Installationsziel"
 
-#: /var/centauri/library/_centauri_bash_ins:79
+#: /var/centauri/library/_centauri_bash_ins:83
+#: /var/centauri/library/_centauri_bash_ins:85
 msgid "Folder not writable:"
 msgstr "Verzeichnis nicht schreibbar:"
 
-#: /var/centauri/library/_centauri_bash_ins:80
+#: /var/centauri/library/_centauri_bash_ins:84
 msgid "Install/uninstall without root rights"
 msgstr "Installation/Entfernen ohne 'root' Rechte"
 
-#: /var/centauri/library/_centauri_bash_ins:94
+#: /var/centauri/library/_centauri_bash_ins:99
+msgid "Have repository, no files to copy"
+msgstr "Habe Repository, keine Dateien zu kopieren"
+
+#: /var/centauri/library/_centauri_bash_ins:102
+msgid "Repository does not exist:"
+msgstr "Repository existiert nicht:"
+
+#: /var/centauri/library/_centauri_bash_ins:108
 msgid "Current folder '%s' is not a centauri-bash-lib root"
 msgstr "Arbeitsverzeichnis '%s' ist nicht Wurzel von 'centauri-bash-lib'"
 
-#: /var/centauri/library/_centauri_bash_ins:101
-#: /var/centauri/library/_centauri_bash_ins:151
+#: /var/centauri/library/_centauri_bash_ins:115
+#: /var/centauri/library/_centauri_bash_ins:165
 msgid "Install centauri-bash-lib at"
 msgstr "'centauri-bash-lib' installieren nach"
 
-#: /var/centauri/library/_centauri_bash_ins:107
+#: /var/centauri/library/_centauri_bash_ins:121
 msgid "Destination '%s' must not be the current folder"
 msgstr "Installationsziel '%s' darf nicht Arbeitsverzeichnis sein"
 
-#: /var/centauri/library/_centauri_bash_ins:137
+#: /var/centauri/library/_centauri_bash_ins:151
 msgid "Update:"
 msgstr "Aktualisiert:"
 
-#: /var/centauri/library/_centauri_bash_ins:140
-#: /var/centauri/library/_centauri_bash_ins:143
+#: /var/centauri/library/_centauri_bash_ins:154
+#: /var/centauri/library/_centauri_bash_ins:157
 msgid "Setup :"
 msgstr "Installiert :"
 
-#: /var/centauri/library/_centauri_bash_ins:216
+#: /var/centauri/library/_centauri_bash_ins:230
 msgid "No 'systemd' support on this machine"
 msgstr "Keine 'systemd' Unterstützung auf diesem Rechner"
 
-#: /var/centauri/library/_centauri_bash_ins:225
+#: /var/centauri/library/_centauri_bash_ins:239
 msgid "No 'SysV' support, missing '%s' folder"
 msgstr "Keine 'SysV' Unterstützung, Verzeichnis '%s' fehlt"
 
-#: /var/centauri/library/_centauri_bash_ins:229
+#: /var/centauri/library/_centauri_bash_ins:243
 msgid "No 'SysV' support, please install 'insserv'"
 msgstr "Keine 'SysV' Unterstützung, bitte 'insserv' installieren"
 
-#: /var/centauri/library/_centauri_bash_ins:262
+#: /var/centauri/library/_centauri_bash_ins:276
 msgid "Wan't remove service, has 'SysV' file:"
 msgstr "Service wird nicht gelöscht, hat 'SysV' Datei:"
 
-#: /var/centauri/library/_centauri_bash_ins:269
+#: /var/centauri/library/_centauri_bash_ins:283
 msgid "Wan't remove service, has 'systemd' unit:"
 msgstr "Service wird nicht gelöscht, hat 'systemd' Unit:"
 
-#: /var/centauri/library/_centauri_bash_ins:342
+#: /var/centauri/library/_centauri_bash_ins:356
 msgid "Only .service units are supported:"
 msgstr "Nur .service Units werden unterstützt:"
 
-#: /var/centauri/library/_centauri_bash_ins:354
+#: /var/centauri/library/_centauri_bash_ins:368
 msgid "Not a service file:"
 msgstr "Ist keine Dienstdatei:"
 
-#: /var/centauri/library/_centauri_bash_ins:380
+#: /var/centauri/library/_centauri_bash_ins:394
 msgid "Machine not running 'systemd', cannot install:"
 msgstr "Rechner führt 'systemd' nicht aus, kann nicht Installieren:"
 
-#: /var/centauri/library/_centauri_bash_ins:383
+#: /var/centauri/library/_centauri_bash_ins:397
 msgid "Need 'SysV' or 'systemd' to install a service"
 msgstr "Brauche 'SysV' oder 'systemd' um einen Dienst zu installieren:"
 
-#: /var/centauri/library/_centauri_bash_ins:399
+#: /var/centauri/library/_centauri_bash_ins:413
 msgid "Uninstalling service:"
 msgstr "Deinstalliere Dienst"
 
-#: /var/centauri/library/_centauri_bash_ins:426
+#: /var/centauri/library/_centauri_bash_ins:440
 msgid "Installing service:"
 msgstr "Installiere Dienst:"
 
-#: /var/centauri/library/_centauri_bash_ins:540
+#: /var/centauri/library/_centauri_bash_ins:554
 msgid "Cannot install in 'SysV' mode: service file has no lsb-header"
 msgstr "Nicht im 'SysV' Modus installierbar: Dienstdatei hat keinen lsb-header"
 
-#: /var/centauri/library/_centauri_bash_ins:571
+#: /var/centauri/library/_centauri_bash_ins:585
 msgid "Cannot install a daemon as a service"
 msgstr "Kann Dämon nicht als Dienst installieren"
 
-#: /var/centauri/library/_centauri_bash_ins:572
+#: /var/centauri/library/_centauri_bash_ins:586
 msgid "Unsupported service type:"
 msgstr "Dienst Typ nicht unterstützt:"
 
-#: /var/centauri/library/_centauri_bash_ins:579
+#: /var/centauri/library/_centauri_bash_ins:593
 msgid "Service '%s' installed as (%s) but wants to be (%s)"
 msgstr "Dienst is als '%s' installiert, aber will (%s) sein"
 
-#: /var/centauri/library/_centauri_bash_ins:593
-#: /var/centauri/library/_centauri_bash_ins:599
+#: /var/centauri/library/_centauri_bash_ins:607
+#: /var/centauri/library/_centauri_bash_ins:613
 msgid "was installed"
 msgstr "wurde installiert"
 
-#: /var/centauri/library/_centauri_bash_ins:593
-#: /var/centauri/library/_centauri_bash_ins:599
+#: /var/centauri/library/_centauri_bash_ins:607
+#: /var/centauri/library/_centauri_bash_ins:613
 msgid "failed to install"
 msgstr "Fehler beim Installieren"
 
-#: /var/centauri/library/_centauri_bash_ins:604
+#: /var/centauri/library/_centauri_bash_ins:618
 msgid "was uninstalled"
 msgstr "wurde deinstalliert"
 
-#: /var/centauri/library/_centauri_bash_ins:604
+#: /var/centauri/library/_centauri_bash_ins:618
 msgid "failed to uninstall"
 msgstr "Fehler beim Deinstallieren"
 
-#: /var/centauri/library/_centauri_bash_ins:607
+#: /var/centauri/library/_centauri_bash_ins:621
 msgid "is installed"
 msgstr "bereits installiert"
 
-#: /var/centauri/library/_centauri_bash_ins:607
+#: /var/centauri/library/_centauri_bash_ins:621
 msgid "is not installed"
 msgstr "ist nicht installiert"
 
-#: /var/centauri/library/_centauri_bash_ins:609
+#: /var/centauri/library/_centauri_bash_ins:623
 msgid "Service '%s' %s"
 msgstr "Dienst '%s' %s"
 
-#: /var/centauri/library/_centauri_bash_ins:651
+#: /var/centauri/library/_centauri_bash_ins:665
 msgid "Systemd setup"
 msgstr "Systemd Einrichtung"
 
-#: /var/centauri/library/_centauri_bash_ins:697
+#: /var/centauri/library/_centauri_bash_ins:711
 msgid "Create systemd link"
 msgstr "Erstelle systemd Verweis"
 
-#: /var/centauri/library/_centauri_bash_ins:842
+#: /var/centauri/library/_centauri_bash_ins:860
 msgid "Do do really want to uninstall 'centauritools'"
 msgstr "Soll 'centauritools' wirklich deinstalliert werden"
 
-#: /var/centauri/library/_centauri_bash_ins:844
+#: /var/centauri/library/_centauri_bash_ins:862
 msgid "Update 'centauritools' services"
 msgstr "'centauritools' Dienste aktualisieren"
 
-#: /var/centauri/library/_centauri_bash_ins:850
+#: /var/centauri/library/_centauri_bash_ins:868
 msgid "Update 'centauritools'"
 msgstr "'centauritools' aktualisieren"
 
-#: /var/centauri/library/_centauri_bash_ins:853
+#: /var/centauri/library/_centauri_bash_ins:871
 msgid "Path check 'centauritools'"
 msgstr "'centauritools' Pfade prüfen"
 
-#: /var/centauri/library/_centauri_bash_ins:856
+#: /var/centauri/library/_centauri_bash_ins:874
 msgid "Install 'centauritools' to"
 msgstr "'centauritools' installieren nach"
 
-#: /var/centauri/library/_centauri_bash_ins:861
+#: /var/centauri/library/_centauri_bash_ins:879
 msgid "Symlink 'centauritools' to"
 msgstr "Verweis für 'centauritools' nach"
 
-#: /var/centauri/library/_centauri_bash_ins:870
+#: /var/centauri/library/_centauri_bash_ins:888
 msgid "Tools setup (%s items)"
 msgstr "Tools Einrichtung (%s Teile)"
 
-#: /var/centauri/library/_centauri_bash_ins:881
+#: /var/centauri/library/_centauri_bash_ins:899
 msgid "Configure 'centauritools' services"
 msgstr "'centauritools' Dienste einrichten"
 
-#: /var/centauri/library/_centauri_bash_ins:894
+#: /var/centauri/library/_centauri_bash_ins:910
 msgid "Remove folder"
 msgstr "Entferne Verzeichnis"
 
-#: /var/centauri/library/_centauri_bash_ins:929
+#: /var/centauri/library/_centauri_bash_ins:961
 msgid "Skip setup runtime folders (no %s)"
 msgstr "Überspringe Einrichtung der Laufzeitverzeichnisse (kein %s)"
 
-#: /var/centauri/library/_centauri_bash_ins:931
+#: /var/centauri/library/_centauri_bash_ins:963
 msgid "Cannot setup runtime folders (not running as root)"
 msgstr "Kann Laufzeitverzeichnisse nicht einrichten (laufe nicht als root)"
 
-#: /var/centauri/library/_centauri_bash_ins:1107
+#: /var/centauri/library/_centauri_bash_ins:1142
 msgid "System version"
 msgstr "System  Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1108
+#: /var/centauri/library/_centauri_bash_ins:1143
 msgid "System family"
 msgstr "System  Familie"
 
-#: /var/centauri/library/_centauri_bash_ins:1109
+#: /var/centauri/library/_centauri_bash_ins:1144
 msgid "Bash    version"
 msgstr "Bash    Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1110
+#: /var/centauri/library/_centauri_bash_ins:1145
 msgid "library version"
 msgstr "Library Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1139
+#: /var/centauri/library/_centauri_bash_ins:1175
 msgid "KDE     version"
 msgstr "KDE     Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1140
+#: /var/centauri/library/_centauri_bash_ins:1176
 msgid "Qt      version"
 msgstr "Qt      Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1141
+#: /var/centauri/library/_centauri_bash_ins:1177
 msgid "Plasma  version"
 msgstr "Plasma  Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1142
+#: /var/centauri/library/_centauri_bash_ins:1178
 msgid "Session type"
 msgstr "Sitzungstyp"
 
-#: /var/centauri/library/_centauri_bash_ins:1144
+#: /var/centauri/library/_centauri_bash_ins:1180
 msgid "No known KDE version found."
 msgstr "Keine bekannte KDE Version gefunden."

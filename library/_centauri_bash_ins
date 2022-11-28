@@ -56,7 +56,7 @@ _cen_sys_rootdefs() {
         # <root> <bin> <link> <repo> <owner> <group>
         if [ -n "${CEN_ROOTDEFS[5]}" ] ; then   # join to <owner>:<group>
             CEN_ROOTDEFS[4]+=":${CEN_ROOTDEFS[5]}"
-            unset CEN_ROOTDEFS[5]
+            unset 'CEN_ROOTDEFS[5]'
         fi
     fi
 
@@ -73,7 +73,7 @@ _cen_sys_rootdefs() {
     # try to autodetect default repositiory
     [ "${CEN_ROOTDEFS[3]}" = '+' ] && CEN_ROOTDEFS[3]="$CEN_ROOTDEFS/admin"
     prettypath -s CEN_ROOTDEFS[3]
-    $CEN_TRACE2 -c 'CEN_ROOTDEFS' -- "done: ${CEN_ROOTDEFS[@]}"
+    $CEN_TRACE2 -c 'CEN_ROOTDEFS' -- "done:" "${CEN_ROOTDEFS[@]}"
 
     local _fldr
     for _fldr in "${CEN_ROOTDEFS[@]::3}" ; do   # warning if a folder is not writable
@@ -93,6 +93,17 @@ _cen_sys_rootdefs() {
 # ------------------------------------------------------------------------------
 _cen_ins_files() {
     local _conf _copy _dest="${1:--}" _fldr _fcur _mesg _stat=0
+
+    if [ "${CEN_ROOTDEFS[3]:--}" != '-' ] ; then
+        if [ -d "${CEN_ROOTDEFS[3]}" ] ; then
+            message $"Have repository, no files to copy"
+            return 0
+        else
+            error $"Repository does not exist:" "${CEN_ROOTDEFS[3]}"
+            return 1
+        fi
+    fi
+
     if ! [ -d 'tools' -a -d 'library' -a -d 'locale' ] ; then
         error -p $"Current folder '%s' is not a centauri-bash-lib root" "$PWD"
         return 1
@@ -257,7 +268,7 @@ _cen_ins_sysvhdr() {
 # safely remove systemd service files: <name>|<unit>
 # ------------------------------------------------------------------------------
 _cen_ins_saferm() {
-    local file doit sysv item unit="$1" name="${1%.*}"
+    local file sysv item unit="$1" name="${1%.*}"
     [ "$name" == "$unit" ] && unit+=".service"  # got a name
 
     sysv="$CEN_INS_SYSVINI/$name"
@@ -450,7 +461,7 @@ _cen_ins_install() {
 _cen_ins_service() {
 
     # (re-)create systemd configuration: <unit>
-    ___make_unit() {
+    ___cen_serv_unit() {
         local _sstp _fsvc="$1"
 
         if [ -e "$CEN_INS_SOURCES/$_fsvc" ] ; then  # have config
@@ -522,7 +533,7 @@ WantedBy=$CEN_SVC_WANTED_BY
     }
 
     # link service to $CEN_INS_SYSVINI, delete systemd files
-    ___make_sysv() {
+    ___cen_serv_sysv() {
         _cen_ins_saferm "$1" || return
         local _file="${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}"
         symlink -- "$_file" "$CEN_INS_SYSVINI/$1" || return 1
@@ -591,13 +602,13 @@ WantedBy=$CEN_SVC_WANTED_BY
     case "$scmd-$styp" in
     install-SysV)
         [ -n "$isin" ] && return 0
-        ___make_sysv "$CEN_NAME" || return 1
+        ___cen_serv_sysv "$CEN_NAME" || return 1
         _cen_ins_install -i "$fsvc" || return 1
         error -t && scmd=$"was installed" || scmd=$"failed to install"
         ;;
     install-systemd)
         [ -n "$isin" ] && return 0
-        ___make_unit "$CEN_NAME.service" || return 1
+        ___cen_serv_unit "$CEN_NAME.service" || return 1
         _cen_ins_install -s "$fsvc" || return 1
         error -t && scmd=$"was installed" || scmd=$"failed to install"
         ;;
@@ -643,7 +654,7 @@ _cen_ins_systemd() {
     #}
 
     # make links for systemd: user|system
-    ___setup_systemd() {
+    ___cen_libr_systemd() {
         local farg forg fdir fena fchg rpre
         local orig="$CEN_TOOLS/systemd/$1"
         local dest="$CEN_INS_SYSDLST"           # /etc/systemd
@@ -738,11 +749,12 @@ _cen_ins_systemd() {
             [ -n "$_remove" ] && remove -q -- "$fdir"   # remove empty .want folder
         done
 
-    #    if [ -z "$fchg" ] ; then
-    #        $CEN_TRACE -a "No changes ($1 mode)" ; return
-    #    fi
+        if [ -z "$fchg" ] ; then
+            $CEN_TRACE -a "No changes ($1 mode)" ; return 0
+        fi
 
-     #   $CEN_TRACE -a "Update systemd ($1 mode, ${#updt[@]} units)" # ; return
+        #$CEN_TRACE -a "Update systemd ($1 mode, ${#updt[@]} units)"
+        return 0
      #   system -e -p systemctl "daemon-reload"
 
      #   for forg in "${updt[@]}" ; do
@@ -754,8 +766,8 @@ _cen_ins_systemd() {
      #   done
     }
 
-    ___setup_systemd 'system'
-    ___setup_systemd 'user'
+    ___cen_libr_systemd 'system'
+    ___cen_libr_systemd 'user'
     [ -n "$_nosysv" ] && return 0
     _cen_ins_install ${_remove:+-r} "${CEN_SYS_SERVICE[@]}"
 }
@@ -765,13 +777,16 @@ _cen_ins_systemd() {
 #
 # Call:     _cen_ins_library                    # full install
 #           _cen_ins_library -r                 # uninstall
-#           _cen_ins_library -p|-t              # fix paths
-#           _cen_ins_library [-s|-u]...         # update
+#           _cen_ins_library -p                 # create/fix paths
+#           _cen_ins_library -t                 # fix paths, ignored if not root
+#           _cen_ins_library [-s|-u]...         # update services|paths
 #
-# Options:  -p  path check/set for centauritools
+#           This is the backend for syssetup()
+#
+# Options:  -p  create/fix paths
 #           -r  uninstall
 #           -s  update services only (needs root)
-#           -t
+#           -t  create/fix paths (root only)
 #           -u  update tool links only
 #
 # Returns status 128 if (un)install is cancelled.
@@ -793,7 +808,7 @@ _cen_ins_library() {
     done
 
     # create new links, remove obsoletes: <path>
-    ___setup_tools() {
+    ___cen_libr_tools() {
         local farg fdes dest="$1"
         [ "$dest" != "-" ] || return ; [ -w "$dest" ] || return
 
@@ -814,7 +829,7 @@ _cen_ins_library() {
     }
 
     # Link Service Menues: <path>
-    ___setup_desktop() {
+    ___cen_libr_desktop() {
         local farg fdes dest="$1"
         [ -w "$dest" ] || return
 
@@ -829,7 +844,7 @@ _cen_ins_library() {
     }
 
     # miscelaneous links
-    ___setup_misc() {
+    ___cen_libr_misc() {
         [ "$EUID" = "0" ] || return
         if [ -n "$_remove" ] ; then
             remove -- "$CEN_INS_ETCPATH/bash_completion.d/_centauri_bash_completion"
@@ -872,9 +887,9 @@ _cen_ins_library() {
     _cen_sys_tools
     $CEN_TRACE -a -p $"Tools setup (%s items)" "${#CEN_SYS_TOOLS[@]}"
 
-    ___setup_misc
-    ___setup_tools   "${CEN_ROOTDEFS[1]:--}"
-    ___setup_desktop "$CEN_PATHS/usr/share/kde4/services/ServiceMenus"
+    ___cen_libr_misc
+    ___cen_libr_tools   "${CEN_ROOTDEFS[1]:--}"
+    ___cen_libr_desktop "$CEN_PATHS/usr/share/kde4/services/ServiceMenus"
 
     if [ "$EUID" = "0" ] ; then
         if [ "${#CEN_SYS_SERVICE[@]}" ] || [ -d "$CEN_TOOLS/systemd" ] ; then
@@ -890,9 +905,7 @@ _cen_ins_library() {
     if [ -n "$_remove" ] ; then
         [ "$CEN_TOOLS" -ef "${CEN_ROOTDEFS[2]}" ] &&
             remove -- "${CEN_ROOTDEFS[2]}"
-        #[ -d "config" ] && system -e -p -- rm -f "admin" "shared" "private"
         _cen_ins_paths -f -r
-###        if [ -d "$CEN_ROOT/configs" ] &&
         if [ -d "$CEN_ROOT" ] &&
             confirm -a -y $"Remove folder"" '$CEN_ROOT'" ; then
             folder -c -f "/"
@@ -900,7 +913,6 @@ _cen_ins_library() {
         fi
     fi
     return 0
-
 }
 
 # ------------------------------------------------------------------------------
@@ -910,9 +922,24 @@ _cen_ins_library() {
 #           -i  ignored
 #           -r  remove but don't destroy repository
 #           -u  ignored
+#
+#   always
+#       $CEN_ROOT       (folder)
+#       .../default     (symlink to /etc/default EUID=0 only -or- folder)
+#
+#   only for EUID=0
+#       /run/centauri   (folder)
+#       transient       (symlink to /run/centauri)
+#       persistent      (symlink to /var/tmp/centauri)
+#
+#   <repo> is not '-'
+#       library         (symlink to <repo>/library)
+#       locale          (symlink to <repo>/locale)
+#       tools           (symlink to<repo>/tools)
+#
+#   BUG: admin symlink should not be removed !!!!
 # ------------------------------------------------------------------------------
 _cen_ins_paths() {
-#_cen_sys_rootdefs
     local _repo="${CEN_ROOTDEFS[3]:--}"         # optional repository
     local _sgrp="${CEN_ROOTDEFS[4]:--}"         # optional group owner
     local _ffrc _frem
@@ -929,21 +956,24 @@ _cen_ins_paths() {
 
     # condition check
 
-    if [ -z "$_ffrc" ] && [ "$_repo" != "-" -a ! -d "$_repo" ] ; then
-        $CEN_TRACE -a -p $"Skip setup runtime folders (no %s)" "$_repo" ; return 1
-    elif [ "$EUID" != "0" ] ; then
-        $CEN_TRACE -a $"Cannot setup runtime folders (not running as root)" ; return 0
-    fi
+    [ -z "$_ffrc" ] &&
+        if [ "$_repo" != '-' -a ! -d "$_repo" ] ; then
+            $CEN_TRACE -a -p $"Skip setup runtime folders (no %s)" "$_repo" ; return 1
+        elif [ "$EUID" != 0 ] ; then
+            $CEN_TRACE -a $"Cannot setup runtime folders (not running as root)" ; return 0
+        fi
 
     # setup CEN_ROOT
 
-    local _drun="$CEN_PATHS/run" ; [ -d "$_drun" ] || _drun="${CEN_PATHS[3]}/run"
+    local _drun="$CEN_PATHS/run"
+    # fallback to CEN_PATHS[3] (/var) if /nun is missing
+    [ -d "$_drun" ] || _drun="${CEN_PATHS[3]}/run"
     if [ -n "$_frem" ] ; then
         remove -d -- "$_drun/centauri" "${CEN_PATHS[3]}/lib/centauri"
         remove    -- "$CEN_ROOT/transient" "$CEN_ROOT/persistent"
     else
         create -d -- "$CEN_ROOT" 775 "$_sgrp" || return 1
-        if [ "$EUID" = "0" ] ; then
+        if [ "$EUID" = 0 ] ; then
             create -d "$_drun/centauri"   775 "$_sgrp" &&
                 symlink "$_drun/centauri" "$CEN_ROOT/transient"
             create -d "${CEN_PATHS[3]}/lib/centauri" 775 "$_sgrp" &&
@@ -992,27 +1022,28 @@ _cen_ins_paths() {
 }
 
 # ------------------------------------------------------------------------------
-# For _centauri_bash_sys - get OS and KDE versions: -s|-k|-w <path>
+# For _centauri_bash_sys - get OS and KDE versions: -s|-k|-w [-m|-v]
 # ------------------------------------------------------------------------------
 _cen_ins_version() {
+    local _otra=: _orun
 
     # get kde/plasma versions: <tool> (using _aver)
-    ___version_try() {
+    ___cen_vers_try() {
         local _aver _alin
         system -c "$1" || return 1
         system -a _aver -n -q -- "$1" --version || return 1
         for _alin in "${_aver[@]}" ; do
             case "$_alin" in
-                plasmash*)  ___version_set CEN_SYS_PLASMA  "${_alin##* }" ;;
-                Qt*)        ___version_set CEN_SYS_QTVERS  "${_alin##* }" ;;
-                KDE*)       ___version_set CEN_SYS_KDEVERS "${_alin##* }" ;;
-                Plasma*)    ___version_set CEN_SYS_PLASMA  "${_alin##* }" ;;
+                plasmash*)  ___cen_vers_set CEN_SYS_PLASMA  "${_alin##* }" ;;
+                Qt*)        ___cen_vers_set CEN_SYS_QTVERS  "${_alin##* }" ;;
+                KDE*)       ___cen_vers_set CEN_SYS_KDEVERS "${_alin##* }" ;;
+                Plasma*)    ___cen_vers_set CEN_SYS_PLASMA  "${_alin##* }" ;;
             esac
         done ; return 0
     }
 
     # set sortable version: <varname> x[.y[.z]]
-    ___version_set() {
+    ___cen_vers_set() {
         local -n _verv="$1" ; local _vers="${2//./ }"
         set -- ${_vers//[! 0123456789]/ }
         printf -v _vers "%3s.%3s.%3s" "${1:-0}" "${2:-0}" "${3:-0}"
@@ -1020,18 +1051,18 @@ _cen_ins_version() {
     }
 
     # debian version number from nickname: <varname> <nick>
-    ___version_deb() {
+    ___cen_vers_deb() {
         case "$2" in
-            bookworm)   ___version_set "$1" 12 ;;
-            bullseye)   ___version_set "$1" 11 ;;
-            buster)     ___version_set "$1" 10 ;;
-            stretch)    ___version_set "$1" 9 ;;
-            jessie)     ___version_set "$1" 8 ;;
-            *)          ___version_set "$1" ;;
+            bookworm)   ___cen_vers_set "$1" 12 ;;
+            bullseye)   ___cen_vers_set "$1" 11 ;;
+            buster)     ___cen_vers_set "$1" 10 ;;
+            stretch)    ___cen_vers_set "$1" 9 ;;
+            jessie)     ___cen_vers_set "$1" 8 ;;
+            *)          ___cen_vers_set "$1" ;;
         esac
     }
 
-    ___version_sys() {
+    ___cen_vers_sys() {
         local _vers
         CEN_SYS_CONFIG=                         # unknown
         CEN_SYS_DISTRO='unknown'
@@ -1064,14 +1095,14 @@ _cen_ins_version() {
         if [ -z "$_vers" ] ; then
             if [ -f "$CEN_INS_ETCPATH/debian_version" ] ; then
                 [ "$CEN_SYS_DISTRO" = "unknown" ] && CEN_SYS_DISTRO="debian"
-                _vers="$(<$CEN_INS_ETCPATH/debian_version)"         # should be "n.m"
+                _vers=$(<"$CEN_INS_ETCPATH/debian_version")         # should be n.m or nickname
                 [ -n "${_vers//[0-9.]}" ] && _vers="${_vers%%/*}"   # version is nickname
             else                                                    # fallback to kernel version...
-                _vers="$(</proc/version)" ; _vers="${_vers%%(*}"    # should be "xxx yyy n.m-xxx (blabla)"
+                _vers=$(</proc/version) ; _vers="${_vers%%(*}"      # should be: xxx yyy n.m-xxx (blabla)
                 _vers="${_vers//[a-zA-z ]/}" ; _vers="${_vers%%[- ]*}"
             fi
         fi
-        ___version_set CEN_SYS_VERSION "$_vers"                 # decode numeric vers
+        ___cen_vers_set CEN_SYS_VERSION "$_vers"                    # decode numeric vers
 
         # get family
         case "$CEN_SYS_DISTRO" in
@@ -1105,37 +1136,38 @@ _cen_ins_version() {
             "debian 12")  CEN_SYS_NICKNAME="bookworm"   ;;
             "debian "[a-z]*)
                           CEN_SYS_NICKNAME="${_vers%%/*}"
-                          ___version_deb CEN_SYS_VERSION "$CEN_SYS_NICKNAME" ;;
+                          ___cen_vers_deb CEN_SYS_VERSION "$CEN_SYS_NICKNAME" ;;
         esac
 
         $_otra -a -c $"System version"  -- "$CEN_SYS_VERSION ($CEN_SYS_DISTRO $CEN_SYS_NICKNAME)"
         $_otra -a -c $"System family"   -- "$CEN_SYS_FAMILY"
         $_otra -a -c $"Bash    version" -- "$BASH_VERSION"
         $_otra -a -c $"library version" -- "${CEN_MODULES["_centauri_bash_lib"]}"
+        return 0
     }
 
-    ___version_kde() {
+    ___cen_vers_kde() {
         CEN_SYS_KDEVERS=
         CEN_SYS_PLASMA=
         CEN_SYS_QTVERS=
 
         if [ -n "$(type -p kdeinit4 kdeinit5)" ] ; then
             if [ "$CEN_DISPLAY" = 'wayland' ] ; then
-                ___version_try "plasmashell"
+                ___cen_vers_try "plasmashell"
             else
                 # plasmashell 5.8.6 (hangs if DISPLAY is not local)
-                [ "${DISPLAY/:[0-9]/-}" = "-" ] && ___version_try "plasmashell"
+                [ "${DISPLAY/:[0-9]/-}" = "-" ] && ___cen_vers_try "plasmashell"
             fi
 
             # Qt: 4.8.6
             # KDE Development Platform: 4.14.2
             # Plasma Desktop Shell: 4.11.13
-            [ -z "$CEN_SYS_PLASMA" ] && ___version_try "plasma-desktop"
+            [ -z "$CEN_SYS_PLASMA" ] && ___cen_vers_try "plasma-desktop"
 
             # Qt: 5.11.3
             # KDE: 5.54.0
-            [ -z "$CEN_SYS_KDEVERS" ] && ___version_try "kdeinit5"
-            [ -z "$CEN_SYS_KDEVERS" ] && ___version_try "kdeinit4"
+            [ -z "$CEN_SYS_KDEVERS" ] && ___cen_vers_try "kdeinit5"
+            [ -z "$CEN_SYS_KDEVERS" ] && ___cen_vers_try "kdeinit4"
 
             [ -z "$CEN_SYS_QTVERS"  ] && CEN_SYS_QTVERS="000.000.000"
             [ -z "$CEN_SYS_PLASMA"  ] && CEN_SYS_PLASMA="000.000.000"
@@ -1149,12 +1181,11 @@ _cen_ins_version() {
         fi
 
         [ -z "$CEN_SYS_KDEVERS" ] && CEN_SYS_KDEVERS="000.000.000"
+        return 0
     }
 
-    if   [ "$1" = "-s" ] ; then ___version_sys
-    elif [ "$1" = "-k" ] ; then ___version_kde
-    elif [ "$1" = "-w" ] ; then
-            create -h "centauritools" -t -s -w "$CEN_SYS_STATE_FILE" 664 <<!EOF
+    ___cen_vers_wrt() {
+        create -h "centauritools" -t -s -w "$CEN_SYS_STATE_FILE" 664 <<!EOF
 CEN_SYS_CONFIG="$CEN_SYS_CONFIG"
 CEN_SYS_DISTRO="$CEN_SYS_DISTRO"
 CEN_SYS_FAMILY="$CEN_SYS_FAMILY"
@@ -1166,9 +1197,21 @@ CEN_SYS_KDEVERS="$CEN_SYS_KDEVERS"
 CEN_SYS_PLASMA="$CEN_SYS_PLASMA"
 CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 !EOF
-    else
-        _cen_abort - "$*"
-    fi || :
+    }
+
+    while [ "${1::1}" = "-" ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -k)   _orun='kde' ;;
+      -s)   _orun='sys' ;;
+      -w)   _orun='wrt' ;;
+      -m)   _otra='message' ;;
+      -v)   _otra='trace' ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
+    ___cen_vers_$_orun || return 1
 }
 
 # ------------------------------------------------------------------------------

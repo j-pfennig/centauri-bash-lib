@@ -1,9 +1,20 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# ------------------------------------------------------------------------------
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2022; BSD License"
+CEN_TITLE=$"Template for an example centauri-bash-lib installer/updater"
 
+MINIMAL="${MINIMAL:-false}" ####################################################
+if $MINIMAL ; then #############################################################
+else ###########################################################################
 # ------------------------------------------------------------------------------
 # README + This is just an example for a library installer/updater
 #
-# Use it like:
+# You may clone the centauri-bash-lib git repository:
+#
+# °     $ git clone
+# °     $ vi README.setup   # set the REPO variable
+#
+# Otherwise, if you install from a tar file,  use it like:
 #
 # °     $ tar -xaf centauri-bash-lib_N.NN.tgz
 # °     $ centauri-bash-lib_N.NN/README.setup
@@ -24,16 +35,21 @@
 # °     <tools>     # a folder to symlink tools (/usr/local/bin)
 # °     <links>     # symlink for tools folder  (/opt/centauritools)
 # ------------------------------------------------------------------------------
+fi #############################################################################
 
 # A root FS prefix can be set here (not needed for termux):
 # export CEN_PREFIX="/some/other/root"
 
+# if installing from a repository folder (not copying, make symlinks) ...
+REPO= 
+# REPO="/somewhere/my-repository"
+
 # Installation defaults for shared and private install - can be edited
 
 if [ "$EUID" = 0 ] ; then                               # shared (root)
-    INFO=/var/centauri:/usr/local/bin:/opt/centauritools
+    INFO="/var/centauri:/usr/local/bin:/opt/centauritools:$REPO"
 else                                                    # private
-    INFO=~/.centauri::~/centauritools 
+    INFO=~/.centauri::~/centauritools:"$REPO" 
 fi
 
 # ------------------------------------------------------------------------------
@@ -102,8 +118,12 @@ fi
 # ------------------------------------------------------------------------------
 # installation completed
 # ------------------------------------------------------------------------------
-{   echo
+if [ -z "$REPO" ] ; then
+    echo
     echo "$SELF: You may now remove: $ROOT"
-} 1>&2
+else
+    echo
+    echo "$SELF: Completed."
+fi 1>&2
 
 # done

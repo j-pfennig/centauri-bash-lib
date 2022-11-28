@@ -4,7 +4,7 @@ CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE=$"Create a script, module or configuration from a template"
 
 # Import the bash library, set name and version
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -s -t -y "$0" "0.10:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -s -t -y "$0" "0.11:1" || exit 2
 
 # Data
 CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
@@ -41,7 +41,7 @@ get_templates() {
         _name="${_item##*centauri}" ; _name="${_name,,}"
         if [ -n "$1" ] ; then
             if ! system -q -a _info -- "$_item" --info detailed ; then
-                _info="Using _centauri_bash_lib without main()"
+                _info=$"Using centauri-bash-lib without main()"
             fi
             printf -v _item "%-12s  %s" "$_name" "$_info"
             usageset -t "$_item"
@@ -56,14 +56,21 @@ get_templates() {
         [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
         DAT_NAME_REG+='config'
         DAT_NAME_MAP['config']='centauri-bash-lib'
-        [ -n "$1" ] && usageset -t "" -t "config        '$CEN_ROOT/default/centauri-bash-lib' configuration"
+        [ -n "$1" ] && usageset -t "" -t "config        '$CEN_ROOT/default/centauri-bash-lib' "$"configuration"
     fi
 
     if [ -e "$DAT_TEMPLATE/_custom_module_usr" ] ; then
         [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
         DAT_NAME_REG+='module'
         DAT_NAME_MAP['module']='_custom_module_usr'
-        [ -n "$1" ] && usageset -t "module        a custom library module"
+        [ -n "$1" ] && usageset -t "module        "$"a custom library module"
+    fi
+
+    if [ -e "$DAT_TEMPLATE/setup" ] ; then
+        [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
+        DAT_NAME_REG+='setup'
+        DAT_NAME_MAP['setup']='setup'
+        [ -n "$1" ] && usageset -t "setup         "$"a simple centauri-bash-lib setup script"
     fi
 }
 
@@ -72,7 +79,7 @@ get_templates() {
 # ------------------------------------------------------------------------------
 do_create() {
     local _line _skip _year
-    printf -v _year "%(%Y)T" -1                 # get current 4-digit year
+    printf -v _year " (c) %(%Y)T" -1                # get current 4-digit year
 
     # define option variables
     for _line in "${CEN_OPT_OPTION[@]^^}" ; do
@@ -137,11 +144,12 @@ do_check() {
 # ------------------------------------------------------------------------------
 run() {
     [ -n "$CEN_OPT_CHECK" ] && do_check "$@"                # run shellcheck, no return
-    local _tmpl _name="$1"
+    local _kind=$"Script" _tmpl _name="$1"
     [ -n "$DAT_NAME_REG" ] || get_templates
     _tmpl="${DAT_NAME_MAP["${CEN_OPT_TEMPLATE:-$DAT_NAME_DEF}"]}"
 
     if [ "$CEN_OPT_TEMPLATE" = 'config' ] ; then
+        _kind=$"Configuration"
         [ "$1" = '-' ] && _name="$CEN_ROOT/default/centauri-bash-lib"
         outfile -c -l -s DAT_FILE -- "$_name"
         case "$?" in
@@ -153,6 +161,7 @@ run() {
         create -t "$DAT_FILE" 664 || return
     else
         if [ "$CEN_OPT_TEMPLATE" = 'module' ] ; then
+            _kind=$"Module"
             _name="_$1_module_usr"
             DAT_REP_FROM="${_tmpl##*/}" ; DAT_REP_TO="$_name"
         fi
@@ -186,7 +195,7 @@ run() {
     _tmpl="$CEN_TOOLS/templates/$_tmpl"
     redirect -v _ihan -i "$_tmpl" || return                 # does error handling
     dryrun "do_create <&$_ihan >'$DAT_FILE'" && return      # debug
-    do_create <&"$_ihan" >>"$DAT_FILE" && quit -a $"Script created"
+    do_create <&"$_ihan" >>"$DAT_FILE" && quit -a "$_kind" $"created"
 }
 
 # ------------------------------------------------------------------------------

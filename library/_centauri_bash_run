@@ -442,7 +442,7 @@ launcher() {
 
         # All data should have been correctly quoted at caching time. So we use eval
         # directly without error handling. The slower equivalent is: spliteval -u
-        eval _larr=("$_line")
+        eval "_larr=($_line)"
         [ -z "${_larr[1]}" ] && _larr=                   # need value, flag error
 
         # On an intermedeate level the quote cache strings are converted back to an
@@ -537,7 +537,7 @@ launcher() {
 
     # split and unquote arguments via eval
     _temp="${CEN_RUN_TOOLS[2]}"
-    if ! eval _vres=("$_temp") 2>/dev/null ; then
+    if ! eval "_vres=($_temp)" 2>/dev/null ; then
         _vres=($_temp)
         $_warn $"Syntax error:" "$_temp"
     fi
@@ -1057,7 +1057,7 @@ terminal() {
         for _line in "${CEN_RUN_TERMINAL[@]}" ; do
             # All data should have been correctly quoted at caching time. So we use eval
             # directly without error handling. The slower equivalent is: spliteval -u
-            eval _sarr=("$_line")
+            eval "_sarr=($_line)"
             #$CEN_TRACE2 -a -c " key val" -p "%-20s %s\n" "$_sarr" "${_sarr[*]:1}"
             [ -z "${_sarr[1]}" ] && _sarr=                  # no argument -> incrorrect
 
@@ -1319,7 +1319,7 @@ _cen_run_config() {
 # ------------------------------------------------------------------------------
 _cen_run_proxy() {
     local _repo _rexp _prox
-    _rexp="${CEN_PATH_REXP[@]@A}" ; _rexp="${_rexp#declare -* }"
+    _rexp="${CEN_PATH_REXP[*]@A}" ; _rexp="${_rexp#declare -* }"
 
     _cen_run_proxy_rdr() {
         _prox+="$1"$'\n'

@@ -182,7 +182,7 @@ sysversion() {
 
     ### main ###
 
-    local _flgk _lfgo _flgu _flgw _otra=":"
+    local _flgk _lfgo _flgu _flgw _otra
     if [ $# = 0 ] ; then
         [ -n "$CEN_SYS_VERSION" ] && return 0       # do nothing if state is loaded
         [ "$EUID" = 0 ] && _flgu=1 || _flgw=0       # only root does implicit update
@@ -191,11 +191,11 @@ sysversion() {
       case "$1" in
       --)   shift ; break ;;
       -k)   _flgk=1 ;;
-      -m)   _otra="message" ;;
+      -m)   _otra="$1" ;;
       -o)   _flgo=1 ;;
       -r)   _flgw=0;;
       -u)   _flgu=1 ;;
-      -v)   _otra="trace" ;;
+      -v)   _otra="$1" ;;
       -w)   _flgw=1 ; _flgo=1 ; _flgk=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -227,8 +227,8 @@ sysversion() {
     # refresh data
     [ -z "$_flgo" -a -z "$_flgk" -a -z "$_flgw" ] && return 0
     embed -m '_centauri_bash_ins'
-    [ -n "$_flgo" ] && _cen_ins_version -s
-    [ -n "$_flgk" ] && _cen_ins_version -k
+    [ -n "$_flgo" ] && _cen_ins_version -s $_otra
+    [ -n "$_flgk" ] && _cen_ins_version -k $_otra
 
     # write state file
     if [ "$_flgw" = 1 ] ; then
@@ -236,7 +236,7 @@ sysversion() {
             warning $"Cannot write version info:" "$CEN_SYS_STATE_FILE"
         else
             $CEN_TRACE -a $"Writing version info:" "$CEN_SYS_STATE_FILE"
-             _cen_ins_version -w "$CEN_SYS_STATE_FILE"
+             _cen_ins_version -w $_otra
         fi
     fi
 }
@@ -244,16 +244,21 @@ sysversion() {
 # ------------------------------------------------------------------------------
 # syssetup - Setup/remove folders and links and services
 #
-# Call:     syssetup [-i] [-r] [-s] [-n|-p|-t|-u] [<rootdef>|-]
+# Call:     (1) syssetup [-i] [-r] [-s] [-p|-t|-u] [<rootdef>|-]
+#           (2) syssetup [-i] [-r] [-s] -n <orig> <dest>
 #
 # Options:  -i  initialize         (sysinfo install)
-#           -n  copy library files (sysinfo refresh)
-#           -p  setup paths only
+#           -n  copy library files (sysinfo refresh/setup)
+#           -p  setup paths only   (bootstrap used for repository)
 #           -r  remove, uninstall  (sysinfo uninstall)
 #           -s  update services    (always needs root rights)
 #           -t  check CEN_ROOT setup
 #           -u  silent update      (sysinfo update)
 #               do not configure services, no questions
+#
+# Arguments:<dest>      destination for refresh/setup
+#           <orig>      origin folder
+#           <rootdef>   see below, overrides CEN_INSTALL
 #
 #+Rootdef:  A colon seperated list of paths, that can be used to override
 #           the "defaults shared" or "defaults private" config entries in
@@ -286,7 +291,7 @@ sysversion() {
 # ------------------------------------------------------------------------------
 syssetup() {
     $CEN_DEBUG -c -- "$*"
-    local _stat=0 _warn  _remv _updt _usrv
+    local _stat=0 _warn  _remv _updt _usrv _kopt
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -300,14 +305,18 @@ syssetup() {
     done
 
     # initial install config is expected in CEN_ROOTDEFS
-    _cen_sys_rootdefs "$1" || return 1              # also load _centaur_bash_ins
+    _cen_sys_rootdefs "${2:-$1}" || return 1        # also load _centaur_bash_ins
 
     if [ "$_updt" = '-n' ] ; then                   # copy library files
+        [ "${1:--}" = '-' ] && fatal $"Missing argument:" '<orig>'
+        [ "${2:--}" = '-' ] && fatal $"Missing argument:" '<dest>'
+        folder -c -f -- "${1:-$CEN_ROOT}" ; shift
         _cen_ins_files ; return                     # return status
     fi || :
 
     # sysconfig, is called twice during setup as the config file may have changed
-    sysconfig "${1:+-k}" || return 1
+    [ "${1:--}" != '-' ] && _kopt='-k'              # keep CEN_ROOTDEFS
+    sysconfig $_kopt || return 1
 
     local _root="$CEN_ROOT" _base="$CEN_TOOLS" _libr="$CEN_LIBRARY"
     CEN_ROOT="$CEN_ROOTDEFS" ; CEN_TOOLS="$CEN_ROOT/tools" ; CEN_LIBRARY="$CEN_ROOT/library"
@@ -376,7 +385,7 @@ sysinfo() {
         "")        ;;
         help|-)    quit -m $"Valid --info arguments are:" '\n' "$_cmds" ;;
         install)   _iopt="-i" ;;
-        paths)     _iopt='-p' ;;
+        paths)     _dopt=2 ;;
         refresh)   _iopt="-n" ;;
         setup)     _iopt="-n" ; CEN_OPT_FORCE=1 ;;
         uninstall) _iopt="-r" ;;
@@ -387,7 +396,7 @@ sysinfo() {
                             'detailed' "$_cmds"
     esac
 
-    if [ "$_iopt" = '-p' ] ; then
+    if [ "$_dopt" = 2 ] ; then
         for _stat in CEN_ROOT CEN_LIBRARY CEN_TOOLS CEN_INSTALL \
                      CEN_PATHS[0] CEN_PATHS[1] CEN_PATHS[2] CEN_PATHS[3] CEN_PATHS[4] \
                      XDG_RUNTIME_DIR TMPDIR PATH ; do
@@ -396,14 +405,8 @@ sysinfo() {
         done
         quit
     elif [ -n "$_iopt" ] ; then                     # setup actions
-        if [ "$_iopt" = '-n' ] ; then
-            [ -z "$2" ] && fatal $"Missing argument:" '<repo>'
-            [ -z "$3" ] && fatal $"Missing argument:" '<dest>'
-            [ "$2" = '-' ] && set -- "$1" "$CEN_ROOT" "$3" "$4"
-            folder -f -- "$2" ; set -- "$1" "$3" "$4"
-        fi
-        syssetup $_iopt -- "$2" || _stat=$?
-        [ "$3" = 'noquit' ] && return $_stat
+        syssetup $_iopt -- "$2" "$3" || _stat=$?
+        [ "${4:-$3}" = 'noquit' ] && return $_stat
         case $_stat in
             0)      quit -a "${1^}" $"succeeded" ;;
             128)    quit -s 1 ;;
@@ -603,7 +606,7 @@ complete -X "@(.[^/]*|./.*)" -F _centauri_bash_lib_compl $_tool
         elif [ -d "$CEN_ROOT/systemd.disabled" ] ; then
             rename -o -- "$CEN_ROOT/systemd.disabled" "$CEN_ROOT/systemd"
         elif [ -d "$CEN_TOOLS/systemd" ] ; then
-            remove $CEN_ROOT/systemd
+            remove "$CEN_ROOT/systemd"
             symlink -m -r -- "$CEN_TOOLS/systemd" "$CEN_ROOT/systemd"
         else
             folder -m "$CEN_ROOT/systemd"
@@ -620,13 +623,13 @@ complete -X "@(.[^/]*|./.*)" -F _centauri_bash_lib_compl $_tool
 # cache dir is missing to trigger a minimal setup ...
 
 if [ "$1" != '-n' ] ; then
-    if [ ! -d "$CEN_SYS_CACHE_DIR" ] && [ "$EUID" = "0" ] ; then
+    if [ ! -d "$CEN_SYS_CACHE_DIR" ] && [ "$EUID" = 0 ] ; then
         # run a mimimal setup, but only if the library is installed
         [ -d "$CEN_SYS_STATE_DIR" -o -h "$CEN_SYS_STATE_DIR" ] && syssetup -t
     fi
 
     if [ "$1" = '-A' ] ; then               # module got auto-loaded ...
-        [ "$EUID" = "0" ] && sysversion     # user root to init global cache
+        [ "$EUID" = 0 ] && sysversion       # user root to init global cache
     else
         sysversion                          # get version info by default
     fi
