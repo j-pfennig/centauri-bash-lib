@@ -520,6 +520,7 @@ _cen_abort() {
         _mesg+=" '$*'"
     fi
 
+    CEN_AUTOIND=
     if [ -n "$_fnot" ] ; then
         _idnt="${BASH_SOURCE[_indx]##*/}.${FUNCNAME[_indx]}"
         case "${_idnt##_centauri_bash_lib*.}" in
@@ -1153,7 +1154,7 @@ context() {
                 _mgui=2
             else                                        # windows or terminal
                 embed -r -q '_centauri_bash_run' && terminal -c
-                if [ "${CEN_IS_DESKTOP:0}" = 0 ] ; then # in cosole mode ...
+                if [ "${CEN_IS_DESKTOP:0}" = 0 ] ; then # in console mode ...
                     _mgui=2
                 elif embed -r -m '_centauri_bash_win' && windows -i 2 ; then
                     _mgui=0                             # windows mode ok
@@ -1172,7 +1173,7 @@ context() {
         [ "$CEN_WINDOWS" = 1 ] && CEN_OPT_GUI=1
         [ "$CEN_CONSOLE" = 1 ] && CEN_OPT_GUI=2
         isfunction -z windows ; isfunction -z console ; isfunction -y progress
-    fi
+    fi || :
 
     # add a hook function
     if [ -n "$_hooc" ] ; then
@@ -1326,7 +1327,7 @@ create() {
         elif [ "$#" = 1 ] && [ -f "$_fout" -a -w "$_fout" ] ; then
             >"$_fout" || _stat=$?                   # really truncate
         elif [ -n "$CEN_FEATURE_A" ] ; then         # can use builtins...
-            remove $_frun -- "$_fout"
+            remove $_frun -s -- "$_fout"
         elif [ -e "$1" ] ; then
             system $_frun -b -e -p -- rm -f -- "$_fout"
         fi

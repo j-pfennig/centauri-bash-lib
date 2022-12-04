@@ -1,27 +1,35 @@
-# --- Proxy to load _centauri_bash_lib --- (bootstrap version)
-
-# The CEN_INSTALL settings are used by 'centaurixxxx --info install [<inst>]".
-# The <inst> parameter overrides the centauri-bash-lib config file and the
-# config file overrides the setting of the CEN_INSTALL varibale. The install
+# ------------------------------------------------------------------------------
+# Proxy to load _centauri_bash_lib (bootstrap version)
+# ------------------------------------------------------------------------------
+# The CEN_INSTALL settings are used by 'centaurixxxx --info install [<inst>]'.
+# The <inst> parameter overrides the CEN_INSTALL variable. The installation
 # process finally replaces the bootstrap proxy with a customized proxy.
+# ------------------------------------------------------------------------------
 
-# installation defaults are: <root>[:<bin>[:<tools>[:<repo>]]]
-if [ -z "$CEN_INSTALL" ] ; then
-    if [ "$EUID" = 0 ] ; then
-        CEN_INSTALL="/usr/local/shared/centauri:/usr/local/bin:/opt/centauritools"
-    else
-        CEN_INSTALL="~/.centauritools:~/mytools:~/centauritools"
+    # Installation defaults, set: root, binaries, shortcut, repository, owner
+    # --------------------------------------------------------------------------
+    # The CEN_INSTALL variable is set to defaults depending on being a 'root'
+    # user (shared installation) or not (private installation). The root field
+    # defines CEN_ROOT (installation location) and is mandatory. All others are
+    # optional or can be empty (or '-'). A '+' stands for a builtin default.
+    # The 1 .. 5 fields are joined into a colon separated string:
+
+if [ -z "$CEN_INSTALL" ] ; then         # if no <inst> parameter is used ...
+
+    if [ "$EUID" = 0 ] ; then           # root user, shared installation
+        CEN_INSTALL="+:+:+"           
+    else                                # private installation 
+        CEN_INSTALL="+:-:$HOME/centauritools"
     fi
+
 fi
+
+# --- Nothing should be modified behind this line ------------------------------
 
 # find the library root folder
 if [ "${CEN_ROOT:-.}" = '.' ] ; then
-    export CEN_ROOT="${CEN_INSTALL%%:*}"
-    export CEN_TOOLS="$CEN_ROOT/tools"
-    if [ ! "$CEN_TOOLS/_centauri_bash_lib" -ef "$BASH_SOURCE" ] ; then
-        CEN_TOOLS=$(readlink -f "$(type -p _centauri_bash_lib)")
-        CEN_TOOLS="${CEN_TOOLS%/*}" ; CEN_ROOT="${CEN_TOOLS%/*}"
-    fi
+    CEN_TOOLS=$(readlink -f "$(type -p _centauri_bash_lib)")
+    CEN_TOOLS="${CEN_TOOLS%/*}" ; CEN_ROOT="${CEN_TOOLS%/*}"
 elif [ "${CEN_TOOLS:--}" = '-' ] ; then
     export CEN_TOOLS="$CEN_ROOT/tools"
 fi

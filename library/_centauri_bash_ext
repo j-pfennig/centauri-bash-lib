@@ -404,15 +404,17 @@ joinpath() {
 #           listsearch [-b] [-c] [-m|-n <vres>] [-g|-u|-x] [--] <what> <item>...
 #           listsearch [-b] [-c] [-d <deli>] [-m|-n <vres>] [-g|-u|-x] -i <vinp> [--] <what>
 #
-# Options:  -b  do a binary search (list must be ordered lexically)
-#           -c  do a case sensitive search
-#           -d  list item separator(s), calls [[splitjoin]] on <list>
-#           -g  glob expression match (longest expression wins)
-#           -i  input from variable (string or array)
-#           -m  return matched word in <vres>
-#           -n  return match index in <vres>
-#           -u  partial word search, match must be unique
-#           -x  regular expression match (longest expression wins)
+# Options:  -b  [-] do a binary search (list must be ordered lexically)
+#           -c      do a case sensitive search
+#           -d      list item separator(s), calls [[splitjoin]] on <list>
+#           -g      glob expression match (longest expression wins)
+#           -i      input from variable (string or array)
+#           -m      return matched word in <vres>
+#           -n      return match index in <vres>
+#           -u      partial word search, match must be unique
+#           -x      regular expression match (longest expression wins)
+#
+#           [-] Not yet implemented
 #
 # Arguments:<deli>  word delimiters in list string
 #           <vres>  variable to receive the search result
@@ -1242,20 +1244,20 @@ resolve() {
 #           splitcall -c|-s <what> [-e|-f|-q] [-g <good>] [-r]
 #           °         <>           [-a <para>] [-m <maxi>] [-p] [-d <deli>] -- <arg>...
 #
-#           ***implentation is incomplete***
+# Options:  -a      parameter array, see below
+#           -c      call a script function
+#           -d  [-] delimiter passed to [[splitjoin()]]
+#           -e      add option -e (report errors)
+#           -f      add option -f (make errors fatal)
+#           -g      stop processing if exit code of <what> is greater <good>
+#           -i  [-] input variable name (can be an array)
+#           -m      maximum chunk size for parallel processes
+#           -p  [-] parallel processing, see below
+#           -q      add option -q (no messages)
+#           -r      add option -r (ignore --dryrun)
+#           -s      use [[sysrun()]] to run a (external) command
 #
-# Options:  -a  parameter array, see below
-#           -c  call a script function
-#           -d  delimiter passed to [[splitjoin()]]
-#           -e  add option -e (report errors)
-#           -f  add option -f (make errors fatal)
-#           -g  stop processing if exit code of <what> is greater <good>
-#           -i  input variable name (can be an array)
-#           -m  maximum chunk size for parallel processes
-#           -p  parallel processing, see below
-#           -q  add option -q (no messages)
-#           -r  add option -r (ignore --dryrun)
-#           -s  use [[sysrun()]] to run a (external) command
+#           [-]     Not yet implemented
 #
 # Arguments:<arg>   list of fields that get added to <data>
 #           <data>  list to be split into chunks
@@ -1724,7 +1726,7 @@ suffixpath() {
 #           -s  do not generate messages
 #           -x  if <link> is a file/dir explicitly delete it
 #
-#           [*] these options allow the creation of stale symlinks
+#           [*] use '-i -n' to allow the creation of stale symlinks
 #
 # Arguments:<target> location the symlink points to
 #           <link>   name (or path) of symlink to be created
@@ -1777,10 +1779,10 @@ symlink() {
         _link="${_link%/}/${_targ##*/}"
     fi
 
-    if [ -z "$_onck" ] ; then
+    if [ -z "$_onck" -o -n "$_fign" ] ; then
         if [ ! -e "$_targ" ] ; then
-            [ -n "$_fign" ] && _oftl="$_mesg"
-            $_oftl $"Link target does not exist:" "$_targ" ; return 1
+            [ -z "$_fign" ] && $_oftl $"Link target does not exist:" "$_targ"
+            [ -z "$_onck" ] && return 1
         elif [ "$_targ" -ef "$_link" ] ; then
             $_mesg -a -c $" valid" -- "$_link => $_targ" ; return 0
         else
@@ -1812,7 +1814,6 @@ symlink() {
     else
         sysrun $_osys -b -m "$_etxt" -d -- ln $_onck -s "$_targ" "$_link" || return 1
     fi
-   # $_mesg -a -p $"Target '%s', created link '%s'" "$_targ" "$_link" ; return 0
     $_mesg -a -c $" created" -- "$_link => $_targ" ; return 0
 }
 
@@ -1820,9 +1821,9 @@ symlink() {
 # sysrun - run a command or builtin, optionally generate error messages
 #
 # Call:     (1) sysrun [-e|-f] [-p] [-m <mesg>] [-w <what>]
-#                      [-a <anam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
+#                      [-a|-s <onam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
 #           (2) sysrun -q
-#                      [-a <anam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
+#                      [-a|-s <onam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
 #           (3) sysrun -c <stat> [-f] [-m <mesg>] [--] [<cmd> <arg>...]
 #
 #+          This is a faster, simpler variant of [[system()]], see below. Form (1)
@@ -1830,7 +1831,7 @@ symlink() {
 #           reporting at all. Form (3) can be used to generate error messages from
 #           error codes.
 #
-# Options:  -a  capture **/dev/stdout** into an array (overrides -p and -q)
+# Options:  -a  capture <cmd> output into an array (overrides -p and -q)
 #           -b  do not run a function, prefer builtin over external
 #           -c  error code for reporting (<cmd> is not executed)
 #           -d  use './' prefix if 1st arg starts with a '-'
@@ -1842,11 +1843,12 @@ symlink() {
 #           -p  discard **/dev/stdout**, capture **/dev/stderr**, pretty-print error message
 #           -q  discard **/dev/stdout** and **/dev/stderr**, no error message
 #           -r  ignore --dryrun
-#           -s  **DO NOT USE**
+#           -s  capture <cmd> output into an string (overrides -p and -q)
 #           -w  override command name in error message
 #           -z  don't capture **/dev/stdout** (for use with -p)
 #
-# Arguments:<mesg>  printf format string with 2 string variables
+# Arguments:<onam>  variable that receives the <cmd> output
+#           <mesg>  printf format string with 2 string variables
 #           <what>  shown in error message
 #           <stat>  status code to report (**0** reports nothing)
 #           <cmd>   a program name or path
@@ -1880,7 +1882,7 @@ symlink() {
 # This can be used for example to bypass a builtin. **Note:** It is not possible for
 # a script to disable builtins via "enable -n". See [[sysfind()]]
 #
-#+A file created via [[tmpfile()]] is used to capture output (options -a or -p).
+#+A file created via [[tmpfile()]] is used to capture <cmd> output (options -a, -s or -p).
 # Callers should set umask=66 to avoid a public readable file if XDG_RUNTIME_DIR
 # is not available.
 #
@@ -1912,7 +1914,8 @@ symlink() {
 # ------------------------------------------------------------------------------
 sysrun() {
     $CEN_NOTRACE set +x
-    local _ecmd="$CEN_TRACE" _emsg _ofmt _oign _osta _opre _orun _oout _owho _fqui _ffnd=1 _vnam
+    local _ecmd="$CEN_TRACE" _emsg
+    local _ofmt _oign _osta _opre _orun _oout _owho _fqui _ffnd=1 _vstr _vnam
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -1928,7 +1931,8 @@ sysrun() {
       -p)   _ofmt=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -q)   _fqui=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -r)   _orun="-r" ;;
-#      -s)   ;;
+      -s)   shift ; _vstr="$1" ; _oout=0
+            local _cen_ext_sysrun ; _vnam='_cen_ext_sysrun' ;;
       -w)   shift ; _owho="$1" ;;
       -z)   _oout=1 ;;
       *)    _cen_abort - "$1"
@@ -1936,6 +1940,7 @@ sysrun() {
     done
 
     local _xmsg _xerr _xarg _xtmp _xcmd="$1" _outf ; shift
+    [ -z "$_vnam" -a -n "$_ofmt" ] && _vnam='_xerr'         # dummy for -p
 
     # run a command or builtin
     if [ -z "$_osta" ] ; then
@@ -1999,7 +2004,7 @@ sysrun() {
             $CEN_NOTRACE set -x ; return 1
         fi
 
-        if [ -n "$_vnam" -o -n "$_ofmt" ] ; then            # capture output
+        if [ -n "$_vnam" ] ; then                           # capture output
             _osta=0
             [ "$CEN_EXT_TPID" = "$$" ] && _outf="${CEN_EXT_TEMP}0" \
                                        || tmpfile ${_orun:+-r} -s _outf -f -n 0
@@ -2008,12 +2013,22 @@ sysrun() {
             else                                            # ... errors only
                 "$_xcmd" "$@" 2>"$_outf" || _osta=$?
             fi
-            IFS=$'\n' read -a "${_vnam:-_xerr}" -d '' -r <"$_outf"
+            IFS=$'\n' read -a "$_vnam" -d '' -r <"$_outf"
         elif [ "$_oout" = 0 ] ; then
             "$_xcmd" "$@" &>/dev/null ; _osta=$?
         else
             "$_xcmd" "$@" ; _osta=$?
         fi || :
+    fi
+
+    # create result string from array
+    if [ -n "$_vstr" ] ; then
+        local -n _rarr="$_vnam"
+        if [ "${#_rarr[@]}" -le 1 ] ; then
+            local -n _rslt="$_vstr" ; _rslt="$_rarr"
+        else
+            splitjoin -j "$_vstr" -d '\n' -i "$_vnam"
+        fi
     fi
 
     # error reporting ...
@@ -2035,11 +2050,11 @@ sysrun() {
     [ "${_emsg:--}" = '-' ] && _emsg=$"Running '%s%s' failed"
     [ -n "$_xmsg" ] && _xmsg=": $_xmsg"
     if [ "$_ecmd" = "$CEN_TRACE" -a -n "$_ofmt" ] ; then    # system -p style
-        splitjoin -j _xtmp -d '\n' -i "${_vnam:-_xerr}"
+        splitjoin -j _xtmp -d '\n' -i "$_vnam"
         message -m "$_xtmp"
         $CEN_NOTRACE set -x ; return $_osta
     elif [ -n "$_ofmt" ] ; then                         # system -e -p style
-        splitjoin -s _xtmp -d '\n' -i "${_vnam:-_xerr}"
+        splitjoin -s _xtmp -d '\n' -i "$_vnam"
         _xarg=
         for _xtmp in "${_xtmp[@]}" ; do
             _xarg+="${_xtmp#/*: *: }"$'\n'              # strip bash error prefix

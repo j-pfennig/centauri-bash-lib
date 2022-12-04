@@ -360,35 +360,44 @@ _cen_win_prog() {
 # ------------------------------------------------------------------------------
 # windialog - show a GUI message box or dialog window
 #
-# Call:     windialog [-e|-f|-w] [-r]
-#                     [-t <title>] <header> <msg>...    # message box
-#           windialog [**-2**|**-3** <label>|-] [-r]
-#                     [-t <title>] <header> <msg>...    # yes|no|cancel box
-#           windialog [-i|-l|-p <var>] [-r]
-#                     [-t <title>] <header> <msg>...    # input|password|progress
-#           windialog -u <time>|**-** [-n <icon>] [-r]
-#                     [-t <title>] <header> <msg>...    # popup notification
-#           windialog -k <kind> [-i <var>]
-#                     [-t <title>] <arg>...             # low level kdialog
+# Call:     °                                           # message box
+#           windialog [-e|-f|-w] [-r] [-t <title>] <header> <msg>...
+#                                                       # yes|no|cancel box
+#           windialog **-2**|**-3** <label>|- [-r] [-t <title>] <header> <msg>...
+#                                                       # input|password|progress
+#           windialog -i|-l|-p <var> [-r] [-t <title>] <header> <msg>...
+#                                                       # multiple|single selection list
+#           windialog -m|-s <var> [-r] [-t <title>] <header> [<dflt>] <item>...
+#                                                       # popup notification
+#           windialog -u <time>|**-** [-n <icon>] [-r] [-t <title>] <header> <msg>...
+#                                                       # check if dialog is available
+#           windialog -c <kind>
+#                                                       # low level (kdialog only)
+#           windialog -k <kind> [-i <var>] [-t <title>] <arg>...
 #
-# Options:  -e  [*] show an error box
-#           -f  [*] show a fatal error box
-#           -i  [*] input box, <var> contains default text on call
-#           -l  [*] launch progress box, return dbus ref
-#           -p  [*] show a password entry box
-#           -u  [*] popup notification window
-#           -k  [*] dialog box of type <kind> (no text preprocessing)
-#           -w  [*] show a warning box
+# Options:  -e  [*]    show an error box
+#           -f  [*]    show a fatal error box
+#           -i  [*]    input box, <var> contains default text on call
+#           -l  [*][#] launch progress box, return dbus ref
+#           -m  [*][-] multiple selection list (checkbox list)
+#           -p  [*]    show a password entry box
+#           -u  [*]    popup notification window
+#           -k  [*][#] dialog box of type <kind> (no text preprocessing)
+#           -s  [*][-] single selection list
+#           -w  [*]    show a warning box
 #
-#           -n  add an icon
-#           -r  show real name (see --embed option)
-#           -t  window title (prefixed with CEN_NAME)
-#           -2  show two message box buttons
-#           -3  show three message box buttons
+#           -c         check if <kind> is supported
+#           -n         add an icon
+#           -r         show real name (see --embed option)
+#           -t         window title (prefixed with CEN_NAME)
+#           -2         show two message box buttons   (kind: yesno)
+#           -3     [#] show three message box buttons (kind: yesnocancel)
 #
-#           [*] These options are mutually exclusive
+#               [*]    These options are mutually exclusive
+#               [#]    Supported by kdialog only
+#               [-]    Not yet implemented
 #
-# Arguments:<kind>     a **kdialog** box type (without --)
+# Arguments:<kind>     dialog type, see below
 #           <label>    button labels, left to right
 #           <time>     time in [s] to display the popup window
 #           <icon>     icon for popup
@@ -396,11 +405,38 @@ _cen_win_prog() {
 #           <var>      sets input variable (for "-" CEN_CONFIRM is used)
 #           <header>   header text for message -or- empty, show as bold
 #           <msg>...   body text for message
+#           <dlft>     an optiona <item> number to set the default selection
+#           <item>     list item, see below
 #
-# Return:   **0** = OK|Yes  **1** = No  **2** = Cancel.
-#           CEN_CONFIRM receives any input if <var> is set to - or if -k is used.
+#+Return:   **0** = OK|Yes  **1** = No  **2** = Cancel. Variable CEN_CONFIRM receives
+#           any input if <var> is set to - or if -k is used.
 #
-#.Examples: windialog -u 3 -n face-angry "My Message is:" "It's raining today"
+# Kinds:    Known dialog <kind> arguments and their associated options are:
+#
+#,          - msgbox                sinple messagebox, see [[message()]]
+#,          - sorry         -w      warning message, see [[warning()]]
+#,          - error         -e|-f   error message, see [[error()]] and [[fatal()]]
+#,          - yesno         -2      messagebox with 2 buttons
+#,          - yesnocancel   -3      messagebox with 3 buttons
+#,          - progressbar   -l      launch progressbar dialog
+#,          - passivepopup  -u      system tray message
+#,          - inputbox      -i      text input box
+#,          - password      -p      password input box
+#,          - single        -s      single selection listbox
+#,          - multiple      -m      multi selection listbox
+#
+#+Lists:    For -m|-s each list item is made of 2 or 3 colon separated fields:
+#
+#           <item> := [<rslt>:]<text>           # single selection (option -s)
+#           <item> := [[<rslt>:]<mode>:]<text>  # multi selection  (option -m)
+#           <mode> := "0"|"off"|"1"|"on"
+#
+#+          The <rslt> values of seletected items are returned to the caller. If
+#           <rslt> is not specfied the item line number is used.
+#
+#.Examples: windialog -- "Hello world"
+#.          windialog -u 3 -n face-angry -- "My Message is:" "It's raining today"
+#.          windialog -i rslt -- "Please enter something..."
 #.          windialog -k getsavefilename . "GPX files (*.gpx);;All files (*.*)"
 #
 #+This function is a wrapper for **kdialog** and is used by **_centauri_bash_lib**
@@ -413,7 +449,7 @@ _cen_win_prog() {
 # ------------------------------------------------------------------------------
 windialog() {
     local _sbtn _stit _inam _labl
-    local _snam="${CEN_EMBED:-$CEN_NAME}" _args=() _kopt _kflg _icon _popw
+    local _snam="${CEN_EMBED:-$CEN_NAME}" _args=() _kopt _kflg _klst _icon _popw
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -428,9 +464,11 @@ windialog() {
         -k)   shift ; _kopt="$1" ; _kflg=1 ;
               [ -z "$_inam" ] && _inam="-" ;;
         -l)   shift ;_inam="$1" ; _kopt="progressbar" ; _stit=$"Progress" ;;
+        -m)   shift ; _inam="$1" ; _kopt="checklist" ; _klst=2 ; _stit=$"Options" ;;
         -n)   shift ; _icon="$1" ;;
         -p)   shift ; _inam="$1" ; _kopt="password" ; _stit=$"Password" ;;
         -r)   [ -n "$CEN_EMBED" ] && _snam="$CEN_EMBED[$CEN_NAME]" ;;
+        -s)   shift ; _inam="$1" ; _kopt="menu" ; _klst=1 ; _stit=$"Selection" ;;
         -t)   shift ; _stit="$1" ;;
         -u)   shift ; _popw="$1" ; _kopt="passivepopup" ;;
         -w)   _kopt="sorry" ; _stit=$"Warning" ;;
@@ -449,7 +487,7 @@ windialog() {
     fi
 
     # currently only kdialog will work in all cases
-    _good=0
+    local _good=0
     if [ "$CEN_WIN_NAME" = 'zenity' ] ; then
         listsearch -c -- "${_sbtn:-$_kopt}" 'msgbox' 'sorry' 'error' \
                          'passivepopup' 'inputbox' 'password' 'yesno' || _good=1
@@ -471,16 +509,43 @@ windialog() {
     fi
 
     # escapes for markup
-    local _good _item _line=() _stat=0
+    local _item _line=() _stat=0
     for _item in "$@" ; do
-        _item="${_item//&/\&amp;}"
-        _item="${_item//</\&lt;}"
-        _item="${_item//>/\&gt;}"
+        case "$_item" in
+        \<html\>*|\<?\>*|\<??\>*|\<???\>*|\<????\>*)
+            ;;
+        *)
+            _item="${_item//&/\&amp;}" ; _item="${_item//</\&lt;}" ; _item="${_item//>/\&gt;}"
+        esac
         _line+=("$_item")
+        [ -n "$_klst" ] && break
     done
 
+    # show a listbox
+    if [ -n "$_klst" ] ; then
+        shift
+        local _rslt _mark _dflt=1 _coun=0
+        if [ -z "${1//[0-9]/}" ] ; then             # optional default line#
+             _dflt="$1" ; shift
+        fi
+        _line+=('--default' "${!_dflt##*:}" --)     # add --default
+
+        for _item in "$@" ; do
+            ((_coun += 1))
+            _rslt="${_item%%:*}" ; [ -z "$_rslt" -o "$_rslt" = "$_item" ] && _rslt="$_coun"
+            if [ "$_klst" = 1 ] ; then
+                _line+=("$_rslt" "${_item#*:}")
+            else
+                _item="${_item#*:}" ; _mark="${_item%%:*}"
+                [ "$_mark" = 1 -o "$_mark" = 'on' ] && _mark='on' || _mark='off'
+                _line+=("$_rslt" "${_item#*:}" "$_mark")
+            fi
+        done
+        _cen_win_dialog "$_inam" "$_kopt" "$_snam" "$_stit" "$_icon" - "${_line[@]}" || _stat=$?
+
     # show dialog
-    if [ $# -le 1 ] ; then
+    elif [ $# -le 1 ] ; then
+    #<vari>|- <kind> <prog> <title> <icon> <text> <arg...>
         _cen_win_dialog "$_inam" "$_kopt" "$_snam" "$_stit" "$_icon" - "$_line" || _stat=$?
 
     elif [ "$CEN_WIN_NAME" = 'zenity' ] &&
@@ -573,7 +638,7 @@ _cen_win_dialog() {
             [ -n "$_text" ] && _text="<b>$_text</b><br/>"
             _opts+=("--$_kind" "$_text$1" "${2:-3}")    # has timeout parameter
         else
-            _opts+=("$@" "--$_kind" "$_text" )          # must have text argument
+            _opts+=("--$_kind" "$_text" "$@")           # must have text argument
         fi
 
     ### zenity ###

@@ -208,7 +208,7 @@ sysbind() {
 # error. In turn the error handler will call [[quit()]] so that syspager does
 # not return, but quit hooks will run. The implementation does something like:
 #
-#.  syspipe -o func -y -c '+' -- less -R -F -X
+#.  syspipe -o func -y -c '+' -- less -r -f -X
 #
 #+While running the pager the [[context()]] function (option **-t°+|-**) is used
 # to catch keyboard interrupts. Also [[syspipe()]] sets a trap for SIGPIPE.
@@ -263,7 +263,7 @@ syspager() {
         centaurihelp) _args=("$CEN_OPT_PAGER" --tool '<pipe>')
                       [ -n "$CEN_FEATURE_T" ] && _args+=('--l10n')
                       ;;
-        less)         _args=("$CEN_OPT_PAGER" -R -F -X)
+        less)         _args=("$CEN_OPT_PAGER" -r -f -X)
                       ;;
         *)            _args=("$CEN_OPT_PAGER")
     esac

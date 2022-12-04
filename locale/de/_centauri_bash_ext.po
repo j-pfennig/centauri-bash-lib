@@ -6,8 +6,8 @@ msgid "No such file/folder:"
 msgstr "Datei oder Ordner nicht gefunden:"
 
 #: /var/centauri/library/_centauri_bash_ext:311
-#: /var/centauri/library/_centauri_bash_ext:536
-#: /var/centauri/library/_centauri_bash_ext:1072
+#: /var/centauri/library/_centauri_bash_ext:538
+#: /var/centauri/library/_centauri_bash_ext:1074
 msgid "Missing arg(s)"
 msgstr "Fehlendes Argument"
 
@@ -27,166 +27,166 @@ msgstr "Kopiere '%s' Objekt(e) nach '%s'"
 msgid "Copying '%s' to '%s'"
 msgstr "Kopiere '%s' nach '%s'"
 
-#: /var/centauri/library/_centauri_bash_ext:533
+#: /var/centauri/library/_centauri_bash_ext:535
 msgid "Move destination is not a folder:"
 msgstr "Verschiebungsziel ist kein Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_ext:542
+#: /var/centauri/library/_centauri_bash_ext:544
 msgid "Move destination not writable:"
 msgstr "Verschiebungsziel ist nicht schreibbar:"
 
-#: /var/centauri/library/_centauri_bash_ext:545
+#: /var/centauri/library/_centauri_bash_ext:547
 msgid "Removing destination before move:"
 msgstr "Ziel vor Verschieben entfernen:"
 
-#: /var/centauri/library/_centauri_bash_ext:550
+#: /var/centauri/library/_centauri_bash_ext:552
 msgid "Moving '%s' to '%s'"
 msgstr "Verschiebe '%s' nach '%s'"
 
-#: /var/centauri/library/_centauri_bash_ext:702
+#: /var/centauri/library/_centauri_bash_ext:704
 msgid "zero"
 msgstr "kein"
 
-#: /var/centauri/library/_centauri_bash_ext:707
+#: /var/centauri/library/_centauri_bash_ext:709
 msgid "one"
 msgstr "ein"
 
-#: /var/centauri/library/_centauri_bash_ext:802
-#: /var/centauri/library/_centauri_bash_ext:1196
-#: /var/centauri/library/_centauri_bash_ext:1205
+#: /var/centauri/library/_centauri_bash_ext:804
+#: /var/centauri/library/_centauri_bash_ext:1198
+#: /var/centauri/library/_centauri_bash_ext:1207
 msgid "No such file or folder:"
 msgstr "Datei oder Ordner nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_ext:903
+#: /var/centauri/library/_centauri_bash_ext:905
 msgid "closing file handle:"
 msgstr "Schliesse Zugriffsnummer:"
 
-#: /var/centauri/library/_centauri_bash_ext:913
+#: /var/centauri/library/_centauri_bash_ext:915
 msgid "File handle %s is in use"
 msgstr "Zugriffsnummer %s ist belegt"
 
-#: /var/centauri/library/_centauri_bash_ext:916
+#: /var/centauri/library/_centauri_bash_ext:918
 msgid "Got no variable to save file handle"
 msgstr "Variable zum Speichern der Zugriffsnummer fehlt"
 
-#: /var/centauri/library/_centauri_bash_ext:919
+#: /var/centauri/library/_centauri_bash_ext:921
 msgid "found file handle:"
 msgstr "Zugriffsnummer gefunden:"
 
-#: /var/centauri/library/_centauri_bash_ext:972
+#: /var/centauri/library/_centauri_bash_ext:974
 msgid "file"
 msgstr "Datei"
 
-#: /var/centauri/library/_centauri_bash_ext:992
+#: /var/centauri/library/_centauri_bash_ext:994
 msgid "symlink"
 msgstr "Verknüpfung"
 
-#: /var/centauri/library/_centauri_bash_ext:994
+#: /var/centauri/library/_centauri_bash_ext:996
 msgid "folder"
 msgstr "Ordner"
 
-#: /var/centauri/library/_centauri_bash_ext:1004
+#: /var/centauri/library/_centauri_bash_ext:1006
 msgid "entries"
 msgstr "Einträge"
 
-#: /var/centauri/library/_centauri_bash_ext:1013
+#: /var/centauri/library/_centauri_bash_ext:1015
 msgid "Cannot remove %s: %s"
 msgstr "Kann %s nicht löschen: %s"
 
-#: /var/centauri/library/_centauri_bash_ext:1066
-#: /var/centauri/library/_centauri_bash_ext:1070
+#: /var/centauri/library/_centauri_bash_ext:1068
+#: /var/centauri/library/_centauri_bash_ext:1072
 msgid "Extra arg(s)"
 msgstr "Zusätzliches Argument"
 
-#: /var/centauri/library/_centauri_bash_ext:1077
+#: /var/centauri/library/_centauri_bash_ext:1079
 msgid "Rename destination exists:"
 msgstr "Umbenennungsziel existiert bereits:"
 
-#: /var/centauri/library/_centauri_bash_ext:1080
+#: /var/centauri/library/_centauri_bash_ext:1082
 msgid "Rename destination is a folder:"
 msgstr "Umbenennungsziel ist ein Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_ext:1082
+#: /var/centauri/library/_centauri_bash_ext:1084
 msgid "Removing destination before rename:"
 msgstr "Ziel vor Umbenennen entfernen:"
 
-#: /var/centauri/library/_centauri_bash_ext:1316
+#: /var/centauri/library/_centauri_bash_ext:1318
 msgid "No '@' in arguments array:"
 msgstr "Kein '@' im Argumentfeld:"
 
-#: /var/centauri/library/_centauri_bash_ext:1425
-#: /var/centauri/library/_centauri_bash_ext:1445
+#: /var/centauri/library/_centauri_bash_ext:1427
+#: /var/centauri/library/_centauri_bash_ext:1447
 msgid "Syntax error:"
 msgstr "Syntaxfehler:"
 
-#: /var/centauri/library/_centauri_bash_ext:1783
+#: /var/centauri/library/_centauri_bash_ext:1784
 msgid "Link target does not exist:"
 msgstr "Verknüpfungsziel existiert nicht:"
 
-#: /var/centauri/library/_centauri_bash_ext:1785
+#: /var/centauri/library/_centauri_bash_ext:1787
 msgid " valid"
 msgstr " gültig"
 
-#: /var/centauri/library/_centauri_bash_ext:1792
+#: /var/centauri/library/_centauri_bash_ext:1794
 msgid " removed"
 msgstr " entfernt"
 
-#: /var/centauri/library/_centauri_bash_ext:1796
+#: /var/centauri/library/_centauri_bash_ext:1798
 msgid "Link '$_link' file/fldr deleted"
 msgstr "Verknüpfung '$_link' Datei/Ordner gelöscht"
 
-#: /var/centauri/library/_centauri_bash_ext:1799
+#: /var/centauri/library/_centauri_bash_ext:1801
 msgid "Link '$_link' file/fldr moved"
 msgstr "Verknüpfung '$2', Datei/Ordner verschoben"
 
-#: /var/centauri/library/_centauri_bash_ext:1801
+#: /var/centauri/library/_centauri_bash_ext:1803
 msgid "Link is an existing folder"
 msgstr "Verknüpfung ist ein bestehender Ordner"
 
-#: /var/centauri/library/_centauri_bash_ext:1803
+#: /var/centauri/library/_centauri_bash_ext:1805
 msgid "Link is an existing file"
 msgstr "Verknüpfung ist eine bestehende Datei"
 
-#: /var/centauri/library/_centauri_bash_ext:1809
+#: /var/centauri/library/_centauri_bash_ext:1811
 msgid "Failed to create symbolic link"
 msgstr "Kann Verknüpfung nicht erstellen:"
 
-#: /var/centauri/library/_centauri_bash_ext:1816
+#: /var/centauri/library/_centauri_bash_ext:1817
 msgid " created"
 msgstr " erstellt"
 
-#: /var/centauri/library/_centauri_bash_ext:2025
+#: /var/centauri/library/_centauri_bash_ext:2040
 msgid "Invalid argument(s)"
 msgstr "Argument(e) ungültig"
 
-#: /var/centauri/library/_centauri_bash_ext:2026
+#: /var/centauri/library/_centauri_bash_ext:2041
 msgid "File not executable"
 msgstr "Datei nicht ausführbar"
 
-#: /var/centauri/library/_centauri_bash_ext:2027
+#: /var/centauri/library/_centauri_bash_ext:2042
 msgid "Program not found"
 msgstr "Programm nicht gefunden"
 
-#: /var/centauri/library/_centauri_bash_ext:2029
+#: /var/centauri/library/_centauri_bash_ext:2044
 msgid "Signal"
 msgstr "Signal"
 
-#: /var/centauri/library/_centauri_bash_ext:2031
+#: /var/centauri/library/_centauri_bash_ext:2046
 msgid "Status"
 msgstr "Status"
 
-#: /var/centauri/library/_centauri_bash_ext:2035
+#: /var/centauri/library/_centauri_bash_ext:2050
 msgid "Running '%s%s' failed"
 msgstr "Ausführung von '%s%s' fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_ext:2181
+#: /var/centauri/library/_centauri_bash_ext:2196
 msgid " update"
 msgstr " aktualisieren"
 
-#: /var/centauri/library/_centauri_bash_ext:2195
+#: /var/centauri/library/_centauri_bash_ext:2210
 msgid " remove"
 msgstr " löschen"
 
-#: /var/centauri/library/_centauri_bash_ext:2221
+#: /var/centauri/library/_centauri_bash_ext:2236
 msgid "Cannot create"
 msgstr "Nicht erstellbar"

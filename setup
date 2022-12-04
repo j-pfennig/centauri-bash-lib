@@ -1,11 +1,5 @@
-#!/bin/bash
-# ------------------------------------------------------------------------------
-CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2022; BSD License"
-CEN_TITLE=$"Template for an example centauri-bash-lib installer/updater"
+#!/usr/bin/env bash
 
-MINIMAL="${MINIMAL:-false}" ####################################################
-if $MINIMAL ; then #############################################################
-else ###########################################################################
 # ------------------------------------------------------------------------------
 # setup + This is just an example of a library installer/updater
 #
@@ -44,7 +38,6 @@ else ###########################################################################
 #               $ centauricreate --info uninstall 
 # ------------------------------------------------------------------------------
 
-fi #############################################################################
 # A root FS prefix can be set here (not needed for termux):
 # export CEN_PREFIX="/some/other/root"
 
@@ -57,7 +50,7 @@ REPO=
 if [ "$EUID" = 0 ] ; then                               # shared (root)
     INFO="/var/centauri:/usr/local/bin:/opt/centauritools:$REPO"
 else                                                    # private
-    INFO=~/.centauri::~/centauritools:"$REPO" 
+    INFO="$HOME/.centauri::$HOME/centauritools:$REPO" 
 fi
 
 # ------------------------------------------------------------------------------

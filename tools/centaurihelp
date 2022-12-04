@@ -1897,15 +1897,15 @@ run_browse() {
             for item in "${mdat[@]}" ; do
                 ___mkurl "$item"
                 case "$mdat" in
-                F)  mlis+=("$item" $"Function"": ${mdat[1]} - ${mdat[2]}") ;;
-                M)  mlis+=("$item" $"Module"": ${mdat[1]} - ${mdat[2]}") ;;
-                T)  mlis+=("$item" $"Topic"": ${mdat[1]} - ${mdat[2]}") ;;
-                S)  mlis+=("$item" "${mdat[1]} - ${mdat[2]}")
+                F)  mlis+=("$item:"$"Function"": ${mdat[1]} - ${mdat[2]}") ;;
+                M)  mlis+=("$item:"$"Module"": ${mdat[1]} - ${mdat[2]}") ;;
+                T)  mlis+=("$item:"$"Topic"": ${mdat[1]} - ${mdat[2]}") ;;
+                S)  mlis+=("$item:${mdat[1]} - ${mdat[2]}")
                 esac
             done
             while : ; do
                 printf -v text "<b>%-90s" $"Multiple search results, please select one ..."
-                windialog -i item -k menu "${text// /\&nbsp;}" "${mlis[@]}" || quit
+                windialog -s item -- "${text// /\&nbsp;}" 1 "${mlis[@]}" || quit
                 embed -v 'centaurilauncher' --mode=0 'viewer' "$elem/$item"
             done
         fi

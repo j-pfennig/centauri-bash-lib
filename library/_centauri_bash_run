@@ -936,7 +936,7 @@ shortpath() {
 #.              emulator     kde     konsole qterminal gnome-terminal xterm
 #.              emulator     gnome   gnome-terminal konsole qterminal xterm
 #.              # other session types (must be last emulator line):
-#.              emulator     -      qterminal gnome-terminal konsole  xterm
+#.              emulator     *      qterminal gnome-terminal konsole  xterm
 #.
 #.              # options for emulators
 #.              -args:konsole       --hide-tabbar --hide-menubar --nofork
@@ -960,42 +960,43 @@ shortpath() {
 #           (2) terminal [-f|-q] [-m <mode>] [-o <over>] [-t <titl>] [-y <desl>] [--] <arg>...
 #
 # Options:  -a  array of resulting command words (default is CEN_TERMINAL)
-#           -b
-#           -c  force check if a terminal emulator must be run
-#           -f  error are fatal
-#           -m  lauch per exec or in background
+#           -b  run via 'bash -c <arg>...' (arguments will be quoted)
+#           -c  check ''terminal'' emulator status, don't run, set CEN_IS_DESKTOP
+#           -f  errors are fatal
+#           -m  launch via exec or as background process
 #           -n  do not run, only return command array
-#           -o  override desktop status (force running emulator)
+#           -o  [*] override desktop status (force running ''terminal'' emulator)
 #           -q  no error messages
 #           -r  ignore --dryrun
-#           -t  window title (if supported by emulator)
-#           -x  check if a terminal emulator can be run
-#           -y  desktop type override
+#           -t  window title (if supported by ''terminal'' emulator)
+#           -x  check if any configured ''terminal'' emulator can be run
+#               (CEN_IS_DESKTOP == 0 returns **false**)
+#           -y  [*] desktop type override
 #
-# Arguments:<arg>   arguments passed to emulator via "<tool> -e <arg>..."
-#           <desk>  desktop config to use like: tty kde lxqt gnome
+#           [*] these options discard any previous detection state
+#
+# Arguments:<arg>   arguments passed to ''terminal'' emulator via "<tool> -e <arg>..."
+#           <desk>  desktop config to use like: **tty** **kde** **lxqt** **gnome**
 #           <mode>  0:wait (default)  1:exec  2:background  3:disown
 #           <titl>  window title
-#           <over>  0:auto (default)  1:start  2:no start
+#           <over>  0:don't start  1:start  2:auto (default)
 #
-# Return:   **true** at success or **false** otherwise.
-#
-#           The following variables are set:
+# Return:   **true** at success or **false** otherwise. The following variables are set:
 #
 #,          - CEN_IS_DESKTOP        desktop status, see below
-#,          - CEN_RUN_EMULATOR      used terminal emulator like "/usr/bin/konsole"
-#,          - CEN_TERMINAL          command to be executed
+#,          - CEN_RUN_EMULATOR      used ''terminal'' emulator like "/usr/bin/konsole"
+#,          - CEN_TERMINAL          command to be executed (array of words)
 #
-#+The main pupose of this function is to find out if a desktop is active and
+#+A main feature of this function is to find out if a desktop session is active and
 # if the caller is running in a ''terminal'' emulator window. Depending on this
-# the following happens:
+# the following happens (unless overridden by -o):
 #
 #,          °°Desktop running, no emulator: start an emulator
 #,          °°No desktop or in an emulator: simply execute
 #
 #+Common ''terminal'' emulators are: **konsole**, **qterminal** or **gnome-terminal**.
-# The emulator detection process and the emulator to be started can be configured,
-# see below.
+# The emulator detection process and the emulator that is to be started are configurable,
+# see [[terminal Config]].
 #
 #+The variable CEN_IS_DESKTOP is set on the first call or if option -c is passed:
 #
@@ -1004,18 +1005,21 @@ shortpath() {
 #,          °°CEN_IS_DESKTOP=1      # have desktop need emulator
 #,          °°CEN_IS_DESKTOP=2      # have no desktop but need emulator
 #
-#+All common terminal emulators seem to support command line option "-e" that is
-# followed by a list of arguments that are to be executed in a shell.
+#+All common ''terminal'' emulators seem to support command line option "-e" that is
+# followed by a list of arguments that are to be executed as a command. This is
+# used by terminal if no "-b" option is given. The 1st <arg> value is converted
+# to a full path via [[sysfind()]].
 #
-# Examples: xxx
-#
-#.          terminal -c             # check only, do not run
+#.Examples: terminal -c             # check only, do not run
 #.          terminal                # open a terminal (desktop only)
 #.          terminal -- top         # run a program, wait for exit
+#.          terminal -b read '$>'   # run using 'bash -c <cmd>'
 #
+#.          terminal -x -y kde   && message "KDE   uses: $CEN_RUN_EMULATOR"
+#.          terminal -x -y gnome && message "Gnome uses: $CEN_RUN_EMULATOR"
+#.          terminal -x -o -        # reset status
 # ------------------------------------------------------------------------------
-CEN_RUN_EMULATOR=
-CEN_TERMINAL=
+CEN_TERMINAL= ; CEN_RUN_EMULATOR=
 terminal() {
     #$CEN_DEBUG -c -- "$*"
     local _bash _ochk _oerr='-e' _onot _orun _otit _over _mode=0 _stat=0 \
@@ -1031,29 +1035,31 @@ terminal() {
         -f)   _oerr='-f' ;;
         -m)   shift ; _mode="${1:-0}" ;;
         -n)   _onot=1 ;;
-        -o)   shift ; _over="$1" ;;
+        -o)   shift ; _over="${1:--}" ; CEN_IS_DESKTOP= ;;
         -q)   _oerr='-q' ;;
         -r)   _orun='-r' ;;
         -t)   shift ; _otit="$1" ;;
         -x)   _ochk=2 ;;
-        -y)   shift ; _desk="$1" ;;
+        -y)   shift ; _desk="$1" ; CEN_IS_DESKTOP= ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
     local -n _acmd="$_vnam" ; _acmd=()
 
-[ "$_ochk" = 2 ] && return 0
     [ -z "$CEN_DISPLAY" ] && CEN_IS_DESKTOP=0
     [ -n "$CEN_IS_DESKTOP" -a "$_ochk" = 1 ] && return 0    # valid status
-    [ -z "$CEN_DISPLAY"    -a "$_ochk" = 2 ] && return 1    # cannot run emulator
 
-    # read configuration
-    if [ -z "$CEN_TERMINAL_DAT" ] ; then
-        _cen_run_config $_oerr 'launcher' || return 1
+    if [ -z "$CEN_IS_DESKTOP" ] ; then                      # unknown state ...
+        CEN_RUN_EMULATOR= ; CEN_TERMINAL_DAT=()
 
-        local _line _temp _indx _sarr
+        if [ -z "$CEN_RUN_TERMINAL" ] ; then                # must read configuration
+            _cen_run_config $_oerr 'terminal' || return 1
+        fi
+
+        local _line _temp _indx _sarr _what
         [ -z "$_desk" ] && _desk='tty'
-        #$CEN_TRACE2 -a -c " parse" -- "$_desk"
+        $CEN_TRACE2 -a -c " parse" -p "lines=%d  desktop=%s" "${#CEN_RUN_TERMINAL[@]}" "$_desk"
+
         for _line in "${CEN_RUN_TERMINAL[@]}" ; do
             # All data should have been correctly quoted at caching time. So we use eval
             # directly without error handling. The slower equivalent is: spliteval -u
@@ -1066,42 +1072,41 @@ terminal() {
                 emulator)
                     [ -n "$CEN_RUN_EMULATOR" ] && continue
                     _temp="${_sarr[1],,}"                   # desktop filter
-                    [ "$_temp" = '-' -o "$_temp" = "$_desk" ] || continue
+                    case "$_temp" in
+                    '*')    [ "$_desk" = 'tty' ] && continue ;;
+                    -)      ;;                              # no check
+                    $_desk) ;;
+                    *)      continue
+                    esac
                     if ! sysfind $_oerr -o -s CEN_RUN_EMULATOR -- ${_sarr[@]:2} ; then
                         _stat=2 ; break
                     fi
-                    CEN_TERMINAL_DAT[0]="${CEN_RUN_EMULATOR##*/}"
-                    #$CEN_TRACE2 -a "terminal: session: $_temp: $CEN_RUN_EMULATOR"
+                    _what="${CEN_RUN_EMULATOR##*/}"
+                    CEN_TERMINAL_DAT[0]="$_temp"
+                    $CEN_TRACE2 -a -c " session" -- "$_temp: $CEN_RUN_EMULATOR"
                     ;;
-                -args:*)
-                    [ "$_sarr" = "-args:$CEN_TERMINAL_DAT" ] || continue
-                    _indx=1 ;;
-                -flags:*)
-                    [ "$_sarr" = "-flags:$CEN_TERMINAL_DAT" ] || continue
-                    _indx=2 ;;
-                -title:*)
-                    [ "$_sarr" = "-title:$CEN_TERMINAL_DAT" ] || continue
-                    _indx=3 ;;
-                login)
-                    _indx=4 ;;
-                shell)
-                    _indx=5 ;;
-                white)
-                    _indx=6 ;;
-                black)
-                    _indx=7 ;;
-                black-startup)
-                    _indx=8 ;;
-                black-konsole)
-                    _indx=9 ;;
+
+                -args:$_what)   _indx=1 ;;
+                -flags:$_what)  _indx=2 ;;
+                -title:$_what)  _indx=3 ;;
+                -args:*|-flags:*|-title:*)
+                                 continue ;;
+
+                login)          _indx=4 ;;
+                shell)          _indx=5 ;;
+                white)          _indx=6 ;;
+                black)          _indx=7 ;;
+                black-startup)  _indx=8 ;;
+                black-konsole)  _indx=9 ;;
+
                 *)  $_warn -- "$_line" ; _stat=1    # warning, ignore this line
             esac
             if [ -n "$_indx" ] ; then
                 CEN_TERMINAL_DAT[_indx]="${_sarr[*]:1}"
-                #$CEN_TRACE2 -a -p "terminal: %-7s: %s" "${_sarr%%-*}" "${_sarr[*]:1}"
+                #$CEN_TRACE2 -a -c "param" -p "%-7s [%s]: %s" "${_sarr%%-*}" "$_indx" "${_sarr[*]:1}"
             fi
         done
-        unset CEN_RUN_TERMINAL                      # drop config data
+
         [ -z "$CEN_TERMINAL_DAT" ] && CEN_TERMINAL_DAT=(-)
         if [ "$_stat" = 1 ] ; then
             warning -p $"Error(s) in [%s] configuration: %s" 'terminal' "$CEN_RUN_CONFIG"
@@ -1120,8 +1125,6 @@ terminal() {
         $CEN_TRACE $"No desktop running, see $DISPLAY or $XDG_SESSION_DESKTOP"
         CEN_IS_DESKTOP=0
     fi
-
-[ "$_ochk" = 2 ] && return 0
 
     # index [0]    session          type of desktop session
     #       [1]    args             command option arguments
@@ -1180,17 +1183,32 @@ terminal() {
         done
     fi
     $CEN_TRACE2 -a -c " result" "CEN_IS_DESKTOP=$CEN_IS_DESKTOP"
-    [ -n "$_ochk" ] && return 0
 
+    if [ -n "$_ochk" ] ; then                               # check only, do not run
+        [ "$_ochk" = 1 ] && return 0
+        [ "$CEN_IS_DESKTOP" != 0 ] ; return                 # return status
+    fi
 
     local _strt="$CEN_IS_DESKTOP" _xopt _sepa='-e'
-    [ "$_over" = 1 ] && _strt=1
-    [ "$_over" = 2 ] && _strt=0
+    case "${_over:--}" in
+        0)      _strt=0 ;;                                  # run as "bash -c", no emulator
+        1)      [ -z "$CEN_DISPLAY" ] && return 1           # run in emulator if possible
+                [ -z "$CEN_RUN_EMULATOR" ] && return 1
+                _strt=1 ;;
+        2|-)    ;;
+        *)      _cen_abort - "-o $_over"
+    esac
 
     # no emulator or shell, just run
     if [ "$_strt" = 0 ] ; then
-        [ "$#" = 0 ] && _acmd=(bash -i)
-        _acmd+=("$@")
+        if [ -n "$_bash" ] ; then
+            _acmd=(bash -c "${*@Q}")
+        elif [ "$#" = 0 ] ; then
+            _acmd=(bash -i)
+        else
+            _acmd=("$@")
+        fi
+        sysfind -c -e -s _acmd[0] -- "$_acmd" || return 1
 
     # build console command
     else
@@ -1198,8 +1216,6 @@ terminal() {
         if [ "${_acmd[-1]}" = '--' ] ; then
             unset _acmd[-1] ; _sepa='--'
         fi
-    #    [ -n "${CEN_TERMINAL_DAT[2]}" ] &&                  # no fork option
-    #        _acmd+=("${CEN_TERMINAL_DAT[2]}")
         if [ -n "$_otit" -a -n "${CEN_TERMINAL_DAT[3]}" ] ; then
             [ "$_otit" = '-' ] && _otit="$CEN_NAME"
             _acmd+=("${CEN_TERMINAL_DAT[3]}" "$_otit")      # title option
@@ -1207,9 +1223,11 @@ terminal() {
         if [ -n "$_bash" ] ; then                           # run bash
             sysfind -c -e -s _bash -- bash || return 1
             _acmd+=("$_sepa" "$_bash")
-            [ $# = 0 ] && _acmd+=(-i) || _acmd+=(-c "${*@E}")
+            [ $# = 0 ] && _acmd+=(-i) || _acmd+=(-c "${*@Q}")
         elif [ $# != 0 ] ; then                             # just start
-            _acmd+=("$_sepa" "$@")
+            local _path
+            sysfind -c -e -s _path -- "$1" || return 1
+            shift ; _acmd+=("$_sepa" "$_path" "$@")
         fi
     fi
 
@@ -1294,7 +1312,7 @@ _cen_run_config() {
 
     # cached sections
     case "$1" in
-    launcher|terminal|shortpath)
+        launcher|terminal|shortpath)
         _fcch=1 ;;
     esac
 
@@ -1318,6 +1336,7 @@ _cen_run_config() {
 # Generate library proxy
 # ------------------------------------------------------------------------------
 _cen_run_proxy() {
+    $CEN_TRACE -a -c " proxy" -- "$CEN_ROOT"
     local _repo _rexp _prox
     _rexp="${CEN_PATH_REXP[*]@A}" ; _rexp="${_rexp#declare -* }"
 
@@ -1328,7 +1347,7 @@ _cen_run_proxy() {
 
     [ -n "$_rexp" ] && _rexp=$'\n'"# path replacements from [library] section"$'\n'"$_rexp"
     [ -n "$_prox" ] && _prox=$'\n'"# things from [proxy] section"$'\n'"$_prox"
-    create -c -t -w "$CEN_TOOLS/_centauri_bash_lib" <<!EOF || return 1
+    create -c -t -w "$CEN_TOOLS/_centauri_bash_lib" 775 <<!EOF || return 1
 # --- Proxy for _centauri_bash_lib (autogenerated, see centauri-bash-lib) ---
 
 # installation defaults: <root>[:<bin>:<tools>:<repo>:<user>:<group>])
@@ -1336,7 +1355,7 @@ CEN_INSTALL='${CEN_INSTALL:-$CEN_ROOT}'
 
 # find the library root folder
 if [ "\${CEN_ROOT:-.}" = '.' ] ; then
-    export CEN_ROOT="\${CEN_INSTALL%%:*}"
+    export CEN_ROOT="$CEN_ROOT"
     export CEN_TOOLS="\$CEN_ROOT/tools"
     if [ ! "\$CEN_TOOLS/_centauri_bash_lib" -ef "\$BASH_SOURCE" ] ; then
         CEN_TOOLS=\$(readlink -f "\$(type -p _centauri_bash_lib)")
@@ -1366,7 +1385,7 @@ fi
 [ "\$EUID" = 0 ] && [ ! -d "\$CEN_ROOT/transient" ] && embed -m '_centauri_bash_sys'
 :
 !EOF
-    sysrun -e -p -- chmod 775 "$CEN_TOOLS/_centauri_bash_lib" || :
+    #sysrun -e -p -- chmod 775 "$CEN_TOOLS/_centauri_bash_lib" || :
     return 0
 }
 

@@ -247,7 +247,12 @@ extsort() {
 #           <expr>  regular expression -or- bash glob pattern
 #           <line>  text line to be sorted
 #
-#.Example:  txtgrep -n -y "#*" -a data -i - <file.txt
+#.Examples: # use a glob expression to remove comment lines
+#.          txtgrep -n -y "#*" -a data -i - <file.txt
+#
+#.          # in-place filtering
+#.          local days=(monday montag wednesday mercredi friday)
+#.          txtgrep -o days -i days -x ".*day"
 #
 #+Return:   Without option -a or -s status **true** is returned after the 1st match
 #           and **false** if no match is found (this implies option -m).
@@ -282,20 +287,21 @@ txtgrep() {
 
     # get input, set _varr
     if [ -z "$_vinp" ] ; then               # grep call arguments
-        _cen_grep_aarg=("$@") ; _varr="_cen_grep_aarg"
+        _cen_grep_aarg=("$@") ; _varr='_cen_grep_aarg'
     elif [ "$_vinp" = '-' ] ; then          # grep stdin
-        IFS=$'\n' read -r -d '' -a _cen_grep_aarg || true ; _varr="_cen_grep_aarg"
+        IFS=$'\n' read -r -d '' -a _cen_grep_aarg ; _varr="_cen_grep_aarg"
     else                                    # grep string/array
         _varr="$_vinp"
         if [ "${#_varr[@]}" = 1 ] ; then    # could be string
-            local -n _varr="_cen_grep_aarg"  # redefine (no unset needed)
+            local -n _varr='_cen_grep_aarg' # redefine (no unset needed)
             splitjoin -s _cen_grep_aarg -n -i "$_vinp"
         fi
-    fi
+    fi || :
 
     # get output, set _rslt
-    if [ "${_vout:--}" = '-' ] ; then       # grep to stdout or string
-        _txtgrep_rarg=() ; _rslt="_txtgrep_rarg"
+    if [ "$_vinp" = "$_vout" ] ||           # in-place, copy temp output
+       [ "${_vout:--}" = '-' ] ; then       # grep to stdout or string
+        _txtgrep_rarg=() ; _rslt='_txtgrep_rarg'
     else
         _rslt="$_vout"
     fi
@@ -330,7 +336,11 @@ txtgrep() {
     fi
 
     # output to stdout or string
-    [ "${_vout:--}" = '-' ] && splitjoin -j "${_fnam:--}" -n -l -i _rslt || true
+    if [ "${_vout:--}" = '-' ] ; then
+        splitjoin -j "${_fnam:--}" -n -l -i _rslt
+    elif [ "$_vinp" = "$_vout" ] ; then         # in-place, copy temp output
+        local -n _vslt="$_vout" ; _vslt=("${_rslt[@]}")
+    fi || :
     return 0
 }
 

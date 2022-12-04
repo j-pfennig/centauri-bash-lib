@@ -46,7 +46,7 @@ msgid "syntax error:"
 msgstr "Syntaxfehler:"
 
 #: /var/centauri/library/_centauri_bash_run:779
-#: /var/centauri/library/_centauri_bash_run:1107
+#: /var/centauri/library/_centauri_bash_run:1112
 msgid "Error(s) in [%s] configuration: %s"
 msgstr "Fehler in [%s] configuration: %s"
 
@@ -59,10 +59,10 @@ msgstr "Kein Verzeichnis für Kurzbezeichnung:"
 msgid "Not a valid shortcut:"
 msgstr "Keine gültige Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:1115
+#: /var/centauri/library/_centauri_bash_run:1120
 msgid "No terminal configuration, see:"
 msgstr "Keine 'terminal' Konfiguration, siehe:"
 
-#: /var/centauri/library/_centauri_bash_run:1120
+#: /var/centauri/library/_centauri_bash_run:1125
 msgid "No desktop running, see $DISPLAY or $XDG_SESSION_DESKTOP"
 msgstr "Kein Desktop aktiv, siehe $DISPLAY oder $XDG_SESSION_DESKTOP"
