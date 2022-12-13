@@ -1,38 +1,79 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_sys:206
+#: /var/centauri/library/_centauri_bash_sys:183
 msgid "Loading OS and KDE versions:"
 msgstr "Lade OS und KDE Versionen:"
 
-#: /var/centauri/library/_centauri_bash_sys:211
+#: /var/centauri/library/_centauri_bash_sys:188
 msgid "Must query OS and KDE versions (no state file)"
 msgstr "Muss OS und KDE Versionen abfragen (keine Statusdatei)"
 
-#: /var/centauri/library/_centauri_bash_sys:236
+#: /var/centauri/library/_centauri_bash_sys:213
 msgid "Cannot write version info:"
 msgstr "Kann Versionsinformation nicht schreiben:"
 
-#: /var/centauri/library/_centauri_bash_sys:238
+#: /var/centauri/library/_centauri_bash_sys:215
 msgid "Writing version info:"
 msgstr "Schreibe Versionsinformation:"
 
-#: /var/centauri/library/_centauri_bash_sys:311
-#: /var/centauri/library/_centauri_bash_sys:312
+#: /var/centauri/library/_centauri_bash_sys:288
+#: /var/centauri/library/_centauri_bash_sys:289
 msgid "Missing argument:"
 msgstr "Fehlendes Argument:"
 
-#: /var/centauri/library/_centauri_bash_sys:325
+#: /var/centauri/library/_centauri_bash_sys:303
 msgid "Installation configuration:"
 msgstr "Installationskonfiguration:"
 
-#: /var/centauri/library/_centauri_bash_sys:387
-msgid "Valid --info arguments are:"
-msgstr "Gültige --info Kommandos sind:"
+#: /var/centauri/library/_centauri_bash_sys:362
+msgid "Bad '--info' argument. Valid arguments are:"
+msgstr "Falsches '--info' Argument. Gültig sind:"
 
-#: /var/centauri/library/_centauri_bash_sys:396
-msgid "Bad --info argument. Valid commands are:"
-msgstr "Falsches --info Kommando. Gültig sind:"
+#: /var/centauri/library/_centauri_bash_sys:364
+msgid "show detailed version info"
+msgstr "Detaillierte Versionsinformation ausgeben"
+
+#: /var/centauri/library/_centauri_bash_sys:365
+msgid "show this message"
+msgstr "Diesen Text ausgeben"
+
+#: /var/centauri/library/_centauri_bash_sys:366
+msgid "create or update an installation"
+msgstr "Erstellen oder Aktualisieren einer Installation"
+
+#: /var/centauri/library/_centauri_bash_sys:367
+msgid "show centauri-bash-lib paths"
+msgstr "Pfade von 'centauri-bash-lib' ausgeben"
+
+#: /var/centauri/library/_centauri_bash_sys:368
+#: /var/centauri/library/_centauri_bash_sys:369
+msgid "for setup tools: "
+msgstr "Für 'setup' Werkzeuge: "
+
+#: /var/centauri/library/_centauri_bash_sys:368
+msgid "copy updated files"
+msgstr "Kopiere neuere Dateien"
+
+#: /var/centauri/library/_centauri_bash_sys:369
+msgid "copy files"
+msgstr "Kopiere Dateien"
+
+#: /var/centauri/library/_centauri_bash_sys:370
+msgid "undo an installation"
+msgstr "Ein Installation rückgängig machen"
+
+#: /var/centauri/library/_centauri_bash_sys:371
+msgid "silently update"
+msgstr "Stille Aktualisierung"
+
+#: /var/centauri/library/_centauri_bash_sys:372
+msgid "show version info"
+msgstr "Versionsinformation ausgeben"
+
+#: /var/centauri/library/_centauri_bash_sys:379
+msgid "Valid --info arguments are:"
+msgstr "Gültige '--info' Argumente sind:"
 
 #: /var/centauri/library/_centauri_bash_sys:412
 msgid "succeeded"
@@ -44,20 +85,20 @@ msgstr "fehlgeschlagen"
 
 #: /var/centauri/library/_centauri_bash_sys:418
 msgid "<unknown author/license>"
-msgstr "<unbekannter Autor/Lizenz"
+msgstr "<unbekannter Autor/Lizenz>"
 
-#: /var/centauri/library/_centauri_bash_sys:557
+#: /var/centauri/library/_centauri_bash_sys:512
 msgid "Using 'systemd' (got 'systemctl' and '%s')"
 msgstr "Benutze 'systemd' (habe 'systemctl' und '%s')"
 
-#: /var/centauri/library/_centauri_bash_sys:564
+#: /var/centauri/library/_centauri_bash_sys:520
 msgid "Using 'systemd' ('%s' is symlink to systemd)"
 msgstr "Benutze 'systemd' ('%s' ist Verweis auf systemd)"
 
-#: /var/centauri/library/_centauri_bash_sys:568
+#: /var/centauri/library/_centauri_bash_sys:524
 msgid "Using 'SysV' init"
 msgstr "Benutze 'SysV' Initialisierung"
 
-#: /var/centauri/library/_centauri_bash_sys:594
+#: /var/centauri/library/_centauri_bash_sys:550
 msgid "Using bootstrap config:"
 msgstr "Verwende Urkonfiguration:"

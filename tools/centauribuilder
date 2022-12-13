@@ -181,7 +181,11 @@ dump_encode() {
     _dump_encode+="$sout"
 }
 
+# encode (binary) file: <file>
 file_encode() {
+    if [ ! -r "$1" ] ; then
+        error "Not a readable file:" "$1" ; return 1
+    fi
     local file name mode line
 
     # text or binary?
@@ -360,7 +364,7 @@ project_open() {
 
     case "$1" in
     -a)     crea=2 ;;
-    -c)     crea=1 ; DAT_PROJECT= ;;
+    -c)     crea=1 ; DAT_PROJECT= ; [ "${3:--}" = '-' ] && proj="$CEN_NAME" ;;
     -d)     dele=1 ; DAT_PROJECT= ;;
     -o)     ;;
     *)      list=1 ;;
@@ -443,6 +447,14 @@ project_open() {
 
     # create config file
 
+    if [ "$proj" != "$CEN_NAME" ] ; then
+        config_file "$DAT_WORK/$CEN_NAME.conf" || return
+        if [ -z "$DAT_CONF_TEMPLATE" -o -z "$DAT_CONF_DESCRIPT" ] ; then
+            quit unhappy "$DAT_CONF_TEMPLATE - $DAT_CONF_DESCRIPT - $DAT_CONF_AUTHOR"
+        fi
+        [ -z "$CEN_OPT_TEMPLATE" ] && tmpl="$DAT_CONF_TEMPLATE"
+        [ -z "$CEN_OPT_DESCR" ] && desc="$DAT_CONF_DESCRIPT"
+    fi
     config_file "$DAT_CONFIG" "${tmpl:-$CEN_OPT_TEMPLATE}" "${desc:-$CEN_OPT_DESCR}" || return 1
     if [ -n "$DAT_CONF_TEMPLATE" ] ; then
         [ -e "$DAT_WORK/$proj" ] || message $"Created project:" "$proj" ; return 0

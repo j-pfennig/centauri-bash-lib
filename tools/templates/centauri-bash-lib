@@ -64,12 +64,12 @@ fi #############################################################################
 : Some examples for TERMUX ##################################################### 
 if [ -d "$HOME/storage" -a -n "$CEN_PATHS" ] ; then ############################ 
 
-   path "android"   "~/storage"             "Android gemeinsamer Speicher"
+    path "android"   "~/storage"             "Android gemeinsamer Speicher"
 
-   path "export"    "~/storage/shared/export"         "Export Verzeichnis"
-   path "bilder"    "~/storage/shared/export/Bilder"  "Bilder (in export)"
-   path "musik"     "~/storage/shared/export/Musik"   "Musik  (in export)"
-   path "rezepte"   "~/storage/shared/export/Rezepte" "Kochrezepte"
+    path "export"    "~/storage/shared/export"         "Export Verzeichnis"
+    path "bilder"    "~/storage/shared/export/Bilder"  "Bilder (in export)"
+    path "musik"     "~/storage/shared/export/Musik"   "Musik  (in export)"
+    path "rezepte"   "~/storage/shared/export/Rezepte" "Kochrezepte"
 fi #############################################################################
 
 # ------------------------------------------------------------------------------

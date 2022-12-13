@@ -1,0 +1,58 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+#: /var/centauri/library/_centauri_bash_utl:281
+msgid "zero"
+msgstr "kein|keine"
+
+#: /var/centauri/library/_centauri_bash_utl:286
+msgid "one"
+msgstr "ein|eine"
+
+#: /var/centauri/library/_centauri_bash_utl:293
+msgid "s"
+msgstr "n"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "line"
+msgstr "Zeile|-g"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "lines"
+msgstr "Zeilen|-g"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "file"
+msgstr "Datei"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "files"
+msgstr "Dateien|-g"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "folder"
+msgstr "Verzeichnis"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "folders"
+msgstr "Verzeichnisse|-g"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "error"
+msgstr "Fehler"
+
+#: /var/centauri/library/_centauri_bash_utl:298
+msgid "errors"
+msgstr "Fehler"
+
+#: /var/centauri/library/_centauri_bash_utl:410
+msgid "No '@' in arguments array:"
+msgstr "Kein '@' im Argumentfeld:"
+
+#: /var/centauri/library/_centauri_bash_utl:432
+msgid "invalid 'wait' result"
+msgstr "Ungültiges 'wait' Ergebnis"
+
+#: /var/centauri/library/_centauri_bash_utl:671
+msgid "Elapsed time: %s [ms]"
+msgstr "Vergangene Zeit: %s [ms]"

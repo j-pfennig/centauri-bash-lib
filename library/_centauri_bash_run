@@ -506,7 +506,7 @@ launcher() {
     for _line in "${_apps[@]}" ; do
         _fltr="${_line#*:}" ; _name="${_line%%:*}"
         if _cen_run_tools "$_flst" "$_name" ${_pard[$_name:$_fltr]} ; then
-            $CEN_TRACE -c " tool" -p "%-18s => %s" "$_line" "${CEN_RUN_TOOLS[1]}"
+            $CEN_TRACE2 -c " tool" -p "%-18s => %s" "$_line" "${CEN_RUN_TOOLS[1]}"
             case "$_flst" in
             '')     break
                     ;;
@@ -519,7 +519,7 @@ launcher() {
                     _vres+=("$_name"$'\a'"$_fltr"$'\a'"$_temp"$'\a'"${CEN_RUN_TOOLS[2]}")
             esac
         else
-            $CEN_TRACE -c " tool" -p "%-18s    NO MATCH" "$_line"
+            $CEN_TRACE2 -c " tool" -p "%-18s    NO MATCH" "$_line"
             if [ -z "$_flst" ] ; then
                 folder -c -f "$_fldr"
                 return 1
@@ -579,7 +579,7 @@ _cen_run_tools() {
         [ "$_path" = '-' ] && return 1                      # negative cache entry
 
         if [ -n "$_path" ] ; then
-            $CEN_TRACE2 -a -c "launcher CACHED" -p "%-18s => %s" "$_nice" "$_path"
+            $CEN_TRACE2 -a -c " CACHED" -p "%-18s => %s" "$_nice" "$_path"
             CEN_RUN_TOOLS=("$_nice" "$_path" "$_args") ; return 0
         fi
 
@@ -590,21 +590,24 @@ _cen_run_tools() {
         [ -z "$_path" ] && continue                         # no executable
 
         _igno="${_pard[-ignore:$_name]}"
-        if [ -n "$_igno" ] && [ "$_igno" = "${_path##*/}" ] ; then
-            $CEN_TRACE2 -c "launcher IGNORED" -p "%-18s => %s" "$_nice" "$_path"
-            continue
+        if [ -n "$_igno" ] ; then                           # symlink ignore ...
+            resolve -s _want -c -- "$_path"
+            if [ "$_igno" = "${_want##*/}" ] ; then
+                $CEN_TRACE2 -c " IGNORE" -p "%-18s => %s" "$_nice" "$_path"
+                continue
+            fi
         fi
 
-        _want="${_pard[-wants:$_name]}"
+        _want="${_pard[-wants:$_name]}"                     # installation requirement...
         if [ -n "$_want" ] ; then
             for _want in $_want "" ; do
                 [ -e "$_want" ] && break
             done
-            $CEN_TRACE2 -c "launcher WANTS" -p "%-18s => %s" "$_nice" "${_want:--miss-}"
+            $CEN_TRACE2 -c " WANTS" -p "%-18s => %s" "$_nice" "${_want:--miss-}"
             [ -z "$_want" ] && continue
         fi
 
-        $CEN_TRACE2 -a -c "launcher FOUND" -p "%-18s => %s" "$_nice" "$_path"
+        $CEN_TRACE2 -a -c " FOUND" -p "%-18s => %s" "$_nice" "$_path"
         CEN_RUN_TOOLS=("$_nice" "$_path" "$_args")
         _pard[$_nice/]="$_path" ; return 0
     done
@@ -756,20 +759,18 @@ shortpath() {
     # read configuration file on 1st call
     if [ -z "$CEN_SHORTPATH_DAT" ] ; then
         _cen_run_config $_oerr 'shortpath' || return 1
-        local _line ## _args
+        local _line _sifs="$IFS" _atmp
         for _line in "${CEN_RUN_SHORTPATH[@]}" ; do
-            #$CEN_TRACE2 -a "shortpath: parse:" "$_line"
+            $CEN_TRACE2 -a -c " parse" -- "$_line"
             local _skey="${_line%% *}" _sval="${_line#* }"
             if [ "$_skey" != 'path' ] ; then
                 $_warn -- $"1st argument must be 'path':" "$_line"
                 _stat=1 ; continue
             fi
-            set -f                                          # no file globbing
-            if eval trimjoin -d : $_sval &>/dev/null ; then # handle vars and quotes
-                set +f ; CEN_SHORTPATH_DAT+=("$CEN_TRIMJOIN")
-            else
-                set +f ; _stat=2 ; $_warn -- $"syntax error:" "$_line"
-            fi
+            # _line entries should already be correctly quoted
+            eval _atmp="($_sval)"                           # replace variables
+            IFS=':' _sval="${_atmp[*]}" ; IFS="$_sifs"
+            CEN_SHORTPATH_DAT+=("$_sval")
         done
         unset CEN_RUN_SHORTPATH                             # drop config data
         [ -z "${#CEN_SHORTPATH_DAT[@]}" ] && CEN_SHORTPATH_DAT=(-)
@@ -1282,13 +1283,14 @@ _cen_run_command() {
 
 # ------------------------------------------------------------------------------
 # Read library configuration: (1) [-f|-q] -a|-l|-r <reader> <section>
-#                             (2) -m [<info>] <line>        # error reporting
+#                             (2) [-f|-q] -v <array> <section>
+#                             (3) -m [<info>] <line>        # error reporting
 # For sections launcher|terminal|shortpath the corresponding data in
 # CEN_RUN_LAUNCHER CEN_RUN_TERMINAL CEN_RUN_SHORTPATH is cached.
 # ------------------------------------------------------------------------------
 CEN_RUN_CONFIG=
 _cen_run_config() {
-    local _ferr _read _ropt _fcch _fqui _stat=0 _smsg _path='centauri-bash-lib'
+    local _ferr _read _ropt _fcch _fpri _fqui _stat=0 _smsg _path='centauri-bash-lib'
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -1299,9 +1301,11 @@ _cen_run_config() {
         -m)   shift ; _smsg="$1" ;;
         -p)   shift ; _path="$1" ;;
         -q)   _ferr='-q' ; _fqui='-q' ;;
+        -v)   _ropt='-v -r' ; shift ; _read="$1" ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
+    [ "$EUID" = 0 ] || _fpri='-p'
 
     # error messages
     if [ -n "$_smsg" ] ; then
@@ -1318,75 +1322,18 @@ _cen_run_config() {
 
     if [ -z "$_fcch" -o $# -gt 1 ] ; then
         [ -z "$_read" ] && _cen_abort + '-a|-l|-r'
-        configfile -i true -p $_ropt $_read -n "$_path" -- "$@" || _stat=$?
+        configfile -i true $_fpri $_ropt $_read -n "$_path" "$@" || _stat=$?
     elif [ -z "$CEN_RUN_CONFIG" ] ; then
-        if ! cachefile $_ferr -s -w 'centauri-bash-lib.dat' "$_path" ; then
-            configfile $_fqui -r CEN_RUN_LAUNCHER  -v -x -n "$CEN_CONFIGFILE" 'launcher'
-            configfile $_fqui -r CEN_RUN_TERMINAL  -v -x -n "$CEN_CONFIGFILE" 'terminal'
-            configfile $_fqui -r CEN_RUN_SHORTPATH -v -x -n "$CEN_CONFIGFILE" 'shortpath'
+        if ! cachefile $_ferr -s -w "$_path.dat" "$_path" ; then
+            configfile $_fqui $_fpri -r CEN_RUN_LAUNCHER  -v -x -n "$CEN_CONFIGFILE" 'launcher'
+            configfile $_fqui $_fpri -r CEN_RUN_TERMINAL  -v -x -n "$CEN_CONFIGFILE" 'terminal'
+            configfile $_fqui $_fpri -r CEN_RUN_SHORTPATH -v -x -n "$CEN_CONFIGFILE" 'shortpath'
             CEN_RUN_CONFIG="$CEN_CONFIGFILE"
             serialize $_ferr -w -n "$CEN_CACHEFILE" -m 664 -- CEN_RUN_CONFIG \
                       CEN_RUN_LAUNCHER CEN_RUN_TERMINAL CEN_RUN_SHORTPATH
         fi
     fi
     return $_stat
-}
-
-# ------------------------------------------------------------------------------
-# Generate library proxy
-# ------------------------------------------------------------------------------
-_cen_run_proxy() {
-    $CEN_TRACE -a -c " proxy" -- "$CEN_ROOT"
-    local _repo _rexp _prox
-    _rexp="${CEN_PATH_REXP[*]@A}" ; _rexp="${_rexp#declare -* }"
-
-    _cen_run_proxy_rdr() {
-        _prox+="$1"$'\n'
-    }
-    _cen_run_config -r _cen_run_proxy_rdr 'proxy' || :
-
-    [ -n "$_rexp" ] && _rexp=$'\n'"# path replacements from [library] section"$'\n'"$_rexp"
-    [ -n "$_prox" ] && _prox=$'\n'"# things from [proxy] section"$'\n'"$_prox"
-    create -c -t -w "$CEN_TOOLS/_centauri_bash_lib" 775 <<!EOF || return 1
-# --- Proxy for _centauri_bash_lib (autogenerated, see centauri-bash-lib) ---
-
-# installation defaults: <root>[:<bin>:<tools>:<repo>:<user>:<group>])
-CEN_INSTALL='${CEN_INSTALL:-$CEN_ROOT}'
-
-# find the library root folder
-if [ "\${CEN_ROOT:-.}" = '.' ] ; then
-    export CEN_ROOT="$CEN_ROOT"
-    export CEN_TOOLS="\$CEN_ROOT/tools"
-    if [ ! "\$CEN_TOOLS/_centauri_bash_lib" -ef "\$BASH_SOURCE" ] ; then
-        CEN_TOOLS=\$(readlink -f "\$(type -p _centauri_bash_lib)")
-        CEN_TOOLS="\${CEN_TOOLS%/*}" ; CEN_ROOT="\${CEN_TOOLS%/*}"
-    fi
-elif [ "\${CEN_TOOLS:--}" = '-' ] ; then
-    export CEN_TOOLS="\$CEN_ROOT/tools"
-fi
-export CEN_LIBRARY="\$CEN_ROOT/library"
-
-# paths that can be installation dependent
-CEN_PATHS=('$CEN_PATHS' '${CEN_PATHS[1]}' '${CEN_PATHS[2]}' '${CEN_PATHS[3]}' '${CEN_PATHS[4]}')
-$_rexp$_prox
-
-# sanitize environment (bash needs TMPDIR)
-[ -z "\$TMPDIR" ] && export TMPDIR="\${XDG_RUNTIME_DIR:-\${CEN_PATHS[4]:-/tmp}}" ;
-[ -z "\$TMP" ] || export TMP="\$TMPDIR"
-
-# load real lib, use packed version if newer
-if [ "\$CEN_LIBRARY/_centauri_bash_lib.p" -nt "\$CEN_LIBRARY/_centauri_bash_lib" ] ; then
-    . "\$CEN_LIBRARY/_centauri_bash_lib.p" "\$@" || exit 2
-else
-    . "\$CEN_LIBRARY/_centauri_bash_lib" "\$@" || exit 2
-fi
-
-# init transient folder after boot (root only)
-[ "\$EUID" = 0 ] && [ ! -d "\$CEN_ROOT/transient" ] && embed -m '_centauri_bash_sys'
-:
-!EOF
-    #sysrun -e -p -- chmod 775 "$CEN_TOOLS/_centauri_bash_lib" || :
-    return 0
 }
 
 # end

@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------------------
 # _centauri_bash_xtr = centauri-bash-lib: Self-extractor for standalone scripts
 #
-# Call:    . _centauri_bash_xtr [-d] [-n]
+# Call:    . _centauri_bash_xtr [-d] [-n] [-q] [--] [<path>]
 #
 #+         [[embed()]] should be used to load the module before calling [[main()]].
 #          The module has no public functions, extraction starts when the module is
@@ -10,6 +10,7 @@
 #
 # Options: -d  enable debug output
 #          -n  do not self-extract
+#          -q  quiet mode, no errors/warnings
 #
 #+A self-extraction script is a completely normal script that embeds this module.
 # The script code should end whith something like "main "$@" ; quit" so that bash
@@ -249,14 +250,17 @@ _cen_xtr_extract() {
             a|s)        _cen_xtr_function "$_kind" "$_arg1" "$_arg2" && continue ;;
             esac
 
-            eval _arg1=$_arg1 ; eval _arg2=$_arg2
-            _path="$_xdir/$_arg1" ; folder -f -- "${_path%/*}"
+            eval _arg1="$_arg1" ; eval _arg2="$_arg2"   # remove quoting
+            _path="$_xdir/$_arg1"
 
             case "$_kind" in
             d)  $CEN_XTR_TRACE2 -a "FOLDER:" "$_arg1" ; folder -m -- "$_path" ;;
-            l)  $CEN_XTR_TRACE2 -a "LINK  :" "$_arg1" "$_arg2" ; symlink -d -n -- "$_arg1" "$_arg2" ;;
-            f)  $CEN_XTR_TRACE2 -a "FILE  :" "$_arg1" ; _cen_xtr_decode >"$_path" ;;
-            t)  $CEN_XTR_TRACE2 -a "TEXT  :" "$_arg1" ; _cen_xtr_txtcpy >"$_path" ;;
+            l)  $CEN_XTR_TRACE2 -a "LINK  :" "$_arg1" "$_arg2"
+                symlink -d -n -- "$_arg1" "$_arg2" ;;
+            f)  folder -f -- "${_path%/*}"
+                $CEN_XTR_TRACE2 -a "FILE  :" "$_arg1" ; _cen_xtr_decode >"$_path" ;;
+            t)  folder -f -- "${_path%/*}"
+                $CEN_XTR_TRACE2 -a "TEXT  :" "$_arg1" ; _cen_xtr_txtcpy >"$_path" ;;
             *)  fatal "Extract:" $"Corrupted data:" "$_kind" "$_arg1" "$_arg2"
             esac
         done
@@ -284,11 +288,12 @@ while [ "${1::1}" = '-' ] ; do              # module options ...
     -A)   return 0 ;;                       # autoload
     -d)   CEN_XTR_TRACE1='_cen_message' ;;
     -n)   return 0 ;;
+    -p)   ;;
     -q)   CEN_XTR_ERROR=':' ;;              # no warning
     esac ; shift
 done
 
-_cen_xtr_extract "$@" <"$0"                 # run extractor for current script
+_cen_xtr_extract "$1" <"$0"                 # run extractor for current script
 
 :                                           # return true to indicate success
 

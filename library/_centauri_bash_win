@@ -242,7 +242,7 @@ _cen_win_pdlg() {
             "$CEN_WIN_APPQDBUS" $CEN_WIN_PROGRESS "close" &>/dev/null
         fi
         CEN_WIN_PROGRESS= ; CEN_WIN_PROGVCUR= ; CEN_WIN_PROGTEXT= ; CEN_WIN_PROGVALU=
-        [ "$_fqui" = 2 ] && quit "$*"
+        [ "$_fqui" = 2 ] && quit -s 2 -- "$*"
         return 0
     fi
 
@@ -942,7 +942,7 @@ _cen_windcheck() {
     [ "$CEN_WIN_NAME" = '-' ] && CEN_WIN_GUISTAT=1 || CEN_WIN_GUISTAT=0
 
     # get system and kde verssion
-    embed -q _centauri_bash_sys || :                # just to get version
+    embed -q '_centauri_bash_sys' || :              # just to get version
     CEN_WIN_DLG_TITLE=1
     CEN_WIN_DLG_CAPTION=1
     CEN_WIN_USE_TITLE=1

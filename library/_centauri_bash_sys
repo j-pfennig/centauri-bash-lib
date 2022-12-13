@@ -90,30 +90,6 @@ _cen_sys_rootdefs() {
 }
 
 # ------------------------------------------------------------------------------
-# get list of tools
-# ------------------------------------------------------------------------------
-_cen_sys_tools() {
-    [ -n "$CEN_SYS_TOOLS" ] && return                   # already defined
-    CEN_SYS_TOOLS=("$CEN_TOOLS/_centauri_bash_lib")     # must include proxy
-    local farg fexc
-    for farg in "$CEN_TOOLS"/centauri* ; do             # autoinclude: centauri*
-        for fexc in "${CEN_SYS_EXCLUDE[@]}" ; do
-            [[ "${farg##*/}" == $fexc ]] || continue
-            farg= ; break
-        done
-        [ -n "$farg" ] && CEN_SYS_TOOLS+=("$farg")
-    done
-    for farg in "${CEN_SYS_INCLUDE[@]}" ; do            # add extra includes
-        farg="$CEN_TOOLS/$farg"
-        for fexc in "${CEN_SYS_TOOLS[@]}" ; do
-            [ "$farg" = "$fexc" ] || continue
-            farg= ; break
-        done
-        [ -n "$farg" ] && CEN_SYS_TOOLS+=("$farg")
-    done
-}
-
-# ------------------------------------------------------------------------------
 # sysversion - determine os/kde versions, read/write version file
 #
 # Call:     sysversion [-k] [-o] [-r|-u|-w]
@@ -151,6 +127,7 @@ _cen_sys_tools() {
 # running. If so the function tries next time when running under KDE.
 # ------------------------------------------------------------------------------
 sysversion() {
+    $CEN_DEBUG -c -- "$*"
 
     # get state file path: -r|-w
     _cen_sys_state() {
@@ -236,7 +213,7 @@ sysversion() {
             warning $"Cannot write version info:" "$CEN_SYS_STATE_FILE"
         else
             $CEN_TRACE -a $"Writing version info:" "$CEN_SYS_STATE_FILE"
-             _cen_ins_version -w $_otra
+            _cen_ins_version -w $_otra
         fi
     fi
 }
@@ -315,6 +292,7 @@ syssetup() {
     fi || :
 
     # sysconfig, is called twice during setup as the config file may have changed
+### TODO _kopt is obsolete
     [ "${1:--}" != '-' ] && _kopt='-k'              # keep CEN_ROOTDEFS
     sysconfig $_kopt || return 1
 
@@ -377,24 +355,46 @@ syssetup() {
 # **noquit** is specified (form (2) and form (3) only), the function calls [[quit()]]
 # and never returns.
 # ------------------------------------------------------------------------------
+_cen_sys_help() {
+    local _cmds=('detailed' 'help' 'install' 'paths' 'refresh'
+                 'setup' 'uninstall' 'update' 'version')
+    [ "$1" = '-f' ] &&
+        quit -e -m $"Bad '--info' argument. Valid arguments are:" '\n' "${_cmds[*]}"
+
+    local _mesg=($"show detailed version info"
+                 $"show this message"
+                 $"create or update an installation"
+                 $"show centauri-bash-lib paths"
+                 $"for setup tools: "$"copy updated files"
+                 $"for setup tools: "$"copy files"
+                 $"undo an installation"
+                 $"silently update"
+                 $"show version info"
+                )
+    local _indx _join _line
+    for ((_indx=0 ; _indx < ${#_cmds[@]} ; _indx++)) ; do
+        printf -v _line "\n    %-10s -  %s" "${_cmds[_indx]}" "${_mesg[_indx]}"
+        _join+="$_line"
+    done
+    quit -m $"Valid --info arguments are:" '\n ' "$_join" '\n' " "
+}
+
 sysinfo() {
     $CEN_DEBUG -c -- "$*"
     local _dopt _iopt _fnoq _stat=0
     # help should not advertise the 'detailed' command
-    local _cmds='help install paths refresh setup uninstall update version'
     case "$1" in
-        "")        ;;
-        help|-)    quit -m $"Valid --info arguments are:" '\n' "$_cmds" ;;
-        install)   _iopt="-i" ;;
-        paths)     _dopt=2 ;;
-        refresh)   _iopt="-n" ;;
-        setup)     _iopt="-n" ; CEN_OPT_FORCE=1 ;;
-        uninstall) _iopt="-r" ;;
-        update)    _iopt="-u" ;;
-        detailed)  _dopt=1 ;;
-        ver*)      sysversion -m -o -k ; quit ;;
-        *)         fatal -m $"Bad --info argument. Valid commands are:" '\n' \
-                            'detailed' "$_cmds"
+        "")         ;;
+        help|-)     _cen_sys_help ;;
+        install)    _iopt="-i" ;;
+        paths)      _dopt=2 ;;
+        refresh)    _iopt="-n" ;;
+        setup)      _iopt="-n" ; CEN_OPT_FORCE=1 ;;
+        uninstall)  _iopt="-r" ;;
+        update)     _iopt="-u" ;;
+        detailed)   _dopt=1 ;;
+        ver*)       sysversion -m -o -k ; quit ;;
+        *)          _cen_sys_help -f
     esac
 
     if [ "$_dopt" = 2 ] ; then
@@ -463,6 +463,7 @@ sysconfig() {
     _cen_sys_read() {
         set -f ; eval set -- $1 ; set +f ; local _skey="$1" ; shift
         $CEN_TRACE2 "[library] $_skey $*"
+        local _sifs="$IFS"
 
         # reset statements
         [ $# = 0 ] &&
@@ -494,58 +495,11 @@ sysconfig() {
                        #_cen_sys_rootdefs "$_skey"
                        ;;
             repath )   configfile -w "sysconfig" 3 + $#
-                       trimjoin -d $'\a' -- "$@" ; CEN_PATH_REXP+=("$CEN_TRIMJOIN")
+                       IFS=$'\a' CEN_PATH_REXP+=("$*") ; IFS="$_sifs"
                        ;;
             *)         configfile -w "sysconfig"
         esac
         return 0
-    }
-
-    # --- bash completion ---
-
-    _cen_sys_completion() {
-        local _tool _item
-        while [ $# -gt 0 ] ; do
-            _item="${1##*/}" ; shift
-            [ "$_item" = "_centauri_bash_lib" ] || _tool+=" '$_item'"
-        done
-        create -h "centauritools" -t -w "$CEN_LIBRARY/_centauri_bash_completion" 664 <<!EOF
-# custom completion function
-_centauri_bash_lib_compl() {
-    # completion of options
-    if [ "\${2::1}" = '-' ] ; then
-        local _xall="\$(CEN_COMPLETION=opts \$1 --help) --info --help --verbose --quiet"
-        COMPREPLY=(\$(compgen -W "\$_xall" -- \$2))
-        # no space for option argument
-        if [ "\${#COMPREPLY[@]}" = "1" ] ; then
-            [ "\${COMPREPLY:\${#COMPREPLY}-1}" = "=" ] && compopt -o nospace
-        fi
-
-    # filenames or verbs
-    else
-        compopt -o filenames
-
-        # forced filename completion
-        if [ "\${2::1}" = "." ] ; then
-            :
-        # filename completion after verb (bash bug, needs && here)
-        elif [ -z "\${3//[a-z]/}" ] && [ "\$1" != "\$3" ] ; then
-            :
-        # do verb completion: <prog> <input> <context>
-        else
-            local _xall=\$(CEN_COMPLETION="verb:\$3" \$1 --help)
-            COMPREPLY=(\$(compgen -W "\$_xall" -- \$2))
-            [ -n "\$COMPREPLY" ] && return
-        fi
-
-        local _sifs="\$IFS" ; IFS=\$'\\n'
-        COMPREPLY=(\$(compgen -o default -- "\$2")) ; IFS="\$_sifs"
-    fi
-}
-
-# register the completion function
-complete -X "@(.[^/]*|./.*)" -F _centauri_bash_lib_compl $_tool
-!EOF
     }
 
     # --- check for systemd ---
@@ -553,12 +507,14 @@ complete -X "@(.[^/]*|./.*)" -F _centauri_bash_lib_compl $_tool
     _cen_sys_systemd() {
         local _sysi="$CEN_PATHS/sbin/init" _sysd="${CEN_PATHS[2]}/systemd"
         # strong systemd evidence: have systemctl and /etc/systemd
+   ### TODO use sysfind
         if [ -d "$_sysd" ] && type -t >/dev/null 'systemctl' ; then
             $CEN_TRACE -a -p $"Using 'systemd' (got 'systemctl' and '%s')" "$_sysd"
             return 0
 
         # strong systemd evidence: /sbin/init symlink to systemd
         else
+   ### TODO use resolve
             system -q -r -s _sysi -- readlink -f '/sbin/init'
             if [ "${_sysi##*/}" = 'systemd' ] ; then
                 $CEN_TRACE -a -p $"Using 'systemd' ('%s' is symlink to systemd)" "$_sysi"
@@ -599,14 +555,21 @@ complete -X "@(.[^/]*|./.*)" -F _centauri_bash_lib_compl $_tool
     _cen_run_config -p "$_pcfg" -r _cen_sys_read 'library' || _stat=$?  # override
     shortpath -q || _stat=$?                                # init paths cache
 
-    [ -n "$_popt" -a -d "$CEN_TOOLS" ] && _cen_run_proxy    # generate proxy
+    if [ -n "$_popt" -a -d "$CEN_TOOLS" ] ; then            # generate proxy
+        local _parr _prox
+        _cen_run_config -v _parr 'proxy'
+        splitjoin -j _prox -n -i _parr
+        embed -m '_centauri_bash_ins'
+        _cen_ins_proxy "$_prox" || _stat=$?
+    fi || :
 
     if [ -n "$_copt" -a -d "$CEN_LIBRARY" ] ; then          # bash completion
-        _cen_sys_tools || _stat=$?
-        _cen_sys_completion "${CEN_SYS_TOOLS[@]}" || _stat=$?
+        embed -m '_centauri_bash_ins'
+        _cen_ins_completion || _stat=$?
     fi
 
     if [ -n "$_sopt" ]  ; then
+    ### TODO move this to: _cen_ins_chksystemd
         if ! _cen_sys_systemd ; then
             remove -q -- "$CEN_ROOT/systemd"
             [ -e "$CEN_ROOT/systemd" ] && rename -b "disabled" -- "$CEN_ROOT/systemd"
@@ -623,24 +586,31 @@ complete -X "@(.[^/]*|./.*)" -F _centauri_bash_lib_compl $_tool
 }
 
 # ------------------------------------------------------------------------------
-# Init module
+# Init module: [-A] [-n]
 # ------------------------------------------------------------------------------
+
+[ "$1" = '-n' ] && return 0                 # no init
 
 # the proxy does a 'embed -m _centauri_bash_sys' if the caller is root and the
 # cache dir is missing to trigger a minimal setup ...
-
-if [ "$1" != '-n' ] ; then
-    if [ ! -d "$CEN_SYS_CACHE_DIR" ] && [ "$EUID" = 0 ] ; then
+if  [ "$EUID" = 0 ] ; then
+    if [ ! -d "$CEN_SYS_CACHE_DIR" ] ; then
         # run a mimimal setup, but only if the library is installed
         [ -d "$CEN_SYS_STATE_DIR" -o -h "$CEN_SYS_STATE_DIR" ] && syssetup -t
+        # refresh caches (if any), may be after system updates
+        remove "$CEN_SYS_STATE_DIR/centaurisystem"
     fi
-
-    if [ "$1" = '-A' ] ; then               # module got auto-loaded ...
-        [ "$EUID" = 0 ] && sysversion       # user root to init global cache
+    # (re-)init global cache
+    if [ "$CEN_ROOT/default/centauri-bash-lib" -nt "$CEN_SYS_STATE_DIR/centaurisystem" ] ; then
+        sysversion -w                           # force refresh
+        sysconfig                               # cache refresh
     else
-        sysversion                          # get version info by default
+        sysversion -u                           # get version info by default
     fi
+else
+    sysversion -u                               # get version info by default
 fi
+
 :
 
 # end

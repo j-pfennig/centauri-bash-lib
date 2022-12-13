@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_lib = centauri-bash-lib: Main module
 #
@@ -417,7 +417,7 @@ quit() {
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -e)   _flgt=2 ; _opts+=("$1") ;;
+      -e)   _flgt=2 ; _opts+=("$1") ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1 ;;
       -h)   $CEN_HOOK_QUIT -h ; CEN_HOOK_QUIT=_cen_quit ; return 0 ;;
       -s)   CEN_EXIT="$2" ; shift ;;
       -t)   _flgt=1 ; CEN_EXIT=4 ;;
@@ -476,7 +476,7 @@ _cen_exit() {
     $CEN_TRACE -r -c $"Exit status" -- "${CEN_EXIT:-0}"
     [ -n "$CEN_QUIT_SANE" ] && system -r -q -- stty sane
     if [ "$CEN_QUIT_WAIT" = 3 ] ; then
-       sleep 2
+        system -b -r sleep 2
     elif [ "$CEN_QUIT_WAIT" = 2 ] ; then
         trap "exit ${CEN_EXIT:-0}" 1 2 3 15
         read -n1 -p $"Press any key to close the window..." 1>&2
@@ -494,7 +494,9 @@ _cen_trap() {
     CEN_TRAPSIG="${1:--}"
     [ -n "$CEN_CONS_MSGLEN" ] && ((CEN_CONS_MSGLEN += 2))
     [ -n "$CEN_QUIT_WAIT" ] && CEN_QUIT_WAIT=3
-    [ "$1" = 2 ] && quit -t - $"by user"
+    if [ "$1" = 2 ] ; then
+        echo >&2 ; quit -t - $"by user"
+    fi
     quit -t - $"by signal" "$1"
 }
 
@@ -1499,11 +1501,9 @@ embed() {
       -a)   shift ; _vset="$1" ; local -n _vsar="$1" ; _vsar=() ;;
       -c)   _modu=3 ;;
       -d)   shift ; [ "$1" = '--' ] && _vdel=(-n) || _vdel=("-d" "$1") ;;
-      -g)   if [ -n "$_mgui" ] ; then
-                if   windows ; then _verb+=" --gui=1"
-                elif console ; then _verb+=" --gui=2"
-                else                _verb+=" --gui=0"
-                fi
+      -g)   if   windows ; then _verb+=" --gui=1"
+            elif console ; then _verb+=" --gui=2"
+            else                _verb+=" --gui=0"
             fi ;;
       -i)   [ -n "$CEN_AUTOIND" ] && _oind=":a" ; CEN_AUTOIND=1 ;;
       -m)   _modu=1 ; _rdry="-r" ;;
@@ -2724,7 +2724,7 @@ main() {
     elif [ -n "$_oinf" ] ; then
         [ -n "$CEN_PACKAGE" ] && _cen_bash_info
         # using -r option to hide from uglify ...
-        embed -r -m '_centauri_bash_sys' && sysinfo "${CEN_CMDARGS[@]}"
+        embed -m '_centauri_bash_sys' && sysinfo "${CEN_CMDARGS[@]}"
     elif [ "$CEN_EXIT" != 0 ] ; then
         CEN_EXIT=1 ; quit
     fi

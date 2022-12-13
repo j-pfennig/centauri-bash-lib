@@ -328,6 +328,7 @@ inpfile() {
 
         # check folder
         elif [ -d "$_varg" ] ; then
+            [ "$_varg" = '/' ] || _varg="${_varg%/}"
             [ -n "$_fdir" ] && return 0
             _mesg=$"Input cannot be a folder"
         elif [ -z "$_ffil" ] ; then
@@ -665,7 +666,7 @@ outfile() {
 # ------------------------------------------------------------------------------
 CEN_CACHEFILE=
 cachefile() {
-    #$CEN_DEBUG -c -- "$*"
+    $CEN_DEBUG -c -- "$*"
     local _fwri _ferr _fglo=1 _fpri=1 _fqui _fsrc _fdef _spri _scfg
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
@@ -682,7 +683,7 @@ cachefile() {
         *)    _cen_abort - "$1"
         esac ; shift
     done
-   [ -z "$_fglo" -a -z "$_fpri" ] && _cen_abort - '-g -p'
+    [ -z "$_fglo" -a -z "$_fpri" ] && _cen_abort - '-g -p'
     CEN_CACHEFILE=
     local _cfil="${1:--}" ; [ "$_cfil" = "-" ] && _cfil="$CEN_NAME.dat"
 
@@ -690,9 +691,9 @@ cachefile() {
 
     if [ -n "$2" ] ; then                               # cache up-to-date?
         [ -n "$_fpri" -a -z "$_fdef" ] && _scfg='-p'
-        configfile $_fqui $_sfg -i true -n "$2"         # get config path
+        configfile $_fqui $_scfg -i true -n "$2"        # get config path
         if cachefile $_ferr $_spri -- "$_cfil" ; then   # get cache path
-            #$CEN_DEBUG "READ" CEN_CACHEFILE CEN_CONFIGFILE
+            #$CEN_TRACE2 -c " check" -- "$CEN_CACHEFILE" "$CEN_CONFIGFILE"
             if [ "$CEN_CACHEFILE" -nt "$CEN_CONFIGFILE" ] ; then
                 [ -n "$_fscr" ] && serialize $_ferr -r -n "$CEN_CACHEFILE"
                 return 0                                # valid cache
@@ -703,7 +704,7 @@ cachefile() {
         # write intention may show a valid private cache
 
         cachefile $_ferr $_spri -w -- "$_cfil"          # get write path
-        #$CEN_DEBUG "WRITE" CEN_CACHEFILE CEN_CONFIGFILE
+        #$CEN_TRACE2 -c " write" -- "$CEN_CACHEFILE" "$CEN_CONFIGFILE"
         if [ "$CEN_CACHEFILE" -nt "$CEN_CONFIGFILE" ] ; then
             [ -n "$_fscr" ] && serialize $_ferr -r -n "$CEN_CACHEFILE"
             return 0                                    # valid cache
@@ -722,7 +723,7 @@ cachefile() {
     if [ -n "$_fglo" ] ; then                           # try global ...
         folder $_ferr -s CEN_CACHEFILE -g -b persistent -- "$_cfil"
         if [ -n "$_fwri" ] ; then
-            [ "$EUID" = "0" ] && return 0               # global dir ok
+            [ "$EUID" = 0 ] && return 0                 # global dir ok
         elif [ -r "$CEN_CACHEFILE" ] ; then
             return 0                                    # global file ok
         fi
@@ -739,7 +740,7 @@ cachefile() {
 # ------------------------------------------------------------------------------
 # configfile - Read and parse a configuration file
 #
-# Call:     (1) configfile [-q] [-i <init>] [-n <name>]             # get file path
+# Call:     (1) configfile [-q] [-i <init>] [-n <name>]           # get file path
 #
 #           (2) configfile [-q] -a|-r <reader> [-c|-x] [-i <init>] [-m] [-n <name>] [--] <sect>...
 #               configfile [-q] -l <reader> [-c|-x] [-i <init>] [-n <name>]
@@ -848,7 +849,7 @@ cachefile() {
 #
 #           (4) Read two sections into array and list:
 #.          local data
-#.          configfile -r -data -v -c -- 'one' 'two' || quit
+#.          configfile -r data -v -c -- 'one' 'two' || quit
 #.          splitjoin -i data
 #
 #           (5) Get file, try private file 1st (before $CEN_ROOT/default):
@@ -856,7 +857,7 @@ cachefile() {
 # ------------------------------------------------------------------------------
 CEN_CONFIGFILE=
 configfile() {
-    #$CEN_DEBUG -c -- "$*"
+    $CEN_DEBUG -c -- "$*"
     local _file _aflg _init _priv _rlin _read _ropt="-r" _sopt _sect=()
     local _ocom _oerr _omul _oqui _ovar _orep='error -z' _otra="$CEN_TRACE"
     while [ "${1::1}" = "-" ] ; do
@@ -921,7 +922,8 @@ configfile() {
     # check list of filters
     _cen_configfile_fltr() {
         [ "${#_sect[@]}" = 0 ] && return 1
-        local _item _snam="${_line%%\]*}" ; _snam="${_snam:1}"
+        [ "${_line//[[:alnum:]_-]/}" = '[]' ] || return 1
+        local _item _snam="${_line:1:-1}"
         for _item in "${_sect[@]}" ; do
             [ "$_snam" = "$_item" -o "$_item" = "*" ] || continue
             CEN_CONFIGFILE[3]="$_snam" ; _skip=
@@ -1016,7 +1018,7 @@ configfile() {
 
     # call worker
     if [ -n "$_rlin" -o "${_read:-.}" != '.' ] ; then
-        $_otra -a -c $" read" -- "$_file"
+        $_otra -a -c $" read" -- "$_file [$*]"
         if [ -n "$_rlin" ] ; then
             while IFS= read -r -u $_fhan _line ; do
                 ((_lnum += 1))
@@ -1052,6 +1054,7 @@ configfile() {
         true ; . "$_file" ; _stat=$?
         [ "$_stat" = 0 ] || error $"Invalid data in configuration file:" "$_file"
     fi
+
     redirect $_oqui -s -v _fhan                             # must close handle
     return $_stat
 }
@@ -1108,7 +1111,7 @@ configfile() {
 # such data must be deserialized manually.
 # ------------------------------------------------------------------------------
 serialize() {
-    #$CEN_DEBUG -c -- "$*"
+    $CEN_DEBUG -c -- "$*"
     local _fdel _fdec _fmod _fref _fzer _fqui _mode
     local _ffil="$CEN_NAME.dat" _oerr='error -z' _otra="$CEN_TRACE -a"
     while [ "${1::1}" = "-" ] ; do
@@ -1155,7 +1158,7 @@ serialize() {
 
         dryrun "serialize: $_ffil" && return
         create $_fqui -v _sout -h - -s -t -- "$_ffil" $_mode || return 1
-        $_otra -a -c $" write" "$_ffil"
+        $_otra -c $" write" -- "$_ffil"
 
     # --- read ---
 
@@ -1165,7 +1168,7 @@ serialize() {
             . $_ffil &>/dev/null
             CEN_QUIT_TRAP="$_trap"
             if [ $? = 0 ] ; then
-                $_otra -a -c $" read" "$_ffil"
+                $_otra -c $" read" -- "$_ffil"
             else
                 $_oerr $"Failed to deserialize data from:" "$_ffil"
                 return 1
@@ -1192,6 +1195,119 @@ serialize() {
         remove $_fqui -- "$_ffil" || return 1
     fi
     return 0
+}
+
+# ------------------------------------------------------------------------------
+# spliteval - Split strings using the bash eval builtin
+#
+# Call:     (1) spliteval -a|-s <var> [-g|-n] [-q|-w] -i <var>
+#               spliteval -a|-s <var> [-g|-n] [-q|-w] [--] <data> ...
+#           (3) spliteval -u <var> [-g] [-q|-w] -i <var>
+#               spliteval -u <var> [-g] [-q|-w] [--] <data> ...
+#
+# Options:  -a  result array
+#           -g  enable bash globbing
+#           -i  input from <var>, can be array or string
+#           -n  no eval, just smart quoting (use with -s only)
+#           -q  do not report eval errors
+#           -s  result string (smart quoted)
+#           -u  simplified 'unquote' to result array
+#           -w  print warning on eval errors
+#
+#
+# Return:   **true** at success or **false** otherwise.
+#
+#.Examples: # do globbing and eval
+#.          local dest=() data=("*.conf" '1st example' "$CEN_PATH/etc")
+#.          spliteval -a dest -g -i data
+#
+#.          # do globbing and eval, smart quoting
+#.          local dest data=("*.conf" '1st example' "$CEN_PATH/etc")
+#.          spliteval -s dest -g -i data
+#
+#.          # smart quoting arguments to string
+#.          local dest
+#.          spliteval -s dest -n -- "*.conf" '1st example' "$CEN_PATH/etc"
+#
+#.          # simplified unquote of a quoted string
+#.          local quot uquo=()
+#.          spliteval -s quot -- " one * 'two tree'   four '|'" "\"five\"  \$HOME"
+#.          spliteval -u uquo -i quot
+# ------------------------------------------------------------------------------
+spliteval() {
+    local _oinp _oset _oerr=error _oglo _onoe _oset _stat=0
+    local -n _vvei _vveo
+    while [ "${1::1}" = "-" ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -a|-u)
+            _oset="$1" ; shift ; _vveo="$1" ; _vveo=() ;;
+      -g)   _oglo=1 ;;
+      -i)   shift ; _oinp=1 ; _vvei="$1" ;;
+      -n)   _onoe=1 ;;
+      -q)   _oerr="$CEN_TRACE" ;;
+      -s)   _oset="$1" ; shift ; _vveo="$1" ; _vveo= ;;
+      -w)   _oerr=warning ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+    [ -n "$_oinp" ] && set -- "${_vvei[@]}"
+
+    # simple 'unquote' eval, fast path
+    if [ "$_oset" = '-u' ] ; then
+        if [ -n "$_oglo" ] ; then
+            eval _vveo=("$*") ; _stat=$?
+        else
+            set -f ; eval _vveo=("$*") ; _stat=$? ; set +f
+        fi 2>/dev/null
+        [ "$_stat" = 0 ] && return 0
+        _vveo=("$*")
+        $_oerr $"Syntax error:" "$_vveo" ; return 1
+    fi
+    [ -z "$_oset" ] && _cen_abort = '-a|-s|-u'
+
+    # full eval
+    local _line _item _ugly _args=()
+    [ -z "$_oglo" ] && set -f
+    for _item in "$@" ; do
+       # _ugly=
+        if [ -n "$_onoe" ] ; then
+            _args+=("$_item")
+        else
+            # fix-ups to make eval happy
+            if [ "$_item" != "${_item/[(|)]/}" ] ; then
+                _item="${_item//|/\\|}" ; _item="${_item//(/\\(}"
+                _item="${_item//)/\\)}" ; _ugly=1
+            fi
+            # use eval to append to array
+            if ! eval _args+=("$_item") 2>/dev/null ; then
+                [ -z "$_oglo" ] && set +f
+                $_oerr $"Syntax error:" "$_item"
+                _args+=("$_item") ; _stat=1
+            fi
+        fi
+    done
+    [ -z "$_oglo" ] && set +f
+
+    # smart quoting
+    for _item in "${_args[@]}" ; do
+        if [ -n "$_ugly" ] ; then                   # undo fix-ups
+            _item="${_item//\\\|/|}" ; _item="${_item//\\\(/(}"
+            _item="${_item//\\\)/)}"
+        fi
+        if [ "$_oset" = '-a' ] ; then               # array output
+            _vveo+=("$_item")
+            continue
+        fi
+        case "$_item" in                            # smart quoting
+        '')     _item="''" ;;
+        *[![:alnum:]]*)
+                [ -n "${_item//[[:alnum:]-+=_.:@\/\[\]]/}" ] && _item="${_item@Q}" ;;
+        esac
+        [ -z "$_line" ] && _line="$_item" || _line+=" $_item"
+    done
+    [ "$_oset" = '-s' ] && _vveo="$_line"
+    return $_stat
 }
 
 # ------------------------------------------------------------------------------

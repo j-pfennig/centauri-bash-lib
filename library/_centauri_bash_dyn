@@ -189,23 +189,17 @@ documentation() { _cen_dyn_load doc "$@" ; }
 attributes() { _cen_dyn_load ext "$@" ; }
 copy() { _cen_dyn_load ext "$@" ; }
 joinpath() { _cen_dyn_load ext "$@" ; }
-listsearch() { _cen_dyn_load ext "$@" ; }
 move() { _cen_dyn_load ext "$@" ; }
-optmake() { _cen_dyn_load ext "$@" ; }
-pluralize() { _cen_dyn_load ext "$@" ; }
 prettypath() { _cen_dyn_load ext "$@" ; }
 redirect() { _cen_dyn_load ext "$@" ; }
 remove() { _cen_dyn_load ext "$@" ; }
 rename() { _cen_dyn_load ext "$@" ; }
 resolve() { _cen_dyn_load ext "$@" ; }
-splitcall() { _cen_dyn_load ext "$@" ; }
-spliteval() { _cen_dyn_load ext "$@" ; }
 splitpath() { _cen_dyn_load ext "$@" ; }
 suffixpath() { _cen_dyn_load ext "$@" ; }
 symlink() { _cen_dyn_load ext "$@" ; }
 sysrun() { _cen_dyn_load ext "$@" ; }
 tmpfile() { _cen_dyn_load ext "$@" ; }
-trimjoin() { _cen_dyn_load ext "$@" ; }
 walk() { _cen_dyn_load ext "$@" ; }
 
 inpdata() { _cen_dyn_load iom "$@" ; }
@@ -215,6 +209,7 @@ outfile() { _cen_dyn_load iom "$@" ; }
 cachefile() { _cen_dyn_load iom "$@" ; }
 configfile() { _cen_dyn_load iom "$@" ; }
 serialize() { _cen_dyn_load iom "$@" ; }
+spliteval() { _cen_dyn_load iom "$@" ; }
 
 automount() { _cen_dyn_load mnt "$@" ; }
 blkdevice() { _cen_dyn_load mnt "$@" ; }
@@ -254,6 +249,13 @@ usageparser() { _cen_dyn_load use "$@" ; }
 usagecat() { _cen_dyn_load use "$@" ; }
 usageset() { _cen_dyn_load use "$@" ; }
 usageopt() { _cen_dyn_load use "$@" ; }
+
+listsearch() { _cen_dyn_load utl "$@" ; }
+optmake() { _cen_dyn_load utl "$@" ; }
+pluralize() { _cen_dyn_load utl "$@" ; }
+splitcall() { _cen_dyn_load utl "$@" ; }
+timer() { _cen_dyn_load utl "$@" ; }
+trimjoin() { _cen_dyn_load utl "$@" ; }
 
 webapp() { _cen_dyn_load web "$@" ; }
 

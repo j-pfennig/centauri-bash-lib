@@ -272,55 +272,62 @@ inhibit() {
 # ------------------------------------------------------------------------------
 # pidfile - create/delete PID file, check status, terminate process
 #
-# Call:     pidfile [-c|-d|-n] [[<path>/]<name>]
-#           pidfile [-d] -s <signal> [[<path>/]<name>]
-#           pidfile -w <pid>|- [[<path>/]<name>]
+# Call:     (1) pidfile -w <pid>|- [--] [[<path>/]<name>]
+#           (2) pidfile [-c|-d|-n] [-s vnam] [--] [[<path>/]<name>]
+#           (3) pidfile [-d] -k <signal> [-s vpid] [--] [[<path>/]<name>]
+#
+#+          Form (1) creates a pid file, form (2) returns pid file information or
+#           deletes a pid file. A signal can be sent to a process using form (3).
 #
 # Options:  -c  check if saved PID is still running
 #           -d  delete the PID file
+#           -k  send a signal to the saved PID
 #           -n  get PID file name and return
 #           -r  use extension .run instead of .pid
-#           -s  send a signal to the saved PID
+#           -s  save the PID (empty string on error)
 #           -w  create a PID file
 #
 # Arguments:<name>    PID file name (default is $CEN_NAME)
 #           <path>    path starting with "/", enables validation
 #           <pid>     PID of main process or "0" for oneshot
-#           <signal>  signal to be sent (default is SIGTERM)
+#           <signal>  signal name/number to be sent (default is SIGTERM)
+#           <vnam>    variable name
 #
 # Files:    $CEN_ROOT/transient/<prog>.pid  # the default PID file
 #           /run/<prog>.pid                 # used if needed
 #           $TMP/<prog>.pid                 # used if needed
 #
-# Return:   **true** on success or **false** on error or failed test.
+#+Return:   **true** on success or **false** on error or failed test.
 #           On success CEN_PIDFILE is set to a PID file path.
 #
 #+This function implements the standard PID file actions and is used to
 # implement service state handling. The function itself does not register
 # any hook to catch signals or to remove the pidfile.
 #
-#+Using a full path as argument enables a validation against the
-# process name.
+#+Using a full path as program name argument enables a validation against the
+# process name to prevent killing a process using a stale pid file. The code
+# checks if "/proc/<pid>/exe" is the same file as the given path. For bash all
+# paths will match.
 # ------------------------------------------------------------------------------
 CEN_PIDFILE=
 pidfile() {
     CEN_PIDFILE=
-    local _flgd _flgs _flgw _fext=".pid"
+    local _flgd _flgs _flgw _fsav _fext=".pid"
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   ;;
       -d)   _flgd=1 ;;
+      -k)   shift ; _flgs="${1:--}" ;;
       -n)   _flgw="-" ;;
       -r)   _fext=".run" ;;
-      -s)   shift ; _flgs="${1:--}" ;;
+      -s)   shift ; _fsav="${1:--}" ; printf -v "$_fsav" '0' ;;
       -w)   shift ; _flgw="${1:--}" ; [ "$_flgw" = "-" ] && _flgw=$$ ;;
 
       # internal use: <pid> <program> <pidfile>
       -v)   shift ; [ "${2::1}" = "/" ] || return 0     # no check
             [ "${1:-0}" = 0 ] && return 0               # nothing to check
             [ "/proc/$1/exe" -ef "$2" ] && return 0     # success
-### TODO try harder
             [ "/proc/$1/exe" -ef "$BASH" ] && return 0
             [ -r "/proc/$1/exe" ] || return 0           # no check
             remove -- "$3" ; return 1 ;;                # failure
@@ -329,46 +336,48 @@ pidfile() {
       esac ; shift
     done
 
-    local name="${1:-$CEN_NAME}" file="$CEN_ROOT/transient" temp
-    [ -w "$file" ] || file="/run"
-    [ -w "$file" ] || file="$TMP"
-    file+="/${name##*/}$_fext"
+    local _name="${1:-$CEN_NAME}" _file="$CEN_ROOT/transient" _temp
+    [ -w "$_file" ] || _file="/run"
+    [ -w "$_file" ] || _file="$TMP"
+    _file+="/${_name##*/}$_fext"
 
     if [ -n "$_flgw" ] ; then                           # write pid file...
         if [ "$_flgw" != "-" ] ; then
-            create -r -t -v _flgw -- "$file" 600 || return 1
+            create -r -t -v _flgw -- "$_file" 600 || return 1
         fi
-        CEN_PIDFILE="$file" ; return 0
+        CEN_PIDFILE="$_file" ; return 0
     fi
 
-    if ! [ -e "$file" ] ; then                          # no PID file
-        $CEN_TRACE "pidfile: no pid file:" "$file"
+    if ! [ -e "$_file" ] ; then                         # no PID file
+        $CEN_TRACE "pidfile: no file:" "$_file"
         return 1
     fi
     if [ -z "$_flgd" -o -n "$_flgs" ] ; then            # read PID file
-        if ! read temp 2>/dev/null <"$file" ; then
-            $CEN_TRACE "pidfile: cannot read:" "$file"
+        if ! read _temp 2>/dev/null <"$_file" ; then
+            $CEN_TRACE "pidfile: cannot read:" "$_file"
             return 1
         fi
+        [ "$_fsav" ] && printf -v "$_fsav" '%s' "$_temp"
     fi
 
     if [ -n "$_flgd" -o -n "$_flgs" ] ; then
-        pidfile -v "$temp" "$name" "$file" || return 3  # wrong process
-        [ -n "$_flgd" ] && remove -r -- "$file"
-        [ "${temp:-0}" = 0 ] && return 0                # nothing to kill
+        pidfile -v "$_temp" "$_name" "$_file" || return 3   # wrong process
+        [ -n "$_flgd" ] && remove -r -- "$_file"
+        [ "${_temp:-0}" = 0 ] && return 0               # nothing to kill
         [ "${_flgs:--}" = "-" ] && _flgs="SIGTERM"
-        $CEN_TRACE "pidfile: send signal:" "$_flgs $temp"
-        kill -s $_flgs $temp 2>/dev/null ; return       # return status
+        $CEN_TRACE "pidfile: send signal:" "$_flgs $_temp"
+        [ -z "${_flgs//[0-9]/}" ] && _flgs="-n $_flgs" || _flgs="-s $_flgs"
+        kill $_flgs $_temp 2>/dev/null ; return        # return status
     fi
 
-    [ -z "$temp" ] && return 1                          # no PID file
-    if [ "$temp" != "0" ] ; then
-        if ! kill -0 "$temp" 2>/dev/null ; then         # PID not valid
-            remove -r -- "$file" ; return 2             # delete stale pid file
+    [ -z "$_temp" ] && return 1                         # no PID file
+    if [ "$_temp" != "0" ] ; then
+        if ! kill -0 "$_temp" 2>/dev/null ; then        # PID not valid
+            remove -r -- "$_file" ; return 2            # delete stale pid file
         fi
-        pidfile -v "$temp" "$name" "$file" || return 3  # wrong process
+        pidfile -v "$_temp" "$_name" "$_file" || return 3   # wrong process
     fi
-    CEN_PIDFILE="$file"; return 0                       # return ok
+    CEN_PIDFILE="$_file"; return 0                      # return ok
 }
 
 # ------------------------------------------------------------------------------
@@ -1074,7 +1083,7 @@ _cen_svc_state() {
 
     elif [ "$1" = "kill" ] ; then                   # --- kill and remove pid file
         if [ "$_fact" = '2' ] ; then
-            pidfile $_frun -d -s - -- "$CEN_NAME"   # kills daemon
+            pidfile $_frun -d -k - -- "$CEN_NAME"   # kills daemon
         else
             pidfile $_frun -d -- "$CEN_NAME"        # remove pid file olny
         fi
@@ -1094,7 +1103,7 @@ _cen_svc_state() {
             [ "$_fact" = "1" ] && quit -p \
                 $"Daemon '%s' is running as service, cannot stop" "$CEN_NAME"
         fi
-        pidfile $_frun -d -s - -- "$CEN_NAME"
+        pidfile $_frun -d -k - -- "$CEN_NAME"
     fi
     return 0
 }

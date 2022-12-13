@@ -7,6 +7,7 @@ CEN_TITLE="Pack centauri-bash-lib sources, create packaged script"
 PATH+=":${0%/*}" . _centauri_bash_lib -d -f -m ext -r -y "$0" "0.24:1" || exit 2
 
 embed -m _centauri_bash_iom -o
+embed -m _centauri_bash_utl
 
 # Data
 #CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
@@ -387,44 +388,57 @@ do_deco() {
 }
 
 # ------------------------------------------------------------------------------
-# Check for 'embed -[cmq]' and 'declare -A' which need special care
+# Check for 'embed -[cmq]' and 'declare -A': <flag> <line>
 # ------------------------------------------------------------------------------
 do_special() {
-    local flib="$1" rlin="$2"
     DAT_FLG_MOVED=
-#    if [ "${rlin::9}" = "embed -m " ] ; then
-    if [ "${rlin::7}" = "embed -" ] && [[ "${rlin:7:1}" == [cmq] ]] ; then
-        rlin="${rlin%%[;&|]*}"
-        local lnam="${rlin#*_centauri_bash_}"
-        if [ "$lnam" != "$rlin" ] ; then
-            lnam="${lnam%%[ \'\"]*}"
-            lnam="${lnam::3}"
-            [ -n "${DAT_MAP_MODULE["$lnam"]}" ] && return
-            if [ "$flib" = "-l" ] ; then
-                 [ -n "$CEN_OPT_NODEPS" ] && return
-                 if [ "$lnam" = "sys" -o "$lnam" = "ins" ] ; then
-                    trace -a "Ignoring module dependency:" "$lnam"
-                    return
-                 fi
-            fi
-            DAT_MAP_MODULE["$lnam"]=1
-        fi
-    elif [ "$flib" != "-l" ] && [ "${rlin##*embed }" != "$rlin" ] ; then
-        set -f ; set -- ${rlin##*embed } ; set +f
-        while [ -n "$1" ] ; do
-            case "$1" in
-            -a|-s|-d|-u)                        # options with argument
-                    shift ;;
-            -r)     break ;;                    # -r flags 'ignore dependency'
-            -*)     ;;
-            *)      DAT_MAP_EMBED["$1"]=1       # save external dependency
-                    break
-            esac ; shift
-        done
-    elif [ "${rlin::11}" = "declare -A " ] ; then
-        DAT_DEC_PACKAGE+="$rlin"$'\n'
-        DAT_FLG_MOVED=1
+
+    case "$2" in
+    declare\ -A\ *) DAT_DEC_PACKAGE+="$2"$'\n'
+                    DAT_FLG_MOVED=1 ; return ;;
+    embed\ *)       ;;
+    *)              return
+    esac
+
+    local flib="$1" fmod frun sifs="$IFS"
+    set -f ; IFS=" \"'" ; set -- $2 ; set +f ; IFS="$sifs"
+    shift                                       # ignore: embed
+    while [ "${1::1}" = "-" ] ; do
+        case "$1" in
+        --)   shift ; break ;;
+        -a|-s|-d|-u)    shift ;;                # options with argument
+        -c|-m|-q)       fmod=1 ;;               # module load flag
+        -r)             frun=1 ;;               #  -r flags: ignore dependency
+        esac ; shift
+    done
+
+    if [ -z "$fmod" ] ; then
+        [ "$flib" = '-l' ] && return            # not in library modules
+        DAT_MAP_EMBED["$1"]=1                   # save external dependency
+        trace -a -c "- External" -- "$1"
+        return
+    elif [ -n "$frun" ] ; then
+        trace -a -c "- Ignoring" -- "$1" "(option -r)"
+        return
     fi
+                                                # --nodeps option
+    [ "$flib" = '-l' -a -n "$CEN_OPT_NODEPS" ] && return
+
+    local snam="${1#_centauri_bash_}"           # short module name
+    if [ "$snam" = "$1" ] ; then
+        trace -a -c "- Custom" -- "$1"
+        return
+    fi
+
+    if [ "$snam" = 'ins' -o "$snam" = 'sys' ] ; then
+        if [ "$flib" = '-l' ] ; then
+            trace -a -c "- Ignoring" -- "$1" "(system module)"
+            return
+        fi
+    else
+        trace -a -c "- Module" -- "$1"
+    fi
+    DAT_MAP_MODULE["$snam"]=1
 }
 
 # ------------------------------------------------------------------------------
@@ -577,7 +591,6 @@ do_config_update() {
     [ -z "$DAT_FLG_LOCALE" ] && set --                  # no l10n, clear list
     do_config_compare "$DAT_CONF_LNMOD" 'locales' "${*##_centauri_bash_}" &&
     do_config_compare "$DAT_CONF_LNEMB" 'embeded' "${!DAT_MAP_EMBED[@]}" && return 1
-
     create -t -v DAT_CONF_LINES -- "$DAT_CONF_FILE"
 }
 
@@ -632,7 +645,7 @@ run() {
         elif [ -e "_centauri_bash_$item" ] ; then
             list+=("_centauri_bash_$item")              # add to result
         elif [ "$item" != "$DAT_LIB_USER" ] ; then
-            error $"No such module:" "$item"
+            error "No such module:" "$item"
         fi
     done
     error -t || return                                  # stop on error
@@ -653,7 +666,7 @@ run() {
         for item in "${list[@]}" ; do
             DAT_MAP_MODULE["${item##*_}"]=1
             if [ "$item" = '_centauri_bash_xtr' ] ; then
-                load+="[ -z "\$CEN_XTR_RUNTIME" ] && embed -m $item -- \"\$@\""$'\n'
+                load+="[ -z \"\$CEN_XTR_RUNTIME\" ] && embed -m $item"$'\n'
             elif [ "$item" != '_centauri_bash_lib' ] ; then
                 load+="embed -m $item"$'\n'
             fi
@@ -673,7 +686,7 @@ run() {
                     message -a -c "Processing" -- "$item"
                 fi
                 if ! [ -f "$item" -a -r "$item" ] ; then
-                    warning "No such module: $item" ; continue
+                    warning "No such module:" "$item" ; continue
                 fi
                 dryrun && continue
                 {   echo "_cen_bash_load_${item##*_}(){"
