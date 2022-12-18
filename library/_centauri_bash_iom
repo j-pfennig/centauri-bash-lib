@@ -72,7 +72,20 @@ CEN_SERIALIZE=          # set by serialize()
 embed -c '_centauri_bash_ext'           # import on demand
 
 # ------------------------------------------------------------------------------
-# Helper for optarg error reporting in inpfile and outfile: <func> <text>...
+# get library cache dir: [-r|-w] <vnam>
+# ------------------------------------------------------------------------------
+_cen_iom_cachedir() {
+    local _opts='-g' _fldr="centauri-bash-lib_${CEN_MODULES['_centauri_bash_lib']%%:*}"
+    if [ "$1" = '-r' ] ; then
+        shift
+    elif [ "$1" = '-w' ] ; then
+        shift ; _opts='-f -m -r'
+    fi
+    folder $_opts -s "$1" -u 'cache' -- "$_fldr"
+}
+
+# ------------------------------------------------------------------------------
+# optarg error reporting in inpfile and outfile: <func> <text>...
 # ------------------------------------------------------------------------------
 CEN_IOM_ERROR=
 _cen_iom_error() {
@@ -652,14 +665,14 @@ outfile() {
 # The global cache folder is:  $CEN_ROOT/persistent
 #
 # Examples: (1) check cache and source (deserialize) it
-#.          cachefile -r -s -- "my-cache" || message "missing:" "$CEN_CACHEFILE"
+#.          cachefile -r -s -- 'my-cache' || message "missing:" "$CEN_CACHEFILE"
 #
 #           (2) check if an up-to-date cachefile exists (sets CEN_CONFIGFILE)
 #.          cachefile -- - "$CEN_NAME.conf"
 #
 #           (3) simple caching example
 #.          local data
-#.          if ! cachefile -s -w - 'centauri-bash-lib' ; then
+#.          if ! cachefile -s -w -- - 'centauri-bash-lib' ; then
 #.             configfile -r data -v -c -n "$CEN_CONFIGFILE" 'launcher' 'terminal'
 #.             serialize -w -- data
 #.          fi
@@ -730,10 +743,13 @@ cachefile() {
     fi
 
     if [ -n "$_fpri" ] ; then                           # try private ...
-        folder $_ferr -s CEN_CACHEFILE -g -u cache -- "$_cfil"
-        [ -n "$_fwri" ] && return 0                     # cache dir ok
+        if [ -n "$_fwri" ] ; then
+            _cen_iom_cachedir -w CEN_CACHEFILE ; CEN_CACHEFILE+="/$_cfil"
+            return 0
+        fi
+        _cen_iom_cachedir CEN_CACHEFILE ; CEN_CACHEFILE+="/$_cfil"
         [ -r "$CEN_CACHEFILE" ] && return 0             # cache file ok
-    fi
+    fi || :
     return 1                                            # error
 }
 
@@ -1122,10 +1138,9 @@ serialize() {
         -m)   shift ; _mode="$1" ;;
         -n)   shift ; _ffil="$1" ;;
         -q)   _oerr="$CEN_TRACE" ; _fqui='-q' ;;
-        -r)   _fmod="r" ;;
+        -r|-w)  _fmod="$1" ;;
         -s)   _otra=":" ;;
         -t)   shift ; _fref="$1" ;;
-        -w)   _fmod="w" ;;
         -z)   _fzer=1 ;;
         -x)   _fdec=1 ;;
         *)    _cen_abort - "$1"
@@ -1133,17 +1148,18 @@ serialize() {
     done
 
     local _fhan _item
+    CEN_SERIALIZE=
     if [ "${_ffil/\//}" = "$_ffil" ] ; then         # no / in name ...
-        folder -g -s _ffil -u "cache" -- "$_ffil" || return 1
-        CEN_SERIALIZE="$_ffil"
+        _cen_iom_cachedir $_fmod _item ; _ffil="$_item/$_ffil"
     else
-        prettypath -s CEN_SERIALIZE -- "$_ffil"
+        prettypath -s _ffil -- "$_ffil"
     fi
     [ -n "$_fref " ] && [ "$_fref" -nt "$_ffil" ] && return 1
+    CEN_SERIALIZE="$_ffil"
 
     # --- write ---
 
-    if [ "$_fmod" = "w" ] ; then
+    if [ "$_fmod" = '-w' ] ; then
         local _sout
         for _item in "$@" ; do                      # create data ...
             [ -n "$_sout" ] && _sout+=$'\n'
@@ -1162,7 +1178,7 @@ serialize() {
 
     # --- read ---
 
-    elif [ "$_fmod" = "r" ] ; then
+    elif [ "$_fmod" = '-r' ] ; then
         if [ -r "$_ffil" ] ; then
             local _trap="$CEN_QUIT_TRAP" ; CEN_QUIT_TRAP=   # suspend trap
             . $_ffil &>/dev/null

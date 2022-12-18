@@ -89,15 +89,15 @@ msgstr "Fenster Modus nicht initialisierbar"
 msgid "(found neither 'kdialog' nor 'zenity')"
 msgstr "(weder 'kdialog' noch 'zenity' gefunden)"
 
-#: /var/centauri/library/_centauri_bash_win:977
+#: /var/centauri/library/_centauri_bash_win:978
 msgid "gui mode (off|on|auto) or (0|1|2)   (default: auto)"
 msgstr "GUI Modus (off|on|auto) od. (0|1|2) (Vorgabe: auto)"
 
-#: /var/centauri/library/_centauri_bash_win:1036
-#: /var/centauri/library/_centauri_bash_win:1038
+#: /var/centauri/library/_centauri_bash_win:1037
+#: /var/centauri/library/_centauri_bash_win:1039
 msgid "module conflict:"
 msgstr "Modulkonflikt:"
 
-#: /var/centauri/library/_centauri_bash_win:1052
+#: /var/centauri/library/_centauri_bash_win:1053
 msgid "output: not available with _centauri_bash_win"
 msgstr "output: nicht mit _centauri_bash_win verfügbar"

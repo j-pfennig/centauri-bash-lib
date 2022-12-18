@@ -871,7 +871,7 @@ _cen_doc_flist() {
 # ------------------------------------------------------------------------------
 # cache helper functions:
 #
-#       _cen_doc_cinit                              # initialise cache
+#       _cen_doc_cinit                              # initialize cache
 #       _cen_doc_cdone                              # finish cache run
 #       _cen_doc_citem <item>                       # add cache entry
 #       _cen_doc_cplay <file> <popt> <work>         # playback

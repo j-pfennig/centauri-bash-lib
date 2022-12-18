@@ -11,7 +11,7 @@
 # enable loadable bash builtins.
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_dyn"]="0.21:1"
+CEN_MODULES["_centauri_bash_dyn"]="0.22:1"
 
 # ------------------------------------------------------------------------------
 # Dynamic loading + Dynamic loading of centauri-bash-lib modules

@@ -92,9 +92,10 @@ _cen_sys_rootdefs() {
 # ------------------------------------------------------------------------------
 # sysversion - determine os/kde versions, read/write version file
 #
-# Call:     sysversion [-k] [-o] [-r|-u|-w]
+# Call:     sysversion [-f] [-k] [-m] [-o] [-r|-u|-w]
 #
-# Options:  -k  update kde version
+# Options:  -f  fix kde version info even for root user
+#           -k  update kde version
 #           -m  print version info
 #           -o  update os version
 #           -r  read state file (default, no updates)
@@ -130,36 +131,44 @@ sysversion() {
     $CEN_DEBUG -c -- "$*"
 
     # get state file path: -r|-w
-    _cen_sys_state() {
+    ___cen_sys_state() {
         CEN_SYS_STATE_FILE="$CEN_SYS_STATE_DIR/centaurisystem"
-        if [ "$EUID" = 0 ] ; then               # root uses CEN_SYS_STATE_DIR
+        if [ "$EUID" = 0 ] ; then                   # root uses CEN_SYS_STATE_DIR
             [ -r "$CEN_SYS_STATE_FILE" ] && return 0
             if [ -d "$CEN_SYS_STATE_DIR" ] ; then
                 [ "$1" = '-w' ] && return 0
-                CEN_SYS_STATE_FILE= ; return 1  # must rewrite
+                CEN_SYS_STATE_FILE= ; return 1      # must rewrite
             fi
-            $CEN_TRACE -c " missing" -- "$CEN_SYS_STATE_DIR"
+            $CEN_TRACE -c " miss" -- "$CEN_SYS_STATE_DIR"
         fi
 
-        local _usta
-        if folder -s _usta -u config ; then     # user config folder
-            _usta+='/centaurisystem'
-            $CEN_TRACE2 -c " user" -- "$_usta"
-            if [ "$1" = '-w' ] ; then
-                CEN_SYS_STATE_FILE="$_usta" ; return 0
-            elif [ "$_usta" -nt "$CEN_SYS_STATE_FILE" ] ; then
-                CEN_SYS_STATE_FILE="$_usta" ; return 0
+        local _usta="centauri-bash-lib_${CEN_MODULES['_centauri_bash_lib']%%:*}"
+        if [ "$1" != '-w' ] ; then
+            folder -g -r -s _usta -u 'cache' -- "$_usta/centaurisystem"
+            if [ "$CEN_SYS_STATE_FILE" -nt "$_usta" ] ; then
+                CEN_SYS_STATE_FILE="$CEN_SYS_STATE_FILE"
             elif [ -r "$_usta" ] ; then
-                return 0
+                CEN_SYS_STATE_FILE="$_usta"
+            else
+                CEN_SYS_STATE_FILE=
             fi
+        elif folder -q -m -r -s _usta -u 'cache' -- "$_usta" ; then
+            CEN_SYS_STATE_FILE="$_usta/centaurisystem"
+        else
+            CEN_SYS_STATE_FILE=
         fi
-        $CEN_TRACE -c " failed" -- "$_usta"
-        CEN_SYS_STATE_FILE= ; return 1          # error
+
+        if [ -n "$CEN_SYS_STATE_FILE" ] ; then
+            $CEN_TRACE2 -c " user" -- "$CEN_SYS_STATE_FILE"
+            return 0
+        fi
+        $CEN_TRACE -c " user" -- "-invalid-"
+        return 1                                    # error
     }
 
     ### main ###
 
-    local _flgk _lfgo _flgu _flgw _otra
+    local _flgk _flgo _flgf _flgu _flgw _otra
     if [ $# = 0 ] ; then
         [ -n "$CEN_SYS_VERSION" ] && return 0       # do nothing if state is loaded
         [ "$EUID" = 0 ] && _flgu=1 || _flgw=0       # only root does implicit update
@@ -167,6 +176,7 @@ sysversion() {
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
+      -f)   _flgf=1 ;;
       -k)   _flgk=1 ;;
       -m)   _otra="$1" ;;
       -o)   _flgo=1 ;;
@@ -178,7 +188,7 @@ sysversion() {
       esac ; shift
     done
 
-    if _cen_sys_state -r ; then                     # have state...
+    if ___cen_sys_state -r ; then                   # have state...
         if [ -z "$CEN_SYS_VERSION" ] ; then
             $CEN_TRACE -a $"Loading OS and KDE versions:" "$CEN_SYS_STATE_FILE"
             . "$CEN_SYS_STATE_FILE"
@@ -190,30 +200,43 @@ sysversion() {
     fi
 
     [ -z "$CEN_SYS_VERSION" ] && _flgo=1
-    [ -z "$CEN_SYS_KDEVERS" -o "$CEN_SYS_PLASMA" = '000.000.000' ] && _flgk=1
+    if [ "$EUID" != 0 ] ; then                      # no kde auto update for root
+        [ -z "$CEN_SYS_KDEVERS" ] && _flgk=1
+        _flgf=1
+    fi
+
+    # try to recover previous failure of kde check from tty mode
+    if [ -n "$_flgf" ] ; then
+        if [ -z "$CEN_SYS_KDEVERS" ] ; then
+            _flgk=1
+        elif [ "$CEN_SYS_KDEVERS" = '000.000.000' ] ; then
+            [ "$CEN_DISPLAY" = 'x11' ] && _flgk=1
+        fi
+    fi
 
     # implicit updates
     if [ -z "$_flgw" ] ; then
         if [ "$CEN_TOOLS/_centauri_bash_lib" -nt "$CEN_SYS_STATE_FILE" ] ; then
-            _flgo=1 ; _flgk=1 ; _flgw=1
+            _flgo=1 ; _flgw=1 #; _flgk=1
         elif [ -n "$_flgu" ] ; then
             [ -n "$_flgo" -o -n "$_flgk" ] && _flgw=1
         fi
     fi
 
     # refresh data
-    [ -z "$_flgo" -a -z "$_flgk" -a -z "$_flgw" ] && return 0
+    [ -z "$_flgo" -a -z "$_flgk" -a -z "$_flgw" -a -z "$_otra" ] && return 0
     embed -m '_centauri_bash_ins'
-    [ -n "$_flgo" ] && _cen_ins_version -s $_otra
-    [ -n "$_flgk" ] && _cen_ins_version -k $_otra
+    [ -n "$_flgo" ] && _cen_ins_version -s
+    [ -n "$_flgk" ] && _cen_ins_version -k
+    [ -n "$_otra" ] && _cen_ins_version $_otra
 
     # write state file
     if [ "$_flgw" = 1 ] ; then
-        if ! _cen_sys_state -w ; then               # get file
+        if ! ___cen_sys_state -w ; then             # get file
             warning $"Cannot write version info:" "$CEN_SYS_STATE_FILE"
         else
             $CEN_TRACE -a $"Writing version info:" "$CEN_SYS_STATE_FILE"
-            _cen_ins_version -w $_otra
+            _cen_ins_version -w
         fi
     fi
 }
@@ -268,7 +291,7 @@ sysversion() {
 # ------------------------------------------------------------------------------
 syssetup() {
     $CEN_DEBUG -c -- "$*"
-    local _stat=0 _warn  _remv _updt _usrv _kopt
+    local _stat=0 _warn  _remv _updt _usrv
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -292,9 +315,7 @@ syssetup() {
     fi || :
 
     # sysconfig, is called twice during setup as the config file may have changed
-### TODO _kopt is obsolete
-    [ "${1:--}" != '-' ] && _kopt='-k'              # keep CEN_ROOTDEFS
-    sysconfig $_kopt || return 1
+    sysconfig || return 1
 
     local _root="$CEN_ROOT" _base="$CEN_TOOLS" _libr="$CEN_LIBRARY"
     CEN_ROOT="$CEN_PATHS$CEN_ROOTDEFS"
@@ -308,7 +329,7 @@ syssetup() {
 
     if [ -z "$_remv" -a "$_updt" != "-t" ] ; then
         local _fold="$PWD"
-        folder -c -f '/'                            # don't block CEN_ROOT
+        folder -c -f '/'                            # do not block CEN_ROOT
         if [ -n "$_updt" ] ; then                   # update only (see centauriconfig)
             sysconfig -u
         else
@@ -355,37 +376,38 @@ syssetup() {
 # **noquit** is specified (form (2) and form (3) only), the function calls [[quit()]]
 # and never returns.
 # ------------------------------------------------------------------------------
-_cen_sys_help() {
-    local _cmds=('detailed' 'help' 'install' 'paths' 'refresh'
-                 'setup' 'uninstall' 'update' 'version')
-    [ "$1" = '-f' ] &&
-        quit -e -m $"Bad '--info' argument. Valid arguments are:" '\n' "${_cmds[*]}"
-
-    local _mesg=($"show detailed version info"
-                 $"show this message"
-                 $"create or update an installation"
-                 $"show centauri-bash-lib paths"
-                 $"for setup tools: "$"copy updated files"
-                 $"for setup tools: "$"copy files"
-                 $"undo an installation"
-                 $"silently update"
-                 $"show version info"
-                )
-    local _indx _join _line
-    for ((_indx=0 ; _indx < ${#_cmds[@]} ; _indx++)) ; do
-        printf -v _line "\n    %-10s -  %s" "${_cmds[_indx]}" "${_mesg[_indx]}"
-        _join+="$_line"
-    done
-    quit -m $"Valid --info arguments are:" '\n ' "$_join" '\n' " "
-}
-
 sysinfo() {
     $CEN_DEBUG -c -- "$*"
+
+    ___cen_sys_help() {
+        local _cmds=('detailed' 'help' 'install' 'paths' 'refresh'
+                    'setup' 'uninstall' 'update' 'version')
+        [ "$1" = '-f' ] &&
+            quit -e -m $"Bad '--info' argument. Valid arguments are:" '\n' "${_cmds[*]}"
+
+        local _mesg=($"show detailed version info"
+                    $"show this message"
+                    $"create or update an installation"
+                    $"show centauri-bash-lib paths"
+                    $"for setup tools: "$"copy updated files"
+                    $"for setup tools: "$"copy files"
+                    $"undo an installation"
+                    $"silently update"
+                    $"show version info"
+                    )
+        local _indx _join _line
+        for ((_indx=0 ; _indx < ${#_cmds[@]} ; _indx++)) ; do
+            printf -v _line "\n    %-10s -  %s" "${_cmds[_indx]}" "${_mesg[_indx]}"
+            _join+="$_line"
+        done
+        quit -m $"Valid --info arguments are:" '\n ' "$_join" '\n' " "
+    }
+
     local _dopt _iopt _fnoq _stat=0
     # help should not advertise the 'detailed' command
     case "$1" in
         "")         ;;
-        help|-)     _cen_sys_help ;;
+        help|-)     ___cen_sys_help ;;
         install)    _iopt="-i" ;;
         paths)      _dopt=2 ;;
         refresh)    _iopt="-n" ;;
@@ -393,8 +415,8 @@ sysinfo() {
         uninstall)  _iopt="-r" ;;
         update)     _iopt="-u" ;;
         detailed)   _dopt=1 ;;
-        ver*)       sysversion -m -o -k ; quit ;;
-        *)          _cen_sys_help -f
+        ver*)       sysversion -f -m -u ; quit ;;
+        *)          ___cen_sys_help -f
     esac
 
     if [ "$_dopt" = 2 ] ; then
@@ -435,10 +457,9 @@ sysinfo() {
 # ------------------------------------------------------------------------------
 # sysconfig - read library config, generate bash completion and proxy
 #
-# Call:     sysconfig [-c|-p|-p|-s|-u]
+# Call:     sysconfig [-c|-p|-s|-u]
 #
 # Options:  -c  generate bash completion (for root only)
-#           -k  keep CEN_ROOTDEFS unchanged (internal use by syssetup)
 #           -p  generate the centauri-bash-lib proxy
 #           -s  check if systemd is to be used
 #           -u  update if neccessary
@@ -460,7 +481,7 @@ sysconfig() {
     # --- get config ---
 
     # reader callback: <line>
-    _cen_sys_read() {
+    ___cen_sys_read() {
         set -f ; eval set -- $1 ; set +f ; local _skey="$1" ; shift
         $CEN_TRACE2 "[library] $_skey $*"
         local _sifs="$IFS"
@@ -481,19 +502,7 @@ sysconfig() {
             exclude)   CEN_SYS_EXCLUDE+=("$@") ;;
             obsolete)  CEN_SYS_OBSOLETE+=("$@") ;;
             service)   CEN_SYS_SERVICE+=("$@") ;;
-            defaults)
-                       #configfile -w "sysconfig" 3 6 $# || return 0
-                       #if [ "$1" = 'shared' ] ; then
-                       #    [ "$EUID" = 0 ] || return 0 ;
-                       #elif [ "$1" = 'private' ] ; then
-                       #    [ "$EUID" = 0 ] && return 0 ;
-                       #else
-                       #    configfile -w "sysconfig" ; return 0
-                       #fi
-                       #[ -n "$_kopt" ] && return 0
-                       #splitjoin -j _skey -d ':' -- "${@:2}"
-                       #_cen_sys_rootdefs "$_skey"
-                       ;;
+            defaults)  ;;                               # obsolete, ignore
             repath )   configfile -w "sysconfig" 3 + $#
                        IFS=$'\a' CEN_PATH_REXP+=("$*") ; IFS="$_sifs"
                        ;;
@@ -502,86 +511,50 @@ sysconfig() {
         return 0
     }
 
-    # --- check for systemd ---
-
-    _cen_sys_systemd() {
-        local _sysi="$CEN_PATHS/sbin/init" _sysd="${CEN_PATHS[2]}/systemd"
-        # strong systemd evidence: have systemctl and /etc/systemd
-   ### TODO use sysfind
-        if [ -d "$_sysd" ] && type -t >/dev/null 'systemctl' ; then
-            $CEN_TRACE -a -p $"Using 'systemd' (got 'systemctl' and '%s')" "$_sysd"
-            return 0
-
-        # strong systemd evidence: /sbin/init symlink to systemd
-        else
-   ### TODO use resolve
-            system -q -r -s _sysi -- readlink -f '/sbin/init'
-            if [ "${_sysi##*/}" = 'systemd' ] ; then
-                $CEN_TRACE -a -p $"Using 'systemd' ('%s' is symlink to systemd)" "$_sysi"
-                return 0
-            fi
-        fi
-        $CEN_TRACE $"Using 'SysV' init" ; return 1
-    }
-
     # --- main part ---
 
-    local _copt _kopt _popt _sopt _stat=0
+    local _copt _popt _sopt _stat=0
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -c)   [ "$EUID" = "0" ] && _copt=1 ;;
-      -k)   _kopt=1 ;;
+      -c)   _copt=1 ;;
       -p)   _popt=1 ;;
       -s)   _sopt=1 ;;
       -u)   [ "$CEN_LIBRARY/_centauri_bash_lib" -nt \
               "$CEN_LIBRARY/_centauri_bash_completion" ] || _copt=1
             [ "$CEN_ROOT/default/centauri-bash-lib" -nt \
               "$CEN_TOOLS/_centauri_bash_lib" ] && _popt=1
-            [ -e "$CEN_LIBRARY/systemd" ] || _sopt=1 ;;
+            [ -d "$CEN_LIBRARY/systemd" ] || _sopt=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
 
-    embed -m '_centauri_bash_run'                           # load modules ext/iom/run
+    folder -f -- "$CEN_ROOT"
+    [ -w "$CEN_ROOT" ] || fatal $"You are not allowed to alter this installation"
 
-    local _pcfg="$CEN_ROOT/centauri-bash-lib"
-    if [ -f "$_pcfg" ] ; then
-        $CEN_TRACE -a $"Using bootstrap config:" "$_pcfg"
-    else
-        _pcfg="$CEN_ROOT/default/centauri-bash-lib"
-    fi
+    {   embed -m '_centauri_bash_run'                       # load modules ext/iom/run
+        _cen_run_config -p "$CEN_ROOT/default/centauri-bash-lib" \
+                        -r ___cen_sys_read 'library' || _stat=$?
+        shortpath -q || _stat=$?                            # init paths cache
 
-    _cen_run_config -p "$_pcfg" -r _cen_sys_read 'library' || _stat=$?  # override
-    shortpath -q || _stat=$?                                # init paths cache
+        if [ -n "$_popt" -a -d "$CEN_TOOLS" ] ; then        # generate proxy
+            local _parr _prox
+            _cen_run_config -v _parr 'proxy'
+            splitjoin -j _prox -n -i _parr
+            embed -m '_centauri_bash_ins'
+            _cen_ins_proxy "$_prox" || _stat=$?
+        fi || :
 
-    if [ -n "$_popt" -a -d "$CEN_TOOLS" ] ; then            # generate proxy
-        local _parr _prox
-        _cen_run_config -v _parr 'proxy'
-        splitjoin -j _prox -n -i _parr
-        embed -m '_centauri_bash_ins'
-        _cen_ins_proxy "$_prox" || _stat=$?
-    fi || :
-
-    if [ -n "$_copt" -a -d "$CEN_LIBRARY" ] ; then          # bash completion
-        embed -m '_centauri_bash_ins'
-        _cen_ins_completion || _stat=$?
-    fi
-
-    if [ -n "$_sopt" ]  ; then
-    ### TODO move this to: _cen_ins_chksystemd
-        if ! _cen_sys_systemd ; then
-            remove -q -- "$CEN_ROOT/systemd"
-            [ -e "$CEN_ROOT/systemd" ] && rename -b "disabled" -- "$CEN_ROOT/systemd"
-        elif [ -d "$CEN_ROOT/systemd.disabled" ] ; then
-            rename -o -- "$CEN_ROOT/systemd.disabled" "$CEN_ROOT/systemd"
-        elif [ -d "$CEN_TOOLS/systemd" ] ; then
-            remove "$CEN_ROOT/systemd"
-            symlink -m -r -- "$CEN_TOOLS/systemd" "$CEN_ROOT/systemd"
-        else
-            folder -m "$CEN_ROOT/systemd"
+        if [ -n "$_copt" -a -d "$CEN_LIBRARY" ] ; then      # bash completion
+            embed -m '_centauri_bash_ins'
+            _cen_ins_completion || _stat=$?
         fi
-    fi || _stat=$?
+
+        if [ -n "$_sopt" ] ; then                           # systemd check
+            embed -m '_centauri_bash_ins'
+            _cen_ins_chksystemd || _stat=$?
+        fi
+    } || :
     return $_stat
 }
 
@@ -589,27 +562,22 @@ sysconfig() {
 # Init module: [-A] [-n]
 # ------------------------------------------------------------------------------
 
-[ "$1" = '-n' ] && return 0                 # no init
+[ "$1" = '-n' ] && return 0                     # no init
 
 # the proxy does a 'embed -m _centauri_bash_sys' if the caller is root and the
 # cache dir is missing to trigger a minimal setup ...
 if  [ "$EUID" = 0 ] ; then
     if [ ! -d "$CEN_SYS_CACHE_DIR" ] ; then
-        # run a mimimal setup, but only if the library is installed
+        # run a mimimal setup, but only if the library is installed as 'shared'
         [ -d "$CEN_SYS_STATE_DIR" -o -h "$CEN_SYS_STATE_DIR" ] && syssetup -t
         # refresh caches (if any), may be after system updates
         remove "$CEN_SYS_STATE_DIR/centaurisystem"
     fi
     # (re-)init global cache
-    if [ "$CEN_ROOT/default/centauri-bash-lib" -nt "$CEN_SYS_STATE_DIR/centaurisystem" ] ; then
-        sysversion -w                           # force refresh
+    [ "$CEN_ROOT/default/centauri-bash-lib" -nt "$CEN_SYS_STATE_DIR/centaurisystem" ] &&
         sysconfig                               # cache refresh
-    else
-        sysversion -u                           # get version info by default
-    fi
-else
-    sysversion -u                               # get version info by default
 fi
+sysversion -u                                   # get/update version info by default
 
 :
 

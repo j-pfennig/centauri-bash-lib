@@ -142,6 +142,7 @@ CEN_SVC_SYSV="${CEN_PATHS[2]}/init.d"   # SysV service folder
 # CEN_SVC_WANTED_BY=            # WantedBy target list
 # CEN_SVC_TYPE=                 # one of: once, oneshot, simple, daemon, auto
 # CEN_SVC_PRESET=               # make a preset file
+# CEN_SYC_SCOPE=                # systemd scope: system user private
 # ------------------------------------------------------------------------------
 # progress (service) - Legacy SysV fancy progress reporting
 #
@@ -246,13 +247,15 @@ background() {
         CEN_BACKGROUND=$!
         [ -n "$_fwai" ] && CEN_QUIT_WSUB=1 || disown -h $!
     fi
-    CEN_SVC_SYSLOG="$_slog" ; return 0                  # restore caller's syslog
+    CEN_SVC_SYSLOG="$_slog" ; return 0                  # restore callers syslog
 }
 
 # ------------------------------------------------------------------------------
 # inhibit - Disable start/stop/restart of the service
 #
 # Call:      inhibit <message>
+#
+#            This function is a no-operation for systemd --user services.
 #
 # Arguments:<message>  output on attemps to start/stop or restart a disabled
 #                      service. Must not be empty.
@@ -322,6 +325,7 @@ pidfile() {
       -n)   _flgw="-" ;;
       -r)   _fext=".run" ;;
       -s)   shift ; _fsav="${1:--}" ; printf -v "$_fsav" '0' ;;
+### TODO -u for user/private pid
       -w)   shift ; _flgw="${1:--}" ; [ "$_flgw" = "-" ] && _flgw=$$ ;;
 
       # internal use: <pid> <program> <pidfile>
@@ -518,6 +522,17 @@ isservice() {
         CEN_SVC_TYPE="oneshot"
         isfunction run && CEN_SVC_TYPE="simple"
     fi
+
+    case "$CEN_SVC_SCOPE" in
+    '')         CEN_SVC_SCOPE='system' ;;
+    system)     ;;
+    user)       ;;
+    private)    ;;
+    *)          fatal -p $"Invalid 'CEN_SVC_SCOPE=%s', expecting: %s" \
+                         "$CEN_SVC_SCOPE" 'system|user|private' ;;
+    esac
+    [ "$CEN_SVC_SCOPE" = 'system' ] ||
+        fatal -p $"Not yet implemented: CEN_SYC_SCOPE=%s" "$CEN_SVC_SCOPE"
 
     [ -n "$_flgn" ] && return 0                 # was just a query
     CEN_IS_SERVICE=1                            # becoming svc or daemon
@@ -745,7 +760,7 @@ runservice() {
 
     status) [ "${#_slst[@]}" -gt 1 ] && _cen_abort "status allows only 1 arg"
             if [ -n "$CEN_SVC_SYSD" ] ; then
-                 sysrun -q -r -n -a _info -- systemctl is-active "$_slst" || ((_serr |= 4))
+                 sysrun -q -r -n -a _info -- systemctl $_user is-active "$_slst" || ((_serr |= 4))
                  _kind=$"Service (systemd)"
             else
                 if sysrun -q -r -n -- "$CEN_SVC_SYSV/$_slst" "status" ; then
@@ -900,10 +915,10 @@ _cen_svc_message() {
 # hook for actions()
 # ------------------------------------------------------------------------------
 _cen_svc_action() {
-    if [ "$CEN_IS_SERVICE" = "0" ] ; then       # not a service
+    if [ "$CEN_IS_SERVICE" = "0" ] ; then               # not a service
         $CEN_SVC_HOOK_ACTIONS "$@" ; return 1
     fi
-    [ -n "$CEN_SVC_RUNNING" ] && return 1       # don't recurse
+    [ -n "$CEN_SVC_RUNNING" ] && return 1               # do not recurse
 
     case "$CEN_ACTION" in
         "")         isservice                           # init as service
@@ -948,8 +963,10 @@ _cen_svc_action() {
                             zopt="$CEN_OPT_ZOMBIE" ; zmsg="zombie"
                         fi
                         if [ -z "$zopt" -a -z "$CEN_OPT_ZOMBIE" ] ; then
-                            message "$CEN_SVC_INHIBIT: $CEN_ACTION (use --$zmsg to override)"
-                            CEN_ARGS=0 ; return         # ignore missing action()
+                            if [ "$CEN_SVC_SCOPE" = 'system' ] ; then
+                                message "$CEN_SVC_INHIBIT: $CEN_ACTION (use --$zmsg to override)"
+                                CEN_ARGS=0 ; return     # ignore missing action()
+                            fi
                         fi
                     fi
                     CEN_SVC_RUNNING="$CEN_ACTION"
@@ -1191,13 +1208,13 @@ _cen_svc_option() {
 # handles forking for CEN_SVC_TYPE=simple|daemon, exits after fork
 # ------------------------------------------------------------------------------
 _cen_svc_forking() {
-    [ "$CEN_OPT_DAEMON" = "1" ] || return
+    [ "$CEN_OPT_DAEMON" = 1 ] || return
     [ "$CEN_SVC_TYPE" = "simple" -o "$CEN_SVC_TYPE" = "daemon" ] || return
 
     local file="${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}"
     [ "${file::1}" = "/" ] || sysrun -f -p -a file -- readlink -f -s -- "$file"
     $CEN_TRACE -a $"Starting as a daemon:" "$file"
-    [ "$EUID" = "0" ] || PATH+=":$CEN_PATHS/sbin:$CEN_PATHS/usr/sbin"
+    [ "$EUID" = 0 ] || PATH+=":$CEN_PATHS/sbin:$CEN_PATHS/usr/sbin"
 
     pidfile -n -r                               # get file path
     sysrun -f -p -- start-stop-daemon --start --background --oknodo \

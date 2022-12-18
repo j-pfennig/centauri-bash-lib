@@ -2,12 +2,13 @@
 # ------------------------------------------------------------------------------
 CEN_LEGAL="Dr. J. Pfennig (c) 2022; BSD License"
 CEN_TITLE=$"Launcher for GUI or Console Applications"
+CEN_UTL_STIME="$EPOCHREALTIME"
 
 # Import the bash library
 PATH+=":${0%/*}" . _centauri_bash_lib -a -d -t - '0.01:1' || exit 2
 
 embed -m _centauri_bash_dbg
-#embed -c _centauri_bash_iom         # dependency for standalone build
+embed -c _centauri_bash_run         # dependency for standalone build
 
 # Data
 CEN_OPT_DESKTOP=                    # see --session
@@ -430,6 +431,27 @@ Window {
     return 0
 }
 
+# ------------------------------------------------------------------------------
+# Callback for service
+# ------------------------------------------------------------------------------
+launcher_service() {
+    $CEN_DEBUG -c -- "$@"
+
+    # we are going to launch 'kiosk' and pass all known options except -x:
+    local orun oerr='-e -p'
+    while [ $# -gt 0 ] ; do
+        case "$1" in
+        --)     shift ; break ;;
+        -f)     oerr='-p -f' ;;
+        -q)     oerr='-q' ;;
+        -r)     orun='-r' ;;
+        -i|-m|-o|-t|-y)
+                shift ;;
+        esac ; shift
+    done
+    timer -m
+    #system $orun $oerr -- "$@"
+}
 
 # ------------------------------------------------------------------------------
 # Callback for webapp: <webapp> <webdir> <cgidir> <syncpipe> <url>

@@ -641,7 +641,7 @@ _cen_con_mesg() {
             [ "$CEN_CONS_MSGLEN" -gt "$_mlen" ] && printf -v _mesg "%s%$((CEN_CONS_MSGLEN-_mlen))s" "$_mesg"
         fi
         CEN_CONS_MSGLEN=
-        [ -z "$_fnnl" ] && _mret=:              # message does "\n"
+        [ -z "$_fnnl" ] && _mret=:              # message does \n
     fi
 
     # do the output
@@ -651,7 +651,7 @@ _cen_con_mesg() {
     else
         _cen_message "${_args[@]}" -- "$_mesg"
     fi
-    $_mret 1>&2 ; return "$_stat"               # linewise progress -> '\r'
+    $_mret 1>&2 ; return "$_stat"               # linewise progress -> \r
 }
 
 # ------------------------------------------------------------------------------

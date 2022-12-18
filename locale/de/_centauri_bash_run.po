@@ -63,5 +63,7 @@ msgstr "Keine 'terminal' Konfiguration, siehe:"
 msgid "No desktop running, see $DISPLAY or $XDG_SESSION_DESKTOP"
 msgstr "Kein Desktop aktiv, siehe $DISPLAY oder $XDG_SESSION_DESKTOP"
 
-#~ msgid "syntax error:"
-#~ msgstr "Syntaxfehler:"
+#: /var/centauri/library/_centauri_bash_run:1338
+msgid "Not writing config cache"
+msgstr "Schreibe keinen Config Cache"
+

@@ -39,7 +39,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2022
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES["_centauri_bash_lib"]="0.99:1:1"
+declare -g -A CEN_MODULES['_centauri_bash_lib']='0.99:1:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -165,7 +165,7 @@ CEN_VERSION=("$2")
 [ -n "$4" ] && CEN_RUN_MAX_ARGS="$4"
 [ "$COLUMNS" = '0' ] && CEN_NOCOLS=1        # COLUMNS may get updated by bash
 
-CEN_DISPLAY="$XDG_SESSION_TYPE"             # could be 'x11' or 'wayland'
+CEN_DISPLAY="$XDG_SESSION_TYPE"             # could be x11 or wayland
 if [ -z "$DISPLAY" ] ; then
     [ "$CEN_DISPLAY" = 'x11' ] && CEN_DISPLAY=
 else
@@ -608,7 +608,8 @@ _cen_shortfmt() {
     [ "$_temp" = '-' ] &&
         for _temp in "${FUNCNAME[@]}" ; do
             case "$_temp" in
-            _cen_*)     continue ;;
+            _cen_*)     continue ;;             # private function
+            ___cen_*)   continue ;;             # inline function
             trace|isfunction|message|warning|error)
                         continue ;;
             *)          break
@@ -1654,7 +1655,7 @@ filter() {
 #           <owner> ''folder'' owner, passed to **/bin/chown**
 #           <name>  a subfolder of $CEN_ROOT (option -t|-v),
 #                   system installation folder (option -b):
-#                   ° **prefix**     (the files system root if not /)
+#                   ° **prefix**     (the file system root, usually /)
 #                   ° **corebin**    (core binaries, usually /usr/bin)
 #                   ° **etc**        (system confirmation, usally /etc)
 #                   ° **var**        (application data, usually /var)
@@ -1737,7 +1738,7 @@ folder() {
                         _adir+=(~/.cache  ~/.local ~/.config '') ;;
                 config) _adir=(~/.config ~/.local '') ;;
                 local)  _adir=(~/.local  ~/.config '') ;;
-                *)  _cen_abort - "$1"
+                *)      _cen_abort - "$1"
             esac ;;
       -v)   local _name="${LOGNAME:-$USER}"
             [ "$EUID" = 0 ] && _name="root" ; _name="${_name:-uid-$EUID}"
@@ -1760,7 +1761,7 @@ folder() {
     _vval="$_tdir$_tsuf$1"
 
     # create folder
-    [ "$_vval" = "/" ] || _vval="${_vval%/}"
+    [ "$_vval" = '/' ] || _vval="${_vval%/}"
     [ -z "$_ogen" ] && while [ ! -d "$_vval" ] ; do
         if [ -n "$_omak" ] ; then
             create -d $_oopt $_rdry -- "$_vval" $2 $3 && break

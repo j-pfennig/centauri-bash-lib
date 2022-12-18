@@ -4,7 +4,7 @@ CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE="Create the autoload module _centauri_bash_dyn"
 
 # we cannot use '-a' here ...
-PATH+=":${0%/*}" . _centauri_bash_lib -m ext -m iom -m utl -r "$0" "0.21:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -m ext -m iom -m utl -r "$0" "0.22:1" || exit 2
 
 CEN_OPT_BUILTIN=                # see --builtin
 CEN_OPT_PATH=                   # see --path
@@ -80,7 +80,7 @@ run() {
     if [ "${1:--}" = "-" ] ; then
         shift                                           # skip dummy arg
         [ $# = 0 ] || fatal $"Extra arguments"
-        [ -n "$CEN_OPT_NOCUSTOM" ] && $DAT_LIB_USER=
+        [ -n "$CEN_OPT_NOCUSTOM" ] && DAT_LIB_USER=
         set -- _centauri_bash_??? $DAT_LIB_USER
     fi
 
@@ -104,8 +104,12 @@ run() {
     # --- use grep to find functions ---
 
     local funs func mesg
-    system -f -p -a funs -- grep -E "^[a-z][a-z_]+\(\)" "${list[@]}"
-    message -a -c $"Dynamic loading" -p $"Found %s functions" "${#funs[@]}"
+    if [ -n "$CEN_OPT_DYNAMIC" ] ; then
+        system -f -p -a funs -- grep -E "^[a-z][a-z_]+\(\)" "${list[@]}"
+        message -a -c $"Dynamic loading" -p $"Found %s functions" "${#funs[@]}"
+    else
+        message -a -c $"Dynamic loading" $"Not enabled"
+    fi
 
     # --- enable extensions ---
 
@@ -119,6 +123,8 @@ run() {
             fi
             message -a -c "-    $mesg" "$item"
         done
+    else
+        message -a -c $"Bash loadables" $"Not enabled"
     fi
 
     # --- create _centauri_bash_dyn ---
@@ -264,6 +270,10 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 
 [ "\$1" = "-f" ] ||
     fatal "Cannot load '_centauri_bash_dyn' via embed, use '_centauri_bash_lib -a'"
+!EOF
+
+[ -n "$CEN_OPT_DYNAMIC" ] &&
+    create -f -c -a '_centauri_bash_dyn' <<!EOF         # append to file
 
 # dynamic loader: <module> <arg>...
 _cen_dyn_load() {

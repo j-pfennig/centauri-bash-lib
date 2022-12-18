@@ -938,7 +938,7 @@ _cen_windcheck() {
         error $"Could not init window mode" $"(found neither 'kdialog' nor 'zenity')"
     fi
 
-    [ -n "$CEN_WIN_GUISTAT" ] && return "$CEN_WIN_GUISTAT"  # don't reread version info
+    [ -n "$CEN_WIN_GUISTAT" ] && return "$CEN_WIN_GUISTAT"  # do not reread version info
     [ "$CEN_WIN_NAME" = '-' ] && CEN_WIN_GUISTAT=1 || CEN_WIN_GUISTAT=0
 
     # get system and kde verssion
@@ -955,7 +955,8 @@ _cen_windcheck() {
     CEN_KDE_VERSION="${CEN_SYS_KDEVERS%%.*}"
     CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
     CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
-    [ -z "$CEN_KDE_VERSION" ] && CEN_KDE_VERSION=5
+ ### TODO no kde installed
+    [ "${CEN_KDE_VERSION:--}" = '-' ] && CEN_KDE_VERSION=5
     [ "$CEN_KDE_VERSION" -gt 4 ] && export KDE_FULL_SESSION=true
     $CEN_TRACE -a -c "KDE-version" -- "$CEN_KDE_VERSION"
     $CEN_TRACE -a -c "Dialog-title" -- "$CEN_WIN_DLG_TITLE"
@@ -1030,14 +1031,14 @@ _cen_win_hook() {
 # Startup: [-n|-s]
 # ------------------------------------------------------------------------------
 
-[ -n "$CEN_WINDOWS" ] && return 0    # already loaded
+[ -n "$CEN_WINDOWS" ] && return 0       # already loaded
 
 [ -n "${CEN_MODULES[_centauri_bash_con]}" ] &&
     fatal $"module conflict:" "_centauri_bash_win/con"
 [ -n "${CEN_MODULES[_centauri_bash_svc]}" ] &&
     fatal $"module conflict:" "_centauri_bash_win/svc"
 
-[ "$1" = "-n" ] && return 0             # don't init
+[ "$1" = "-n" ] && return 0             # do not init
 
 embed -c _centauri_bash_ext             # required module
 
@@ -1045,7 +1046,7 @@ embed -c _centauri_bash_ext             # required module
 CEN_WIN_HOOK_OPTIONS="$CEN_HOOK_OPTIONS"
 CEN_HOOK_OPTIONS="_cen_win_option"
 
-#CEN_CONS_MSGLEN=                        # flags open progress dialog
+#CEN_CONS_MSGLEN=                       # flags open progress dialog
 
 # dummies (indent to hide from _centauri_bash_dyn generator)
     console() { return 1 ; }

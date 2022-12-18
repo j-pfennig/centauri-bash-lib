@@ -38,9 +38,6 @@
 #               $ centauricreate --info uninstall 
 # ------------------------------------------------------------------------------
 
-# A root FS prefix can be set here (not needed for termux):
-# export CEN_PREFIX="/some/other/root"
-
 # if installing from a repository folder (not copying, make symlinks) ...
 REPO= 
 # REPO="/somewhere/my-repository"

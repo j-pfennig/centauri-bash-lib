@@ -1,79 +1,122 @@
 ──────────────────────────────────────────────────────────────────────────────────────────────
 Topic - Installation - Install/Update/Uninstall and Configuration
 ──────────────────────────────────────────────────────────────────────────────────────────────
-tar-file:  From https://github.com/j-pfennig/centauri-bash-lib you can download a the current
+Install:   For simplicity an example setup script is provided (see centauricreate template).
+           Just unpack the source tar archive or use a cloned repository and run setup. Do not
+           install as root user unless you want a 'shared' system-wide installation (see
+           private or shared). centauri-bash-lib itself needs no setup program, you can do a
+           manual install by running any of the included tools with --info install.
+
+tar-file:  From https://github.com/j-pfennig/centauri-bash-lib you may download the current
            tar file and run the included setup script:
 
            ┃ tar -xaf centauri-bash-lib_X.XX.tgz
+           ┃ # sudo -i                               # only for shared installation
            ┃ centauri_bash_lib_X.XX/setup            # automatic install -or- do a
            ┃                                         # manual install, see below...
 
            The setup script can also be used to update an existing installation.
 
-git-hub:   Otherwise just clone the repository and install manually:
+git-hub:   Otherwise just clone the repository (later in this text a repository installation
+           mode will be discussed):
 
            ┃ git clone https://github.com/j-pfennig/centauri-bash-lib.git
-           ┃ cd centauri_bash_lib
+           ┃ # sudo -i                               # only for shared installation
+           ┃ centauri-bash-lib/setup                 # automatic install -or- do a
+           ┃                                         # manual install, see below...
 
-Install:   centauri-bash-lib itself needs no setup program: just unpack the source archive or
-           use the cloned repository and run one of the included tools with --info install.
+Manual:    This section explains how to do a manual installation.
 
-           (1) System-wide local installation (needs root rights):
+           (1.a) System-wide 'shared' installation (using root rights):
 
+           ┃ sudo -i                             # root always installs shared
            ┃ arch="centauri_bash_lib.tgz"        # what to install
            ┃ dest="/usr/local/shared/centauri"   # where to install (CEN_ROOT)
            ┃ 
-           ┃ sudo mkdir -p "$dest"
-           ┃ sudo tar -C "$dest" -xaf "$arch"
-           ┃ sudo "$dest"/tools/centauripaths --info install
+           ┃ mkdir -p "$dest"
+           ┃ tar -C "$dest" -xaf "$arch" --skip-components=1
+           ┃ "$dest"/tools/centauricreate --info install
 
-           (2) Private installation (no root rights needed):
+           (1.b) 'Private' installation (only without root rights):
 
            ┃ arch="centauri_bash_lib.tgz"        # what to install
            ┃ dest=~/.centauri                    # where to install (CEN_ROOT)
            ┃ 
            ┃ mkdir -p "$dest"
            ┃ tar -C "$dest" -xaf "$arch"
-           ┃ "$dest"/tools/centauripaths --info install
-           ┃ ln -s "$dest" ~/centauritools
+           ┃ "$dest"/tools/centauricreate --info install
+           ┃ ln -s "$dest" ~/centauritools --skip-components=1
            ┃ PATH+=":~/centauritools"            # add this to your ~/.bashrc
 
-           (3) System-wide repository installation (needs root rights):
+           (2) Finish a manual install by running the following steps:
 
-           ┃ # The $CEN_ROOT hierarchie can contain symlinks to a repository folder
-           ┃ # to allow simple updates via git or another repository source
-           ┃ 
-           ┃ REPO=<repository>       # path of repository
+           ┃ # (2.1) enable loadable bash buitins (please after installing the
+           ┃ #       bash-buitins package of your distribution):
+           ┃ $dest/library/autoload --builtin
+
+           ┃ # (2.2) preprocess bash sources for a little speed-up:
+           ┃ $dest/library/uglify -D -U
+
+           ┃ # (2.3) create a initial configuration file from a template:
+           ┃ centauricreate --template=config -
+
+Uninstall: To remove _centauri_bash_lib completely type one of those:
+
+           ┃ centauricreate --info uninstall         # uninstall with prompt
+
+           ┃ centauricreate --info uninstall --yes   # uninstall without prompt
+
+           WARNING: uninstall will remove the whole $CEN_ROOT tree.
+
+Customize: The setup script and --info setup can install to custom locations by passing a
+           colon separated argument string of up to five fields:
+
+           • DEST     The installation root $CEN_ROOT (should be the path of the
+                      installation folder).
+           • TOOLS    <empty> -or- folder to symlink user scripts (a folder contained in
+                      $PATH simplifies calling user scripts).  This field is ignored
+                      if the folder is not writable.
+           • ALIAS    <empty> -or- symlink to $CEN_ROOT/tools (just an  alias that should
+                      be easy to remember). This field is ignored if the base folder is
+                      not writable.
+           • REPO     An optional repository path -or- <empty> for no repository. A value
+                      of '+' tries $CEN_ROOT/admin. The setup code will symlink tools,
+                      library and locale to an existing repository.
+           • USER     <empty> or a [user][:group], sets the ownership of created folders.
+
            ┃ DEST=/var/centauri      # $CEN_ROOT hierarchie path
            ┃ TOOLS=/usr/bin          # optional: symlink tools to bin folder
            ┃ ALIAS=/opt/centauri     # optional: symlink $CEN_ROOT/tools
-           ┃ <repo>/tools/centauripaths --info install $DEST:$TOOLS:$ALIAS:$REPO
+           ┃ REPO=<repository>       # optional: path of your repository
 
-Finally:   If you did not use the setup tool, you should run the following steps:
+           ┃ setup $DEST:$TOOLS      # examples ...
+           ┃ setup $DEST:$TOOLS:$ALIAS
+           ┃ setup $DEST:$TOOLS:$ALIAS:$REPO
 
-           ┃ # (1) enable loadable bash buitins:
-           ┃ $dest/library/autoload --builtin
-           ┃ 
-           ┃ # (2) preprocessing for a little speed-up:
-           ┃ $dest/library/uglify -D -U
-           ┃ 
-           ┃ # (3) create a configuration file:
-           ┃ centauricreate --template=config -
+Repository:When using git or something similar, updates are simplified using the repository
+           installation mode. After installation the $CEN_ROOT hierarchy will contain symlinks
+           into the repository folder, e.g. the library files and tools are not copied ...
+
+           ┃ DEST=/var/centauri      # $CEN_ROOT hierarchie path
+           ┃ TOOLS=/usr/bin          # optional: symlink tools to bin folder
+           ┃ ALIAS=/opt/centauri     # optional: symlink $CEN_ROOT/tools
+           ┃ REPO=<repository>       # path of your repository
+
+           ┃ # using setup ...
+           ┃ $REPO/setup $DEST:$TOOLS:$ALIAS:$REPO
+
+           ┃ # ... or manual mode
+           ┃ $REPO/tools/centauripaths --info install $DEST:$TOOLS:$ALIAS:$REPO
 
 Non-FHS:   Most Linux systems follow the FSH standard. For other implementations or to install
-           into a non-root FS, the CEN_PATHS array variable is provided. It is initialized by
-           the library proxy to FSH values. The CEN_PREFIX variable can be set to point to a
-           different root folder:
+           into a non-root FS, for running scripts the CEN_PATHS array variable is provided.
+           It is initialized by _centauri_bash_lib and has five elements:
 
-           ┃ # to alter the FS root folder (not required for termux, see below)
-           ┃ export CEN_PREFIX=/some/other/root
-
-           When CEN_PREFIX is not set but PREFIX is non-empty and no "/var" folder is found,
-           _centauri_bash_lib sets CEN_PREFIX="$PREFIX". This is used to support termux linux
-           on android. CEN_PREFIX is automatically prepended to CEN_PATHS.
-
-           ┃ # paths that can be installation dependent (don't use CEN_PREFIX here):
-           ┃ CEN_PATHS=("" "/usr/bin" "/etc" "/var" "/tmp")
+             [0] non-FSH root prefix  (empty on FSH conformant systems)
+             [1] GNU corebin folder   (usually /usr/bin)
+             [2] system configuration (usually /etc)
+             [3] system var folder    (usually /var)
+             [4] temporary files      (usually /tmp)
 
            At _centauri_bash_lib load time, it checks "${CEN_PATHS[1]/bash}". If this is not
            executable (e.g. not FSH compliant) the "$BASH" variable is used to get some prefix
@@ -84,45 +127,13 @@ Non-FHS:   Most Linux systems follow the FSH standard. For other implementations
            The GNU core utilities can be installed either at "$CEN_PATHS/usr/bin" or at
            "$CEN_PATHS/bin". The autodetected path is stored as "${CEN_PATHS[1]}".
 
-           To override the autogenerated library proxy, the [proxy] section in the
-           configuration file "centauri-bash-lib" can be used.
-
-Customize: In the example centauripaths is called to trigger a default setup. Before doing so,
-           the configuration can be tailored to local needs by editing the
-           "$CEN_ROOT/tools/_centauri_bash_lib" proxy script.
-
-           Installing as non-root user does not need configuration changes. See below for
-           configuration details ...
-
-Proxy:     Loading _centauri_bash_lib into a user script always invokes a proxy, see [[Library
-           Proxy]] for details. This proxy contains some configuration information used to
-           locate the library itself. Every folder containing user scripts wanting to use
+Proxy:     Loading _centauri_bash_lib into a user script always invokes a proxy, see
+           Library Proxy for details. This proxy contains some configuration information used
+           to locate the library itself. Every folder containing user scripts wanting to use
            _centauri_bash_lib must contain a symlink to the proxy.
 
            The proxy at $CEN_ROOT/tools is recreated by the installation process. If you are
            using multiple binary folders symlink the proxy rather than creating copies.
-
-Config:    The proxy source is $CEN_ROOT/tools/_centauri_bash_lib and it contains two
-           configuration statements that looks like these:
-
-           ┃ defaults shared  "/var/centauri" "/usr/local/bin" "/admin" "+" "root:staff"
-           ┃ defaults private "~/.centauri" "~/bin" "~/centauritools"
-
-           This internally defines an array with up to five elements (<empty> stands for a minus
-           sign or an empty string):
-
-               [0]     The installation root $CEN_ROOT (should be the path of the
-                       installation folder)
-               [1]     <empty> -or- folder to symlink user scripts (a folder contained in
-                       $PATH simplifies calling user scripts).  This field is ignored
-                       if the folder is not writable.
-               [2]     <empty> -or- symlink to $CEN_ROOT/tools (just an  alias that should
-                       be easy to remember). This field is ignored if the base folder is
-                       not writable.
-               [3]     An optional repository path -or- <empty> for no repository. A value
-                       of '+' tries $CEN_ROOT/admin. The setup code will symlink tools,
-                       library and locale to an existing repository.
-               [4]     <empty> or a [user][:group], sets the ownership of created folders.
 
 Folders:   Parts of the folder tree shown below are added by _centauri_bash_sys. An automatic
            setup of the tree is done on the 1st execution (as root user) if the persistent
@@ -144,20 +155,13 @@ Folders:   Parts of the folder tree shown below are added by _centauri_bash_sys.
 
            The following commands can be run to force a (repair) setup:
 
-           ┃ centauripaths --info install          # setup with prompts
-           ┃ centauripaths --info install --yes    # setup without prompts
+           ┃ centauricreate --info install         # setup with prompts
+           ┃ centauricreate --info install --yes   # setup without prompts
 
 Updates:   If you add own scripts to the tools folder, symlinks to the binary folder (like
            /usr/local/bin) are created this way:
 
-           ┃ centauripaths --info update           # update binary symlinks
-
-Uninstall: To remove _centauri_bash_lib completely type one of those:
-
-           ┃ centauripaths --info uninstall        # uninstall with prompt
-           ┃ centauripaths --info uninstall --yes  # uninstall without prompt
-
-           WARNING: uninstall will remove the whole $CEN_ROOT tree.
+           ┃ centauricreate --info update          # update binary symlinks
 
 Remarks:   As mentioned above, there is no separate installation program. Every script that
            calls _centauri_bash_lib main() has the --info option and can be used
@@ -165,8 +169,4 @@ Remarks:   As mentioned above, there is no separate installation program. Every 
 
            Verbs and options following --info must be typed exactly as documented above. They
            cannot be abbreviated and must appear in that order.
-
-           To override the default configuration (built into the proxy) create the file
-           $CEN_ROOT/default/centauri-bash-lib, see sysconfig(). Some data from the
-           configuration file is compiled into the proxy during setup.
 

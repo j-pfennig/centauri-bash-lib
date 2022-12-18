@@ -405,7 +405,7 @@ splitcall() {
     local _offs= _leng _coun="$#" _aidx _args _stat _save _savd _rval=0
     _leng="${_maxi:-1024}"
 
-    if [ -n "$_vnam" ] ; then                       # find '@' in param list
+    if [ -n "$_vnam" ] ; then                       # find @ in param list
         listsearch -c -n _aidx -i "$_vnam" -- '@' ||
             _cen_abort $"No '@' in arguments array:" '-a'
         local -n _cen_splitcall="$_vnam"
@@ -470,7 +470,7 @@ splitcall() {
         _rval="$_stat" ; break                      # stop with error code
     done || :
 
-    if [ "${_good:--}" = '-' -a "$CEN_ERROR" = '0' ] ; then
+    if [ "${_good:--}" = '-' -a "$CEN_ERROR" = 0 ] ; then
         CEN_ERROR="$_save" ; CEN_DONE="$_savd"      # restore error state
     fi
     return $_rval
