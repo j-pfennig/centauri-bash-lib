@@ -36,7 +36,7 @@
 # coreutils bash builtins can be enabled. For more details see [[_centauri_bash_ext]]
 # and [[builtin]].
 #
-# Copyright Dr. J. Pfennig (c) 2007-2022
+# Copyright Dr. J. Pfennig (c) 2007-2023
 # ------------------------------------------------------------------------------
 
 declare -g -A CEN_MODULES['_centauri_bash_lib']='0.99:1:1'
@@ -311,15 +311,15 @@ error() {
     [ -n "$_fopt" ] && fatal ${_popt[@]} -- "$@"
     [ -n "$CEN_NOTRACE" ] && [ -z "$_isok" -a -n "$*" ] && message -e ${_popt[@]} -- "$@"
     [ "$CEN_DONE" = 1 ] && CEN_DONE=2
-    [ "$CEN_EXIT" -le 1 ] && CEN_EXIT=2
-    return "${_zero:-$CEN_EXIT}"
+    [ "${CEN_EXIT:-0}" -le 1 ] && CEN_EXIT=2
+    return ${_zero:-$CEN_EXIT}
 }
 
 # ------------------------------------------------------------------------------
 # fatal - fatal error message, terminate via quit()
 #
 # Call:     fatal [-a|-i] [-m|-n] [-p] [-r] [--] <msg>...
-#           fatal -t <msg>...                               # call trace
+#           fatal -t [-p <fmt>] <msg>...                    # call trace
 #
 # Options:  ... most [[message()]] options (using **message -f**)
 #
@@ -360,7 +360,7 @@ fatal() {
 #           quit -h
 #
 # Options:  ... most [[message()]] options (the implementation calls **message**)
-#           -e  check for error, print "Terminated after error" if 1st arg is not '-'
+#           -e  error exit, print "Terminated after error" if 1st arg is not '-'
 #           -h  just run ''quit'' hook and reset to default (save for subshell)
 #           -s  override the exit code (CEN_EXIT)
 #           -t  sets CEN_EXIT=4, print "Terminated" if 1st arg is not '-'
@@ -380,8 +380,12 @@ fatal() {
 #.              $DAT_QUIT_LIST "$@"         # IMPORTANT: pass all args!
 #.          }
 #.
+#.          # explicitly register the hook function ...
 #.          DAT_QUIT_LIST="$CEN_HOOK_QUIT"  # save top of list
 #.          CEN_HOOK_QUIT=my_quit ; quit    # register hook and call
+#.
+#.          # ... or register the hook function via context -h
+#.          context -h CEN_HOOK_QUIT DAT_QUIT_LIST my_quit
 #
 #+Internally quit gets called by some traps. See: [[context()]], [[fatal()]],
 # [[main()]] and [[error()]]. But it never uses EXIT, RETURN or DEBUG traps.
@@ -419,7 +423,7 @@ quit() {
       --)   shift ; break ;;
       -e)   _flgt=2 ; _opts+=("$1") ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1 ;;
       -h)   $CEN_HOOK_QUIT -h ; CEN_HOOK_QUIT=_cen_quit ; return 0 ;;
-      -s)   CEN_EXIT="$2" ; shift ;;
+      -s)   CEN_EXIT="${2:-0}" ; shift ;;
       -t)   _flgt=1 ; CEN_EXIT=4 ;;
       -y)   CEN_QUIT_SANE=1 ;;
       -)    break ;;                        # special case
@@ -457,7 +461,10 @@ _cen_quit() {
     done || :
     $CEN_NOTRACE set -x
 
-    [ -n "$CEN_QUIT_WSUB" ] && wait                     # wait for subshells
+    if [ -n "$CEN_QUIT_WSUB" ] ; then                   # wait for subshells
+        $CEN_TRACE -a -c - $"Waiting for children"
+        wait
+    fi
     CEN_HOOK_QUIT=_cen_exit
     if [ $# = 1 -a "$1" = '-h' ] ; then
         _cen_exit -
@@ -473,7 +480,7 @@ _cen_exit() {
     isfunction -c '_cen_pro_quit' || :          # remove progress output
     isfunction -c '_cen_ext_quit' || :          # run quit tmpfile late
     [ "$1" = '-' ] && return 0                  # see quit -h
-    $CEN_TRACE -r -c $"Exit status" -- "${CEN_EXIT:-0}"
+    $CEN_TRACE2 -r -c $"Exit status" -- "${CEN_EXIT:-0}"
     [ -n "$CEN_QUIT_SANE" ] && system -r -q -- stty sane
     if [ "$CEN_QUIT_WAIT" = 3 ] ; then
         system -b -r sleep 2
@@ -571,7 +578,7 @@ _cen_message() {
     if [ -n "$CEN_CONS_MSGLEN" ] ; then         # see progress(), ignore -q
         echo 1>&2 ; CEN_CONS_MSGLEN=            #     needed for trace()
     fi
-    [ "$_verb" -gt 0 ] || return "$_stat"       # global -q option
+    [ "$_verb" -gt 0 ] || return $_stat         # global -q option
 
     [ "$CEN_AUTOIND" = 2 ] && _sind=1 ; CEN_AUTOIND=1
     [ -n "$_sind" ] && _snam="${_snam//?/ }"    # no program name
@@ -596,7 +603,7 @@ _cen_message() {
             shift ; _snam="${_snam//?/ }" ; _serr=
         done
     fi 1>&2
-    return "$_stat"                             # error/fatal return CEN_EXIT
+    return $_stat                               # error/fatal return CEN_EXIT
 }
 
 # format short message: <vnam> <orig>|- <mesg>
@@ -871,7 +878,7 @@ confirm() {
         if [ -n "$CEN_YESNO" ] ; then
             _varg="$CEN_YESNO"
             [ "$CEN_YESNO" = "y" ] || return 1
-            $CEN_TRACE -a "confirm:" "$@" ; return 0
+            $CEN_TRACE -a -c " yes" "$@" ; return 0
         fi
         [ -z "$_dflt" ] && _dflt=$"no"
         [ -z "$_vali" ] && _vali=$"yes no"
@@ -972,7 +979,7 @@ _cen_getline() {
 #
 # Call:     (1) context -e <mask> ...
 #           (2) context -g <mode> ...
-#           (2) context -h <hnam> <vnam> <hook> ...
+#           (3) context -h <hnam> <vnam> <hook> ...
 #           (4) context -t [<trap>|+|-] ...
 #           (5) context -v [0-3] ...
 #           (6) context ... [-r] [-s] [-c|-q|-x] [--] <arg>...
@@ -1014,7 +1021,7 @@ _cen_getline() {
 # 'command not found' function (bit 2). **DO NOT** run "set -eE" directly.
 #
 #+Form (2): The -g option will load the [[_centauri_bash_con]] or [[_centauri_bash_win]]
-# module, depending on <mode>.
+# module, depending on <mode>. See [[quit()]] option -h for an example.
 #
 #+Form (3): Adds a hook function to a hook chain if variable <vnam> is empty.
 #
@@ -1220,7 +1227,6 @@ context() {
     if [ -n "$CEN_DISPLAY" ] && [ "${CEN_IS_DESKTOP:-0}" != 0 -o "$_cons" = 2 ] ; then
         if embed -r -q '_centauri_bash_run' ; then
             if [ "$_cons" = 2 ] ; then                  # force a console window ...
-#                terminal -f -o 1 -m 3 -t "$_text" -r -- $_sudo "$@" && return 2 || return 1
                 terminal -f -o 1 -t "$_text" -r -- $_sudo "$@"
             else                                        # exec console, no return on success
                 terminal -f -m 1 -t "$_text" -r -- $_sudo "$@"
@@ -1329,8 +1335,6 @@ create() {
             :
         elif [ "$#" = 1 ] && [ -f "$_fout" -a -w "$_fout" ] ; then
             >"$_fout" || _stat=$?                   # really truncate
-        elif [ -n "$CEN_FEATURE_A" ] ; then         # can use builtins...
-            remove $_frun -s -- "$_fout"
         elif [ -e "$1" ] ; then
             system $_frun -b -e -p -- rm -f -- "$_fout"
         fi
@@ -1610,19 +1614,19 @@ filter() {
       *)   _cen_abort - "$1"
       esac ; shift
     done
-    [ "${#CEN_OPT_INCLEXCL[@]}" = 0 ] && return "${_rval:-0}"
+    [ "${#CEN_OPT_INCLEXCL[@]}" = 0 ] && return ${_rval:-0}
     _vall="$1" ; [ -n "$_oinv" ] && _vall="${1,,}"
 
     for _valu in "${CEN_OPT_INCLEXCL[@]}" ; do
         if [ -n "$_valu" ] ; then
             [ "$_excl" = 0 ] && _iinc=1
             [ -n "$_oinv" ] && _valu="${_valu,,}"
-            [[ "$_vall" == $_valu ]] && return "$_excl"
+            [[ "$_vall" == $_valu ]] && return $_excl
         fi
         [ "$_excl" = 0 ] && _excl=1 || _excl=0
     done
 
-    [ -n "$_rval" ] && return "$_rval"
+    [ -n "$_rval" ] && return $_rval
     [ "$_iinc" = 0 ]            # fail if we had includes
 }
 
@@ -1764,7 +1768,7 @@ folder() {
     [ "$_vval" = '/' ] || _vval="${_vval%/}"
     [ -z "$_ogen" ] && while [ ! -d "$_vval" ] ; do
         if [ -n "$_omak" ] ; then
-            create -d $_oopt $_rdry -- "$_vval" $2 $3 && break
+            create -d $_oopt $_rdry -- "$_vval" "$2" "$3" && break
         elif [ -n "$_tdir" -a "$_ocwd" = ":" ] ; then
             return 1                            # do not clear _vval!
         else
@@ -1898,11 +1902,11 @@ invoke() {
     if ! isfunction "$nact" ; then
         error -z $"Not yet implemented:" "$CEN_ACTION"
     elif [ -n "$CEN_OPT_TRACE" ] ; then
-        $CEN_TRACE -r -c " '$CEN_ACTION'" "$nact"
+        $CEN_TRACE2 -r -c " '$CEN_ACTION'" "$nact"
         # must catch ERR trap in _cen_abort
         CEN_NOTRACE= ; set -x ; $nact "${CEN_ACTARR[@]}" ; set +x ; CEN_NOTRACE=:
     else
-        $CEN_TRACE -r -c " '$CEN_ACTION'" "$nact"
+        $CEN_TRACE2 -r -c " '$CEN_ACTION'" "$nact"
         # must catch ERR trap in _cen_abort
         $nact "${CEN_ACTARR[@]}"
     fi
@@ -2060,6 +2064,7 @@ optarg() {
     -i|-x)
        local _temp="$CEN_ACTARR" ; _vnam=
        case "$_temp" in
+       *\**)    ;;
        ^*\$)    _temp="${_temp:1}" ; _temp="${_temp%\$}" ;;
        ^*)      _temp="${_temp:1}*" ;;
        *\$)     _temp="*${_temp%\$}" ;;
@@ -2484,7 +2489,8 @@ _cen_sudo() {
 
 system() {
     $CEN_NOTRACE set +x
-    local _ferr _good=0 _mind _nout _val_ _vset _vdel _xcmd _stat=0 _sudo _cpro _rdry _bflg _zflg _temp
+    local _ferr _mind _nout _val_ _vset _vdel _xcmd _sudo _cpro _rdry _bflg _xflg _zflg _temp
+    local _good=0 _stat=0
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -2510,42 +2516,44 @@ system() {
             [ "$CEN_VERB" -gt 1 ] && _nout=3
             [ "$CEN_VERB" -lt 1 ] && _nout=1 ;;
       -w)   _ferr="-w" ;;
-      -x)   _xcmd="exec" ;;
+      -x)   _xflg=1 ;;
       -z)   _zflg=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
 
-    if [ "$1" = "eval" ] ; then
-        [ -n "$_sudo" ] && { shift ; _sudo+=("${CEN_PATHS[1]}/bash" -c); }
-    elif [ "$_cpro" = 1 ] ; then                        # option -c
+    if [ "$_cpro" = 1 ] ; then                          # option -c
         sysfind -c $_bflg $_ferr -- "$@" || _stat=127
-        $CEN_NOTRACE set -x ; return "$_stat"
+        $CEN_NOTRACE set -x ; return $_stat
+    elif [ "$1" = 'eval' ] ; then
+        [ -n "$_sudo" ] && _xcmd=("${CEN_PATHS[1]}/bash" -c "${*:1}")
     elif [ -z "$_cpro" ] ; then                         # no -n option
-        _temp="${CEN_COMMANDS["${1:-/}"]}"
-        if [ -z "$_temp" ] ; then                       # not cached, try to add it
+        _temp="${CEN_COMMANDS["${1:-/}"]}"              # cached command?
+        case "$_temp" in
+        '')     ;;                                      # not cached
+        -)      [ -z "$_bflg" ] && _temp= ;;            # is builtin, want cmd
+        *)      [ -n "$_bflg" ] && _temp= ;;            # is cmd, want builtin
+        esac
+
+        if [ -z "$_temp" ] ; then                       # get builtin or path
             [ "$_nout" = 1 ] && _temp= || _temp="${_ferr:--e}"
-            if ! sysfind -c $_bflg $_temp -- "$1" ; then
+            [ -n "$_xflg" ] && _bflg=
+            if ! sysfind -c -d $_bflg $_temp -- "$1" ; then
                 $CEN_NOTRACE set -x ; return 127
             fi
-            _temp="${CEN_COMMANDS["$1"]}"
+            _temp="${CEN_COMMANDS["${1:-/}"]}"          # cached command?
         fi
-        if [ "$_temp" = '-' ] ; then                    # cached as builtin
-            if [ -z "$_bflg" ] ; then                   # run external...
-                [ "$_nout" = 1 ] && _temp= || _temp="${_ferr:--e}"
-                if ! sysfind -c -i -s _temp $_temp -- "$1" ; then
-                    $CEN_NOTRACE set -x ; return 127
-                fi
-            elif [ -z "$_xcmd" ] ; then
-                _xcmd="builtin"
-            fi
-        elif [ -n "$_temp" ] ; then                     # cached as command
-            _temp+="/$1"
-            shift ; set -- "${_temp/\/\//\/}" "$@"
+        if [ "$_temp" = '-' ] ; then                    # got builtin
+            _xcmd=(builtin "$@")                        # assemble command
+        else
+            _temp+="/$1" ; _temp="${_temp/\/\//\/}"
+            _xcmd=("$_temp" "${@:2}")                   # assemble command
         fi
     fi
 
-    _xcmd=($_xcmd "${_sudo[@]}" "$@")                   # assemble command
+    [ -z "$_xcmd" ] && _xcmd=("$@")
+    [ -n "$_sudo" ] && _xcmd=("${_sudo[@]}" "${_xcmd[@]}")
+    [ -n "$_xflg" ] && _xcmd=(exec "${_xcmd[@]}")
     if dryrun $_rdry -- "${_xcmd[@]}"; then
         $CEN_NOTRACE set -x ; return 1
     fi
@@ -2578,7 +2586,7 @@ system() {
     fi
 
     if [ "$_stat" -le "$_good" ] ; then
-        $CEN_NOTRACE set -x ; return "$_stat"
+        $CEN_NOTRACE set -x ; return $_stat
     elif [ "$_nout" = 2 -a -n "$_val_" ] ; then
         if [ -z "$_ferr" ] ; then
             message $_mind -m -- "$_val_"
@@ -2591,7 +2599,7 @@ system() {
         message $_ferr -p -- $"Running '%s' failed with status %s" "$1" "$_stat"
     fi
     [ -n "$_ferr" ] && CEN_AUTOIND=
-    $CEN_NOTRACE set -x ; return "$_stat"
+    $CEN_NOTRACE set -x ; return $_stat
 }
 
 # ------------------------------------------------------------------------------
@@ -2699,7 +2707,7 @@ main() {
             _oinf=1 ; CEN_FEATURE_D=1 ; CEN_FEATURE_Y=1 ;;
         --pager)
             if embed -r -q '_centauri_bash_pip' ; then
-                optarg 'pager' - -t ; syspager -y
+                optarg 'pager' - -t ; syspager -y -d -c ''
             else
                 _isok=
             fi

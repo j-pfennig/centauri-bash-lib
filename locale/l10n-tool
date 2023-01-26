@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2018-2022; BSD License"
 CEN_TITLE="Helper to manage script translations"

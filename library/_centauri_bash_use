@@ -381,7 +381,7 @@ _cen_usage() {
 
     if [ -n "$CEN_FEATURE_T" ] ; then           # translate title...
         local _mesg ; export TEXTDOMAINDIR
-        system -q -s _mesg -- gettext -d "$CEN_NAME" "$CEN_TITLE" && CEN_TITLE="$_mesg"
+        system -q -r -s _mesg -- gettext -d "$CEN_NAME" "$CEN_TITLE" && CEN_TITLE="$_mesg"
     fi
 
     CEN_USE_HEADER="[<action> <argument>... [--]]..."
@@ -568,7 +568,7 @@ CEN_USE_OWNSVC=
 usageset() {
     [ -z "$CEN_USE_USAGE" ] && _cen_usage 1 # implicit initialization
 
-    local _sepa=$'\n' _mesg
+    local _sepa=$'\n' _mesg _temp
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -618,14 +618,15 @@ usageset() {
               CEN_USE_OWNSVC=2
               CEN_USE_ACTIONS+="$_sepa       $2" ; shift ;;
 
-        -t)   case "$CEN_USE_OWNLBL" in
+        -t)   [ "${2:--}" = '-' ] && _temp='' || _temp="$2"
+              case "$CEN_USE_OWNLBL" in
               "") CEN_USE_OWNLBL=1              # add as is
-                  CEN_USE_OTHER+="$2" ;;
-              1)  CEN_USE_OTHER+="$_sepa$2" ;;  # add line
+                  CEN_USE_OTHER+="$_temp" ;;
+              1)  CEN_USE_OTHER+="$_sepa$_temp" ;;  # add line
               2)                                # add indented
-                  CEN_USE_OTHER+="$_sepa       $2" ;;
+                  CEN_USE_OTHER+="$_sepa       $_temp" ;;
               *)  CEN_USE_OWNLBL=2              # join
-                  CEN_USE_OTHER+="$2"
+                  CEN_USE_OTHER+="$_temp"
               esac
               CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
 

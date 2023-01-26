@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE="Pack centauri-bash-lib sources, create packaged script"

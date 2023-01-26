@@ -89,26 +89,30 @@ echo 1>&2
 PATH="$PORG" centauricreate --embed="$SELF" --info install "$INFO" || exit $?
 
 # run autoload to check for bash loadables
-PATH="$PDES" $DEST/library/autoload --builtin --embed="$SELF:a" -
+PATH="$PDES" "$DEST/library/autoload" --builtin --embed="$SELF:a" -
 
 # create *.p files to optimize loading speed
-PATH="$PDES" $DEST/library/uglify --embed="$SELF:a" -U -D
+PATH="$PDES" "$DEST/library/uglify" --embed="$SELF:a" -U -D
+
+# replace shebang
+echo 1>&2
+PATH="$PORG" centauricreate --embed="$SELF" --shell=- "$DEST/tools" --yes
 
 # ------------------------------------------------------------------------------
 # Optional: create an example library config file
 # ------------------------------------------------------------------------------
 
 echo 1>&2
-PATH="$PDES" $DEST/tools/centauricreate --embed="$SELF" --template=config -
+PATH="$PDES" "$DEST/tools/centauricreate" --embed="$SELF" --template=config -
 
 # ------------------------------------------------------------------------------
 # Optional: generate HTML documentation
 # ------------------------------------------------------------------------------
 
 echo 1>&2
-PATH="$PDES" $DEST/tools/centaurihelp --embed="$SELF" --generate=all --delete
+PATH="$PDES" "$DEST/tools/centaurihelp" --embed="$SELF" --generate=all --delete
 if [ ! -s "$DEST/html/index.html" ] ; then
-    PATH="$PDES" $DEST/tools/centaurihelp --embed="$SELF" --generate=dummy --yes
+    PATH="$PDES" "$DEST/tools/centaurihelp" --embed="$SELF" --generate=dummy --yes
 elif [ "$DEST/library/_centauri_bash_lib" -nt "$DEST/html/index.html" ] ; then
     echo "$SELF: Your Html documentation is outdated, please rebuild" 1>&2
 fi

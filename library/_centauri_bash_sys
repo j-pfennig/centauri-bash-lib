@@ -443,6 +443,7 @@ sysinfo() {
         if [ -n "$CEN_FEATURE_T" ] ; then           # translate title...
             local _titl ; export TEXTDOMAINDIR
             system -q -s _titl -- gettext -d "$CEN_NAME" "$CEN_TITLE" && CEN_TITLE="$_titl"
+            system -q -s _titl -- gettext -d "$CEN_NAME" "$_mesg" && _mesg="$_titl"
         fi
         echo "${CEN_TITLE:--}"
         echo "${CEN_VERSION:--}"

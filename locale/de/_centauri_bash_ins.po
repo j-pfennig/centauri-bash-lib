@@ -145,112 +145,112 @@ msgstr "Erstelle systemd Verweis"
 msgid "Needing root rights to alter a shared installation"
 msgstr "Zum Verändern einer geteilten Installation sind 'root' Rechte nötig"
 
-#: /var/centauri/library/_centauri_bash_ins:942
+#: /var/centauri/library/_centauri_bash_ins:944
 msgid "Do do really want to uninstall 'centauritools'"
 msgstr "Soll 'centauritools' wirklich deinstalliert werden"
 
-#: /var/centauri/library/_centauri_bash_ins:944
+#: /var/centauri/library/_centauri_bash_ins:946
 msgid "Update 'centauritools' services"
 msgstr "'centauritools' Dienste aktualisieren"
 
-#: /var/centauri/library/_centauri_bash_ins:950
+#: /var/centauri/library/_centauri_bash_ins:952
 msgid "Update 'centauritools'"
 msgstr "'centauritools' aktualisieren"
 
-#: /var/centauri/library/_centauri_bash_ins:953
+#: /var/centauri/library/_centauri_bash_ins:955
 msgid "Path check 'centauritools'"
 msgstr "'centauritools' Pfade prüfen"
 
-#: /var/centauri/library/_centauri_bash_ins:956
+#: /var/centauri/library/_centauri_bash_ins:958
 msgid "Install 'centauritools' to"
 msgstr "'centauritools' installieren nach"
 
-#: /var/centauri/library/_centauri_bash_ins:961
+#: /var/centauri/library/_centauri_bash_ins:963
 msgid "Symlink 'centauritools' to"
 msgstr "Verweis für 'centauritools' nach"
 
-#: /var/centauri/library/_centauri_bash_ins:970
+#: /var/centauri/library/_centauri_bash_ins:972
 msgid "Tools setup (%s items)"
 msgstr "Tools Einrichtung (%s Teile)"
 
-#: /var/centauri/library/_centauri_bash_ins:982
+#: /var/centauri/library/_centauri_bash_ins:983
 msgid "Configure 'centauritools' services"
 msgstr "'centauritools' Dienste einrichten"
 
-#: /var/centauri/library/_centauri_bash_ins:992
+#: /var/centauri/library/_centauri_bash_ins:993
 msgid "Remove folder"
 msgstr "Entferne Verzeichnis"
 
-#: /var/centauri/library/_centauri_bash_ins:1044
+#: /var/centauri/library/_centauri_bash_ins:1045
 msgid "Skip setup runtime folders (no %s)"
 msgstr "Überspringe Einrichtung der Laufzeitverzeichnisse (kein %s)"
 
-#: /var/centauri/library/_centauri_bash_ins:1046
+#: /var/centauri/library/_centauri_bash_ins:1047
 msgid "Cannot setup runtime folders (not running as root)"
 msgstr "Kann Laufzeitverzeichnisse nicht einrichten (laufe nicht als root)"
 
-#: /var/centauri/library/_centauri_bash_ins:1189
+#: /var/centauri/library/_centauri_bash_ins:1190
 msgid "Unknown installation destination"
 msgstr "Unbekanntes Installationsziel"
 
-#: /var/centauri/library/_centauri_bash_ins:1209
+#: /var/centauri/library/_centauri_bash_ins:1211
 msgid "Folder not writable, ignoring:"
 msgstr "Verzeichnis nicht schreibbar, ignoriere:"
 
-#: /var/centauri/library/_centauri_bash_ins:1215
 #: /var/centauri/library/_centauri_bash_ins:1217
+#: /var/centauri/library/_centauri_bash_ins:1219
 msgid "Folder not writable:"
 msgstr "Verzeichnis nicht schreibbar:"
 
-#: /var/centauri/library/_centauri_bash_ins:1216
+#: /var/centauri/library/_centauri_bash_ins:1218
 msgid "Install/uninstall without root rights"
 msgstr "Installation/Entfernen ohne 'root' Rechte"
 
-#: /var/centauri/library/_centauri_bash_ins:1453
+#: /var/centauri/library/_centauri_bash_ins:1455
 msgid "System version"
 msgstr "System  Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1454
+#: /var/centauri/library/_centauri_bash_ins:1456
 msgid "System family"
 msgstr "System  Familie"
 
-#: /var/centauri/library/_centauri_bash_ins:1455
+#: /var/centauri/library/_centauri_bash_ins:1457
 msgid "Bash    version"
 msgstr "Bash    Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1456
+#: /var/centauri/library/_centauri_bash_ins:1458
 msgid "Library version"
 msgstr "Library Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1457
+#: /var/centauri/library/_centauri_bash_ins:1459
 msgid "shared"
 msgstr "geteilt"
 
-#: /var/centauri/library/_centauri_bash_ins:1457
+#: /var/centauri/library/_centauri_bash_ins:1459
 msgid "private"
 msgstr "privat"
 
-#: /var/centauri/library/_centauri_bash_ins:1458
+#: /var/centauri/library/_centauri_bash_ins:1460
 msgid "Library setup"
 msgstr "Library Setup"
 
-#: /var/centauri/library/_centauri_bash_ins:1461
 #: /var/centauri/library/_centauri_bash_ins:1463
+#: /var/centauri/library/_centauri_bash_ins:1465
 msgid "KDE     version"
 msgstr "KDE     Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1461
+#: /var/centauri/library/_centauri_bash_ins:1463
 msgid "-unknown-"
 msgstr "-unbekannt-"
 
-#: /var/centauri/library/_centauri_bash_ins:1464
+#: /var/centauri/library/_centauri_bash_ins:1466
 msgid "Qt      version"
 msgstr "Qt      Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1465
+#: /var/centauri/library/_centauri_bash_ins:1467
 msgid "Plasma  version"
 msgstr "Plasma  Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1467
+#: /var/centauri/library/_centauri_bash_ins:1469
 msgid "Session type"
 msgstr "Sitzungstyp"

@@ -4,17 +4,17 @@
 #
 # Call:     . _centauri_bash_utl
 #
-# Copyright Dr. J. Pfennig (c) 2022
+# Copyright Dr. J. Pfennig (c) 2022-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_utl"]="0.01:1"
+CEN_MODULES["_centauri_bash_utl"]="0.02:1"
 
 # ------------------------------------------------------------------------------
 # listsearch - search a word in a list
 #
-# Call:     listsearch [-b] [-c] [-d <deli>] [-m|-n <vres>] [-g|-u|-x] [--] <what> <list>
-#           listsearch [-b] [-c] [-m|-n <vres>] [-g|-u|-x] [--] <what> <item>...
-#           listsearch [-b] [-c] [-d <deli>] [-m|-n <vres>] [-g|-u|-x] -i <vinp> [--] <what>
+# Call:     listsearch [-b] [-c] [-t] [-d <deli>] [-m|-n <vres>] [-g|-u|-x] [--] <what> <list>
+#           listsearch [-b] [-c] [-t] [-m|-n <vres>] [-g|-u|-x] [--] <what> <item>...
+#           listsearch [-b] [-c] [-t] [-d <deli>] [-m|-n <vres>] [-g|-u|-x] -i <vinp> [--] <what>
 #
 # Options:  -b  [-] do a binary search (list must be ordered lexically)
 #           -c      do a case sensitive search
@@ -23,6 +23,7 @@ CEN_MODULES["_centauri_bash_utl"]="0.01:1"
 #           -i      input from variable (string or array)
 #           -m      return matched word in <vres>
 #           -n      return match index in <vres>
+#           -t      trim list items
 #           -u      partial word search, match must be unique
 #           -x      regular expression match (longest expression wins)
 #
@@ -45,7 +46,7 @@ CEN_MODULES["_centauri_bash_utl"]="0.01:1"
 #.          message "Index $valn is '$valm'"
 # ------------------------------------------------------------------------------
 listsearch() {
-    local _fbin _fcas _fglo _finp _fwrd _fidx _frex _funi _sdel _word _list _curr
+    local _fbin _fcas _fglo _finp _fwrd _fidx _frex _ftrm _funi _sdel _word _list _curr
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -56,6 +57,7 @@ listsearch() {
       -i)   shift ; local -n _vinp="$1" ; _finp=1 ;;
       -n)   shift ; local -n _vidx="$1" ; _vidx= ; _fidx=1 ;;
       -m)   shift ; local -n _vres="$1" ; _vres= ; _fwrd=1 ;;
+      -t)   _ftrm=1 ;;
       -u)   _funi=1 ;;
       -x)   _fglo=0 ; _frex=1 ;;
       *)    _cen_abort - "$1"
@@ -74,7 +76,12 @@ listsearch() {
     # iteration limits
     local _ibeg=0 _iend="${#_list[@]}" _irun
     for ((_irun=_ibeg; _irun<_iend; _irun++)) ; do
-        [ -z "$_fcas" ] && _curr="${_list[_irun],,}" || _curr="${_list[_irun]}"
+        _curr="${_list[_irun]}"
+        if [ -n "$_ftrm" ] ; then
+            _curr="${_curr%"${_curr##*[![:space:]]}"}"
+            _curr="${_curr#"${_curr%%[![:space:]]*}"}"
+        fi
+        [ -z "$_fcas" ] && _curr="${_curr,,}"
         if [ -n "$_fglo" ] ; then                   # glob match ...
             [ $_fglo -ge ${#_curr} ] && continue    # find longest match
             if [ -n "$_frex" ] ; then               # regexp match
@@ -555,17 +562,19 @@ _cen_scal_wait() {
 #           (2) timer -s <vnam>                  # save current epoch time
 #               timer -s <vnam> -p <pfmt>|-      # save elapsed time in [ms]
 #           (3) timer ... -i <time>|- ...        # set epoch time before return
-#           (4) timer -w <secs> [-c <func>] [-r] # sleep, optional callback
+#                                                # sleep, optional callback
+#           (4) timer -w <secs> [-c <func>] [-h] [-r]
 #                                                # run a poll loop ...
-#           (5) timer -l <tick> -w <secs> -c <func> [-r]
+#           (5) timer -l <tick> -w <secs> -c <func> [-h] [-r]
 #
 # Options:  -a  pass -a option to [[message]] or [[trace]]
 #           -c  callback function
+#           -h  register a trap handler (see [[context]] -t)
 #           -i  set or reset start time integer [ms] or floating time
 #           -l  enter callback loop
 #           -m  report elapsed time via  [[message]]
 #           -p  use printf formatting
-#           -r  register a trap handler (see [[context]] -t)
+#           -r  ignore --dryrun option
 #           -s  save elapsed time to variable
 #           -t  report elapsed time via  [[trace]]
 #           -w  wait number of seconds
@@ -600,7 +609,7 @@ _cen_scal_wait() {
 #           time in [ms].
 #
 #.Examples: # just sleep for a while (1.5 [s])
-#.          timer -w 1.5 -r
+#.          timer -w 1.5 -h
 #
 #.          # reset elapsed time, do something, report elapsed time, reset
 #.          timer -i - ; do_something
@@ -614,7 +623,7 @@ _cen_scal_wait() {
 #
 #.          # run a poll loop
 #.          poll_func() {  [ "$1" = '-l' ] || return 0 ; [ -e "flagfile" ] }
-#.          timer -w 10 -l 200 -c poll_func -r || quit "Timeout"
+#.          timer -w 10 -l 200 -c poll_func -h || quit "Timeout"
 #.          timer -s mesg -p "% [ms]"
 #.          message "Ready after" "$mesg" " wait time."
 # ------------------------------------------------------------------------------
@@ -635,17 +644,18 @@ _cen_timer_cvt() {
 CEN_UTL_SLEEP=                                  # see 'sysfind -b sleep'
 [ -v CEN_UTL_STIME ] || CEN_UTL_STIME="$EPOCHREALTIME"
 timer() {
-    local _call=: _vnam _aopt _ropt _spri _sset _stic _swai _mesg _time _stat
+    local _call=: _vnam _aopt _hopt _ropt _spri _sset _stic _swai _mesg _time _stat
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _aopt="$1" ;;
       -c)   shift ; isfunction -f -- "$1" ; _call="$1" ;;
+      -h)   _hopt=1 ;;
       -i)   shift ; _sset="$1" ;;
       -l)   shift ; _stic="$1" ;;
       -m)   _mesg='message' ;;
       -p)   shift ; _spri="$1" ;;
-      -r)   _ropt=1 ;;
+      -r)   _ropt="$1" ;;
       -s)   shift ; _vnam="$1" ;;
       -t)   _mesg="$CEN_TRACE" ;;
       -w)   shift ; _swai="$1" ;;
@@ -655,7 +665,7 @@ timer() {
     [ -z "$_mesg" -a -n "$_aopt" ] && _mesg="$CEN_TRACE"
     [ -n "$_mesg" -a -z "$_spri" ] && _spri='-'
 
-    [ -n "$_ropt" ] && context -t +
+    [ -n "$_hopt" ] && context -t +
     $_call -b "$_swai"
 
     if [ -n "$_spri" ] ; then
@@ -693,7 +703,7 @@ timer() {
         while [ "$_tnow" -lt "$_tend" ] ; do
             $_call -l "$((_tnow - _tbeg))" "$_twai" ; _stat=$?
             [ "$_stat" = 1 ] || break ; _stat=
-            dryrun "$CEN_UTL_SLEEP $_stic" || $CEN_UTL_SLEEP $_stic
+            dryrun $_ropt "$CEN_UTL_SLEEP $_stic" || $CEN_UTL_SLEEP $_stic
             _cen_timer_cvt "$EPOCHREALTIME" ; _tnow="$_time"
             [ "$_tnow" -lt "$_tbeg" ] && ((_tnow += 1000000000))
         done
@@ -705,7 +715,7 @@ timer() {
     elif [ -n "$_swai" ] ; then
         [ -z "$CEN_UTL_SLEEP" ] && sysfind -f -b -s CEN_UTL_SLEEP -- sleep
         if [ "$_swai" != '-' ] ; then
-            dryrun "$CEN_UTL_SLEEP $_swai" || $CEN_UTL_SLEEP $_swai
+            dryrun $_ropt "$CEN_UTL_SLEEP $_swai" || $CEN_UTL_SLEEP $_swai
         fi
     fi
 
@@ -716,7 +726,7 @@ timer() {
 
     [ -z "$_stat" ] && _stat=0
     $_call -e $_stat
-    [ -n "$_ropt" ] && context -t -
+    [ -n "$_hopt" ] && context -t -
     return $_stat
 }
 

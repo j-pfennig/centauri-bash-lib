@@ -64,8 +64,8 @@ CEN_MODULES["_centauri_bash_dyn"]="0.22:1"
 #
 #+General:  The library tries to avoid calls to external (e.g. non-builtin) tools
 #           whenever possible. Bash has a lot of builtins, see "help°enable". For
-#           your linux distribution some extra builtins (bash examples) may be
-#           provided (on a debian system use "apt°install°bash-builtins"). The
+#           your Linux distribution some extra builtins (bash examples) may be
+#           provided (on a Debian system use "apt°install°bash-builtins"). The
 #           library will use installed builtins for **mkdir**, **rmdir**, **rm**,
 #           **ln**, **unlink**, **mkfifo**,  **sleep** and **realpath**.
 #
@@ -73,7 +73,7 @@ CEN_MODULES["_centauri_bash_dyn"]="0.22:1"
 #           attempt to autoload bash builtins, not causing harm if a builtin is
 #           not installed. See **autoload** option --builtin.
 #
-#+Warnings: (1) The builtins comming with bash have less functionality than the
+#+Warnings: (1) The builtins coming with bash have less functionality than the
 #           corresponding GNU tools. [[_centauri_bash_ext]] is aware of this and
 #           uses builtins in a safe way.
 #
@@ -99,7 +99,7 @@ CEN_MODULES["_centauri_bash_dyn"]="0.22:1"
 #           order to load faster, these can be removed or extracted using [[uglify]].
 #           For script code this tool also removes extra spaces and replaces some
 #           strings that are noted using quotes by strings using apostrophes. When
-#           preprocessing documentation only the neccessary data is retained.
+#           preprocessing documentation only the necessary data is retained.
 #
 #+          The resulting files receive a ".p" (script) or ".d" (documentation)
 #           ending. Preprocessed code is loaded via proxy or [[_centauri_bash_lib]]
@@ -133,7 +133,7 @@ CEN_MODULES["_centauri_bash_dyn"]="0.22:1"
 #+          The module kind is defined by its installation location. The code
 #           itself makes no difference (except for the naming pattern).
 #
-# Example:  See [[centauricreate]] and **$CEN_TOOLS\templates\_custom_module_usr**
+# Example:  See [[centauricreate]] and **$CEN_TOOLS/templates/_custom_module_usr**
 # ------------------------------------------------------------------------------
 
 [ "$1" = "-f" ] ||
@@ -189,6 +189,7 @@ documentation() { _cen_dyn_load doc "$@" ; }
 attributes() { _cen_dyn_load ext "$@" ; }
 copy() { _cen_dyn_load ext "$@" ; }
 joinpath() { _cen_dyn_load ext "$@" ; }
+matchpath() { _cen_dyn_load ext "$@" ; }
 move() { _cen_dyn_load ext "$@" ; }
 prettypath() { _cen_dyn_load ext "$@" ; }
 redirect() { _cen_dyn_load ext "$@" ; }

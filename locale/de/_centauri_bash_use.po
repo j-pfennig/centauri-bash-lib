@@ -15,7 +15,7 @@ msgid "Bad exit status ignored"
 msgstr "Fehlerstatus ignoriert"
 
 #: /var/centauri/library/_centauri_bash_use:393
-#: /var/centauri/library/_centauri_bash_use:636
+#: /var/centauri/library/_centauri_bash_use:637
 msgid "usage:"
 msgstr "Aufruf:"
 

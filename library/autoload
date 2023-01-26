@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
 CEN_TITLE="Create the autoload module _centauri_bash_dyn"
@@ -196,8 +196,8 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 #
 #+General:  The library tries to avoid calls to external (e.g. non-builtin) tools
 #           whenever possible. Bash has a lot of builtins, see "help°enable". For
-#           your linux distribution some extra builtins (bash examples) may be
-#           provided (on a debian system use "apt°install°bash-builtins"). The
+#           your Linux distribution some extra builtins (bash examples) may be
+#           provided (on a Debian system use "apt°install°bash-builtins"). The
 #           library will use installed builtins for **mkdir**, **rmdir**, **rm**,
 #           **ln**, **unlink**, **mkfifo**,  **sleep** and **realpath**.
 #
@@ -205,7 +205,7 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 #           attempt to autoload bash builtins, not causing harm if a builtin is
 #           not installed. See **$CEN_NAME** option --builtin.
 #
-#+Warnings: (1) The builtins comming with bash have less functionality than the
+#+Warnings: (1) The builtins coming with bash have less functionality than the
 #           corresponding GNU tools. [[_centauri_bash_ext]] is aware of this and
 #           uses builtins in a safe way.
 #
@@ -231,7 +231,7 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 #           order to load faster, these can be removed or extracted using [[uglify]].
 #           For script code this tool also removes extra spaces and replaces some
 #           strings that are noted using quotes by strings using apostrophes. When
-#           preprocessing documentation only the neccessary data is retained.
+#           preprocessing documentation only the necessary data is retained.
 #
 #+          The resulting files receive a ".p" (script) or ".d" (documentation)
 #           ending. Preprocessed code is loaded via proxy or [[_centauri_bash_lib]]
@@ -265,7 +265,7 @@ CEN_MODULES["_centauri_bash_dyn"]="$CEN_VERSION"
 #+          The module kind is defined by its installation location. The code
 #           itself makes no difference (except for the naming pattern).
 #
-# Example:  See [[centauricreate]] and **\$CEN_TOOLS\templates\_custom_module_usr**
+# Example:  See [[centauricreate]] and **\$CEN_TOOLS/templates/_custom_module_usr**
 # ------------------------------------------------------------------------------
 
 [ "\$1" = "-f" ] ||

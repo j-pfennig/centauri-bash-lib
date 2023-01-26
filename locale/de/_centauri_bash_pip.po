@@ -9,19 +9,19 @@ msgstr "sysbind Instanz läuft bereits:"
 msgid "sysbind instance not running:"
 msgstr "sysbind Instanz läuft nicht:"
 
-#: /var/centauri/library/_centauri_bash_pip:248
+#: /var/centauri/library/_centauri_bash_pip:259
 msgid "Pager not found:"
 msgstr "Pager nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_pip:435
+#: /var/centauri/library/_centauri_bash_pip:454
 msgid "command failed (status %s): %s"
 msgstr "Kommando fehlgeschlagen (Fehler %s): %s"
 
-#: /var/centauri/library/_centauri_bash_pip:437
+#: /var/centauri/library/_centauri_bash_pip:456
 msgid "command failed (%s): %s"
 msgstr "Kommando fehlgeschlagen (%s): %s"
 
-#: /var/centauri/library/_centauri_bash_pip:469
+#: /var/centauri/library/_centauri_bash_pip:488
 msgid "coproc already in use"
 msgstr "coproc läuft bereits"
 

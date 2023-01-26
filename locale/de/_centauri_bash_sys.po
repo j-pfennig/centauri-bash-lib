@@ -87,6 +87,6 @@ msgstr "fehlgeschlagen"
 msgid "<unknown author/license>"
 msgstr "<unbekannter Autor/Lizenz>"
 
-#: /var/centauri/library/_centauri_bash_sys:533
+#: /var/centauri/library/_centauri_bash_sys:534
 msgid "You are not allowed to alter this installation"
 msgstr "Sie sind nicht berechtigt diese Installation zu verändern"

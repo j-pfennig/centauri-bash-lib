@@ -1138,7 +1138,8 @@ serialize() {
         -m)   shift ; _mode="$1" ;;
         -n)   shift ; _ffil="$1" ;;
         -q)   _oerr="$CEN_TRACE" ; _fqui='-q' ;;
-        -r|-w)  _fmod="$1" ;;
+        -r|-w)
+              _fmod="$1" ;;
         -s)   _otra=":" ;;
         -t)   shift ; _fref="$1" ;;
         -z)   _fzer=1 ;;

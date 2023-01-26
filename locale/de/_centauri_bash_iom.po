@@ -179,7 +179,7 @@ msgid "Configuration path is a folder:"
 msgstr "Konfigurationspfad ist ein Verzeichnis:"
 
 #: /var/centauri/library/_centauri_bash_iom:1037
-#: /var/centauri/library/_centauri_bash_iom:1187
+#: /var/centauri/library/_centauri_bash_iom:1188
 msgid " read"
 msgstr " lesen"
 
@@ -191,52 +191,52 @@ msgstr " laden"
 msgid "Invalid data in configuration file:"
 msgstr "Unbrauchbare Daten in Konfigurationsdatei:"
 
-#: /var/centauri/library/_centauri_bash_iom:1177
+#: /var/centauri/library/_centauri_bash_iom:1178
 msgid " write"
 msgstr " schreibe"
 
-#: /var/centauri/library/_centauri_bash_iom:1189
+#: /var/centauri/library/_centauri_bash_iom:1190
 msgid "Failed to deserialize data from:"
 msgstr "Kann Daten nicht deserialisieren:"
 
-#: /var/centauri/library/_centauri_bash_iom:1193
+#: /var/centauri/library/_centauri_bash_iom:1194
 msgid " missing"
 msgstr " fehlend"
 
-#: /var/centauri/library/_centauri_bash_iom:1195
+#: /var/centauri/library/_centauri_bash_iom:1196
 msgid "Cannot deserialize data from:"
 msgstr "Kann Daten nicht deserialisieren:"
 
-#: /var/centauri/library/_centauri_bash_iom:1281
-#: /var/centauri/library/_centauri_bash_iom:1301
+#: /var/centauri/library/_centauri_bash_iom:1282
+#: /var/centauri/library/_centauri_bash_iom:1302
 msgid "Syntax error:"
 msgstr "Syntaxfehler:"
 
-#: /var/centauri/library/_centauri_bash_iom:1352
+#: /var/centauri/library/_centauri_bash_iom:1353
 msgid "No output path provided"
 msgstr "Kein Ausgabepfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1359
-#: /var/centauri/library/_centauri_bash_iom:1366
+#: /var/centauri/library/_centauri_bash_iom:1360
+#: /var/centauri/library/_centauri_bash_iom:1367
 msgid "No folder path provided"
 msgstr "Kein Ordnerpfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1373
+#: /var/centauri/library/_centauri_bash_iom:1374
 msgid "No input path provided"
 msgstr "Kein Eingabepfad angegeben"
 
-#: /var/centauri/library/_centauri_bash_iom:1419
+#: /var/centauri/library/_centauri_bash_iom:1420
 msgid "Open file for input"
 msgstr "Datei als Eingabe öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1420
+#: /var/centauri/library/_centauri_bash_iom:1421
 msgid "Open file for output"
 msgstr "Datei als Ausgabe öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1421
+#: /var/centauri/library/_centauri_bash_iom:1422
 msgid "Open file for reading"
 msgstr "Datei zum Lesen öffnen"
 
-#: /var/centauri/library/_centauri_bash_iom:1422
+#: /var/centauri/library/_centauri_bash_iom:1423
 msgid "Open file for writing"
 msgstr "Datei zum Schreiben öffnen"

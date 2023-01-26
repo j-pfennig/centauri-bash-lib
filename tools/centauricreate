@@ -1,10 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# NOTE: '/usr/bin/env' should always be used for centauricreate for portability.
+#       Other scripts may use '/usr/bin/bash' or '/bin/bash' see --shell option.
+
 # ------------------------------------------------------------------------------
-CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2023; BSD License"
 CEN_TITLE=$"Create a script, module or configuration from a template"
 
 # Import the bash library, set name and version
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -s -t -y "$0" "0.11:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -s -t -y "$0" "0.20:1" || exit 2
 
 # Data
 CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
@@ -140,10 +144,67 @@ do_check() {
 }
 
 # ------------------------------------------------------------------------------
+# Handle --shell option (may quit), set DAT_SHELL
+# ------------------------------------------------------------------------------
+do_shell() {
+    case "${CEN_OPT_SHELL:--}" in
+    +)  DAT_SHELL='/usr/bin/env bash'   ;;
+    -)  DAT_SHELL="${CEN_PATHS[1]}/bash" ;;
+    /*) DAT_SHELL="$CEN_OPT_SHELL"
+        [ -x "$DAT_SHELL" ] || optarg 'shell' "$CEN_OPT_SHELL" -e $"path not executable" ;;
+    *)  optarg 'shell' "$CEN_OPT_SHELL" -e $"must be '-', '+' or absolute path"
+    esac
+
+    [ $# = 0 ] && return
+    [ -d "$1" ] || return
+    folder -c -f -- "$1"
+
+    # fix shebang if argument is a folder
+
+    ___shell_file() {
+        if [ -h "$1" ] ; then
+            message -a -c $"skipping symlink" -- "$1" ; return 1
+        elif [[ "$1" == *.bak ]] ; then
+            return
+        fi
+        return 0
+    }
+
+    local list item line bang="#!$DAT_SHELL" coun=0 data
+    matchpath -a list -c ___shell_file -x -m -f -- *
+    pluralize -z -g -p $"Check and replace shebang for %s %s"": $bang" -- "${#list[@]}" 'file'
+    [ -z "$list" ] && quit
+
+    for item in "${list[@]}" ; do
+        line= ; read -r line <"$item" &>/dev/null
+        if [ "$line" = "$bang" ] ; then
+            trace -a -c $"shell is current" -- "$item" ; continue
+        elif ! [[ "$line" == \#!*[/[:space:]]bash* ]] ; then
+            trace -a -c $"no bash script" -- "$item" ; continue
+        fi
+        dryrun -- $"replace shebang"" '${item##*/}'" && continue
+        confirm -a -q $"replace shebang"" '${item##*/}'" || continue
+
+        inpdata -a data -r -- "$item" || continue
+        data[0]="$bang"
+        copy -a -x "$item" "$item.bak" || continue
+        outdata -o data -t -- "$item" || continue
+        system -e -p -- touch --reference="$item.bak" "$item" || continue
+        remove -- "$item.bak"
+        [ "$CEN_YESNO" == 'y' ] && message -a -c $"Replaced shebang" -- "$item"
+        ((coun += 1))
+    done
+    pluralize -a -z -g -p $"Replaced shebang of %s %s" -- "$coun" 'file'
+    quit
+}
+
+# ------------------------------------------------------------------------------
 # The one and only action
 # ------------------------------------------------------------------------------
 run() {
-    [ -n "$CEN_OPT_CHECK" ] && do_check "$@"                # run shellcheck, no return
+    [ -n "$CEN_OPT_CHECK" ] && do_check "$@"                # run shellcheck, does quit
+    [ -n "$CEN_OPT_SHELL" ] && do_shell "$@"                # handle --shell, may quit
+
     local _kind=$"Script" _tmpl _name="$1"
     [ -n "$DAT_NAME_REG" ] || get_templates
     _tmpl="${DAT_NAME_MAP["${CEN_OPT_TEMPLATE:-$DAT_NAME_DEF}"]}"
@@ -168,13 +229,13 @@ run() {
         outfile -c -l -s DAT_FILE -- "$_name" || return     # does error handling
 
         serialize -q -r DAT_AUTHOR DAT_LICENSE DAT_SHELL    # caching ...
-        [ "$CEN_OPT_SHELL" ] && DAT_SHELL="$CEN_OPT_SHELL"
-        [ "${DAT_SHELL:--}" = '-' ] && DAT_SHELL="${CEN_PATHS[1]}/bash"
+        [ "${DAT_SHELL:--}" = '-' ] && do_shell
         [ -n "$CEN_OPT_AUTHOR"  ] && DAT_AUTHOR="$CEN_OPT_AUTHOR"
         [ "${DAT_AUTHOR:--}" = '-' ] && DAT_AUTHOR=$"anonymous"
         [ -n "$CEN_OPT_LICENSE" ] && DAT_LICENSE="$CEN_OPT_LICENSE"
         [ "${DAT_LICENSE:--}" = '-' ] && DAT_LICENSE=$"all rights reserved"
         [ -z "$CEN_OPT_NOCONF" ] && serialize -w DAT_AUTHOR DAT_LICENSE DAT_SHELL
+        error -q
 
         local _ihan _mesg=$"<copy from input>"
         message -a -m \
@@ -209,6 +270,7 @@ options() {
                     [ -n "$CEN_OPT_NOCONF$CEN_OPT_OPTION$CEN_OPT_SHELL$CEN_OPT_TEMPLATE" ] &&
                         optarg - - -m "--check --noconf|--option|--shell|--template"
                 fi
+                [ -n "$CEN_OPT_SHELL" ] && do_shell
                 ;;
 
     -A|--aut*)
@@ -237,6 +299,8 @@ options() {
 usage() {
     usageset -u "$CEN_NAME <option>... <script>   # "$"create a script" \
              -u "$CEN_NAME --no -                 # "$"show cached options" \
+             -u "$CEN_NAME --check <script> ...   # "$"run shellcheck" \
+             -u "$CEN_NAME --shell <folder> ...   # "$"replace shebang" \
              -u - \
              -u "$CEN_TITLE."
 
@@ -253,7 +317,7 @@ usage() {
              -o $"The values of --author and --license are cached."
 
     usageset -l $"arguments" \
-             -t "<bash>          "$"any path, for example:"' /usr/bin/env bash' \
+             -t "<bash>          "$"\"+\" for '/usr/bin/env bash', \"-\" for '$BASH' or a path" \
              -t "<name>          "$"option name, gets converted to uppercase" \
              -t "<text>          "$"any text not containing \";\" or \"-\" to reset" \
              -t "<tmpl>          "$"name of a template, see below"
@@ -278,7 +342,12 @@ usage() {
              -t "" \
              -t "# "$"run the 'shellcheck' tool (a bash lint)" \
              -t "$CEN_NAME -C myscript" \
-             -t "$CEN_NAME -C myscript --- -e 1098 -W3"
+             -t "$CEN_NAME -C myscript --- -e 1098 -W3" \
+             -t "" \
+             -t "# "$"replace shebang for bash scripts in a folder" \
+             -t "$CEN_NAME --shell /bin/bash --dryrun --yes myfolder" \
+             -t "$CEN_NAME -S + /var/centauri/tools -i centauricreate" \
+             -t "$CEN_NAME -S - /var/centauri/tools -x centauricreate"
 }
 
 # ------------------------------------------------------------------------------

@@ -192,7 +192,7 @@ sysbind() {
 #           command line --pager option or by a prior call to syspager.
 #
 # Options:  -c  override pager given by CEN_OPT_PAGER
-#           -d  clear CEN_PAGER and set CEN_OPT_PAGER='off'
+#           -d  clear CEN_PAGER and set CEN_OPT_PAGER='none'
 #           -y  redirect **stderr** of <func> to **stdout**
 #
 # Arguments:<cmd>   pager command: on|off|yes|no|less|more
@@ -208,38 +208,49 @@ sysbind() {
 # error. In turn the error handler will call [[quit()]] so that syspager does
 # not return, but quit hooks will run. The implementation does something like:
 #
-#.  syspipe -o func -y -c '+' -- less -r -f -X
+#.  syspipe -o func -y -c '+' -- less -r -F -R -X
 #
 #+While running the pager the [[context()]] function (option **-t°+|-**) is used
 # to catch keyboard interrupts. Also [[syspipe()]] sets a trap for SIGPIPE.
 #
 #+Function <func> must not call **exit** but is allowed to call [[quit()]]. The
 # later will terminate the pager via SIGTERM.
+#
+#+The environment variables $CEN_PAGER_TOOL and $CEN_PAGER_OPTS can be used to
+# override the auto detected pager tool and options:
+#
+#.  CEN_PAGER_TOOL="mytool"             # tool name or path
+#.  CEN_PAGER_OPTS="-l -X"              # tool option string
 # ------------------------------------------------------------------------------
 syspager() {
     #$CEN_DEBUG -c -- "$*"
-    local _ocap _opag="${CEN_OPT_PAGER:-less}"
+    local _ocap _opag _odel
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -c)   shift ; _opag="${1:-less}" ;;
-      -d)   CEN_PAGER= ; CEN_OPT_PAGER='off' ;;
+      -c)   shift ; _opag="${1:-$CEN_OPT_PAGER}" ;;
+      -d)   CEN_PAGER= ; _odel=1 ;;
       -y)   _ocap='-y' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
+    [ -n "$_odel" -a -z "$_opag" ] && return 0  # just delete
 
     # initialize paging only if output goes to a terminal
     if [ -z "$CEN_PAGER" -a -n "$TERM" ] && [ -t 1 -a -t 2 ] ; then
-        local _plst
+        local _plst _tool="$CEN_PAGER_TOOL"
+        [ -z "$_opag" ] && _opag="${CEN_OPT_PAGER:-less}"
         case "$_opag" in
             less|yes|on) _plst=('less' 'more') ;;
-            no|off)      _plst='none' ;;
-            more)   _plst=('more' 'less') ;;
-            *)      _plst=("$CEN_OPT_PAGER" -)
+            none|no|off) _plst='none' ; _tool= ;;
+            more)        _plst=('more' 'less') ;;
+            *)           _plst=("$_opag" -) ; _tool=
         esac
         if [ "$_plst" = 'none' ] ; then
             :
+        elif [ "${_tool:--}" != '-' ] && sysfind -s CEN_OPT_PAGER -- "$_tool" ; then
+            CEN_PAGER_TOOL="$CEN_OPT_PAGER"
+            CEN_PAGER="syspager $_ocap"            # custom tool
         elif sysfind -s CEN_OPT_PAGER -- "${_plst[0]}" ; then
             CEN_PAGER="syspager $_ocap"            # 1st pager ok
         elif sysfind -s CEN_OPT_PAGER -- "${_plst[1]}" ; then
@@ -263,9 +274,17 @@ syspager() {
         centaurihelp) _args=("$CEN_OPT_PAGER" --tool '<pipe>')
                       [ -n "$CEN_FEATURE_T" ] && _args+=('--l10n')
                       ;;
-        less)         _args=("$CEN_OPT_PAGER" -r -f -X)
+        less)         if [ "$CEN_OPT_PAGER" = "$CEN_PAGER_TOOL" ] ; then
+                          _args=("$CEN_OPT_PAGER" $CEN_PAGER_OPTS)
+                      else
+                          _args=("$CEN_OPT_PAGER" -r -F -R -X)
+                      fi
                       ;;
-        *)            _args=("$CEN_OPT_PAGER")
+        *)            if [ "$CEN_OPT_PAGER" = "$CEN_PAGER_TOOL" ] ; then
+                          _args=("$CEN_OPT_PAGER" $CEN_PAGER_OPTS)
+                      else
+                          _args=("$CEN_OPT_PAGER")
+                      fi
     esac
 
     # run pager via syspipe to avoid sub-shell by pipe (|) problem
