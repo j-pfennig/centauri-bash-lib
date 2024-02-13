@@ -18,10 +18,10 @@
 # documentation. Most functions notably [[move()]], [[remove()]], [[rename()]]
 # and [[symlink()]] are aware of these builtins.
 #
-# Copyright Dr. J. Pfennig (c) 2016-2022
+# Copyright Dr. J. Pfennig (c) 2016-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_ext"]="0.22:1"
+CEN_MODULES["_centauri_bash_ext"]="0.23:1"
 
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
@@ -331,7 +331,7 @@ copy() {
     else
         $_omsg -a -p $"Copying '%s' to '%s'" "${_olis[*]}" "$_odes"
     fi
-    sysrun $_oflg $_orun -b -w 'copy()' -- \
+    sysrun $_oflg $_orun -b -o 'copy()' -- \
            cp $_oarc $_ocow $_oupd -- "${_olis[@]}" "$_odes" && return 0
     [ -n "$CEN_OPT_DRYRUN" ]                     # --dryrun always returns 0
 }
@@ -555,7 +555,7 @@ move() {
 
     $_omsg -a -p $"Moving '%s' to '%s'" "${*:1:$#-1}" "$_dest"
 
-    sysrun $_orun $_osys -b -w 'move()' -- mv -f -- "${@:1:$#-1}" "$_dest" && return 0
+    sysrun $_orun $_osys -b -o 'move()' -- mv -f -- "${@:1:$#-1}" "$_dest" && return 0
     [ -n "$CEN_OPT_DRYRUN" ]                     # --dryrun always returns 0
 }
 
@@ -851,7 +851,7 @@ remove() {
     if [ -n "$_oone" ] ; then
         sysrun $_oerr $_orun -i -- rm $_oone $_orec $_ofrc -- "$@" && return 0
     elif [ -n "$_smpl" ] ; then
-        sysrun $_oerr $_orun -d -b -w "$_oitm" \
+        sysrun $_oerr $_orun -d -b -o "$_oitm" \
                -m $"Cannot remove %s: %s" -- $_smpl -- "$1" && return 0
     else
         sysrun $_oerr $_orun -b -- rm $_orec $_ofrc -- "$@" && return 0
@@ -1419,9 +1419,9 @@ symlink() {
     # run 'ln' and disable builtin for option '-r'
     _etxt=$"Failed to create symbolic link"": $_link"
     if [ -n "$_orel" ] ; then
-        sysrun $_osys -w 'symlink()' -m "$_etxt" -i -- ln $_onck -s -r -- "$_targ" "$_link" || return 1
+        sysrun $_osys -o 'symlink()' -m "$_etxt" -i -- ln $_onck -s -r -- "$_targ" "$_link" || return 1
     else
-        sysrun $_osys -w 'symlink()' -b -m "$_etxt" -d -- ln $_onck -s "$_targ" "$_link" || return 1
+        sysrun $_osys -o 'symlink()' -b -m "$_etxt" -d -- ln $_onck -s "$_targ" "$_link" || return 1
     fi
     $_mesg -a -c $" created" -- "$_link => $_targ" ; return 0
 }
@@ -1429,11 +1429,11 @@ symlink() {
 # ------------------------------------------------------------------------------
 # sysrun - run a command or builtin, optionally generate error messages
 #
-# Call:     (1) sysrun [-e|-f] [-p] [-m <mesg>] [-w <what>]
+# Call:     (1) sysrun [-e|-f|-w] [-p] [-m <mesg>] [-o <what>]
 #                      [-a|-s <onam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
 #           (2) sysrun -q
 #                      [-a|-s <onam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
-#           (3) sysrun -c <stat> [-f] [-m <mesg>] [--] [<cmd> <arg>...]
+#           (3) sysrun -c <stat> [-f|-w] [-m <mesg>] [--] [<cmd> <arg>...]
 #
 #+          This is a faster, simpler variant of [[system()]], see below. Form (1)
 #           runs a command or builtin with error reporting, form (2) does no error
@@ -1444,16 +1444,17 @@ symlink() {
 #           -b  do not run a function, prefer builtin over external
 #           -c  error code for reporting (<cmd> is not executed)
 #           -d  use './' prefix if 1st arg starts with a '-'
-#           -e  print error message if command <cmd> fails
-#           -f  like -e but make errors fatal
+#           -e  call [[error()]] if command <cmd> fails
+#           -f  call [[fatal()]] on error
 #           -i  do not run a function or builtin, see **sysfind -i**
 #           -m  custom format string for error message
 #           -n  do no checks on <cmd> (implied if <cmd> is a path)
+#           -o  override command name in error message
 #           -p  discard **/dev/stdout**, capture **/dev/stderr**, pretty-print error message
 #           -q  discard **/dev/stdout** and **/dev/stderr**, no error message
 #           -r  ignore --dryrun
 #           -s  capture <cmd> output into an string (overrides -p and -q)
-#           -w  override command name in error message
+#           -w  call [[warning()]] on error
 #           -z  don't capture **/dev/stdout** (for use with -p)
 #
 # Arguments:<onam>  variable that receives the <cmd> output
@@ -1537,12 +1538,13 @@ sysrun() {
       -i)   _oign='-i' ;;
       -m)   shift ; _emsg="$1" ; [ -z "$_oout" ] && _oout=0 ;;
       -n)   _ffnd= ;;
+      -o)   shift ; _owho="$1" ;;
       -p)   _ofmt=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -q)   _fqui=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -r)   _orun="-r" ;;
       -s)   shift ; _vstr="$1" ; _oout=0
             local _cen_ext_sysrun ; _vnam='_cen_ext_sysrun' ;;
-      -w)   shift ; _owho="$1" ;;
+      -w)   _ecmd=warning ;;
       -z)   _oout=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
