@@ -62,21 +62,20 @@ msgid "action three - at least one arg"
 msgstr "action drei - braucht wenigstens ein Argument"
 
 #: /var/centauri/tools/templates/centauriAction:175
-msgid "arguments"
-msgstr "Argumente"
-
-#: /var/centauri/tools/templates/centauriAction:176
 msgid "any argument"
 msgstr "irgendein Argument"
 
-#: /var/centauri/tools/templates/centauriAction:177
+#: /var/centauri/tools/templates/centauriAction:176
 msgid "any text"
 msgstr "irgendein Text"
 
-#: /var/centauri/tools/templates/centauriAction:178
+#: /var/centauri/tools/templates/centauriAction:177
 msgid "choice \\\"left\\\" or \\\"right\\\""
 msgstr "Auswahl \\\"left\\\" oder \\\"right\\\""
 
-#: /var/centauri/tools/templates/centauriAction:179
+#: /var/centauri/tools/templates/centauriAction:178
 msgid "any positive number"
 msgstr "positive Zahl"
+
+#~ msgid "arguments"
+#~ msgstr "Argumente"

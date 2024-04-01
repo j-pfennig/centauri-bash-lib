@@ -23,52 +23,52 @@ msgstr "Initialisierung der Fortschrittanzeige fehlgeschlagen"
 msgid "Cancelled by user"
 msgstr "Durch Benutzer abgebrochen"
 
-#: /var/centauri/library/_centauri_bash_win:458
+#: /var/centauri/library/_centauri_bash_win:457
 msgid "Error"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_win:459
-#: /var/centauri/library/_centauri_bash_win:501
+#: /var/centauri/library/_centauri_bash_win:458
+#: /var/centauri/library/_centauri_bash_win:500
 msgid "Fatal"
 msgstr "Fatal"
 
-#: /var/centauri/library/_centauri_bash_win:462
+#: /var/centauri/library/_centauri_bash_win:461
 msgid "Input"
 msgstr "Eingabe"
 
-#: /var/centauri/library/_centauri_bash_win:466
+#: /var/centauri/library/_centauri_bash_win:465
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: /var/centauri/library/_centauri_bash_win:467
+#: /var/centauri/library/_centauri_bash_win:466
 msgid "Options"
 msgstr "Optionen"
 
-#: /var/centauri/library/_centauri_bash_win:469
+#: /var/centauri/library/_centauri_bash_win:468
 msgid "Password"
 msgstr "Passwort"
 
-#: /var/centauri/library/_centauri_bash_win:471
+#: /var/centauri/library/_centauri_bash_win:470
 msgid "Selection"
 msgstr "Auswahl"
 
-#: /var/centauri/library/_centauri_bash_win:474
+#: /var/centauri/library/_centauri_bash_win:473
 msgid "Warning"
 msgstr "Warnung"
 
-#: /var/centauri/library/_centauri_bash_win:481
+#: /var/centauri/library/_centauri_bash_win:480
 msgid "Not available in console mode:"
 msgstr "Nicht im Konsolen-Modus verfügbar:"
 
-#: /var/centauri/library/_centauri_bash_win:486
+#: /var/centauri/library/_centauri_bash_win:485
 msgid "Message"
 msgstr "Nachricht"
 
-#: /var/centauri/library/_centauri_bash_win:500
+#: /var/centauri/library/_centauri_bash_win:499
 msgid "not supported, please install 'kdialog'"
 msgstr "nicht unterstuetzt, bitte 'kdialog' installieren"
 
-#: /var/centauri/library/_centauri_bash_win:565
+#: /var/centauri/library/_centauri_bash_win:564
 #: /var/centauri/library/_centauri_bash_win:892
 msgid "yes no cancel"
 msgstr "ja nein abbrechen"

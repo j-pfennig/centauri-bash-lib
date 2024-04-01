@@ -1,19 +1,19 @@
 #!/bin/bash
 # ------------------------------------------------------------------------------
-CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2007-2022; BSD License"
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2007-2023; BSD License"
 CEN_TITLE="Template for simple scripts (no action syntax)"
 
 MINIMAL="${MINIMAL:-false}" ####################################################
 if $MINIMAL ; then #############################################################
 # Import the bash library, set mix/max arguments
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r "$0" "0.00:1" 1 + || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r - '0.00:2' 1 + || exit 2
 
 # Data
 CEN_OPT_XXX=                    # see --xxx
 else ###########################################################################
 
 # Import the bash library, set name and version TODO
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -g -r "$0" "0.00:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -g -r - '0.00:2' || exit 2
 
 # Minimum/maximum argument count
 CEN_RUN_MIN_ARGS=1              # min arg count, see arguments() TODO

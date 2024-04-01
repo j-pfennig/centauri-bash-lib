@@ -4,7 +4,7 @@ CEN_LEGAL="Dr. J. Pfennig (c) 2022; BSD Lincense"
 CEN_TITLE=$"Tool to build packaged or portable applications"
 
 # Import the bash library
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -f -t -y "$0" "0.10:1" 1 || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -f -t -y "$0" "0.10:1" || exit 2
 
 # Data
 CEN_OPT_DESCR=                  # see --descr

@@ -11,7 +11,7 @@
 # enable loadable bash builtins.
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_dyn"]="0.22:1"
+CEN_MODULES["_centauri_bash_dyn"]="0.23:2"
 
 # ------------------------------------------------------------------------------
 # Dynamic loading + Dynamic loading of centauri-bash-lib modules
@@ -175,6 +175,11 @@ _cen_dyn_builtin() {
     return $_stat
 }
 
+attributes() { _cen_dyn_load atr "$@" ; }
+filestat() { _cen_dyn_load atr "$@" ; }
+
+backup() { _cen_dyn_load bak "$@" ; }
+
 cgiapp() { _cen_dyn_load cgi "$@" ; }
 
 console() { _cen_dyn_load con "$@" ; }
@@ -186,12 +191,12 @@ debug() { _cen_dyn_load dbg "$@" ; }
 
 documentation() { _cen_dyn_load doc "$@" ; }
 
-attributes() { _cen_dyn_load ext "$@" ; }
 copy() { _cen_dyn_load ext "$@" ; }
 joinpath() { _cen_dyn_load ext "$@" ; }
 matchpath() { _cen_dyn_load ext "$@" ; }
 move() { _cen_dyn_load ext "$@" ; }
 prettypath() { _cen_dyn_load ext "$@" ; }
+readline() { _cen_dyn_load ext "$@" ; }
 redirect() { _cen_dyn_load ext "$@" ; }
 remove() { _cen_dyn_load ext "$@" ; }
 rename() { _cen_dyn_load ext "$@" ; }
@@ -216,6 +221,22 @@ automount() { _cen_dyn_load mnt "$@" ; }
 blkdevice() { _cen_dyn_load mnt "$@" ; }
 findmount() { _cen_dyn_load mnt "$@" ; }
 
+netconfig() { _cen_dyn_load net "$@" ; }
+netconv() { _cen_dyn_load net "$@" ; }
+nethost() { _cen_dyn_load net "$@" ; }
+netiface() { _cen_dyn_load net "$@" ; }
+netoption() { _cen_dyn_load net "$@" ; }
+netparse() { _cen_dyn_load net "$@" ; }
+nettemp() { _cen_dyn_load net "$@" ; }
+netlink() { _cen_dyn_load net "$@" ; }
+netfile() { _cen_dyn_load net "$@" ; }
+netpath() { _cen_dyn_load net "$@" ; }
+netproxy() { _cen_dyn_load net "$@" ; }
+netquery() { _cen_dyn_load net "$@" ; }
+netresolv() { _cen_dyn_load net "$@" ; }
+netserver() { _cen_dyn_load net "$@" ; }
+nettool() { _cen_dyn_load net "$@" ; }
+
 sysbind() { _cen_dyn_load pip "$@" ; }
 syspager() { _cen_dyn_load pip "$@" ; }
 syspipe() { _cen_dyn_load pip "$@" ; }
@@ -231,6 +252,7 @@ background() { _cen_dyn_load svc "$@" ; }
 inhibit() { _cen_dyn_load svc "$@" ; }
 pidfile() { _cen_dyn_load svc "$@" ; }
 isservice() { _cen_dyn_load svc "$@" ; }
+runsysddir() { _cen_dyn_load svc "$@" ; }
 runservice() { _cen_dyn_load svc "$@" ; }
 
 sysversion() { _cen_dyn_load sys "$@" ; }
@@ -270,8 +292,22 @@ xml_element() { _cen_dyn_load xml "$@" ; }
 xml_flush() { _cen_dyn_load xml "$@" ; }
 xml_input() { _cen_dyn_load xml "$@" ; }
 xml_list() { _cen_dyn_load xml "$@" ; }
+xml_script() { _cen_dyn_load xml "$@" ; }
 xml_sequence() { _cen_dyn_load xml "$@" ; }
 xml_table() { _cen_dyn_load xml "$@" ; }
 xml_text() { _cen_dyn_load xml "$@" ; }
+
+img_cache() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_convert() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_convert_old() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_exif() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_files() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_getinfo() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_iccfind() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_output() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_profile() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_quality() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_resize() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
+img_toolfind() { _cen_dyn_load _alpha_imgtool_usr "$@" ; }
 
 # End

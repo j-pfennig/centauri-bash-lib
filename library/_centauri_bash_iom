@@ -54,10 +54,10 @@
 #.          optarg "outfile" -   -w     # get output file, prompt for overwrite
 #.                                      # unless --force option was seen
 #
-# Copyright Dr. J. Pfennig (c) 2019-2022
+# Copyright Dr. J. Pfennig (c) 2019-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_iom"]="0.03:1"
+CEN_MODULES["_centauri_bash_iom"]="0.04:2"
 
 CEN_IOM_QUEUE=()        # see _cen_optarg_iom()
 
@@ -263,7 +263,7 @@ _cen_iom_reader() {
 # ------------------------------------------------------------------------------
 CEN_INPFILE=
 inpfile() {
-    local _fblk _fcan _fdir _femp _ffil _floo _fopt _fext _fset="CEN_INPFILE" _oerr='error -z' _stat=0
+    local _fblk _fcan _fdir _femp _ffil _floo _fopt _fext _fset="CEN_INPFILE" _oerr='error -z' _stat
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -305,9 +305,9 @@ inpfile() {
                 [ "$_fdir:$_ffil" = ":1" ] && _mesg=$"Please enter an input file name"
                 [ "$_fdir:$_ffil" = "1:" ] && _mesg=$"Please enter an input folder name"
                 [ -n "$_fblk" ] && _mesg=$"Please enter a device name"
-                [ -n "$_fext" ] && _dext="\n"$"Default extension"": $_fext"
-                confirm -m -n -p - -s "$_fset" -u "$_mesg" "$_dext" \
-                    "\n"$"Current folder"": $PWD" || return 2
+                [ -n "$_fext" ] && _dext=$"Default extension"": $_fext"
+                confirm -m -p - -s "$_fset" -u "$_mesg" "$_dext" \
+                        $"Current folder"": $PWD" || return 2
             fi
         fi
 
@@ -362,7 +362,7 @@ inpfile() {
 
     [ "$1" = "+" ] || _floo=
     while : ; do
-        _cen_inpfile "$1" || _stat=$?
+        _cen_inpfile "$1" ; _stat=$?
         [ "$_stat" = 1 ] || return $_stat
         [ -z "$_floo" ] && return 1
     done
@@ -575,9 +575,9 @@ outfile() {
                 local _dext _dtyp=$"Please enter an output path"
                 [ "$_fdir:$_ffil" = ":1" ] && _dtyp=$"Please enter an output file name"
                 [ "$_fdir:$_ffil" = "1:" ] && _dtyp=$"Please enter an output folder name"
-                [ -n "$_fext" ] && _dext="\n"$"Default extension"": $_fext"
-                confirm -m -n -p - -s "$_fset" -u "$_dtyp" "$_dext" \
-                    "\n"$"Current folder" "'$PWD'" || return 2
+                [ -n "$_fext" ] && _dext=$"Default extension"": $_fext"
+                confirm -m -p - -s "$_fset" -u "$_dtyp" "$_dext" \
+                        $"Current folder"" '$PWD'" || return 2
             fi
         fi
         if [ -z "$_varg" ] ; then
@@ -776,7 +776,7 @@ cachefile() {
 #           -n  file name or a path containing "/", see remark below
 #           -p  try private file 1st in **~/.config**, **~/.local** then ***~.<name>**
 #           -q  quiet, no error messages
-#           -r  read callback             (use '.' to source the file)
+#           -r  read callback
 #           -s  silent, no trace messages
 #           -v  save data to an array variable (no reader callback)
 #           -x  process lines by [[spliteval()]]
@@ -853,7 +853,7 @@ cachefile() {
 # Examples: (1) Just source $CEN_ROOT/default/$CEN_NAME, call ___init if not present:
 #.          DAT_EXAMPLE=
 #.          ___init() {  DAT_EXAMPLE=42 ; return 0 ; }
-#.          configfile -i ___init -r .
+#.          configfile -i ___init -l .
 #
 #           (2) Use a reader callback for section "" (empty) and "test":
 #.          ___reader() { echo "Count $#, Args: $*" ; return 0 ; }
@@ -916,7 +916,7 @@ configfile() {
     # error reporting
     if [ -n "$_oerr" ] ; then
         [ -z "${CEN_CONFIGFILE[2]}" ] && _cen_abort $"not in callback" '-e|-f|-w'
-        [ "${_rlin:--}" = "-" ] && _rlin=$"configfile"
+        [ "${_rlin:--}" = '-' ] && _rlin=$"configfile"
         if [ "$#" = 0 ] ; then
             [ -z "$_oqui" ] && set -- $"invalid statement:" "${CEN_CONFIGFILE[1]}"
         else
@@ -927,9 +927,9 @@ configfile() {
             fi
         fi
         if [ "${CEN_CONFIGFILE[2]:--}" = '-' ] ; then
-            $_oerr -m -p $"%s [file='%s']\n%s" "$_rlin" "${CEN_CONFIGFILE[0]}" "$*"
+            $_oerr -n -p $"%s [file='%s']\n%s" "$_rlin" "${CEN_CONFIGFILE[0]}" "$*"
         else
-            $_oerr -m -p $"%s [file='%s' line=%s]\n%s" "$_rlin" \
+            $_oerr -n -p $"%s [file='%s' line=%s]\n%s" "$_rlin" \
                 "${CEN_CONFIGFILE[0]}" "${CEN_CONFIGFILE[2]}" "$*"
         fi
         return 1
@@ -938,6 +938,7 @@ configfile() {
     # check list of filters
     _cen_configfile_fltr() {
         [ "${#_sect[@]}" = 0 ] && return 1
+        _line="${_line%% *}"
         [ "${_line//[[:alnum:]_-]/}" = '[]' ] || return 1
         local _item _snam="${_line:1:-1}"
         for _item in "${_sect[@]}" ; do
@@ -1035,14 +1036,20 @@ configfile() {
     # call worker
     if [ -n "$_rlin" -o "${_read:-.}" != '.' ] ; then
         $_otra -a -c $" read" -- "$_file [$*]"
+        [ "${#_sect[@]}" = 0 ] || _skip=1
         if [ -n "$_rlin" ] ; then
             while IFS= read -r -u $_fhan _line ; do
                 ((_lnum += 1))
+                if [ "${#_sect[@]}" != 0 ] ; then
+                    if [ "${_line::1}" = '[' ] ; then       # section ...
+                        _cen_configfile_fltr && continue
+                    fi
+                    [ -n "$_skip" ] && continue
+                fi
                 _cen_configfile_call && continue
                 _stat=$? ; break
             done
         else
-            [ "${#_sect[@]}" = 0 ] || _skip=1
             while read $_ropt -u $_fhan _line ; do
                 ((_lnum += 1))
                 if [ -n "$_join" ] ; then                   # line continuation
@@ -1161,16 +1168,23 @@ serialize() {
     # --- write ---
 
     if [ "$_fmod" = '-w' ] ; then
-        local _sout
+        local _sout _sser
         for _item in "$@" ; do                      # create data ...
-            [ -n "$_sout" ] && _sout+=$'\n'
             local -n _varg="$_item"                 # must be local
-            _item="${_varg[@]@A}"
+            _sser="${_varg[@]@A}"
             if [ -z "$_fdec" ] ; then               # strip declare
-                _item="${_item#declare -* }"
-                [ "${_item%=*}" = "$_item" ] && _item+='='
+                case "$_sser" in
+                    '') _item="$_item=" ;;          # since bash 5.2
+                    declare\ -?\ *=*)   _item="${_sser:11}" ;;
+                    declare\ -a\ *)     _item="${_sser:11}=()" ;;
+                    declare\ -?\ *)     _item="${_sser:11}=" ;;
+                    *=*)                _item="$_sser" ;;
+                    *)                  _item="$_sser="
+                esac
+            else
+                _item="${_sser:-$_item=}"
             fi
-            _sout+="$_item"
+            _sout+="$_item" ; _sout+=$'\n'
         done
 
         dryrun "serialize: $_ffil" && return
@@ -1198,6 +1212,7 @@ serialize() {
     fi
 
     # --- zero ---
+
     if [ -n "$_fzer" ] ; then
         for _item in "$@" ; do
             local -n _vvar="$_item"

@@ -224,7 +224,7 @@ extsort() {
     # additional error reporting
     if [ -n "$_fnam" -o "$_ferr" != '-q' ] ; then
         splitjoin -d "\n" -i "$_fnam" -j _sout
-        message -a -m -- "$_sout"
+        message -a -n -- "$_sout"
     fi
     return $_stat
 }
@@ -431,7 +431,7 @@ extgrep() {
     # additional error reporting
     if [ -n "$_fnam" -o "$_ferr" != '-q' ] ; then
         splitjoin -d "\n" -i "$_fnam" -j _sout
-        message -a -m -- "$_sout"
+        message -a -n -- "$_sout"
     fi
     return $_stat
 }

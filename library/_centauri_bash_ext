@@ -21,7 +21,7 @@
 # Copyright Dr. J. Pfennig (c) 2016-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_ext"]="0.23:1"
+CEN_MODULES["_centauri_bash_ext"]="0.25:2"
 
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
@@ -36,7 +36,7 @@ CEN_EXT_REALP=              # 0:=use external  1:=use realpath builtin
 # ------------------------------------------------------------------------------
 _cen_path_pretty() {
     local _fchk _vnam _fpwd
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -e)   _fchk=1 ;;
@@ -71,7 +71,7 @@ _cen_path_pretty() {
                         _vcpp="${PWD%/*}${_vcpp:2}" ; break ;;
 
         *)              [ -z "$_fpwd" -o "${_vcpp::1}" = "/" ] && break
-                        _vcpp="$PWD/$_vcpp" ; break
+                        _vcpp="$PWD/$_vcpp"
         esac
     done
 
@@ -153,7 +153,9 @@ _cen_path_realp() {
     0-c)    _exro+=(readlink -m) ;;
     1-c)    _exro+=(realpath) ; _opta=1 ; _retr=1  ;;   # fails for all invalid links
 
-    ?-l)    [ -e "$2" ] || return 1 ; _exro+=(readlink) ;; # || _exro+=(readlink -m) ;;
+    ?-l)    if   [ -e "$2" ] ; then _exro+=(readlink)
+            elif [ -h "$2" ] ; then _exro+=(readlink)
+            else               return 1 ; fi ;;
 
     # check if builtin can be loaded
     -*)     CEN_EXT_REALP=0
@@ -186,86 +188,6 @@ _cen_path_realp() {
 }
 
 # ------------------------------------------------------------------------------
-# attributes - Create file/folder, set file/folder attributes
-#
-# Call:     attributes [-o <owner>|-] [-m <mode>|-] [-c|-d] [-f] [-k] [-r] [-s]
-#                      [-x <excl>]... [--] <item>...
-#
-# Options:  -c  create non-exsting items as files
-#           -d  create non-exsting itmes as directories
-#           -f  make errors fatal
-#           -k  keep existing items unchanged
-#           -o  set owner (use **-** for "$LOGNAME:")
-#           -m  set mode  (use **-** for **664** or **775**)
-#           -r  ignore --dryrun
-#           -s  recurse into sub-folders
-#           -x  exclude matching arguments, repeatable
-#
-# Arguments:<mode>   item mode to be set in any **/usr/bin/chmod** syntax
-#           <owner>  item owner to be set in **/usr/bin/chown** syntax
-#           <excl>   exclude pattern for bash glob
-#
-# Return:   **true** at success or **false** otherwise.
-#
-# Examples: (1) Create file or folders
-#.          attributes -c "hallo"
-#.          attributes -c -o root:staff -m 770 "/.hidden"
-#.          attributes -d -o daemon -m - "/run/x1" "/run/x2"
-#
-#           (2) Set owner/mode recursively
-#.          attributes -s -m "o-w" "/etc"
-#.          attributes -d -s -m 700 -o root "/etc/test"
-#
-#           (3) Exclude patterns
-#.          attributes -x "*.p" -x "*~" -m 664 library/_*
-#
-#+The **/usr/bin/chown** program uses a '<user>:[<group>]' notation for owner. With
-# '<user>**:**' (no group but trailing colon) the user's primary group is used.
-# ------------------------------------------------------------------------------
-attributes() {
-    local _excl=() _erun _kind _ownr=":" _mode _mdef="664" _args=() _item _srec _ferr="-e"
-    while [ "${1::1}" = "-" ] ; do
-        case "$1" in
-        --)   shift ; break ;;
-        -c)   _kind=" " ;;
-        -d)   _kind="-d" ; _mdef="775" ;;
-        -f)   _ferr="-f" ;;
-        -k)   _keep=1 ;;
-        -o)   shift ; _ownr="$1" ;;
-        -m)   shift ; _mode="$1" ;;
-        -r)   _fdry='-r' ;;
-        -s)   _srec="-R" ;;
-        -x)   shift ; _excl+=("$1") ;;
-        *)    _cen_abort - "$1"
-        esac ; shift
-    done
-
-    for _item in "$@" ; do
-        if [ -e "$_item" ] ; then
-            [ -n "$_keep" ] && continue
-        elif [ -n "$_kind" ] ; then
-            create $_fdry $_kind -- "$_item" || continue
-        else
-            $CEN_TRACE -a $"No such file/folder:" "$_item" ; continue
-        fi
-        if [ "${#_excl[@]}" = 0 ] ; then    # no excludes...
-            _args+=("$_item") ; continue
-        fi
-        for _erun in "${_excl[@]}" ; do
-            [[ "$_item" == $_erun ]] || continue
-            _item= ; break
-        done
-        [ -n "$_item" ] && _args+=("$_item")
-    done
-
-    [ -n "$_args" ] || return 0
-    [ "${_ownr:--}" = "-" ] && _ownr="${LOGNAME:-$USER}:"
-    [ "$_mode" = "-" ] && _mode="$_mdef"
-    [ -n "$_mode" ] && sysrun $_fdry $_ferr -b -p -- chmod $_srec "$_mode" -- "${_args[@]}"
-    [ "${_ownr:-:}" = ":" ] || sysrun $_fdry $_ferr -b -p -- chown $_srec "$_ownr" -- "${_args[@]}"
-}
-
-# ------------------------------------------------------------------------------
 # copy - Copy files/folders using coreutils /usr/bin/cp
 #
 # Call:     copy <opt>... <source>... <dest>
@@ -283,14 +205,14 @@ attributes() {
 #
 # Return:   **true** at success or **false** otherwise.
 #
-#+This is a conviniency wrapper for coreutils **/usr/bin/cp** that provides some
+#+This is a conveniency wrapper for coreutils **/usr/bin/cp** that provides some
 # extra reporting and error handling.
 #
 #+In newer versions for gnu coreutils ''copy-on-write'' is enabled by default.
 # ------------------------------------------------------------------------------
 copy() {
     local _oflg='-e -p' _oerr='error' _omsg="$CEN_TRACE" _oarc _ocow _oupd _olis _odes _orem
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _oarc="-a" ;;
@@ -359,7 +281,7 @@ copy() {
 CEN_JOINPATH=
 joinpath() {
     local _fset="CEN_JOINPATH" _oabs _orel _opre _odef _opte _path _elem
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _oabs=1 ;;
@@ -408,20 +330,22 @@ joinpath() {
 # ------------------------------------------------------------------------------
 # matchpath - Match argument paths by type and access permission
 #
-# Call:    matchpath [-a <rslt>] [-c <func>] [-f|-d|-e] [-m] [-o] [-p] \
+# Call:    matchpath [-a|-s <rslt>] [-c <func>] [-d|-e|-f|-l] [-m] [-o] [-p] \
 #                    [-r|-w|-x]... [--] <path>...
 #
 #          Simple filtering of paths, no recursion. See also: [[walk()]].
 #
-# Options: -a  result array
+# Options: -a  name of result array variable
 #          -c  call <func> for accepted item, ignore item on failure
 #          -d  match folders only
 #          -e  match existing paths only
 #          -f  match files only
+#          -l  match symlink (including stale symlink)
 #          -m  match against --include/--exclude
 #          -o  return first match only
 #          -p  run prettypath on matches
 #          -r  path must be readable
+#          -s  name of result string variable (LF seperated)
 #          -w  path must be writable
 #          -x  path must be executable
 #
@@ -450,8 +374,8 @@ joinpath() {
 # ------------------------------------------------------------------------------
 CEN_MATCHPATH=
 matchpath() {
-    local _oarr _oone _opre _otyp _orea _owri _oexe _scal=':' _smat=':'
-    while [ "${1::1}" = "-" ] ; do
+    local _oarr _ostr _oone _opre _otyp _orea _owri _oexe _scal=':' _smat=':'
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _oarr="$1" ;;
@@ -459,16 +383,19 @@ matchpath() {
       -d)   _otyp='-d' ;;
       -e)   _otyp='-e' ;;
       -f)   _otyp='-f' ;;
+      -l)   _otyp='-h' ;;
       -m)   _smat='filter' ;;
       -o)   _oone=1 ;;
       -p)   _opre=1 ;;
       -r)   _orea=1 ;;
+      -s)   shift ; _ostr="$1" ; _oarr='_cen_ext_matchpath' ;;
       -w)   _owri=1 ;;
       -x)   _oexe=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
     local -n _varr="${_oarr:-CEN_MATCHPATH}" ; _varr=()
+
     local _item _stat=1
     for _item in "$@" ; do
         $_smat -- "$_item" || continue
@@ -485,11 +412,21 @@ matchpath() {
             [ -x "$_item" ] || continue
         fi
         _stat=0
-        [ -n "$_opre" ] && prettypath -s _item -p -- "$_item"
+      #  [ -n "$_opre" ] && prettypath -s _item -p -- "$_item"
+        [ -n "$_opre" ] && _cen_path_pretty -p _item "$_item"
         $_scal "$_item" || continue
         _varr+=("$_item")
         [ -n "$_oone" ] && break
     done
+
+    # create result string from array
+    if [ -n "$_ostr" ] ; then
+        if [ "${#_varr[@]}" -le 1 ] ; then
+            local -n _rslt="$_ostr" ; _rslt="$_varr"
+        else
+            splitjoin -j "$_ostr" -d '\n' -i "$_oarr"
+        fi
+    fi
     return $_stat
 }
 
@@ -508,7 +445,7 @@ matchpath() {
 #
 # Return:  **true** at success or **false** otherwise.
 #
-#+This is a conviniency wrapper for **/usr/bin/mv** that provides some extra
+#+This is a conveniency wrapper for **/usr/bin/mv** that provides some extra
 # reporting and error handling. Unlike [[rename()]] the move function accepts
 # multiple <src> arguments if <dest> is a folder.
 #
@@ -518,7 +455,7 @@ matchpath() {
 # ------------------------------------------------------------------------------
 move() {
     local _oftl _orep _orun _osys="-e -p" _oerr=error _omsg="$CEN_TRACE"
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -f)   _oftl="-f" ; _osys="-f -p" ; _oerr=fatal ;;
@@ -571,7 +508,7 @@ move() {
 #           -f  errors are made fatal
 #           -l  read symlink but do not canonicalize (return logical path)
 #           -n  network (abstract) path, see **repath** in **centauri-bash-lib**
-#           -p  prettify path, see **repath** in **centauri-bash-lib**
+#           -p  physical path, do not apply **repath** expressions
 #           -q  output no error messages
 #           -s  save path to <var> (default is CEN_PRETTYPATH)
 #           -t  trim prefix from result path
@@ -616,7 +553,7 @@ CEN_PRETTYPATH=
 prettypath() {
     local _ocan _oerr="error" _oexi _obas _otrm _logi _phys
     local _fset="CEN_PRETTYPATH" _fltr="-l"
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -b)   _obas=1 ;;
@@ -662,6 +599,61 @@ prettypath() {
     fi
     _cen_path_ltrim "$_otrm" "$_varg" && _varg="$_logi"
     return 0
+}
+
+# ------------------------------------------------------------------------------
+# readline - read a single line of text
+#
+# Call:     readline [-e|-f|-w] [-h <hnum>|-i <file>] [-q] [-a|-s <vnam>] [-x]
+#
+# Options:  -a  save data to array
+#           -e  report errors
+#           -f  make errors fatal
+#           -h  input from file handle
+#           -i  input file path
+#           -q  no trace messages
+#           -s  save data to variable (default: CEN_READLINE)
+#           -w  report errors as warnings
+#           -x  create a message for non-existing input file
+#
+# Arguments:<file>  file path
+#           <hnum>  handle number
+#           <vnam>  variable name
+#
+# Return:   0   success
+#           1   error
+#           2   not a readable file (only without option -x)
+# ------------------------------------------------------------------------------
+CEN_READLINE=
+readline() {
+    local _oerr='trace' _finp _oqui= _oarr _oexi _vnam='CEN_READLINE' _mesg
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -a)   shift ; _vnam="$1" ; _oarr='-a' ;;
+      -e)   _oerr='error' ;;
+      -f)   _oerr='fatal' ;;
+      -h)   shift ; _finp="/dev/fd/$1" ;;
+      -i)   shift ; _finp="$1" ;;
+      -q)   _oqui=1 ;;
+      -s)   shift ; _vnam="$1" ; _oarr= ;;
+      -w)   _oerr='warning' ;;
+      -x)   _oexi=1 ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
+    if [ ! -r "$_finp" ] ; then
+        [ -z "$_oexi" ] && return 2
+        _mesg=$"Cannot read from:"" $_finp"
+    elif ! read $_oarr $_vnam <"$_finp" &>/dev/null ; then
+        _mesg=$"Failed to read from:"" $_finp"
+    elif [ -z "$_oqui" ] ; then
+        trace -a -c ' file OK' -- "$_finp"
+    fi
+
+    [ -z "$_mesg" ] && return 0
+    $_oerr -- "$_mesg" ; return 1
 }
 
 # ------------------------------------------------------------------------------
@@ -713,7 +705,7 @@ prettypath() {
 CEN_REDIRECT=
 redirect() {
     local _sinp _sout _ocnt=0 _oapp _ofnd _osav _hndl _oaop='>' _oerr='error -z' _otra="$CEN_TRACE"
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _sout="${1:--}" ; _oapp="-a" _oaop=">>" ;;
@@ -801,7 +793,7 @@ redirect() {
 #
 # Return:   **true** at success or **false** otherwise.
 #
-#+This is a conviniency wrapper for **unlink**, **rm** and **rmdir** that provides
+#+This is a conveniency wrapper for **unlink**, **rm** and **rmdir** that provides
 # some extra reporting and error handling. The implementation is aware of simple
 # cases so that the bash builtins **unlink** and **rmdir** can be used (if enabled
 # via [[autoload]]). If the number of arguments is > 1 the function always calls
@@ -809,7 +801,7 @@ redirect() {
 # ------------------------------------------------------------------------------
 remove() {
     local _oerr="-e -p" _orec _ofrc="-f" _oone _orun _omsg="$CEN_TRACE" _oitm=$"file" _smpl
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -d)   _orec="-r" ;;
@@ -824,12 +816,9 @@ remove() {
       esac ; shift
     done
 
-### TODO should not use unlink
-### TODO /usr/bin/rm should use --interactive=never (or </dev/null)
-
     # single argument - allow rmdir and unlink bash builtins
     if [ $# = 1 ] ; then
-        [ "${1:--}" = "-" ] && return 0
+        [ "${1:--}" = '-' ] && return 0
         if [ -h "$1" ] ; then                   # symlink - use unlink
             _oitm=$"symlink" ; _smpl=unlink
         elif [ -d "$1" ] ; then
@@ -847,14 +836,16 @@ remove() {
     fi
     $_omsg -a -c " $_oitm" -- "$*"
 
-    # bash builtins might be unable to handle options or --
+    # bash builtins might be unable to handle options or -- . Also: use </dev/null
+    # to avoid interactive mode of rm (will delete readonly files like with -f) ...
+
     if [ -n "$_oone" ] ; then
-        sysrun $_oerr $_orun -i -- rm $_oone $_orec $_ofrc -- "$@" && return 0
+        sysrun $_oerr $_orun -i -- rm $_oone $_orec $_ofrc -- </dev/null "$@" && return 0
     elif [ -n "$_smpl" ] ; then
         sysrun $_oerr $_orun -d -b -o "$_oitm" \
                -m $"Cannot remove %s: %s" -- $_smpl -- "$1" && return 0
     else
-        sysrun $_oerr $_orun -b -- rm $_orec $_ofrc -- "$@" && return 0
+        sysrun $_oerr $_orun -b -- rm $_orec $_ofrc -- "$@" </dev/null && return 0
     fi
     [ -n "$CEN_OPT_DRYRUN" ]                     # --dryrun always returns 0
 }
@@ -877,16 +868,16 @@ remove() {
 #
 # Return:  **true** at success or **false** otherwise.
 #
-#+This is a conviniency wrapper for **/usr/bin/mv** that provides some extra
+#+This is a conveniency wrapper for **/usr/bin/mv** that provides some extra
 # reporting and error handling. Only one <src> argument is supported and the
 # function fails if <des> exists and neither option -o or -x are given.
 # ------------------------------------------------------------------------------
 rename() {
     local _oftl _omis _orep _orun _osys="-e -p" _oerr=error _omsg="$CEN_TRACE" _suff
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -b)   shift ; _suff="$1" ; _orem=1 ;;
+      -b)   shift ; _suff="${1#.}" ; _orem=1 ;;
       -f)   _oftl="-f" ; _osys="-f -p" ; _oerr=fatal ;;
       -m)   _omis=1 ;;
       -o)   _orem=1 ;;
@@ -948,8 +939,8 @@ rename() {
 #           -f  make errors fatal
 #           -p  return pretty name, see [[prettypath()]]
 #           -q  do not report errors
-#           -x  locate an executable file using BASH_ARGV0
-#           -y  locate a file using BASH_ARGV0
+#           -x  locate an executable file using PATH and BASH_ARGV0
+#           -y  like -x but locate any file
 #
 # Arguments:<path>  any symlink, file or folder. All <path> args are
 #           °       resolved at once by a single call to **/usr/bin/readlink**
@@ -961,7 +952,7 @@ rename() {
 # Return:   **true** at success or **false** otherwise.
 #
 #+In contrast to [[prettypath()]] this function calls **/usr/bin/readlink**
-# (unlesss option -p is used). Also it can pass multiple <path> args at once.
+# (unless option -p is used). Also it can pass multiple <path> args at once.
 #
 #+If option -p is given, the function prettifies the result paths in the same
 # way as [[prettypath()]] does. This option overrides option -m and only
@@ -984,14 +975,14 @@ rename() {
 #.          # read symlink (fails if arg is not a symlink)
 #.          resolve -q -l /usr/bin/sh && message "sh symlinked: $CEN_RESOLVE"
 #
-#.          # get my invokation path
-#.          resolve -x -p && message "Path:" "${CEN_RESOLVE%/*}"
+#.          # get my invocation path
+#.          resolve -x -p && message "Path:" "$CEN_RESOLVE"
 # ------------------------------------------------------------------------------
 CEN_RESOLVE=
 resolve() {
     local _ocan _otrm _oexe _osys='-e -p' _pret \
           _vset="CEN_RESOLVE" _varr _vrrr _xchk _xerr=error _nret=0
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vset= ; local -n _vvaa="$1" ; _vvaa=() ;;
@@ -1018,11 +1009,16 @@ resolve() {
     # get executable - use _centauri_bash_lib paths and resolve argv0 if needed
     if [ -n "$_oexe" ] ; then
         local _logi _self="$CEN_TOOLS:$CEN_LIBRARY:${BASH_ARGV0%/*}"
-        PATH="$PATH:$_self" sysrun -q -r -a _logi -- type -f -p -- "$1"
+        [ -n "$1" ] && PATH="$PATH:$_self" sysrun -q -r -a _logi -- type -f -p -- "$1"
         if [ -z "$_logi" ] ; then
-            [ -h "$BASH_ARGV0" ] && _cen_path_realp -c "$BASH_ARGV0"
-            _self="${_logi%/*}"
-            set -- "${_self:-$PWD}/$1"
+            [ -h "$BASH_ARGV0" ] && _cen_path_realp -c "$BASH_ARGV0" || _logi="$BASH_ARGV0"
+            case "$_logi" in
+            /*/*)   _self="${_logi%/*}" ;;
+            /*)     _self='/' ;;
+            */*)    _self="$PWD/${_logi%/*}" ;;
+            *)      _self="$PWD"
+            esac
+            set -- "$_self${1:+/}$1"
             if [ "$_oexe" = 1 ] ; then
                 [ -x "$1" ] || _nret=1
             else
@@ -1065,6 +1061,7 @@ resolve() {
         for _logi in "$@" ; do
             if [ -n "$_pret" ] ; then
                 _cen_path_pretty -e -p _logi "$_logi" || continue
+                _cen_path_regex '-l' "$_logi"
             fi
             [ -n "$_otrm" ] && _cen_path_ltrim "$_otrm"
             _vrrr+=("$_logi")
@@ -1105,9 +1102,9 @@ resolve() {
 # it is empty when "$PWD" is the parent.
 #
 # Examples: results for path '/' '/one' '/one/two' :
-#.          splitpath    -p ...  #  =>  ("" "/")    # root has no parent
-#.          splitpath    -p ...  #  =>  ("/one" "")
-#.          splitpath    -p ...  #  =>  ("/one" "two")
+#.          splitpath    -p ...  #  =>  ("" "/" "")    # root has no parent
+#.          splitpath    -p ...  #  =>  ("/" "one" "")
+#.          splitpath    -p ...  #  =>  ("/one" "two" "")
 #
 #           results for path '/example/base.text' :
 #.          splitpath -e -p ...  #  =>  ("/example" "base" "text")
@@ -1129,7 +1126,6 @@ resolve() {
 #   /a.b        ([0]="/" [1]="a"     [2]="b")     ([0]="/"    [1]="a"    [2]="b")
 #   a.b/        ([0]=""  [1]="a.b"   [2]="")      ([0]=""     [1]="a.b"  [2]="")
 #   /a.b/       ([0]="/" [1]="a.b"   [2]="")      ([0]="/"    [1]="a.b"  [2]="")
-#   /           ([0]=""  [1]="/"     [2]="")      ([0]=""     [1]="/"    [2]="")
 #   /x          ([0]="/" [1]="x"     [2]="")      ([0]="/"    [1]="x"    [2]="")
 #   /x/y        ([0]="/" [1]="x/y"   [2]="")      ([0]="/x"   [1]="y"    [2]="")
 #   /x/y/z      ([0]="/" [1]="x/y/z" [2]="")      ([0]="/x/y" [1]="z"    [2]="")
@@ -1137,7 +1133,7 @@ resolve() {
 # ------------------------------------------------------------------------------
 splitpath() {
     local _vset _oext _odmy _opar _left _righ _path _ofir _ospl _owrk _pref
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vset="$1" ; local -n _vvaa="$1" ; _vvaa=() ;;
@@ -1154,8 +1150,7 @@ splitpath() {
 
     # remove trailing or leading slash, prettify
     case "$_path" in
-        /)      [ -n "$_ospl" ] && _vvaa=("")
-                _path="/" ; _ofir= ; _opar= ; _ospl= ;;
+        /)      ;;                              # special handling
         /*/)    _path="${_path:1}" ; _pref="/"
                 _cen_path_pretty _path "${_path::-1}" ; [ -n "$_oext" ] && _odmy=1 ; _oext= ;;
         /*)     _cen_path_pretty _path "${_path:1}" ; _pref="/" ;;
@@ -1167,7 +1162,9 @@ splitpath() {
         sysrun -q -r -b -a _path -- readlink -s -m -- "$1" || return 2
     fi
 
-    [ "$_path" = '/' ] && return 1              # root has no parent
+    if [ "$_path" = '/' ] ; then                # root has no parent
+        _vvaa=('' '/' '') ; return 1
+    fi
 
     if [ -n "$_ofir" ] ; then
         _left="${_path%%/*}" ; _righ="${_path#*/}"
@@ -1260,7 +1257,7 @@ splitpath() {
 CEN_SUFFIXPATH=
 suffixpath() {
     local _vnam="CEN_SUFFIXPATH" _suff _from _optd _olow _orem
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -)    break ;;
@@ -1355,7 +1352,7 @@ suffixpath() {
 # ------------------------------------------------------------------------------
 symlink() {
     local _fign _targ _ocan _odir _oftl='error' _onck _orel _osys='-e -p' _move _mesg="$CEN_TRACE"
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   _ocan=1 ;;
@@ -1409,9 +1406,9 @@ symlink() {
                 sysrun $_osys -b -- mv -f -- "$_link" "$_link.$CEN_NAME" || return 2
                 $_mesg -a $"Link '$_link' file/fldr moved"": $_link.$CEN_NAME"
             elif [ -d "$_link" ] ; then
-                $_oftl $"Link is an existing folder"": $_link" ; return 2
+                $_oftl $"Link target is an existing folder:" "$_link" ; return 2
             else
-                $_oftl $"Link is an existing file"": $_link" ; return 2
+                $_oftl $"Link target is an existing file:" "$_link" ; return 2
             fi
         fi
     fi
@@ -1429,7 +1426,7 @@ symlink() {
 # ------------------------------------------------------------------------------
 # sysrun - run a command or builtin, optionally generate error messages
 #
-# Call:     (1) sysrun [-e|-f|-w] [-p] [-m <mesg>] [-o <what>]
+# Call:     (1) sysrun [-e|-f|-w] [-p] [-v] [-m <mesg>] [-o <what>]
 #                      [-a|-s <onam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
 #           (2) sysrun -q
 #                      [-a|-s <onam>] [-b|-i] [-d] [-n] [-r] [-z] [--] <cmd> <arg>...
@@ -1440,7 +1437,7 @@ symlink() {
 #           reporting at all. Form (3) can be used to generate error messages from
 #           error codes.
 #
-# Options:  -a  capture <cmd> output into an array (overrides -p and -q)
+# Options:  -a  capture <cmd> output into an array
 #           -b  do not run a function, prefer builtin over external
 #           -c  error code for reporting (<cmd> is not executed)
 #           -d  use './' prefix if 1st arg starts with a '-'
@@ -1453,9 +1450,10 @@ symlink() {
 #           -p  discard **/dev/stdout**, capture **/dev/stderr**, pretty-print error message
 #           -q  discard **/dev/stdout** and **/dev/stderr**, no error message
 #           -r  ignore --dryrun
-#           -s  capture <cmd> output into an string (overrides -p and -q)
+#           -s  capture <cmd> output into an string
+#           -v  show <show> arguments in warning/error message
 #           -w  call [[warning()]] on error
-#           -z  don't capture **/dev/stdout** (for use with -p)
+#           -z  don't capture **/dev/stdout**
 #
 # Arguments:<onam>  variable that receives the <cmd> output
 #           <mesg>  printf format string with 2 string variables
@@ -1524,9 +1522,9 @@ symlink() {
 # ------------------------------------------------------------------------------
 sysrun() {
     $CEN_NOTRACE set +x
-    local _ecmd="$CEN_TRACE" _emsg
-    local _ofmt _oign _osta _opre _orun _oout _owho _fqui _ffnd=1 _vstr _vnam
-    while [ "${1::1}" = "-" ] ; do
+    local _ecmd="$CEN_TRACE" _emsg _vstr _vnam
+    local _ofmt _oign _osta _opre _orun _oout _over _owho _fqui _ffnd=1
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vnam="$1" ; _oout=0 ;;
@@ -1542,8 +1540,8 @@ sysrun() {
       -p)   _ofmt=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -q)   _fqui=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -r)   _orun="-r" ;;
-      -s)   shift ; _vstr="$1" ; _oout=0
-            local _cen_ext_sysrun ; _vnam='_cen_ext_sysrun' ;;
+      -s)   shift ; _vstr="$1" ; _oout=0 ; _vnam='-' ;;
+      -v)   _over=1 ;;
       -w)   _ecmd=warning ;;
       -z)   _oout=1 ;;
       *)    _cen_abort - "$1"
@@ -1551,7 +1549,8 @@ sysrun() {
     done
 
     local _xmsg _xerr _xarg _xtmp _xcmd="$1" _outf ; shift
-    [ -z "$_vnam" -a -n "$_ofmt" ] && _vnam='_xerr'         # dummy for -p
+    [ -z "$_vnam" -a -n "$_ofmt" ] && _vnam='-'             # dummy for -p
+    [ "$_vnam" = '-' ] && { local _cen_ext_sysrun ; _vnam='_cen_ext_sysrun' ; }
 
     # run a command or builtin
     if [ -z "$_osta" ] ; then
@@ -1602,7 +1601,7 @@ sysrun() {
             local _afix=()
             while [ $# -gt 0 ] ; do
                 if [ "$1" == "--" ] ; then
-                    if [ "${2::1}" = "-" ] ; then
+                    if [ "${2::1}" = '-' ] ; then
                         _afix+=("./$2") ; shift
                     fi
                     shift ; break
@@ -1644,9 +1643,11 @@ sysrun() {
 
     # error reporting ...
     [ -z "$_osta" ] && _osta=1                  # must have a value here
-    [ -n "$_fqui" ] && return $_osta
+    if [ "$_osta" = 0 -o -n "$_fqui" ] ; then
+        $CEN_NOTRACE set -x ; return $_osta
+    fi
+
     case "$_osta" in
-    0)      $CEN_NOTRACE set -x ; return 0 ;;
     1)      ;;
     2)      _xmsg=$"Invalid argument(s)" ;;
     126)    _xmsg=$"File not executable" ;;
@@ -1662,7 +1663,7 @@ sysrun() {
     [ -n "$_xmsg" ] && _xmsg=": $_xmsg"
     if [ "$_ecmd" = "$CEN_TRACE" -a -n "$_ofmt" ] ; then    # system -p style
         splitjoin -j _xtmp -d '\n' -i "$_vnam"
-        message -m "$_xtmp"
+        message -n "$_xtmp"
         $CEN_NOTRACE set -x ; return $_osta
     elif [ -n "$_ofmt" ] ; then                         # system -e -p style
         splitjoin -s _xtmp -d '\n' -i "$_vnam"
@@ -1673,8 +1674,11 @@ sysrun() {
         fi
         splitjoin -j _xarg -n -- "$_xarg" "${_xtmp[@]:1}"
         [ "$_xcmd" = 'builtin' ] && _xtmp=" $1" || _xtmp=
-        $_ecmd -m -p "${_emsg} %s\n%s" "${_owho:-($_xcmd)}" "$_xtmp" "$_xmsg" "$_xarg"
+        [ -n "$_over" ] && _xtmp+=" $*"
+        $_ecmd -n -p "$_emsg%s\n%s" "${_owho:-($_xcmd)}" "$_xtmp" "$_xmsg" "$_xarg"
     else                                                # simple ...
+        [ "$_xcmd" = 'builtin' ] && _xtmp=" $1" || _xtmp=
+        [ -n "$_over" ] && _xtmp+=" $*"
         $_ecmd -p "$_emsg$_xmsg" "${_owho:-($_xcmd)}" "$_xtmp"
     fi
     $CEN_NOTRACE set -x ; return $_osta
@@ -1759,7 +1763,7 @@ CEN_TMPFILE=
 CEN_EXT_TSUB=
 tmpfile() {
     local _odel _oftl _onoc _opip _oerr='error -z' _orun _updt _snam='CEN_TMPFILE' _base
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       -)    break ;;
       --)   shift ; break ;;
@@ -1833,7 +1837,7 @@ tmpfile() {
         [ -d "$_base" ] && return 0                     # do not remove folder
         set +f ; set -- "$_base$_ssuf"*                 # make sure glob is on
         [ "$1" = "$_base$_ssuf*" ] && return 0          # nothing to remove
-        sysrun $_orun -q -b -- rm -f -- "$@" ; return   # return status
+        sysrun $_orun -q -b -- rm -f -r -- "$@" ; return   # return status
     fi
 
     # create folder / file
@@ -1876,6 +1880,7 @@ tmpfile() {
 #           -h  find hidden files and folders
 #           -i  case insensitive filter using --include|--exclude
 #           -l  limit for recursion levels (default: no limit)
+#           -n  do not follow symlinks into folders
 #           -r  recurse into folders
 #
 # Arguments:<ffil>  command excuted for each file   (default **true**)
@@ -1913,8 +1918,13 @@ tmpfile() {
 #
 #,          0  -  append item to **CEN_WALK_xxx** array
 #,          1  -  do not append to **CEN_WALK_xxx** array
-#,          2  -  skip current folder
+#,          2  -  skip current folder (see remark on symlinks below)
 #,          3  -  stop walk
+#
+#+Symlinks:To avoid parsing a folder multiple times when symlinks are followed
+# (no -n option) the code uses a map of absolute folder paths to skip such items.
+# Unluckily this will cause problems when trying to skip a symlinked folder in
+# the folder callback (return code 2) - better use option -n for this purpose.
 # ------------------------------------------------------------------------------
 CEN_WALK_FILES=()
 CEN_WALK_DIRS=()
@@ -1922,18 +1932,19 @@ CEN_WALK_LEVEL=0
 declare -g -A CEN_WALK_DMAP
 
 walk() {
-    local _fdir=false _ffil=: _fexc=: _frec _fadd _fbro="-e" _fhid _fext=() _stat _levl=999999999
-    while [ "${1::1}" = "-" ] ; do
+    local _fdir=false _ffil=: _fexc=: _frec _fadd _fbro _fhid _fnod _fext=() _stat _levl=999999999
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _fadd=1 ;;
-      -b)   _fbro="-n" ;;
+      -b)   _fbro=1 ;;
       -c)   _fexc="filter --" ;;
       -d)   shift; _fdir="$1" ;;
       -e)   shift; _fext+=("$1") ;;
       -f)   shift; _ffil="$1" ;;
       -h)   _fhid=1 ;;
       -l)   shift; _levl="$1" ;;
+      -n)   _fnod=1 ;;
       -r)   _frec=1 ;;
       -i)   _fexc="filter -i --" ;;
       *)    _cen_abort - "$1"
@@ -1948,11 +1959,17 @@ walk() {
         # loop over argument list
         for _item in "$@" ; do
             _item="${_item/\/\//\/}"
-            if [ -d "$_item" ] ; then           # folder
+            if [ -d "$_item" ] ; then                   # folder
+                [ -n "$_fnod" ] && [ -h "$_item" ] && continue
                 _dirs+=("$_item") ; continue
+            elif [ -e "$_item" ] ; then
+                _inam="${_item##*/}"
+            elif [ -h "$_item" ] ; then                 # broken symlink
+                [ -n "$_fbro" ] || continue
+                _inam="${_item##*/}"
+            else                                        # not existing
+                continue
             fi
-            [ $_fbro "$_item" ] || continue
-            _inam="${_item##*/}"
             if [ -n "$_fext" ] ; then           # extension filter
                 local _iext=0 _sext="${_inam##*.}"
                 while [ $_iext -lt "${#_fext[@]}" ] ; do

@@ -23,7 +23,7 @@ msgid "Trash method:"
 msgstr "Trash Methode:"
 
 #: /var/centauri/library/_centauri_bash_tra:156
-msgid "Cannot find usable a trash folder"
+msgid "Cannot find a usable trash folder"
 msgstr "Kann kein Müll-Verzeichnis finden"
 
 #: /var/centauri/library/_centauri_bash_tra:165

@@ -1,6 +1,18 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
+#: /var/centauri/library/_centauri_bash_doc:416
+msgid "cache filling:"
+msgstr "Cache füllen:"
+
+#: /var/centauri/library/_centauri_bash_doc:418
+msgid "cache playback:"
+msgstr "Cache abspielen:"
+
+#: /var/centauri/library/_centauri_bash_doc:431
+msgid "processing:"
+msgstr "Verarbeiten:"
+
 #: /var/centauri/library/_centauri_bash_doc:540
 msgid "Marker comment before version: %s[%s]:\\n%s"
 msgstr "Marker-Kommentar vor Version: %s[%s]:\\n%s"

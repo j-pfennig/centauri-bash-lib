@@ -29,31 +29,24 @@
 #           _cen_ins_tools      § get list of (centauri)tools
 #           _cen_ins_version    § get OS and KDE versions
 #
-# Copyright Dr. J. Pfennig (c) 2019-2022
+# Copyright Dr. J. Pfennig (c) 2019-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_ins"]="0.03:1"
-
-CEN_INS_SYSTEMD=            # flags that systemd is in use
-CEN_INS_SYSVOK=             # flags that sysv is supported
-
-CEN_INS_ETCPATH="${CEN_PATHS[2]}"
-CEN_INS_SOURCES="$CEN_ROOT/systemd"         # systemd service folder (only if installed)
-CEN_INS_SYSVINI="$CEN_INS_ETCPATH/init.d"   # SysV service folder
-
-if [ -d "$CEN_INS_SOURCES" ] ; then         # using systemd ...
-    CEN_INS_SYSDLST=("$CEN_INS_ETCPATH/systemd" "$CEN_PATHS/run/systemd"
-                     "$CEN_PATHS/lib/systemd" "$CEN_PATHS/usr/lib/systemd")
-    CEN_INS_SYSDDIR="$CEN_INS_SYSDLST/system"
-else
-    CEN_INS_SYSDLST=
-    CEN_INS_SYSDDIR=
-fi
-
-# TODO: systemd folder and repo install
-# TODO: systemd .wants folders not empty for delete
+# do not demand an api-version, we get loaded by centauriconfig
+CEN_MODULES["_centauri_bash_ins"]="0.10:2"
 
 embed -c '_centauri_bash_ext'               # dependency
+
+CEN_INS_SYSTEMD=                            # flags that systemd is supported
+CEN_INS_SYSVOK=                             # flags that sysv is supported
+CEN_INS_ETCPATH="${CEN_PATHS[2]}"           # path to /etc
+
+# systemd variables are initialized by _cen_ins_chksystemd
+
+CEN_INS_SOURCES="$CEN_ROOT/systemd"         # systemd service folder (only if installed)
+CEN_INS_SYSVINI="$CEN_INS_ETCPATH/init.d"   # SysV service folder
+CEN_INS_SYSDLST=                            # list of systemd service folders
+CEN_INS_SYSDDIR=                            # custom systemd folder
 
 # ------------------------------------------------------------------------------
 # Check if SysV or systemd services are supported: [-s] [-f|-q]
@@ -104,7 +97,15 @@ _cen_ins_canrun() {
 }
 
 # ------------------------------------------------------------------------------
-# check if systemd is used by this system
+# check if systemd is used by this system, setup variables
+#
+# - if systemd is not installed this routine does nothing
+#
+# - if the library is installed without CEN_INS_SOURCES systemd
+#   is not supported by the installer
+#
+# - CEN_INS_SYSDDIR and CEN_INS_SYSDLST are only set if systemd is installed
+#   and supported.
 # ------------------------------------------------------------------------------
 _cen_ins_chksystemd() {
     local _sysf=1 _sysi _sysd="${CEN_PATHS[2]}/systemd"
@@ -123,16 +124,34 @@ _cen_ins_chksystemd() {
         fi
     fi
 
+    # have no systemd, return to caller
     if [ "$_sysf" = 1 ] ; then                          # no systemd ...
         $CEN_TRACE $"Using 'SysV' init"
-        remove -q -- "$CEN_ROOT/systemd"                # file or empty dir only
-        rename -b "disabled" -- "$CEN_ROOT/systemd"     # try to rename non-empty
-    elif [ -d "$CEN_ROOT/systemd.disabled" ] ; then
-        rename -o -- "$CEN_ROOT/systemd.disabled" "$CEN_ROOT/systemd"
-    elif [ -d "$CEN_TOOLS/systemd" ] ; then
-        symlink -m -r -- "$CEN_TOOLS/systemd" "$CEN_ROOT/systemd"
-    else
-        folder -m "$CEN_ROOT/systemd"
+        return 0
+    fi
+
+    # initialize systemd symlink and variables
+
+    if [ ! -d "$CEN_INS_SOURCES" ] ; then
+        remove "$CEN_INS_SOURCES"                       # stale symlink
+        if [ -d "$CEN_ROOT/admin/tools/systemd" -a ! -h "$CEN_ROOT/admin/tools/systemd" ] ; then
+            warning "systemd files should be at:" "$CEN_ROOT/admin/systemd"
+            symlink "$CEN_ROOT/admin/tools/systemd" "$CEN_INS_SOURCES"
+        elif [ -d "$CEN_ROOT/admin/systemd" ] ; then
+            local _conf
+            resolve -e -l -s _conf "$CEN_ROOT/admin"
+            $CEN_TRACE -a -- $"systemd files are at:" "$_conf/systemd"
+            symlink -i -n "$_conf/systemd" "$CEN_INS_SOURCES"
+        else
+            $CEN_TRACE -a -- "no systemd files in configuration"
+        fi
+    fi
+
+    if [ -d "$CEN_INS_SOURCES" ] ; then                 # supporting systemd ...
+        $CEN_TRACE -a -- $"Library installed with systemd support"
+        CEN_INS_SYSDLST=("$CEN_INS_ETCPATH/systemd" "$CEN_PATHS/run/systemd"
+                        "$CEN_PATHS/lib/systemd" "$CEN_PATHS/usr/lib/systemd")
+        CEN_INS_SYSDDIR="$CEN_INS_SYSDLST/system"
     fi
     return 0
 }
@@ -389,15 +408,22 @@ _cen_ins_saferm() {
 # If -i or -s are given, the SysV or systemd mode is set without any heuristics:
 #   No -s option: must be .desktop or have $CEN_TOOLS/.desktop for systemd
 #   No -i option: for a SysV install an lsb-header must be present.
+#
+# Conditions prefixes:
+#       <none>      always install and enable or uninstall
+#       +           skip install if enabled, ignored without systemd
+#       ?           run this tool if it exists with argument 'install' or
+#                   'uninstall' and stop further processing. Recursion is
+#                   is prevented by checking the tool name.
 # ------------------------------------------------------------------------------
 _cen_ins_install() {
-    local _remove _iopt _sysv
+    local _remove _iopt _sysv _verb='install'
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -i|-s)
              _iopt="$1" ;;
-      -r)   _remove=1 ;;
+      -r)   _remove=1 ; _verb='uninstall' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -405,9 +431,7 @@ _cen_ins_install() {
 
     local farg  fsvc dest labl unit name actn
     for farg in "$@" ; do
-        dest= ; unit=
-
-# uninstall disable preset enable install
+        actn= ; dest= ; unit=
 
         # separate action prefix
         case "$farg" in
@@ -415,8 +439,24 @@ _cen_ins_install() {
         +*)     actn='+'  ; farg="${farg:1}" ;;
         --*)    actn='--' ; farg="${farg:2}" ;;
         -*)     actn='-'  ; farg="${farg:1}" ;;
+        \?*)    actn='?'  ; farg="${farg:1}" ;;
         esac
-[ -n "$actn" ] && warning "Action prefix not implemented"
+
+        # handle prefix
+        case "$actn" in
+        '')     ;;
+        +)      ;; # [ -z "$CEN_INS_SYSDDIR" ] && actn= ;;   # no systemd support
+        '?')    [ "$CEN_NAME"  = "${farg##*/}" ] && continue
+                [ "$CEN_EMBED" = "${farg##*/}" ] && continue
+                if system -c "$farg" ; then
+                    message -a $"Running installer:" "$farg" "$_verb"
+                    embed -z -v -- "$farg" "$_verb"
+                    continue
+                else
+                    $CEN_TRACE $"Installer not found:" "$farg"
+                fi ;;
+        *)      warning $"Action prefix not implemented:" "$actn$farg"
+        esac
 
         # can be a service file, a service name or a script path
         case "$farg" in
@@ -476,8 +516,11 @@ _cen_ins_install() {
         if [ "$dest" == "$CEN_INS_SYSVINI" ] ; then
             labl="(SysV)"
         else
-            labl="(systemd)"
             [ -z "$unit" ] && name+=".service"
+            if [ "$actn" = '+' -a -z "$_remove" ] ; then
+                system -r -q -- systemctl --quiet is-enabled "$name" && continue
+            fi
+            labl="(systemd)"
         fi
         local fdes="$dest/$name"                # full path of unit file or SysV
 
@@ -521,8 +564,9 @@ _cen_ins_install() {
      #   [ -n "$dest" ] && symlink -- "$fsvc" "$fdes"
             :
         fi
-
         if _cen_ins_canrun -s -q ; then
+            # remove old links to make systemd happy
+            remove "$CEN_INS_ETCPATH/systemd/system/$name"
             system -e -p -- systemctl --quiet enable "$fdes"
         else
             system -e -p -- insserv -f "$fdes"
@@ -731,9 +775,8 @@ _cen_ins_systemd() {
     # make links for systemd: user|system
     ___cen_libr_systemd() {
         local farg forg fdir fena fchg rpre
-        local orig="$CEN_TOOLS/systemd/$1"
+        local orig="$CEN_ROOT/systemd/$1"
         local dest="$CEN_INS_SYSDLST"           # /etc/systemd
-#        local -A updt
 
         [ -d "$orig" ] || return 1              # no input folder
         [ -d "$dest/$1" ] || return 1           # no systemd folder
@@ -786,7 +829,6 @@ _cen_ins_systemd() {
             $CEN_TRACE -a $"Create systemd link"": $dest/$farg"
             symlink -s -- "$forg" "$dest/$farg" ; fchg=1
             [ -n "$fena" ] || continue
-#            updt["${farg##*/}"]="${forg}" ; fchg=1
         done
 
         # remove preset folder
@@ -796,10 +838,10 @@ _cen_ins_systemd() {
         for farg in "$orig"/*.wants ; do
             [ -e "$farg" ] || continue
             forg="$farg" ; farg="$1/${farg##*/}"
-            trace -c "Processing" "$farg  =>  $fdir"
 
             # create wants folder/file
             fdir="$dest/${farg%.*}.wants"
+            trace -c "Processing" "$farg  =>  $fdir"
             if [ -z "$_remove" ] ; then
                 create -d -- "$fdir" 755 || return
             fi
@@ -819,7 +861,7 @@ _cen_ins_systemd() {
                         remove -- "$fdir/$snam"
                     fi ;;
                 esac
-            done <"$CEN_TOOLS/systemd/$farg"
+            done < "$CEN_ROOT/systemd/$farg"
 
             [ -n "$_remove" ] && remove -q -- "$fdir"   # remove empty .want folder
         done
@@ -830,15 +872,6 @@ _cen_ins_systemd() {
 
         #$CEN_TRACE -a "Update systemd ($1 mode, ${#updt[@]} units)"
         return 0
-     #   system -e -p systemctl "daemon-reload"
-
-     #   for forg in "${updt[@]}" ; do
-     #       farg="${forg##*/}"
-     #       # preset removes .wants entries AND the service symlink
-     #       system -e -p systemctl "preset" "$farg"
-     #       # restore symlink, only .wants entries should get removed
-     #       symlink -- "$forg" "$CEN_INS_SYSDDIR/$farg"
-     #   done
     }
 
     ___cen_libr_systemd 'system'
@@ -898,7 +931,7 @@ _cen_ins_library() {
             if [ -n "$_remove" ] ; then
                 [ "$farg" -ef "$fdes" ] && remove -- "$fdes"
             else
-                symlink -i -n -m -- "$farg" "$fdes"
+                symlink -i -n -m -s -- "$farg" "$fdes"
             fi
         done
 
@@ -941,7 +974,7 @@ _cen_ins_library() {
 
     if [ -n "$_remove" ] ; then
         [ -d "$CEN_TOOLS" ] || return 1
-        confirm -a -y $"Do do really want to uninstall 'centauritools'" || return 128
+        confirm -a -n $"Do do really want to uninstall 'centauritools'" || return 128
     elif [ "$_update" = "-s" ] ; then
         $CEN_TRACE -a $"Update 'centauritools' services"
         _cen_ins_systemd ; return
@@ -976,7 +1009,7 @@ _cen_ins_library() {
     ___cen_libr_desktop
 
     if [ "$EUID" = 0 ] ; then
-        if [ "${#CEN_SYS_SERVICE[@]}" ] || [ -d "$CEN_TOOLS/systemd" ] ; then
+        if [ "${#CEN_SYS_SERVICE[@]}" ] || [ -d "$CEN_ROOT/systemd" ] ; then
             if [ -n "$_updsrv" ] ; then
                 _cen_ins_systemd -n
             elif [ -z "$_update" ] ; then           # full setup only ...
@@ -1058,10 +1091,10 @@ _cen_ins_paths() {
     else
         create -d -- "$CEN_ROOT" 775 "$_sgrp" || return 1
         if [ "$EUID" = 0 ] ; then
-            create -d "$_drun/centauri"   775 "$_sgrp" &&
-                symlink "$_drun/centauri" "$CEN_ROOT/transient"
-            create -d "${CEN_PATHS[3]}/lib/centauri" 775 "$_sgrp" &&
-                symlink "${CEN_PATHS[3]}/lib/centauri" "$CEN_ROOT/persistent"
+            create -d -- "$_drun/centauri"   775 "$_sgrp" &&
+                symlink -- "$_drun/centauri" "$CEN_ROOT/transient"
+            create -d -- "${CEN_PATHS[3]}/lib/centauri" 775 "$_sgrp" &&
+                symlink -r -- "${CEN_PATHS[3]}/lib/centauri" "$CEN_ROOT/persistent"
         fi
     fi
 
@@ -1084,7 +1117,7 @@ _cen_ins_paths() {
     elif [ -d "$CEN_ROOT/default" ] ; then
         $CEN_TRACE2 -a -c " keep" -- "$CEN_ROOT/default"
     elif [ "$EUID" = 0 -a -e "$CEN_INS_ETCPATH/default" ] ; then
-        symlink -- "$CEN_INS_ETCPATH/default" "$CEN_ROOT/default"
+        symlink -r -- "$CEN_INS_ETCPATH/default" "$CEN_ROOT/default"
     else
         create -d -- "$CEN_ROOT/default" 775 "$_sgrp"
     fi
@@ -1141,7 +1174,7 @@ fi
 export CEN_LIBRARY="\$CEN_ROOT/library"
 
 # paths that can be installation dependent
-CEN_PATHS=('$CEN_PATHS' '${CEN_PATHS[1]}' '${CEN_PATHS[2]}' '${CEN_PATHS[3]}' '${CEN_PATHS[4]}')
+CEN_PATHS=('$CEN_PATHS'      '${CEN_PATHS[1]}' '${CEN_PATHS[2]}' '${CEN_PATHS[3]}' '${CEN_PATHS[4]}' '${CEN_PATHS[5]}')
 $_rexp$_prox
 
 # sanitize environment (bash needs TMPDIR)
@@ -1215,7 +1248,7 @@ _cen_ins_rootdefs() {
         _fldr="${_fldr%/*}"                     # base folder
         [ -w "$_fldr" ] && continue
         [ "$EUID" = 0 ] && fatal $"Folder not writable:" "$_fldr"
-        warning -m $"Install/uninstall without root rights" "\n" \
+        warning -n $"Install/uninstall without root rights" '\n' \
                    $"Folder not writable:" "$_fldr"
     done
     return 0
@@ -1284,7 +1317,7 @@ _cen_ins_version() {
     # get kde/plasma versions: <tool> (using _aver)
     ___cen_vers_try() {
         local _aver _alin
-        sysrun -a _aver -n -q -- "$1" --version || return 1
+        sysrun -a _aver  -q -- "$1" --version || return 1
         for _alin in "${_aver[@]}" ; do
             case "$_alin" in
                 plasmash*)  ___cen_vers_set CEN_SYS_PLASMA  "${_alin##* }" ;;
@@ -1386,6 +1419,7 @@ _cen_ins_version() {
             "debian 10")  CEN_SYS_NICKNAME="buster"     ;;
             "debian 11")  CEN_SYS_NICKNAME="bullseye"   ;;
             "debian 12")  CEN_SYS_NICKNAME="bookworm"   ;;
+            "debian 13")  CEN_SYS_NICKNAME="trixy"      ;;
             "debian "[a-z]*)
                           CEN_SYS_NICKNAME="${_vers%%/*}"
                           ___cen_vers_deb CEN_SYS_VERSION "$CEN_SYS_NICKNAME" ;;
@@ -1399,12 +1433,13 @@ _cen_ins_version() {
             CEN_SYS_KDEVERS='-' ; CEN_SYS_PLASMA= ; CEN_SYS_QTVERS=
             return
         fi
-        # only try kde checks for wayland of local X11 display
+        # only try kde checks for wayland or local X11 display
         [ "${CEN_SYS_KDEVERS:-000.000.000}" = '000.000.000' ] && CEN_SYS_KDEVERS='000.000.000'
+        [ -n "$SUDO_USER" ] && return
         [ "$CEN_DISPLAY" != 'wayland' -a "${DISPLAY/:[0-9]/-}" != '-' ] && return
         CEN_SYS_KDEVERS= ; CEN_SYS_PLASMA= ; CEN_SYS_QTVERS=
 
-        # since kde5
+        # since kde5 (plasmashell crashes for missing display and sudo)
         ___cen_vers_try "plasmashell"
 
         # Qt: 4.8.6
@@ -1599,7 +1634,7 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #           be provided. See [[systemd Config]] for details:
 #
 #.          # the custom unit file for service hellosvc2 ($CEN_TOOLS/hellosvc) is
-#.          # $CEN_TOOLS/systemd/system/hellosvc2.service
+#.          # $CEN_ROOT/systemd/system/hellosvc2.service
 #.
 #.          > hellosvc2 setup install
 #.
@@ -1615,8 +1650,8 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #           possible to have private versions of systemd units, preferably
 #           overrides should be used.
 #
-#+Data:     Configuration data is kept in **$CEN_TOOLS/systemd/user** for user
-#           mode services and in **$CEN_TOOLS/systemd/system** for system mode
+#+Data:     Configuration data is kept in **$CEN_ROOT/systemd/user** for user
+#           mode services and in **$CEN_ROOT/systemd/system** for system mode
 #           services. The data in these folders might be:
 #
 #           (1) Some **.service** units. Such units are linked into the **/etc/systemd**
@@ -1783,6 +1818,7 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #,          [2] system configuration (usually **/etc**)
 #,          [3] system var folder    (usually **/var**)
 #,          [4] temporary files      (usually **/tmp**)
+#,          [5] library folder       (usually **/usr/lib**)
 #
 #+          At [[_centauri_bash_lib]] load time, it checks "${CEN_PATHS[1]/bash}".
 #           If this is not executable (e.g. not FSH compliant) the "$BASH" variable
@@ -1819,6 +1855,7 @@ CEN_SYS_QTVERS="$CEN_SYS_QTVERS"
 #.             ├── library     # static, _centauri_bash_lib code
 #.             ├── locale      # static, translations
 #.             ├── persistent  # dynamic, persistent cache
+#.             ├── systemd     # optional, systemd files
 #.             ├── tools       # static, user scripts ($CEN_TOOLS)
 #.             └── transient   # dynamic, volatile cache
 #

@@ -8,12 +8,9 @@ CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2023; BSD License"
 CEN_TITLE=$"Create a script, module or configuration from a template"
 
 # Import the bash library, set name and version
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -s -t -y "$0" "0.20:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -s -t -y - '0.20:2' 1 1 || exit 2
 
 # Data
-CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
-CEN_RUN_MAX_ARGS=1              # max arg count
-
 CEN_OPT_AUTHOR=                 # see --author
 CEN_OPT_CHECK=                  # see --check
 CEN_OPT_DESCR=                  # see --descr
@@ -238,7 +235,7 @@ run() {
         error -q
 
         local _ihan _mesg=$"<copy from input>"
-        message -a -m \
+        message -a -n \
             "┃" $"Selected template:" "$_tmpl" "\n" \
             "┃" $"Short description:" "${CEN_OPT_DESCR:-$_mesg}" "\n" \
             "┃" $"Author           :" "$DAT_AUTHOR" "\n" \

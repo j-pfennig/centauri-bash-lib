@@ -112,8 +112,10 @@ listsearch() {
 # optmake - Build options string or array
 #
 # Call:     optmake -s|-j|-a <dest> [-k|-n <name>] [-f|-v|-z] <valu>
+#           optmake -s|-j|-a <dest> -b <opti>
 #
 # Options:  -a  add result to <dest> array
+#           -b  copy a builitin option
 #           -f  option is a flag, no value
 #           -j  add result to <dest> variable
 #           -k  key name (not an option)
@@ -125,6 +127,7 @@ listsearch() {
 #
 #.Examples: optmake -a opts -v "$CEN_OPT_INPUT"                 # argument
 #.          optmake -a opts -- "-version"                       # constant
+#.          optmake -a opts -b pager                            # builtin
 #.          optmake -s opts -n host -m -v "$CEN_OPT_HOST"       # text value
 #.          optmake -j opts -n logical -f "$CEN_OPT_LOGICAL"    # flag
 #.          optmake -a opts -n number  -z "$CEN_OPT_NUMBER"     # num. value
@@ -132,6 +135,7 @@ listsearch() {
 #
 #.          optmake -j args        -v "$addr"       # add a value
 #.          optmake -j args -k mtu -v "$vmtu"       # add key/value
+#.          optmake -j args -b verb                 # add builtin --verbose
 #
 #+If the option <name> starts with '-' or '--' the generated code for
 # string output (option -j or -s) is:
@@ -143,13 +147,19 @@ listsearch() {
 #+When used with -a option optmake never generates a '=' separator but
 # puts the <valu> into an extra array element. For string output only
 # simple quoting is used, e.g. '''"''' in <valu> are changed to '''\"'''.
+#
+#+For builitin options (-b) the following <opti> values are recognized:
+#
+#,      dryrun|force|silent|trace|quiet|zombie
+#,      gui|pager|verb*|yesno
 # ------------------------------------------------------------------------------
 optmake() {
-    local _vset _name _vflg _asep _fmin _valu
+    local _vset _name _vflg _asep _blti _fmin _valu
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vset="a" ; local -n _vvaa="$1" ;;
+      -b)   shift ; _blti="$1" ;;
       -f)   shift ; _valu="$1" ; _vflg=0 ;;
       -m)   shift ; _fmns=1 ;;
       -j)   shift ; _vset="j" ; local -n _vvaa="$1" ;;
@@ -165,11 +175,28 @@ optmake() {
     if [ -z "$_vflg" ] ; then                   # no -f|-v|-z option
         _valu="$1" ; _vflg=0
     fi
-    case "$_valu" in
-        "") return ;;
-        -)  [ -z "$_fmns" ] && return ;;
-        0)  [ "$_vflg" = 2 ] && return ;;
-    esac
+    if [ -n "$_blti" ] ; then                   # builtin options
+        [ -n "$_name" ] && _cen_abort - '-b|-n|-k'
+        _name="$_blti" ; _vflg=0
+        eval _valu="\$CEN_OPT_${_name^^}"
+        case "$_blti" in
+        dryrun|force|silent|trace|quiet|zombie)
+                    [ -z "$_valu" ] && return ;;
+        gui)        [ "$_valu" = 2 ] && return
+                    _vflg=1 ;;
+        pager)      _vflg=1 ;;
+        verb*)      [ "$CEN_VERB" -le 1 ] && return ;;
+        yesno)      [ -z "$CEN_YESNO" ] && return
+                    [ "$CEN_YESNO" = 'y' ] && _name='yes' || _name='no' ;;
+        *)          _cen_abort $"unknown option:" "$_blti"
+        esac
+    else
+        case "$_valu" in
+            "") return ;;
+            -)  [ -z "$_fmns" ] && return ;;
+            0)  [ "$_vflg" = 2 ] && return ;;
+        esac
+    fi
 
     case "$_name" in
     "")         ;;
@@ -555,8 +582,8 @@ _cen_scal_wait() {
 # ------------------------------------------------------------------------------
 # timer - sleep, return elapsed time, run poll loop
 #
-# Call:     (1) timer -a                         # implies -t -p -
-#               timer [-a] -t|-m                 # implies -p -
+# Call:     (1) timer [-a] -m                    # show elapsed time via message
+#               timer [-a] -t                    # show elapsed time via trace
 #               timer [-a] -t|-m -p <pfmt>       # explicit printf format
 #               timer <opts> [--] <text>...      # append text to output
 #           (2) timer -s <vnam>                  # save current epoch time
@@ -602,7 +629,7 @@ _cen_scal_wait() {
 #+Polling:  With option -l the callback function is called in a loop until it
 #           returns 0 (ready, exit code 0), or a <stat> > 1 (stop, exit code <stat>).
 #           A return code of 1 continues polling. When <wait> has expired <func>
-#           is called for a last time with option -l, and the return values becomes
+#           is called for a last time with option -e, and the return values becomes
 #           the timer exit code.
 #
 #+          The two non-option arguments of <func> are elapsed time and total wait
@@ -619,10 +646,10 @@ _cen_scal_wait() {
 #.          local curr; timer -s curr
 #.          do_something one  ; timer -a -p "%s [ms]: do_something" -t -i - -- one
 #.          do_something two  ; timer -a -p "%s [ms]: do_something" -t -i - -- two
-#.          timer -i "$curr" ; time -p "Total elapsed time: %s [ms]"
+#.          timer -i "$curr" ; timer -p "Total elapsed time: %s [ms]"
 #
 #.          # run a poll loop
-#.          poll_func() {  [ "$1" = '-l' ] || return 0 ; [ -e "flagfile" ] }
+#.          poll_func() {  [ "$1" = '-l' ] || return 0 ; [ -e "flagfile" ] ; }
 #.          timer -w 10 -l 200 -c poll_func -h || quit "Timeout"
 #.          timer -s mesg -p "% [ms]"
 #.          message "Ready after" "$mesg" " wait time."
@@ -747,6 +774,10 @@ timer() {
 #           -t  don't trim leading
 #           -s  use <name> to save result (default is CEN_TRIMJOIN)
 #           -w  simplify whitespace (<TAB>, <CR> and <LF> are whitspace)
+#
+# Arguments:<maxl>  max. columns or '+' for max. width or '-' for indentation
+#           <name>  variable name
+#           <text>  text to process
 #
 #.Examples: trimjoin -- "  hi  "                    # trim into CEN_TRIMJOIN
 #.          trimjoin -a -- "there"                  # append

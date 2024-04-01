@@ -22,20 +22,24 @@
 # to the documentation format of [[_centauri_bash_doc]] in order to pretty-print
 # the help text.
 #
-# Copyright Dr. J. Pfennig (c) 2016-2022
+# Copyright Dr. J. Pfennig (c) 2016-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_use"]="0.21:1"
+CEN_MODULES["_centauri_bash_use"]="0.24:2"
 
 CEN_USE_USAGE=          # flag that _cen_usage was called
 
 CEN_USE_ADDOPTS=        # see _cen_use_option
 CEN_USE_ADDVERB=        # used by svc and bat extension
 
-CEN_USE_HEADER=         # generated usage header
+# CEN_USE_HEADER=       # generated usage header (can be preset)
+
 CEN_USE_OPTIONS=        #  ... options text
 CEN_USE_ACTIONS=        #  ... actions text
+CEN_USE_PARAMS=         #  ... arguments text
+CEN_USE_EXAMPLE=        #  ... examples text
 CEN_USE_OTHER=          #  ... other text
+CEN_CONS_UTF8=          # utf-8 flag, see _cen_use_writeln
 
 declare -g -A CEN_USE_OMAP  # maps option letters to description text
 
@@ -333,9 +337,9 @@ _cen_completion() {
         for ckey in "${carr[@]}" ; do
             case "${cflg:--f}" in
             -e)     ;;                      # ignore optarg -e
-            -f)     printf '%s\n' "$3${ckey//\"/}" ;;
+            -f)     _cen_use_writeln "$3${ckey//\"/}" ;;
             -m)     ;;                      # ignore optarg -m
-            *)      printf '%s\n' "$3${ckey//\"/}="
+            *)      _cen_use_writeln "$3${ckey//\"/}="
             esac
         done
         carr=()
@@ -343,7 +347,7 @@ _cen_completion() {
 
     # extra actions or options
     if [ "$1" = "actions" ] ; then
-        [ -n "$CEN_USE_ADDVERB" ] && printf '%s\n' "$CEN_USE_ADDVERB"
+        [ -n "$CEN_USE_ADDVERB" ] && _cen_use_writeln "$CEN_USE_ADDVERB"
     elif [ "$1" = "options" ] ; then
         [ -n "$CEN_FEATURE_D" ] && echo "--dryrun"
         [ -n "$CEN_FEATURE_F" ] && echo "--force"
@@ -352,7 +356,7 @@ _cen_completion() {
         [ -n "$CEN_FEATURE_S" ] && echo "--silent"
         [ -n "$CEN_FEATURE_Y" ] && echo "--yes --no"
         embed -r -c '_centauri_bash_pip' && echo "--pager="
-        [ -n "$CEN_USE_ADDOPTS" ] && printf '%s\n' "$CEN_USE_ADDOPTS"
+        [ -n "$CEN_USE_ADDOPTS" ] && _cen_use_writeln "$CEN_USE_ADDOPTS"
     fi
     return 0
 }
@@ -384,13 +388,18 @@ _cen_usage() {
         system -q -r -s _mesg -- gettext -d "$CEN_NAME" "$CEN_TITLE" && CEN_TITLE="$_mesg"
     fi
 
-    CEN_USE_HEADER="[<action> <argument>... [--]]..."
-    if [ -n "$CEN_FEATURE_R" ] ; then
-        CEN_USE_HEADER="<argument>"
-        [ "$CEN_RUN_MAX_ARGS" = 1 ] || CEN_USE_HEADER+="..."
-        [ "$CEN_RUN_MAX_ARGS" = 0 ] && CEN_USE_HEADER=
+    if [ -z "$CEN_USE_HEADER" ] ; then
+        CEN_USE_HEADER="[<action> <argument>... [--]]..."
+        if [ -n "$CEN_FEATURE_R" ] ; then
+            CEN_USE_HEADER="<argument>"
+            [ "$CEN_RUN_MAX_ARGS" = 1 ] || CEN_USE_HEADER+="..."
+            [ "$CEN_RUN_MAX_ARGS" = 0 ] && CEN_USE_HEADER=
+        fi
+        CEN_USE_HEADER=$"usage:"" $CEN_NAME <option>... $CEN_USE_HEADER"$'\n'
+    else
+        CEN_USE_HEADER+=$'\n'
     fi
-    CEN_USE_HEADER=$"usage:"" $CEN_NAME <option>... $CEN_USE_HEADER"$'\n'$'\n'"       $CEN_TITLE."
+    [ "$CEN_TITLE" ] && CEN_USE_HEADER+=$'\n'"       $CEN_TITLE."
 
     local orun omsg ogrp olin=$'\n'
     CEN_USE_OMAP["d"]="-d --dryrun          "$"show what would be done, make no changes"
@@ -414,9 +423,8 @@ _cen_usage() {
         CEN_USE_OMAP["z5"]="   --wait            "$"prompt before exit"
     fi
 
-    if [ "$CEN_VERB" -gt 1 -o -n "$CEN_OPT_PAGER" ] && embed -r -c '_centauri_bash_pip' ; then
+    [ "$CEN_VERB" -gt 1 -o -n "$CEN_OPT_PAGER" ] && embed -r -q '_centauri_bash_pip' &&
         CEN_USE_OMAP["z3"]="   --pager   <prog>  "$"pipe output thru pager, use 'none' to disable"
-    fi
 
     # override option text: <text> <short> [<short>]
     _cen_use_check() {
@@ -461,7 +469,7 @@ _cen_usage() {
         usage ; usageset -x
     }
 
-    if [ -z "$CEN_OPT_PAGER" ] ; then
+    if [ "${CEN_OPT_PAGER:--}" = '-' -o "$CEN_OPT_PAGER" = 'yes' ] ; then
         # when no pager is set use centaurihelp for formatting. centaurihelp itself
         # will run less as pager: usage -> centaurihelp -> less
         # use full path because CEN_TOOLS is required by syspager (see CEN_PACKAGE)
@@ -522,7 +530,10 @@ usagecat() {
         else
             [ -z "$_flit" ] && _verb="${_verb//[°§]/ }"
             _verb="${_verb/--/\"$CEN_NAME --help --verbose\"}"
-            [ "$_verb" = '-' ] || printf "${_verb//%/%%}\n"
+            if [ "$_verb" != '-' ] ; then
+                _cen_use_writeln "$_verb"
+                while [ "$#" -gt 0 ] ; do _cen_use_writeln "$1" ; shift ; done
+            fi
             return 1
         fi
     fi
@@ -531,22 +542,30 @@ usagecat() {
     while IFS= read -r _text ; do
         # replace [°§] space aliases unless output is for centaurihelp
         [ -z "$_flit" ] && _text="${_text//[°§]/ }"
-        printf "${_text//%/%%}\n"
+        _cen_use_writeln "$_text"
         _last="$_text"
     done
     [ -n "${_last// /}" ] && echo                       # append empty line
     return 0
 }
 
+_cen_use_writeln() {
+   local _text="$*"
+    [ -z "$CEN_USE_UTF8" ] && _text="${_text//•/\~}"
+   printf '%s\n' "$_text"
+}
+
 # ------------------------------------------------------------------------------
 # usageset - generate usage() output text programmatically
 #
-# Call:     usageset [-a|-h|-l|-o|-s|-t|-u <text>|-]... [-x]
+# Call:     usageset [-a|-e|-h|-l|-o|-p|-s|-t|-u <text>|- [<text>]]... [-x]
 #
 # Options:  -a  add an action   (adds to CEN_USE_ACTIONS)
+#           -e  add an example  (adds to CEN_USE_EXAMPLE)
 #           -h  add header text (adds to CEN_USE_HEADER)
 #           -l  add a label     (adds to CEN_USE_OTHER)
 #           -o  add an option   (adds to CEN_USE_OPTIONS)
+#           -p  add an argument (adds to CEN_USE_PARAMS)
 #           -s  add svc action  (adds to CEN_USE_ACTIONS)
 #           -t  add a text line (adds to CEN_USE_OTHER)
 #           -u  add usage line  (adds to CEN_USE_HEADER)
@@ -568,92 +587,126 @@ CEN_USE_OWNSVC=
 usageset() {
     [ -z "$CEN_USE_USAGE" ] && _cen_usage 1 # implicit initialization
 
-    local _sepa=$'\n' _mesg _temp
-    while [ "${1::1}" = "-" ] ; do
-        case "$1" in
-        --)   shift ; break ;;
+    local _sepa=$'\n' _mesg _copt _txt1 _txt2 _wide
+    while [ $# -gt 0 ] ; do
+        _copt="$1" ; shift ; _txt2=
+        _txt1="$1" ; shift ; [ "$_txt1" = '-' ] && _txt1=
+        while [ $# -gt 0 ] ; do
+            case "$1" in
+            -[a-z]) break;;
+            -)      _txt2=' ' ;;
+            *)      _txt2+=" $1"
+            esac ; shift
+        done
+
+        case "$_copt" in
+        '')     break ;;
 
         -a)   if [ -z "$CEN_USE_ACTIONS" ] ; then
-                    CEN_USE_ACTIONS="actions:"
+                    CEN_USE_ACTIONS=$"actions:"
                     isfunction -c _cen_svc_usage
               fi
               [ "$CEN_USE_OWNSVC" = 2 ] &&
                    CEN_USE_ACTIONS+="$_sepa       "$"••• other actions •••"
+              CEN_USE_ACTIONS+="$_sepa"
+              [ -n "$_txt2" ] && printf -v _txt1 "%-19s %s" "$_txt1" "$_txt2"
+              [ -n "$_txt1" ] && CEN_USE_ACTIONS+="       $_txt1"
               CEN_USE_OWNSVC=1
-              CEN_USE_ACTIONS+="$_sepa       $2"
-              CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
-        -h)   CEN_USE_HEADER+="$_sepa       $2"
-              CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
+        -e)   if [ -z "$CEN_USE_EXAMPLE" ] ; then
+                    _wide=50 ; CEN_USE_EXAMPLE=$"examples:"
+              fi
+              if [ "$_txt1" = '§' ] ; then
+                  _wide="$_txt2" ; continue
+              fi
+              CEN_USE_EXAMPLE+="$_sepa"
+              [ "${_txt1::1}" = '.' ] && _txt1="$CEN_NAME${_txt1:1}"
+              [ -n "$_txt2" ] && printf -v _txt1 "%-${_wide}s %s" "$_txt1" "$_txt2"
+              [ -n "$_txt1" ] && CEN_USE_EXAMPLE+="       $_txt1"
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
+
+        -h)   CEN_USE_HEADER+="$_sepa       $_txt1$_txt2"
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
         -l)   [ -n "$CEN_USE_OWNLBL" ] && CEN_USE_OTHER+="$_sepa"
-              if [ "$2" = "-" ] ; then          # reset
+              if [ -z "$_txt1$_txt2" ] ; then       # reset
                   CEN_USE_OWNLBL=1
-              elif [ -z "$2" ] ; then           # no label
+              elif [ -z "$_txt1" ] ; then           # no label
                   [ "${CEN_USE_OWNLBL:-0}" -gt 1 ] && CEN_USE_OTHER+="$_sepa"
-                  CEN_USE_OTHER+="       "
+                  CEN_USE_OTHER+='       '
                   CEN_USE_OWNLBL=3
-              elif [ "${#2}" -ge 6 ] ; then     # long label
+              elif [ "${#_txt1}" -ge 6 ] ; then     # long label
                   [ "${CEN_USE_OWNLBL:-0}" -gt 1 ] && CEN_USE_OTHER+="$_sepa"
-                  CEN_USE_OTHER+="$2:"
+                  CEN_USE_OTHER+="$_txt1:"
                   CEN_USE_OWNLBL=2
-              else                              # short label
+              else                                  # short label
                   [ "${CEN_USE_OWNLBL:-0}" -gt 1 ] && CEN_USE_OTHER+="$_sepa"
-                  _mesg="$2:      "
+                  _mesg="$_txt1:      "
                   CEN_USE_OTHER+="${_mesg::7}"
                   CEN_USE_OWNLBL=3
               fi
-              CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
-        -o)   if [ "${2:--}" = '-' ] ; then
-                  CEN_USE_OPTIONS+="$_sepa"
-              else
-                  CEN_USE_OPTIONS+="$_sepa       $2"
-              fi
-              CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
+        -o)   CEN_USE_OPTIONS+="$_sepa"
+              [ -n "$_txt2" ] && printf -v _txt1 "%-19s %s" "$_txt1" "$_txt2"
+              [ -n "$_txt1" ] && CEN_USE_OPTIONS+="       $_txt1"
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
-        -s)   [ -z "$CEN_USE_ACTIONS" ] && CEN_USE_ACTIONS="actions:"
+        -p)   [ -z "$CEN_USE_PARAMS" ] && CEN_USE_PARAMS=$"arguments:"
+              CEN_USE_PARAMS+="$_sepa"
+              [ -n "$_txt2" ] && printf -v _txt1 "%-11s §%s" "$_txt1" "$_txt2"
+              [ -n "$_txt1" ] && CEN_USE_PARAMS+="       $_txt1"
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
+
+        -s)   [ -z "$CEN_USE_ACTIONS" ] && CEN_USE_ACTIONS=$"actions:"
               [ "$CEN_USE_OWNSVC" != 2 ] &&
                     CEN_USE_ACTIONS+="$_sepa       "$"••• service actions •••"
-              CEN_USE_OWNSVC=2
-              CEN_USE_ACTIONS+="$_sepa       $2" ; shift ;;
+              CEN_USE_ACTIONS+="$_sepa"
+              [ -n "$_txt2" ] && printf -v _txt1 "%-19s %s" "$_txt1" "$_txt2"
+              [ -n "$_txt1" ] && CEN_USE_ACTIONS+="       $_txt1"
+              CEN_USE_OWNSVC=2                      # used by option -x
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
-        -t)   [ "${2:--}" = '-' ] && _temp='' || _temp="$2"
+        -t)   [ -n "$_txt2" ] && printf -v _txt1 "%-11s §%s" "$_txt1" "$_txt2"
               case "$CEN_USE_OWNLBL" in
-              "") CEN_USE_OWNLBL=1              # add as is
-                  CEN_USE_OTHER+="$_temp" ;;
-              1)  CEN_USE_OTHER+="$_sepa$_temp" ;;  # add line
-              2)                                # add indented
-                  CEN_USE_OTHER+="$_sepa       $_temp" ;;
-              *)  CEN_USE_OWNLBL=2              # join
-                  CEN_USE_OTHER+="$_temp"
+              '') CEN_USE_OWNLBL=1                  # add as is
+                  CEN_USE_OTHER+="$_txt1" ;;
+              1)  CEN_USE_OTHER+="$_sepa$_txt1" ;;  # add line
+              2)                                    # add indented
+                  CEN_USE_OTHER+="$_sepa       $_txt1" ;;
+              *)  CEN_USE_OWNLBL=2                  # join
+                  CEN_USE_OTHER+="$_txt1"
               esac
-              CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
-        -u)   if [ "${2:--}" = '-' ] ; then
+        -u)   if [ -z "$_txt1$_txt2" ] ; then
                   CEN_USE_HEADER+="$_sepa"
               elif [ -z "$CEN_USE_OWNHDR" ] ; then
                   CEN_USE_OWNHDR=1
                   CEN_USE_HEADER=$"usage:"
                   [ "${#CEN_USE_HEADER}" -gt 6 ] && CEN_USE_HEADER+="$_sepa      "
-                  CEN_USE_HEADER+=" $2"
+                  CEN_USE_HEADER+=" $_txt1$_txt2"
               else
-                  CEN_USE_HEADER+="$_sepa       $2"
+                  CEN_USE_HEADER+="$_sepa       $_txt1$_txt2"
               fi
-              CEN_USE_OWNFLG=1 ; shift ;;       # used by option -x
+              CEN_USE_OWNFLG=1 ;;                   # used by option -x
 
         -x)   [ -n "$CEN_USE_OWNFLG" ] || return 0
               [ -z "$CEN_USE_ACTIONS" ] && isfunction -c _cen_svc_usage && true
               [ -n "$CEN_USE_OPTIONS" ] && CEN_USE_OPTIONS="$_sepa$CEN_USE_OPTIONS$_sepa"
               [ -n "$CEN_USE_ACTIONS" ] && CEN_USE_ACTIONS="$_sepa$CEN_USE_ACTIONS$_sepa"
+              [ -n "$CEN_USE_PARAMS"  ] && CEN_USE_PARAMS="$_sepa$CEN_USE_PARAMS$_sepa"
+              [ -n "$CEN_USE_EXAMPLE" ] && CEN_USE_EXAMPLE="$_sepa$CEN_USE_EXAMPLE$_sepa"
               [ -n "$CEN_USE_OTHER"   ] && CEN_USE_OTHER="$_sepa$CEN_USE_OTHER$_sepa"
               usagecat <<!EOF
 $CEN_USE_HEADER
-$CEN_USE_OPTIONS$CEN_USE_ACTIONS$CEN_USE_OTHER
+$CEN_USE_OPTIONS$CEN_USE_ACTIONS$CEN_USE_PARAMS$CEN_USE_EXAMPLE$CEN_USE_OTHER
 !EOF
               ;;
+
         *)    _cen_abort - "$1"
-        esac ; shift
+        esac
     done
     return 0
 }
@@ -714,6 +767,12 @@ usageopt() {
 # ------------------------------------------------------------------------------
 # module init
 # ------------------------------------------------------------------------------
+
+# check for utf-8 encoding
+case "${LANG,,}" in
+*.utf8)     CEN_USE_UTF8=1 ;;
+*.utf-8)    CEN_USE_UTF8=1 ;;
+esac
 
 [ "$1" = "-h" ] && _cen_usage 0
 [ "$1" = "-u" ] && _cen_usage 1

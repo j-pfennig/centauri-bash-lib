@@ -1,58 +1,62 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_utl:288
+#: /var/centauri/library/_centauri_bash_utl:191
+msgid "unknown option:"
+msgstr "Unbekannte Option:"
+
+#: /var/centauri/library/_centauri_bash_utl:315
 msgid "zero"
 msgstr "kein|keine"
 
-#: /var/centauri/library/_centauri_bash_utl:293
+#: /var/centauri/library/_centauri_bash_utl:320
 msgid "one"
 msgstr "ein|eine"
 
-#: /var/centauri/library/_centauri_bash_utl:300
+#: /var/centauri/library/_centauri_bash_utl:327
 msgid "s"
 msgstr "n"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "line"
 msgstr "Zeile|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "lines"
 msgstr "Zeilen|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "file"
 msgstr "Datei"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "files"
 msgstr "Dateien|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "folder"
 msgstr "Verzeichnis"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "folders"
 msgstr "Verzeichnisse|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "error"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_utl:305
+#: /var/centauri/library/_centauri_bash_utl:332
 msgid "errors"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_utl:417
+#: /var/centauri/library/_centauri_bash_utl:444
 msgid "No '@' in arguments array:"
 msgstr "Kein '@' im Argumentfeld:"
 
-#: /var/centauri/library/_centauri_bash_utl:439
+#: /var/centauri/library/_centauri_bash_utl:466
 msgid "invalid 'wait' result"
 msgstr "Ungültiges 'wait' Ergebnis"
 
-#: /var/centauri/library/_centauri_bash_utl:681
+#: /var/centauri/library/_centauri_bash_utl:708
 msgid "Elapsed time: %s [ms]"
 msgstr "Vergangene Zeit: %s [ms]"

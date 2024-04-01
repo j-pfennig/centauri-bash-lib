@@ -97,10 +97,10 @@
 #.              done < "$file"
 #.          }
 #
-# Copyright Dr. J. Pfennig (c) 2019-2022
+# Copyright Dr. J. Pfennig (c) 2019-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_doc"]="0.20:1"
+CEN_MODULES["_centauri_bash_doc"]="0.22:2"
 
 CEN_DOC_VERSION=1       # serialized data format
 CEN_DOC_FLIST=()        # file list, see _cen_doc_flist
@@ -413,9 +413,9 @@ documentation() {
     if [ "$_work" = ":" ] ; then
         _popt="-c" ; _vers=             # all header and versions
         CEN_DOC_CACHE=1
-        $_otra -a -c "documentation" "cache filling:" "$_file"
+        $_otra -a -c 'documentation' $"cache filling:" "$_file"
     elif [ -n "$CEN_DOC_CACHE" -a -n "$_popt" ] ; then
-        $_otra -a -c "documentation" "cache playback:" "$_file"
+        $_otra -a -c 'documentation' $"cache playback:" "$_file"
         _cen_doc_cplay "$_file" "$_popt" "$_work" ; return
     fi
 
@@ -428,7 +428,7 @@ documentation() {
     if [ ! -r "$_file" ] ; then
         error -z "Cannot read documentation file:" "$_file" ; return 1
     elif [ -z "$CEN_DOC_CACHE" ] ; then
-        $_otra -a -c "documentation" "processing:" "$_file"
+        $_otra -a -c 'documentation' $"processing:" "$_file"
     fi
 
     # --------------------------------------------------------------------------
@@ -537,7 +537,7 @@ documentation() {
             [ "$_popt" = "-m" ] &&
                 $_work "$_file" "$_lnum:V$_vers"    # signal module version
             [ -n "$_warn" ] &&
-                error -m -p $"Marker comment before version: %s[%s]:\n%s" "$_file" "$_lnum" "$_rlin"
+                error -n -p $"Marker comment before version: %s[%s]:\n%s" "$_file" "$_lnum" "$_rlin"
             return
         done
         _vers=-
@@ -767,11 +767,11 @@ _cen_doc_flist() {
                     _cen_doc_flist $_sopt -i "${_item%%:*}"
                 fi
                 ((CEN_DOC_QMATCH += 1))
-                $_otra -a -c "documentation" -p $"match '%s' in file '%s'" "$_skip" ${_item%%:*}
+                $_otra -a -c -p 'documentation' $"match '%s' in file '%s'" "$_skip" ${_item%%:*}
             done
         done
         [ "$CEN_DOC_QMATCH" = 0 ] && return 1
-        $_otra -a -c "documentation" -p $"got %s match(es)" "$CEN_DOC_QMATCH" ; return 0
+        $_otra -a -c -p 'documentation' $"got %s match(es)" "$CEN_DOC_QMATCH" ; return 0
 
     # cache test
     elif [ "$_copt" = "-t" ] ; then
@@ -796,7 +796,7 @@ _cen_doc_flist() {
     if [ "$_fopt" = "-x" ] ; then
         CEN_DOC_FLIST=() ; CEN_DOC_CLIST=() ; CEN_DOC_FILTER=()
         CEN_DOC_CACHE= ; CEN_DOC_QMATCH=
-        $_otra -a -c "documentation" $"file list cleared"
+        $_otra -a -c 'documentation' $"file list cleared"
         return
     fi
 
@@ -807,7 +807,7 @@ _cen_doc_flist() {
     elif [ "$_fopt" = "-l" ] ; then
         local _work="${1:-:}" _prep="${2:--}" _fcnt=0 _stat
 
-        $_otra -a -c "documentation" $"start file list"
+        $_otra -a -c 'documentation' $"start file list"
         for _item in "${CEN_DOC_FLIST[@]}" ; do
 
             # filtering
@@ -818,20 +818,20 @@ _cen_doc_flist() {
                     _skip= ; break
                 done
                 if [ -n "$_skip" ] ; then              # not in list, skip
-                    $_otra -a -c "documentation" $"run file list:" "$_item" $"[skipped, filter]"
+                    $_otra -a -c 'documentation' $"run file list:" "$_item" $"[skipped, filter]"
                     continue
                 fi
             fi
 
             # user callback <prep>
             if [ "$_prep" != "-" ] ; then
-                $_otra -a -c "documentation" $"run file list:" "$_item"
+                $_otra -a -c 'documentation' $"run file list:" "$_item"
                 $_prep "$_fcnt" "$_item" ; _stat=$?
                 if [ "$_stat" = 1 ] ; then
-                    $_otra -a -c "documentation" $"run file list:" "$_item" $"[skipped, status 1]"
+                    $_otra -a -c 'documentation' $"run file list:" "$_item" $"[skipped, status 1]"
                     continue
                 elif [ "$_stat" -gt 0 ] ; then
-                    $_otra -a -c "documentation" $"run file list:" "$_item" $"[stopped, status $_stat]"
+                    $_otra -a -c 'documentation' $"run file list:" "$_item" $"[stopped, status $_stat]"
                     return $_stat
                 fi
             fi
@@ -845,17 +845,17 @@ _cen_doc_flist() {
             documentation $_sopt $_popt $_pars -- "$_work" "$_item"
         done
         [ "$_fcnt" != 0 ] && $_work "" "0:Z$_fcnt"      # signal end of processing
-        $_otra -a -c "documentation" $"done file list"
+        $_otra -a -c 'documentation' $"done file list"
 
     # set file list (1st time only)
     elif [ "$_fopt" = "-f" ] && [ "${#CEN_DOC_FLIST[@]}" = 0 ] ; then
         CEN_DOC_FLIST=("$@")
-        $_otra -a -c "documentation" -p $"file list set [%s files]" "${#CEN_DOC_FLIST[@]}"
+        $_otra -a -c -p 'documentation' $"file list set [%s files]" "${#CEN_DOC_FLIST[@]}"
     fi
 
     # enable cache
     if [ "$_copt" = "-e" ] ; then
-        $_otra -a -c "documentation" $"enable cache:" "$CEN_DOC_CFILE"
+        $_otra -a -c 'documentation' $"enable cache:" "$CEN_DOC_CFILE"
         _cen_doc_cinit                                  # deserialize cache
         case $? in
         0)  return 0 ;;                                 # cache valid
@@ -886,7 +886,7 @@ _cen_doc_cinit() {
     error -t || return 2                        # deserialize error
     [ -z "$CEN_DOC_CACHE" ] && return 1         # no data
     if [ "$CEN_DOC_VERSION" != "$CEN_DOC_CACHE" ] ; then
-        $CEN_TRACE -c "documentation" $"wrong cache data version:" "$CEN_DOC_CACHE"
+        $CEN_TRACE -c 'documentation' $"wrong cache data version:" "$CEN_DOC_CACHE"
         CEN_DOC_MD5SUM= ; CEN_DOC_CLIST=()
     else
         CEN_DOC_APICHANGE=0                     # flag cache as valid
@@ -1345,8 +1345,9 @@ _cen_doc_citem() {
 #         CEN_PATHS[0]       filesystem prefix for non FSH-compatible install
 #         CEN_PATHS[1]       GNU core binary path (usually **/usr/bin**)
 #         CEN_PATHS[2]       configuration folder (usually **/etc**)
-#         CEN_PATHS[3]       library persistent   (usually **/var/centauri/persistent**)
-#         CEN_PATHS[4]       library temporary    (usually **/var/centauri/transient**)
+#         CEN_PATHS[3]       system var folder    (usually **/var**)
+#         CEN_PATHS[4]       system temporary     (usually **/tmp**)
+#         CEN_PATHS[5]       system library       (usually **/usr/lib**)
 #
 #         CEN_ACTARR         action argument array
 #         CEN_ACTION         current action, see [[actions()]]
@@ -1356,6 +1357,7 @@ _cen_doc_citem() {
 #         CEN_CMDARGS        array of script arguments (options removed)
 #         CEN_CMDINDX        index in CEN_CMDARGS[]
 #         CEN_CMDOPTS        array of script options
+#         CEN_DECO_xxxx      ansi escape sequences, see [[console]]
 #         CEN_EMBED          see --embed option
 #         CEN_EXIT           error status, see [[error()]]
 #         CEN_HISTORY        use history/readline in [[confirm()]]

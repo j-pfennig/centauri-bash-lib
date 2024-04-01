@@ -115,10 +115,10 @@
 #.          myservice setup status
 #.          myservice setup uninstall
 #
-# Copyright Dr. J. Pfennig (c) 2015-2022
+# Copyright Dr. J. Pfennig (c) 2015-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_svc"]="0.33:1"
+CEN_MODULES['_centauri_bash_svc']='0.34:2'
 
 CEN_IS_SERVICE=                 # used by _cen_svc_action (internal)
 
@@ -134,6 +134,10 @@ export CEN_SVC_SYSLOG=          # actual logging mode (environment import)
 
 CEN_SVC_SYSD="$CEN_ROOT/systemd"        # systemd service folder (only if installed)
 CEN_SVC_SYSV="${CEN_PATHS[2]}/init.d"   # SysV service folder
+
+                                # systemd base locations
+CEN_SVC_SYSX=("${CEN_PATHS[2]}/systemd" "$CEN_PATHS/run/systemd"
+              "$CEN_PATHS/usr/local/lib/systemd" "${CEN_PATHS[5]}/systemd")
 
 # Imported from user script (must not be defined here) ...
 
@@ -253,13 +257,13 @@ background() {
                 [ -e "$_cpro" ] || continue
             fi
             if echo 2>/dev/null "$_cgrp" >"$_cpro" ; then
-                $CEN_TRACE -a -c " cgrp" -p "Moved 'pid=%s' to '%s'" "$_cgrp" "$_curr"
+                $CEN_TRACE -a -c -p ' cgrp' $"Moved 'pid=%s' to '%s'" "$_cgrp" "$_curr"
                 return 0
             fi
-            error -p "background: Failed to move 'pid=%s' to '%s'" "$_cgrp" "$_curr"
+            error -p 'background: '$"Failed to move 'pid=%s' to '%s'" "$_cgrp" "$_curr"
             return 1
         done
-        error "background: New cgroup not found" ; return 1
+        error 'background: '$"New cgroup not found" ; return 1
     fi
 
     # run in background
@@ -639,14 +643,89 @@ isservice() {
 }
 
 # ------------------------------------------------------------------------------
+# runsysddir - get or iterate systemd directories
+#
+# Call:     runsysddir -r                       # reset, unset CEN_RUNSYSDDIR
+#           runsysddir [-d] [-b|-u]             # return list in CEN_RUNSYSDDIR
+#           runsysddir [-d] [-b|-u]             # iterate over list
+#
+# Options:  -b  base folder names only (no '/system' appended)
+#           -d  include only existing folders
+#           -i  iterate, current item returned in CEN_RUNSYSDDIR
+#           -u  use 'user' instances (default is 'system')
+#
+#+Return:   Data is returned in CEN_RUNSYSDDIR which is a simple values or a list
+#           depending on the call options. On succes the function returns **true**
+#           or **false** on error or end of iteration.
+#
+# Variables:CEN_RUNSYSDIDX  iterator index, clear to restart iteration
+#           CEN_RUNSYSDDIR  return value or list
+#
+#+This functions is used by [[runservice()]], so CEN_RUNSYSDDIR and CEN_RUNSYSDIDX
+# are volatile.
+#
+#+See the [[runservice()]] documentation for the list of searched systemd folders.
+# ------------------------------------------------------------------------------
+CEN_RUNSYSDDIR=
+CEN_RUNSYSDIDX=
+runsysddir() {
+    local _chck _indx _inst='/system' _iter _sdir
+    while [ "${1::1}" = "-" ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -b)   _inst= ;;
+      -d)   _chck=1 ;;
+      -i)   _iter=1 ;;
+      -r)   _rset=1 ;;
+      -u)   _inst='/user' ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
+    if [ -n "$_rset" ] ; then
+        unset CEN_RUNSYSDDIR ; CEN_RUNSYSDIDX=
+        return 0
+    fi
+    if [ "$_inst" = '/user' ] ; then
+        _sdir=(~/.config/systemd ~/.local/share/systemd "${CEN_SVC_SYSX[@]}")
+    else
+        _sdir=("${CEN_SVC_SYSX[@]}")
+    fi
+
+    if [ -z "$_iter" ] ; then
+        CEN_RUNSYSDDIR=() ; CEN_RUNSYSDIDX= ;
+        for _indx in "${_sdir[@]}" ; do
+            _indx+="$_inst"
+            [ -n "$_chck" ] && [ ! -d "$_indx" ] && continue
+            CEN_RUNSYSDDIR+=("$_indx")
+        done
+        return 0
+    fi
+
+    _indx="${CEN_RUNSYSDIDX:-0}"
+    while [ -n "$_indx" ] ; do
+        CEN_RUNSYSDDIR="${_sdir[_indx]}"
+        if [ -n "$CEN_RUNSYSDDIR" ] ; then
+            ((_indx += 1)) ; CEN_RUNSYSDDIR+="$_inst"
+            [ -n "$_chck" ] && [ ! -d "$CEN_RUNSYSDDIR" ] && continue
+            CEN_RUNSYSDIDX="$_indx" ; return 0
+        fi
+        break
+    done
+    unset CEN_RUNSYSDDIR ; CEN_RUNSYSDIDX= ; return 1
+}
+
+# ------------------------------------------------------------------------------
 # runservice - start/stop/test services
 #
 # Call:     runservice [-d] [-r] [-u] [-e|-f] [-v] [-n] <verb> <name>...
 #
-#           runservice [-d] [-u] [-e|-f] [-v] <name>                # deprecated
-#           runservice [-d] [-u] [-e|-f] [-v] **test** <name>...
-#
 #           runservice [-r] [-u] [-e|-f] [-v] **status** <name>
+#           runservice [-r] [-u] [-e|-f] [-v] **enabled** <name>
+#
+#           runservice [-u] [-e|-f] [-v] **test** <name>...     # unmasked services
+#           runservice [-u] [-e|-f] [-v] **sytemd** <name>...   # systemd services
+#           runservice [-u] [-e|-f] [-v] **masked** <name>...   # masked services
 #
 # Options:  -d  run as a daemon, needs no root priviledge or service install
 #           -e  report errors
@@ -660,11 +739,16 @@ isservice() {
 # Arguments:<verb>  **start**|**stop**|**restart**
 #           <name>  A plain service name (**NOT** a path or unit.name)
 #
-#+Return:   The **test** command returns **true** if all service are found and not
-#           masked. On error a status bit mask is returned, see below.
-#
-#+          The **status** command returns **true** if the service is active. On
+#+Return:   The **status** command returns **true** if the service is active. On
 #           error a status bit mask is returned, see below.
+#
+#+          **enabled** works like **status** but adds an extra 'is-enabled' test for an
+#           inactive service (systemd only). For an enabled service it returns **true**.
+#
+#+          The **test** command returns **true** if all services are found and not
+#           masked. On error a status bit mask is returned, see below. The **systemd**
+#           and **masked** commands behave like **test** but check for a systemd unit
+#           or a systemd masked symlink instead.
 #
 #+          All other verbs return **true** on success or a status bit mask otherwise,
 #           see below.
@@ -673,6 +757,7 @@ isservice() {
 #           description depending on the command verb (but not for **test**).
 #
 #           Status bits:    64  no valid service to found
+#                            8  service not enabled
 #                            4  got start/stop error or not active
 #                            2  got masked service
 #                            1  got invalid service
@@ -681,29 +766,30 @@ isservice() {
 #                           "started"   (text translated)
 #                           "stopped"   (text translated)
 #                           "restarted" (text translated)
+#           CEN_RUNSYSDDIR  not conserved, used internally
 #
-# This method only searches the following subset of **systemd** paths:
-#
-# - "/etc/systemd/*"               § (no -u option) ...
-# - "/run/systemd/*"
-# - "/lib/systemd/*"
-# - "/usr/lib/systemd/*"
+# This method only searches the following subset of **systemd** paths (the user mode
+# search order differs from systemd defaults):
 #
 # - "~/.config/systemd/user"       § (option -u only) ...
 # - "~/.local/share/systemd/user"
+# - "/etc/systemd/*"               § (no -u option) ...
+# - "/run/systemd/*"
+# - "/usr/local/lib/systemd/*"
+# - "/usr/lib/systemd/*" (or "/lib/systemd/*")
 #
 # **SysV** services are searched in "/etc/init.d" only.
 #
+# Internally it uses [[runsysddir()]], so CEN_RUNSYSDDIR is not conserved.
+#
 #.Examples: runservice [test] inetd     # test if inetd is installed and not masked
 #.          runservice stop inetd nmbd  # stop inetd and nmbd
-#.          runservice -d start dscipt  # start 'dscript' as daemon
+#.          runservice -d start dscript # start 'dscript' as daemon
 # ------------------------------------------------------------------------------
 CEN_RUNSERVICE=
 runservice() {
     CEN_RUNSERVICE=
-    local _daem _rdry _user _suff _verb='trace' _inst='system' _oerr='trace' _oslt _onob
-    local _sdir=("${CEN_PATHS[2]}/systemd" "$CEN_PATHS/run/systemd"
-                 "$CEN_PATHS/lib/systemd" "$CEN_PATHS/usr/lib/systemd")
+    local _daem _rdry _user _suff _oslt _onob _verb='trace' _oerr='trace'
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -716,26 +802,27 @@ runservice() {
       -u)   if [ -z "$CEN_SVC_SYSD" ] ; then
                 error $"Service command depends on 'systemd'" ; return 1
             fi
-            _sdir+=(~/.config/systemd ~/.local/share/systemd)
-            _inst='user' ; _user='--user' ;;
+            _user='--user' ;;
       -v)   _verb='message' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
-    [ -z "$_oslt" ] && _oslt="$_oerr"
 
-    [ "$_verb" = "message" -a "$_oerr" = "trace" ] && _oerr="message"
-    [ "$_oerr" != "trace" ] && _verb="message"
-    local _stmp _scmd="$1" ; shift
+    [ -z "$_oslt" ] && _oslt="$_oerr"
+    [ "$_verb" = 'message' -a "$_oerr" = 'trace' ] && _oerr='message'
+    [ "$_oerr" != 'trace' ] && _verb='message'
+    local _stmp _scmd="$1" _ssys ; shift
 
     # check verb
     case "$_scmd" in
-    start|stop|restart|status|test)
-        ;;
+    start|stop|restart|status|enabled)  ;;
+    systemd|masked) [ "$_oerr" = 'trace' ] && _oerr=':'
+                    _ssys=1 ;;                      # systemd only
+    test)           [ "$_oerr" = 'trace' ] && _oerr=':' ;;
     *)
         [ $# = 0 ] || _cen_abort - "$_scmd"
         # single argument: assume "test"
-        set -- "$_scmd" ; _scmd="test"
+        set -- "$_scmd" ; _scmd='test'
     esac
 
     # test if services exist and are not masked
@@ -758,9 +845,9 @@ runservice() {
         else
             # is it an unmasked service?
             if [ -n "$CEN_SVC_SYSD" ] ; then
-                for _curr in "${_sdir[@]}" "" ; do
-                    [ -d "$_curr" ] || continue
-                    _curr+="/$_inst"
+                CEN_RUNSYSDIDX=
+                while runsysddir -d -i ${_user:+-u} ; do    # iterate existing folders
+                    _curr="$CEN_RUNSYSDDIR"
                     if   [ -e "$_curr/$_base.service" ] ; then
                         _suff=".service"
                     elif [ -e "$_curr/$_base.target" ] ; then
@@ -768,25 +855,33 @@ runservice() {
                     else
                         continue
                     fi
-                    if [ "$_curr/$_base$_suff" -ef "/dev/null" ] ; then
-                        $_oslt $"Service is masked" "($_scmd): $_base"
-                        ((_serr |= 2)) ; break
+                    if [ "$_scmd" = 'masked' ] ; then
+                        if [ "$_curr/$_base$_suff" -ef '/dev/null' ] ; then
+                            $CEN_TRACE2 -a -c $"Masked service" "($_scmd) $_base ($_curr/$_base$_suff)"
+                            _slst+=("$_name$_suff")
+                        else
+                            ((_serr |= 1))
+                        fi
+                    elif [ "$_curr/$_base$_suff" -ef '/dev/null' ] ; then
+                        $_oslt -a -c $"Masked service" "($_scmd) $_base ($_curr/$_base$_suff)"
+                        ((_serr |= 2))
                     else
-                        _slst+=("$_name$_suff") ; break
+                        _slst+=("$_name$_suff")
                     fi
+                    break
                 done
             fi
 
             if [ -z "$_curr" -o -z "$CEN_SVC_SYSD" ] ; then
                 # check for sysv
-                if [ -x "$CEN_SVC_SYSV/$_name" ] ; then
+                if [ -z "$_ssys" ] && [ -x "$CEN_SVC_SYSV/$_name" ] ; then
                     _curr="$CEN_SVC_SYSV/$_name"
                     _slst+=("$_name")
                 else
                     [ -z "$_sarg" -a "$_oerr" != 'trace' ] &&
-                        $_oerr $"Not a service" "($_scmd): $_name"
+                        $_oerr -c $"Not a service" "($_scmd) $_name"
                     [ -z "$_sarg" -a "$_oerr"  = 'trace' ] &&
-                        $_verb -a $"Not a service" "($_scmd): $_name"
+                        $_verb -a -c $"Not a service" "($_scmd) $_name"
                     ((_serr |= 1))
                 fi
             fi
@@ -803,14 +898,22 @@ runservice() {
     # translate operation text
     local _kind _info
     case "$_scmd" in
-    test)    return $_serr ;;
+    test|systemd|masked)
+             return $_serr ;;
     start)   CEN_RUNSERVICE=$"started" ;;
     stop)    CEN_RUNSERVICE=$"stopped" ;;
     restart) CEN_RUNSERVICE=$"restarted" ;;
 
-    status) [ "${#_slst[@]}" -gt 1 ] && _cen_abort "status allows only 1 arg"
+    enabled|status)
+            [ "${#_slst[@]}" -gt 1 ] && _cen_abort "'$scmd' allows only 1 arg"
             if [ -n "$CEN_SVC_SYSD" ] ; then
-                 sysrun -q -r -n -a _info -- systemctl $_user is-active "$_slst" || ((_serr |= 4))
+                 if ! sysrun -q -r -n -a _info -- systemctl $_user is-active "$_slst" ; then
+                    if [ "$_scmd" = 'status' ] ; then
+                        ((_serr |= 4))
+                    else
+                        sysrun -q -r -n -a _info -- systemctl $_user is-enabled "$_slst" || ((_serr |= 12))
+                    fi
+                 fi
                  _kind=$"Service (systemd)"
             else
                 if sysrun -q -r -n -- "$CEN_SVC_SYSV/$_slst" "status" ; then
@@ -892,16 +995,16 @@ _cen_svc_message() {
     # we handle output in this module ...
     local _scal _sfmt _serr _sind _srea _mlog
     local _spri _snam="${CEN_EMBED:-$CEN_NAME}:" _verb="$CEN_VERB"
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _sind="$CEN_AUTOIND" ;;
       -b)   shift ;;                                # ignored here
-      -c)   shift ; _scal="$1" ;;
+      -c)   _scal=1 ;;
       -d)   shift ;;                                # ignored here
-      -e)   _verb=1 ; _spri="error"
+      -e)   _verb=1 ; _spri='error'
             _serr=$" ***ERROR***" ;;
-      -f)   _verb=1 ; _spri="crit"
+      -f)   _verb=1 ; _spri='crit'
             _serr=$" ***FATAL ERROR***" ;;
       -i)   _sind=1 ;;
       -l)   _verb=1 ;;
@@ -909,8 +1012,8 @@ _cen_svc_message() {
       -n)   ;;                                      # ignored here
       -p)   _sfmt=1 ;;
       -r)   [ -n "$CEN_EMBED" ] && _srea=1 ;;
-      -t)   _spri="debug" ;;                        # special for trace()
-      -w)   _spri="crit"  ; _serr=$" ***WARNING***" ;;
+      -t)   _spri='debug' ;;                        # special for trace()
+      -w)   _spri='crit'  ; _serr=$" ***WARNING***" ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -923,8 +1026,9 @@ _cen_svc_message() {
     else
         _sfmt="$*"
     fi
-    if [ -n "$_scal" ] ; then                       # option -c
-        _cen_shortfmt _scal - "$_scal" ; _serr+="$_scal"
+    if [ -n "$_scal" ] ; then                   # option '-c'
+        _cen_shortfmt _scal - "$1" ; _serr+="$_scal" ; shift
+        [ "$1" = '--' ] && shift                # backward compatibility
     fi
 
     # can send "info" messages to stderr in some cases ...
@@ -965,7 +1069,7 @@ _cen_svc_message() {
 # hook for actions()
 # ------------------------------------------------------------------------------
 _cen_svc_action() {
-    if [ "$CEN_IS_SERVICE" = "0" ] ; then               # not a service
+    if [ "$CEN_IS_SERVICE" = 0 ] ; then                 # not a service
         $CEN_SVC_HOOK_ACTIONS "$@" ; return 1
     fi
     [ -n "$CEN_SVC_RUNNING" ] && return 1               # do not recurse
@@ -995,15 +1099,15 @@ _cen_svc_action() {
         # This is used by _cen_svc_forking to handle starting a child
 
         start-daemon)
-                    CEN_OPT_DAEMON="2"                  # flag as child
-                    CEN_SVC_RUNNING="start"
-                    shift ; set -- "start" "$@"
+                    CEN_OPT_DAEMON=2                    # flag as child
+                    CEN_SVC_RUNNING='start'
+                    shift ; set -- 'start' "$@"
                     ;;
 
         # The following are standard service commands ...
 
         stop|start|restart)
-                    if [ "$CEN_SVC_TYPE" = "once" -a "$CEN_ACTION" != "start" ] ; then
+                    if [ "$CEN_SVC_TYPE" = "once" -a "$CEN_ACTION" != 'start' ] ; then
                         _cen_svc_user "$@" ; return     # fwd to user code
                     fi
                     isservice -r                        # check root
@@ -1044,15 +1148,17 @@ _cen_svc_action() {
         fatal $"Service start/stop/restart cannot have arguments"
     _cen_svc_fancy begin
 
-    if [ "$CEN_SVC_RUNNING" = "stop" -o "$CEN_SVC_RUNNING" = "restart" ] ; then
-        CEN_ACTION="stop"
-        _cen_svc_state "stop" || return                 # check/update state
+    if [ "$CEN_SVC_RUNNING" = 'stop' -o "$CEN_SVC_RUNNING" = 'restart' ] ; then
+        local _styp="$CEN_SVC_TYPE"                     # needed for daemon restart
+        CEN_ACTION='stop'
+        _cen_svc_state 'stop' || return                 # check/update state
         _cen_svc_user "$@"                              # fwd to user code
+        [ "$CEN_SVC_RUNNING" = 'restart' ] && CEN_SVC_TYPE="$_styp"
     fi
 
-    if [ "$CEN_SVC_RUNNING" = "start" -o "$CEN_SVC_RUNNING" = "restart" ] ; then
-        CEN_ACTION="start"
-        _cen_svc_state "start" || return                # check/update state
+    if [ "$CEN_SVC_RUNNING" = 'start' -o "$CEN_SVC_RUNNING" = 'restart' ] ; then
+        CEN_ACTION='start'
+        _cen_svc_state 'start' || return                # check/update state
         _cen_svc_forking                                # fork simple service
         if ! _cen_svc_user "$@" ; then                  # fwd to user code
             if [ "$CEN_SVC_TYPE" != 'oneshot' ] ; then  # catch signal, call run()
@@ -1101,9 +1207,9 @@ _cen_svc_state() {
         [ -n "$CEN_OPT_FORCE" -o -n "$CEN_OPT_ZOMBIE" ] && return
         error -s 4 ; CEN_SVC_TYPE=
         [ -n "$CEN_FEATURE_F" ] && _frun="--force" || _frun="--zombie"
-        if [ "$2" = "start" ] ; then
+        if [ "$2" = 'start' ] ; then
             [ "$3" = 1 ] && _fpid=$"service" || _fpid=$"daemon"
-            quit -p -m $"Not starting, already running as a %s\nUse '%s' to override or delete '%s'" \
+            quit -p -n $"Not starting, already running as a %s\nUse '%s' to override or delete '%s'" \
                 "$_fpid" "$_frun" "$CEN_PIDFILE"
         else
             quit -a -p $"Found no PID file, not stopping, use '%s' to override" "$_frun"
@@ -1113,16 +1219,20 @@ _cen_svc_state() {
     # handle other commands
     case "$CEN_SVC_TYPE" in
     forking)
-        [ "$1" != "start" ] && _fpid=$$ ;;
+        [ "$1" != 'start' ] && _fpid=$$ ;;
     once)
         _fpid=$$ ;;
     oneshot)
-        _fpid=0 ;;
+        if [ "$1" = 'start' ] ; then
+            pidfile -w $$ -- "$CEN_NAME" ; return
+        elif [ "$1" = 'quit' ] ; then           # pid=0 flags 'dead' state
+            pidfile -w 0 -- "$CEN_NAME" ; return
+        fi ;;
     daemon|simple)
-        if [ "$CEN_OPT_DAEMON" = "1" ] && [ "$1" = "start" ] ; then
+        if [ "$CEN_OPT_DAEMON" = "1" ] && [ "$1" = 'start' ] ; then
             _fpid="-"                           # check but no create
         elif [ "$CEN_OPT_DAEMON" = "2" ] ; then
-            [ "$1" = "start" ] && return        # see start-stop-daemon
+            [ "$1" = 'start' ] && return        # see start-stop-daemon
             _fpid=$$
         else
             _fpid=$$
@@ -1151,7 +1261,7 @@ _cen_svc_state() {
         _fact=2                                     # runs as daemon
     fi
 
-    if [ "$1" = "start" ] ; then                    # --- check start conflict
+    if [ "$1" = 'start' ] ; then                    # --- check start conflict
         [ -n "$_fact" ] && _cen_svc_state error "$1" "$_fact"
         [ "$_fpid" != "-" ] && pidfile $_frun -w $_fpid -- "$CEN_NAME"
 

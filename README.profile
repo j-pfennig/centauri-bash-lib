@@ -21,8 +21,21 @@ _ccd_helper () {
         [ -n "$cdes" ] && cd "$cdes"
     fi
 }
-
 alias ccd='_ccd_helper'
+
+_cfi_helper () { 
+    find -xdev \( -name ".encfs_*" -o -name ".cache" \) -prune -o -iname "*$**" -print
+}
+alias cfi='_cfi_helper'
+
 alias clh='centaurihelp -L'
 alias cth='centaurihelp -T'
 
+alias ..='cd ..'
+alias grep='grep --color=auto'
+alias less='less --tabs=4'
+alias ll='ls -lh'
+alias ls='ls --color=auto --time-style="+%F %H:%M"'
+alias mail='mail -a "Content-Type: text/plain; charset=UTF-8"'
+alias phys='cd -P "$PWD"'
+alias server='centaurissh exec ---'

@@ -4,7 +4,7 @@ CEN_LEGAL=$"Dr. J. Pfennig (c) 2022-2023; BSD license"
 CEN_TITLE=$"Grep for (bash) source files"
 
 # Import the bash library, set mix/max arguments
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -t "$0" "0.02:1" 1 + || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -t "$0" '0.02:1' || exit 2
 
 # Data
 CEN_OPT_COMMENT=                # see --comment
@@ -60,8 +60,8 @@ run() {
     *)
         cexp="$CEN_OPT_COMMENT"
         if [ -z "${cexp//[a-z]/}" ] ; then
-            error -m $"Option '--comment' should look like a regular expression or" '\n' \
-                  $"must be a keyword like:" "bash hash semi semicolon c cpp slash java"
+            error -m $"Option '--comment' should look like a regular expression or" \
+                  $"must be a keyword like:"' bash hash semi semicolon c cpp slash java'
             quit
         fi
         # skip spaces if comment expression is not starting with '^'

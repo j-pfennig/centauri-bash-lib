@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2022; BSD License"
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2023; BSD License"
 CEN_TITLE="Create the autoload module _centauri_bash_dyn"
 
 # we cannot use '-a' here ...
-PATH+=":${0%/*}" . _centauri_bash_lib -m ext -m iom -m utl -r "$0" "0.22:1" || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -m ext -m iom -m utl -r "$0" "0.23:2" || exit 2
 
 CEN_OPT_BUILTIN=                # see --builtin
 CEN_OPT_PATH=                   # see --path
@@ -16,7 +16,7 @@ CEN_OPT_NOCUSTOM=               # see --nocustom
 #CEN_DYN_NOLOADABLES=           # don't load loadable modules
 
 DAT_EXTENSIONS=()               # loaded bash extensions
-DAT_LOADABLES=('sleep' 'mkdir' 'mkfifo' 'rm' 'rmdir' 'unlink' 'ln' 'realpath')
+DAT_LOADABLES=('sleep' 'mkdir' 'mkfifo' 'rm' 'rmdir' 'unlink' 'ln' 'realpath' 'stat')
 
 DAT_LIB_USER='_*_*_usr'         # glob pattern for user libraries
 
@@ -106,7 +106,7 @@ run() {
     local funs func mesg
     if [ -n "$CEN_OPT_DYNAMIC" ] ; then
         system -f -p -a funs -- grep -E "^[a-z][a-z_]+\(\)" "${list[@]}"
-        message -a -c $"Dynamic loading" -p $"Found %s functions" "${#funs[@]}"
+        message -a -c -p $"Dynamic loading" $"Found %s functions" "${#funs[@]}"
     else
         message -a -c $"Dynamic loading" $"Not enabled"
     fi
@@ -114,14 +114,14 @@ run() {
     # --- enable extensions ---
 
     if [ -n "$CEN_OPT_BUILTIN" ] ; then
-        message -a -c $"Bash loadables" -p $"Checking %s builtins" "${#DAT_LOADABLES[@]}"
+        message -a -c -p $"Bash loadables" $"Checking %s builtins" "${#DAT_LOADABLES[@]}"
         for item in "${DAT_LOADABLES[@]}" ; do
             if listsearch -i CEN_OPT_IGNORE -- "$item" ; then
                 mesg=$"Ignored"
             else
                 enable_extension "$item" && mesg=$"Enabled" || mesg=$"Failed"
             fi
-            message -a -c "-    $mesg" "$item"
+            message -a -c -- "-    $mesg" "$item"
         done
     else
         message -a -c $"Bash loadables" $"Not enabled"

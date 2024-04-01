@@ -15,10 +15,10 @@
 #
 # The module implements exactly one public function: [[webapp()]]
 #
-# Copyright Dr. J. Pfennig (c) 2022
+# Copyright Dr. J. Pfennig (c) 2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_web"]="0.01:1"
+CEN_MODULES["_centauri_bash_web"]="0.02:2"
 
 CEN_WEB_HOOK_OPTIONS=       # hook for option parsing
 CEN_WEB_HOOK_MAIN=          # hook for main()
@@ -304,7 +304,7 @@ _cen_web_create() {
             error $"Not a writable folder:" "$CEN_WEB_WEBDIR"
         fi
     #elif [ -n "$CEN_OPT_FORCE" ] ||
-    elif confirm -n -y $"Create Web folder:" "$CEN_WEB_WEBDIR" ; then
+    elif confirm -y $"Create Web folder:" "$CEN_WEB_WEBDIR" ; then
         folder -m -- "$CEN_WEB_WEBDIR"
     else
         quit
@@ -351,7 +351,7 @@ _cen_web_delete() {
     # get list of files to be deleted
     case "$1" in
     0)  _args=()
-        if [ -n "$CEN_OPT_FORCE" ] || confirm -n -y "Remove Web Folder" ; then
+        if [ -n "$CEN_OPT_FORCE" ] || confirm -n "Remove Web Folder" ; then
             [ -n "$_cgib" ] && _args=("$_cgib") ; _webd=1
         fi ;;
     1)  _args+=(*/) ; [ -n "$_cgib" ] && _args+=("$_cgib") ;;
@@ -367,7 +367,7 @@ _cen_web_delete() {
             remove -- "${CEN_WALK_FILES[@]}" && _stat=0
         else
             printf -v _mesg $"Folder not empty, remove %s files" "${#CEN_WALK_FILES[@]}"
-            if [ -n "$CEN_OPT_FORCE" ] || confirm -n -y "$_mesg" ; then
+            if [ -n "$CEN_OPT_FORCE" ] || confirm -n "$_mesg" ; then
                 remove -- "${CEN_WALK_FILES[@]}" && _stat=0
             fi
         fi

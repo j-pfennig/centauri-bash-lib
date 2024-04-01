@@ -26,10 +26,14 @@ fi
 
 # --- Nothing should be modified behind this line ------------------------------
 
-# find the library root folder
+# find the library root folder - use readlink if CEN_ROOT is not valid
 if [ "${CEN_ROOT:-.}" = '.' ] ; then
-    CEN_TOOLS=$(readlink -f "$(type -p _centauri_bash_lib)")
-    CEN_TOOLS="${CEN_TOOLS%/*}" ; CEN_ROOT="${CEN_TOOLS%/*}"
+    export CEN_ROOT="/var/centauri"
+    export CEN_TOOLS="$CEN_ROOT/tools"
+    if [ ! "$CEN_TOOLS/_centauri_bash_lib" -ef "$BASH_SOURCE" ] ; then
+        CEN_TOOLS=$(readlink -f "$(type -p _centauri_bash_lib)")
+        CEN_TOOLS="${CEN_TOOLS%/*}" ; CEN_ROOT="${CEN_TOOLS%/*}"
+    fi
 elif [ "${CEN_TOOLS:--}" = '-' ] ; then
     export CEN_TOOLS="$CEN_ROOT/tools"
 fi
@@ -47,9 +51,9 @@ CEN_PATH_REXP=()
 
 # load real lib, use packed version if newer
 if [ "$CEN_LIBRARY/_centauri_bash_lib.p" -nt "$CEN_LIBRARY/_centauri_bash_lib" ] ; then
-    . $CEN_LIBRARY/_centauri_bash_lib.p "$@" || exit 2
+    . "$CEN_LIBRARY/_centauri_bash_lib.p" "$@" || exit 2
 else
-    . $CEN_LIBRARY/_centauri_bash_lib "$@" || exit 2
+    . "$CEN_LIBRARY/_centauri_bash_lib" "$@" || exit 2
 fi
 
 # end

@@ -35,10 +35,10 @@
 #,          -d -        # force a text message, don't display a message box
 #,          -d +<time>  # show notification popup window for <time> seconds
 #
-# Copyright Dr. J. Pfennig (c) 2015-2022
+# Copyright Dr. J. Pfennig (c) 2015-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_win"]="0.46:1"
+CEN_MODULES['_centauri_bash_win']='0.46:2'
 
 CEN_KDE_VERSION=
 CEN_WINDOWS=
@@ -179,10 +179,10 @@ windows() {
         if [ -n "$CEN_WIN_NAME" ] ; then                # init is valid
             [ -z "$_frun" ] && return 0                 # return or launch application
             _cen_win_launch $_frun "$_titl" "$@" ; return
-        elif [ -z "$CEN_DISPLAY" ] ; then               # must have display
+        elif [ "${CEN_DISPLAY:-tty}" = 'tty' ] ; then   # must have display server
             CEN_WINDOWS=0 ; CEN_WIN_NAME='-'
             [ -n "$_ferr" ] && $_emsg $"could not initialize window mode"
-            return 1_frun
+            return 1
         fi
     else
         [ -n "$_ferr" ] && $_emsg $"window mode not initialized"
@@ -256,7 +256,7 @@ _cen_win_pdlg() {
     # run qdbus, use compound to avoid extra process caused by redirection
     { _cncl=$("$CEN_WIN_APPQDBUS" $CEN_WIN_PROGRESS wasCancelled) ; } 2>/dev/null
     # kde5 closes window on cancel, wasCancelled does never return true
-    if [ "$_cncl" = "false" ] ; then
+    if [ "$_cncl" = 'false' ] ; then
         "$CEN_WIN_APPQDBUS" $CEN_WIN_PROGRESS "$@" &>/dev/null && return 0
     fi
     _cen_win_pdlg -q $"Cancelled by user"
@@ -276,8 +276,7 @@ _cen_win_pdlg() {
 # called from progress() in _centauri_bash_pro
 # ------------------------------------------------------------------------------
 _cen_win_prog() {
-    [ "${CEN_WINDOWS:-0}" = '0' ] && return 1   # not in windows mode
-#    _cen_windcheck || return 1   # not in windows mode
+    [ "${CEN_WINDOWS:-0}" = 0 ] && return 1     # not in windows mode
     local _prog="$1" _fdel="$2" _fend="$3" _flin="$4" _step="$5" _ftxt="$6"
     shift 6
     local _mesg
@@ -638,6 +637,7 @@ _cen_win_dialog() {
             [ -n "$_text" ] && _text="<b>$_text</b><br/>"
             _opts+=("--$_kind" "$_text$1" "${2:-3}")    # has timeout parameter
         else
+            _text="${_text// /\&nbsp;}"
             _opts+=("--$_kind" "$_text" "$@")           # must have text argument
         fi
 
@@ -909,11 +909,11 @@ _cen_windread() {
 _cen_windcheck() {
     # debug -c -- "$*"
     case "$1" in
-        "")     [ "$CEN_WINDOWS" = 0 ] && return 1
+        '')     [ "$CEN_WINDOWS" = 0 ] && return 2
                 [ "$CEN_WIN_NAME" = '-' ] && return 1
                 [ -n "$CEN_WIN_NAME" ] && return 0
-                windows -g - -i 2 || return 1               # TODO --windows=0 should return 1
-                [ "$CEN_WINDOWS" = 0 ] && return 1
+                windows -f -g - || return 1
+                [ "$CEN_WINDOWS" = 0 ] && return 2
                 ;;
         -)      CEN_WIN_NAME='-'
                 [ "$CEN_WINDOWS" = 1 ] && return 0 || return 2

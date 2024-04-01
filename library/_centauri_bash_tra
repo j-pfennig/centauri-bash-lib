@@ -153,7 +153,7 @@ _cen_tra_init() {
         fi
     fi
     [ "$CEN_OPT_TRASH" = 1 -a "$CEN_TRA_METHOD" = 'rm' ] &&
-        fatal $"Cannot find usable a trash folder"
+        fatal $"Cannot find a usable trash folder"
     $CEN_TRA_TRACE $"Trash method:" "$CEN_TRA_METHOD"
 }
 

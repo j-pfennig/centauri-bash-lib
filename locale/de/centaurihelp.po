@@ -92,6 +92,10 @@ msgid "Creating index data (%s items)"
 msgstr "Erstelle Index Daten (%s Einträge)"
 
 #: /var/centauri/tools/centaurihelp:1962
+msgid "index cache"
+msgstr "Index Caches"
+
+#: /var/centauri/tools/centaurihelp:1962
 msgid "%s header entries"
 msgstr "%s Kopfzeilen Einträge"
 

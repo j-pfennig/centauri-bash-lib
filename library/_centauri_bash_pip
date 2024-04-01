@@ -262,7 +262,7 @@ syspager() {
 
     [ $# = 0 ] && return 0                  # nothing to run or no pager
     isfunction -e -x -- "$1" || return 1    # need function or command
-    if [ -z "$CEN_PAGER" ] ; then
+    if [ -z "$CEN_PAGER" -o -n "$CEN_SYSPIPE" ] ; then
         "$@" ; return
     fi || :
 
@@ -301,11 +301,16 @@ syspager() {
 # ------------------------------------------------------------------------------
 # syspipe - run a command in background using coproc or a pipe
 #
-# Call:     syspipe ORIGIN [DESTINATION] [-c <error>|-|+]
-#                   [-e|-f] [-g] [-n] [-r] [-v] [-x] [-y] -- <cmd> <arg>...
+# Call:     (1) syspipe -b <producer> -d <consumer>
+#                       [-c <error>|-|+] [-f] [-g] [-r] [-y] [--] <arg>...
+#           (2) syspipe -o <producer> -b <consumer>
+#                       [-c <error>|-|+] [-f] [-g] [-r] [-y] [--] <arg>...
 #
-#           ORIGIN      := -o <producer> | -i <var> | -i -
-#           DESTINATION := -d <consumer> | -a <array> | -s <string>
+#           (3) syspipe ORIGIN [DESTINATION] [-c <error>|-|+]
+#                       [-e|-f] [-g] [-n] [-r] [-v] [-x] [-y] [--] <cmd> <arg>...
+#
+#               ORIGIN      := -o <producer> | -i <var> | -i -
+#               DESTINATION := -d <consumer> | -a <array> | -s <string>
 #
 # Options:  -a  [*] put output into an array (overrides -c)
 #           -d  [*] destination script function (stdin -> <consumer>)
@@ -335,6 +340,13 @@ syspager() {
 #           [#] using external commands possibe but not recommended
 #
 # Return:   **true** at success or **false** otherwise.
+#
+#+Pipe:     Form (1) and (2) create a pipe. The option -b part runs in a background
+#           sub-shell whereas the -o or -d part runs in the caller's shell. So in (1)
+#           the <producer> runs in a sub-shell and in (2) the <consumer> runs in a
+#           sub-shell. Remember: a simple '<producer> | <consumer>' command would run
+#           both sides in a sub-shell. Any <arg>... parameters are passed to the
+#           <producer> and the <consumer>.
 #
 #+Coproc:   I/O redirection (and "|" pipes) run the command (or function) in a
 #           sub-shell. This makes it difficult to pass lengthy output back to
@@ -406,12 +418,13 @@ syspager() {
 CEN_SYSPIPE=
 syspipe() {
     #$CEN_DEBUG -c -- "$*"
-    local _fcop _fcap _fnoc _fqui \
-          _ocal='_cen_pip_error' _odst _oerr _ogra _omsg='error -z' _osrc _oinp _oout _orun
+    local _fbak _fcop _fcap _fnoc _fqui \
+          _ocal='_cen_pip_error' _ocon _odst _oerr _ogra _omsg='error -z' _osrc _oinp _oout _orun
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; [ "$1" = '-' ] && _oout=2 || _oout=1 ; _ocon="splitjoin -s $1 -i - -l -n" ;;
+      -b)   shift ; _fbak="$1" ;;
       -c)   shift ; _ocal="$1" ;;
       -d)   shift ; _oout=0 ; _ocon="$1" ;;
       -e)   _oerr='-e' ;;
@@ -429,7 +442,15 @@ syspipe() {
       esac ; shift
     done
 
-    [ -z "$_osrc$_ocon" ] && _cen_abort + "-i|-o|-d|-a|-s"
+    if [ -n "$_fbak" ] ; then
+        _fnoc=1
+        [ "${_oout:-0}" = 0 ] || _cen_abort - '-a|-s'
+        [ -z "$_osrc$_oout" ] && _cen_abort + '-i|-o'
+        [ -n "$_osrc" -a -n "$_ocon" ] && _cen_abort ? '-i|-o'
+        [ -z "$_fcop$_oinp" ] || _cen_abort - '-i|-x'
+    elif [ -z "$_osrc$_ocon" ] ; then
+        _cen_abort + '-i|-o|-d|-a|-s'
+    fi
     CEN_SYSPIPE=                                # reset state
     local _stat=0 _verb="$CEN_VERB" _acmd=("$@") _cen_pip_temp
 
@@ -446,11 +467,11 @@ syspipe() {
         fi
     fi
 
-    # default error handler
+    # default error handler: (STATUS <code>) | (<info> -) <mesg>
     _cen_pip_error() {
         IFS=$' \n\t'                                    # repair IFS
         if [ "$1" = 'STATUS' ] ; then
-            [ "$_stat" -gt "${_ogra:-0}" ] &&
+            [ "$2" -gt "${_ogra:-0}" ] &&
                 $_omsg -p $"command failed (status %s): %s" "$2" "$3"
         else
             $_omsg -p $"command failed (%s): %s" "$1" "$3"
@@ -513,9 +534,11 @@ syspipe() {
                [ -n "$_fcap" ] && exec 2>&1
                shift
                if isfunction -- "$_acmd" ; then
+                    # disabled - trace -a -c ' ' "Call: $_acmd"
                     # a function may create subprocesses and temporary files
-                    "${_acmd[@]}" ; wait ; tmpfile -d
+                    "${_acmd[@]}" ; wait ; tmpfile -d ; return
                else
+                    # disabled - trace -a -c ' ' "Exec: $_acmd"
                     # exec is safe here as we are called as last cmd in subshell
                     exec "${_acmd[@]}"
                fi
@@ -525,6 +548,7 @@ syspipe() {
             if [ "$1" = '<>' ] ; then
                 tmpfile -r -s _pipe[1] -f ; CEN_SYSPIPE="${_pipe[*]}"
             fi
+            trace -a -c "() $1" "worker: $_acmd"
             [ "$_verb" -gt 1 ] && context -v 1          # disable debug output
 
             if [ "$1" = '<>' ] ; then
@@ -537,7 +561,19 @@ syspipe() {
         }
 
         local _pipe
-        if [ -n "$_osrc" ] ; then                       # has source function
+
+        # simple pipe with background subshell
+        if [ -n "$_fbak" ] ; then
+            _acmd=("$_fbak" "$@")
+            if [ -z "$_osrc" ] ; then
+                _cen_pip_worker '>' ; CEN_PIP_WAIT=$!
+                "$_ocon" "$@" < "$_pipe" || _cen_pip_error STATUS "$?" "$_ocon"
+            else
+                _cen_pip_worker '<' ; CEN_PIP_WAIT=$!
+                "$_osrc" "$@" > "$_pipe" || _cen_pip_error STATUS "$?" "$_osrc"
+            fi
+
+        elif [ -n "$_osrc" ] ; then                     # has source function
             if [ -n "$_ocon" ] ; then                   # ... and consumer
                 _cen_pip_worker '<>' ; CEN_PIP_WAIT=$!
             else                                        # ... only producer
@@ -717,16 +753,17 @@ sysloop() {
         $CEN_TRACE -a -c " sent quit" "status=$?"
 
     elif [ "$_frun" = 1 ] ; then                # event loop ...
-        $CEN_TRACE -c " enter loop" "pipe=$CEN_SYSLOOP"
+        $CEN_TRACE -c " loop" "pipe=$CEN_SYSLOOP"
         local _epid _emsg _earg _ecnt _stat=0
         CEN_SYSLOOP[3]="$_rpip"
         while [ -n "${CEN_SYSLOOP[1]}" ] ; do
-           while read -r _epid _ecnt _emsg ; do
+            _epid=                              # flag for read error
+            while read -r _epid _ecnt _emsg < "$CEN_SYSLOOP" ; do
                 if [ -n "${_epid//[0-9]/}" -o -n "${_ecnt//[-0-9]/}" ] ; then
-                    $CEN_TRACE -c " input ignored" -- "$_epid" "$_ecnt"
+                    $CEN_TRACE -c " ignored" -- "$_epid" "$_ecnt"
                     continue
                 elif [ "${_ecnt:--}" = '-' ] ; then
-                    $CEN_TRACE -a -c " quit msg." "from PID=$_epid"
+                    $CEN_TRACE -a -c " quit msg" "from PID=$_epid"
                     _stat=0 ; CEN_SYSLOOP[1]= ; break
                 elif [ "$_ecnt" -gt 1 ] ; then
                     splitjoin -s _earg -d '\a' -- "$_emsg"
@@ -734,10 +771,13 @@ sysloop() {
                 else
                     ${CEN_SYSLOOP[1]} "$_epid" "$_emsg" && continue
                 fi
-                _stat=$? ; CEN_SYSLOOP[1]= ; break
-           done < "$CEN_SYSLOOP"
+            done
+            if [ -z "$_epid" ] && [ ! -r "$CEN_SYSLOOP" ] ; then
+                error "Cannot read pipe:" "$CEN_SYSLOOP"
+                _stat=2 ; break
+            fi
         done
-        $CEN_TRACE -c " exit loop" "status=$_stat"
+        $CEN_TRACE -c " end loop" "status=$_stat"
         _cen_pip_ticker                         # stop ticker
         [ "$_stat" -gt 1 ] && return $_stat
 
@@ -745,9 +785,9 @@ sysloop() {
         local _mesg="$1"
         [ $# -gt 1 ] && splitjoin -j _mesg -d '\a' -- "$@"
         if echo "$BASHPID" $# "${_mesg//$'\n'/$'\t' }" > "$CEN_SYSLOOP" 2>/dev/null ; then
-            $CEN_TRACE -a -c " send success" -- "$BASHPID $*"
+            $CEN_TRACE -a -c " send OK" -- "$BASHPID $*"
         else
-            $_emsg -c " send failed" -- "$BASHPID $*" ; return 1
+            $_emsg -c " send err" -- "$BASHPID $*" ; return 1
         fi
 
     else

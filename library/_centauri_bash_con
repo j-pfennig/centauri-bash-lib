@@ -16,10 +16,10 @@
 #  [[_centauri_bash_lib]] to enable choosing between [[_centauri_bash_con]] and
 #  [[_centauri_bash_win]] at script start (adds option --gui).
 #
-# Copyright Dr. J. Pfennig (c) 2015-2021
+# Copyright Dr. J. Pfennig (c) 2015-2023
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_con"]="0.21:1"
+CEN_MODULES["_centauri_bash_con"]="0.23:2"
 
 CEN_ROWS=               # console rows
 CEN_COLS=               #         columns
@@ -29,7 +29,12 @@ CEN_DECO_BOLD=          #       bold
 CEN_DECO_ITAL=          #       italic
 CEN_DECO_NORM=          #       normal
 CEN_DECO_ULIN=          #       underline
+CEN_DECO_EROR=          # highlight error message
+CEN_DECO_WARN=          #       warning ...
+CEN_DECO_TRCE=          #       trace ...
 
+CEN_CONS_UTF8='─═•'     # utf-8 special chars
+CEN_CONS_HIGH=          # highlighting, see console -h
 CEN_CONS_MSGLEN=        # message length, used by progress
 CEN_CONS_MSGTXT=        # text for incremental mode
 CEN_CONS_PROGLN=        # progress line mode flag
@@ -41,105 +46,143 @@ CEN_CONS_HOOK_MESSAGE=
 # ------------------------------------------------------------------------------
 # console - query/initialize console mode support
 #
-# Call:     console [-m **0**|**1**|**2**|**3**] [-c **0**|<cols>] [-r **0**|<rows>]
+# Call:     console [-m **0**|**1**|**2**|**3**] [-h <high>] [-c **0**|<cols>] [-r **0**|<rows>]
 #
 # Options:  -c  colums to use (**0** := current COLUMNS)
+#           -h  trace/warning/error highlight; **0**: off  **1**: on  **2**: auto (default)
 #           -r  rows to use   (**0** := current LINES)
-#           -m  force mode **0**: disable  **1**: fancy  **2**: simple  **3**: auto
+#           -m  force mode; **0** disable  **1**: fancy  **2**: simple  **3**: auto (default)
 #
 # Return:   **false** if console mode is not supported (mode **0**)
 #
-#+ The function does implicit initialization on 1st call, which usually
-#  is done at module load time. Decorated output and [[progress()]] depend
-#  on a successfull init call (mode **1** or **2**).
+#+This function is called by default at module load time as "console -c 0". The default
+# for option -m is **3** on 1st call. Decorated output and the availability of [[progress()]]
+# depend on a successfull console call (CEN_CONSOLE result **1** or **2**).
 #
-#+ Without option -m the function only sets mode **2** if **stderr**
-#  goes to a terminal and sets mode **1** if also the TERM variable is set to
-#  "xterm*" or "linux". In mode **2** no ANSII escape sequences are set. For
+#+Without option -m the function only sets mode **2** if **stderr**
+# goes to a terminal and sets mode **1** if also the TERM variable is set to
+# "xterm*" or "linux". In mode **2** no ANSII escape sequences are set. For
 # mode **3** **stdout** must go to a terminal or command line option --force
 # must be set.
 #
 # If not disabled the program **/usr/bin/tput** is used to get COLUMNS and LINES:
 #
-#,              CEN_COLS          # number of tty columns
-#,              CEN_ROWS          # number of tty rows
+#,              CEN_COLS                # number of tty columns
+#,              CEN_ROWS                # number of tty rows
 #
 # The following ANSI escape sequences will be set in mode **1**:
 #
-#,              CEN_DECO_MARK     # print inverse (ESC sequence for VT100)
-#,              CEN_DECO_BOLD     # "     bold
-#,              CEN_DECO_ITAL     # "     italic
-#,              CEN_DECO_ULIN     # "     underline
-#,              CEN_DECO_NORM     # "     normal
+#,              CEN_DECO_MARK           # print inverse (ESC sequence for VT100)
+#,              CEN_DECO_BOLD           # "     bold
+#,              CEN_DECO_ITAL           # "     italic
+#,              CEN_DECO_ULIN           # "     underline
+#,              CEN_DECO_NORM           # "     normal
+#
+#+The trace/message/warning/error and fatal functions decorate output (see -h)
+# using the following variables (which are also exported):
+#
+#,              CEN_DECO_EROR=          # highlight error message
+#,              CEN_DECO_WARN=          #       warning ...
+#,              CEN_DECO_TRCE=          #       trace ...
+#
+# The current mode is:
+#
+#,              CEN_CONSOLE  not set    # not initialized, module not loaded
+#,              °            **0**      # TERM not set or stderr not to a tty
+#,              °            **1**      # console allows fancy mode
+#,              °            **2**      # unknown device, simple mode
 # ------------------------------------------------------------------------------
 console() {
     # parse options
-    local fmod frow fcol
+    local _fmod _frow _fcol _high=2
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -c)   shift ; fcol="$1" ;;
-      -m)   shift ; fmod="$1" ;;
-      -r)   shift ; frow="$1" ;;
+      -c)   shift ; _fcol="$1" ;;
+      -h)   shift ; _high="$1" ;;
+      -m)   shift ; _fmod="$1" ;;
+      -r)   shift ; _frow="$1" ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
 
     # implicit initialization
-    if [ -z "$CEN_CONSOLE" -o -n "$fmod" ] ; then
+    if [ -z "$CEN_CONSOLE" -o -n "$_fmod" ] ; then
         # hook message()
         if [ -z "$CEN_CONS_HOOK_MESSAGE" ] ; then
             CEN_CONS_HOOK_MESSAGE=$CEN_HOOK_MESSAGE ; CEN_HOOK_MESSAGE='_cen_con_mesg'
         fi
 
-        if [ -z "$fmod" ] ; then
-            if ! [ -t 2 ] ; then
-                fmod=0
+        if [ -z "$_fmod" ] ; then
+            if [ -n "$CEN_PAGER" ] ; then
+                _fmod=1
+            elif [ "${TERM:-dumb}" = 'dumb' ] ; then
+                _fmod=0
+            elif ! [ -t 2 ] ; then
+                _fmod=0
             elif [ "${TERM::5}" = "xterm" -o "$TERM" = "linux" ] ; then
-                fmod=1
+                _fmod=1
             else
-                fmod=2
+                _fmod=2
             fi
-        elif [ "$fmod" -gt 2 ] ; then
+        elif [ "$_fmod" -gt 2 ] ; then
             if [ -n "$CEN_OPT_FORCE" -o -t 1 ] ; then
-                fmod=1
+                _fmod=1
             else
-                fmod=0 ; frow= ; fcol=
+                _fmod=0 ; _frow= ; _fcol=
             fi
         fi
     fi
 
+    # check for utf-8 encoding
+    case "${LANG,,}" in
+    *.utf8)     ;;
+    *.utf-8)    ;;
+    *)          CEN_CONS_UTF8='-=°'
+    esac
+
     # set variables
-    if [ -n "$fmod" ] ; then
-        CEN_CONSOLE="$fmod"
+    if [ -n "$_fmod" ] ; then
+        CEN_CONSOLE="$_fmod"
         CEN_CONS_MSGLEN=
         CEN_COLS= ; CEN_ROWS=
     fi
-    if [ "$fmod" = 1 ] ; then
-        CEN_DECO_BOLD="\033[1m"
-        CEN_DECO_ITAL="\033[3m"
-        CEN_DECO_MARK="\033[7m"
-        CEN_DECO_NORM="\033[0m"
-        CEN_DECO_ULIN="\033[4m"
-
-    elif [ -n "$fmod" ] ; then
+    if [ "$_fmod" = 1 ] ; then
+        export CEN_DECO_BOLD=$'\033[1m'
+        export CEN_DECO_ITAL=$'\033[3m'
+        export CEN_DECO_MARK=$'\033[7m'
+        export CEN_DECO_NORM=$'\033[0m'
+        export CEN_DECO_ULIN=$'\033[4m'
+        if [ -n "$_high" ] ; then
+            export CEN_DECO_EROR=$'\033[01;31m'
+            export CEN_DECO_WARN=$'\033[01;35m'
+            export CEN_DECO_TRCE=$'\033[01;32m'
+        fi
+    elif [ -n "$_fmod" ] ; then
         CEN_DECO_BOLD=
         CEN_DECO_ITAL=
         CEN_DECO_MARK=
         CEN_DECO_NORM=
         CEN_DECO_ULIN=
-        fcol= ; frow=
+        CEN_DECO_EROR=
+        CEN_DECO_WARN=
+        CEN_DECO_TRCE=
+        CEN_CONS_HIGH=
+        _fcol= ; _frow=
+        [ "$_high" = 2 ] && _high=
     fi
+    [ "$_high" = 2 ] && _high=1
+    CEN_CONS_HIGH="$_high"
 
     # get row/col sizes
-    if [ -n "$frow" ] ; then
-        [ "$frow" = 0 ] || LINES="$frow"
-        [ -z "$LINES" -a -n "$TERM" ] && system -q -r -s LINES   tput lines
+    if [ -n "$_frow" ] ; then
+        [ "$_frow" = 0 ] || LINES="$_frow"
+        [ -z "$LINES" -a -n "$TERM" ] && sysrun -q -r -s LINES tput lines
         CEN_ROWS="$LINES"
     fi
-    if [ -n "$fcol" ] ; then
-        [ "$fcol" = 0 ] || COLUMNS="$fcol"
-        [ -z "$COLUMNS" -a -n "$TERM" ] && system -q -r -s COLUMNS tput cols
+    if [ -n "$_fcol" ] ; then
+        [ "$_fcol" = 0 ] || COLUMNS="$_fcol"
+        [ -z "$COLUMNS" -a -n "$TERM" ] && sysrun -q -r -s COLUMNS tput cols
         CEN_COLS="$COLUMNS"
     fi
 
@@ -150,17 +193,19 @@ console() {
 # ------------------------------------------------------------------------------
 # decorate - enclose text in escape sequences
 #
-# Call:     decorate [-l] [-m] [-a|-s <rslt>] [-d <deco>] <text>...
+# Call:     decorate [-l] [-m] [-a|-s <rslt>] [-d <deco>] [-f <size>] <text>...
 #
 # Arguments:<deco>  decoration mode, see below for values
 #           <text>  Data to be processed, multiple arguments are concatenated
 #                   and are separated be spaces
 #           <rslt>  variable to receice the output
+#           <size>  text width (not counting escape characters)
 #
 # Options:  -a  append result to <rslt>
 #           -d  decoration style
+#           -f  fixed size output, space padded
 #           -l  add new-line
-#           -m  multi-line mode, repeat decoration per line
+#           -m  multi-line mode, repeat call per line in joined <text>
 #           -s  save result to <rslt> (default is CEN_DECORATE)
 #
 #+Style:    The <deco> paramater can be "-", a digit or a keyword. Most modes
@@ -177,12 +222,13 @@ console() {
 # ------------------------------------------------------------------------------
 CEN_DECORATE=
 decorate() {
-    local _fclr=1 _flin _fmul _deco="-" _stxt _fset="CEN_DECORATE"
+    local _fclr=1 _ffix _flin _fmul _deco='-' _npad=0 _stxt _fset='CEN_DECORATE'
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _fset="$1" ; _fclr= ;;
       -d)   shift ; _deco="${1:--}" ;;
+      -f)   shift ; _ffix="$1" ;;
       -l)   _flin=1 ;;
       -m)   _fmul=1 ;;
       -s)   shift ; _fset="$1" ;;
@@ -192,7 +238,15 @@ decorate() {
 
     # get the text to be decorated, do nothing if empty (unless -d 0)
     local -n _varg="$_fset" ; [ -n "$_fclr" ] && _varg=
-    _stxt="$*" ; [ -z "$_stxt" -a "$_deco" != 0 ] && return 0
+    _stxt="$*"
+    if [ -n "$_ffix" ] ; then
+        #printf -v _stxt "%-${_ffix}.${_ffix}s" "$_stxt"
+        _stxt="${_stxt::_ffix}"
+        _npad=$((_ffix - ${#_stxt}))
+        [ -z "$_stxt" ] && _deco='-'
+    elif [ -z "$_stxt" ] ; then
+        [ "$_deco" != 0 -a "${_deco::3}" != 'nor' ] && return 0
+    fi
 
     # handle -m option
     if [ -n "$_fmul" -a "$_deco" != "-" -a "$_deco" != 0 ] ; then
@@ -203,16 +257,22 @@ decorate() {
 
     # add deco and new-line
     case "$_deco" in
-    -)      _varg+="$_stxt" ;;
-    1|bol*) _varg+="$CEN_DECO_BOLD$_stxt$CEN_DECO_NORM" ;;
-    2|mar*) _varg+="$CEN_DECO_MARK$_stxt$CEN_DECO_NORM" ;;
-    3|ita*) _varg+="$CEN_DECO_ITAL$_stxt$CEN_DECO_NORM" ;;
+    -)          _varg+="$_stxt" ;;
+    1|bol*)     _varg+="$CEN_DECO_BOLD$_stxt$CEN_DECO_NORM" ;;
+    2|mar*)     _varg+="$CEN_DECO_MARK$_stxt$CEN_DECO_NORM" ;;
+    3|ita*)     _varg+="$CEN_DECO_ITAL$_stxt$CEN_DECO_NORM" ;;
     4|uli*|und*)
-            _varg+="$CEN_DECO_ULIN$_stxt$CEN_DECO_NORM" ;;
-    9|rem*) _deco=$'\033'"\\[[0-9]m"
-            _varg+="${_stxt//$_deco/}" ;;
-    *)      _varg+="$CEN_DECO_NORM$_stxt"
+                _varg+="$CEN_DECO_ULIN$_stxt$CEN_DECO_NORM" ;;
+    9|rem*)     _deco=$'\033'"\\[[0-9]m"
+                _varg+="${_stxt//$_deco/}" ;;
+    10|tra*)    _varg+="$CEN_DECO_TRCE$_stxt$CEN_DECO_NORM" ;;
+    11|war*)    _varg+="$CEN_DECO_WARN$_stxt$CEN_DECO_NORM" ;;
+    12|err*)    _varg+="$CEN_DECO_EROR$_stxt$CEN_DECO_NORM" ;;
+    *)          _varg+="$CEN_DECO_NORM$_stxt"
     esac
+    if [ "$_npad" -gt 0 ] ; then
+        printf -v _stxt "%${_npad}s" '' ; _varg+="$_stxt"
+    fi
     [ -n "$_flin" ] && _varg+='\n' ; return 0
 }
 
@@ -222,13 +282,15 @@ decorate() {
 # Call:     output [-l|-m] [-p] [-b <offs>[:<balg>[:<plen>]]] [-d <cols>] [-d <deco>]
 #                  [-i <idnt>] [-v <vari>] [-x <xcnt> [<xchr>]] [--] <text>...
 #
-# Options:  -b  line breaking, wrap long lines with optional indentation
+# Options:  -a  prefix output with program name, does auto indent
+#           -b  line breaking, wrap long lines with optional indentation
 #           -d  use decorated output, see [[decorate()]]
 #           -i  indent output with spaces
 #           -j  join args, separated by space
 #           -l  append new-line
-#           -m  print multiple lines (new-line separated), implies -l
-#           -p  use fprintf formatting (1st arg is format)
+#           -m  multiple lines, one line per arg, C-style escapes, implies -l
+#           -n  prefix output with program name
+#           -p  use printf formatting (1st arg is format)
 #           -v  append result to variable
 #           -w  set line width (overrides CEN_COLS)
 #           -x  expand width with spaces or other speficied chars
@@ -260,29 +322,35 @@ decorate() {
 output() {
     $CEN_NOTRACE return 0                   # ignore in trace mode
 
-    local  _aopt _balg=0 _cexp _deco _fbrk _ffmt _find _fjoi _flin _fmul _fsav
-    local _fexp _nexp _marr _mesg _cols="${CEN_COLS:-0}"
+    local _aopt _balg=0 _cexp _deco _fbrk _ffmt _find _fjoi _flin _fmul _fsav
+    local _sind _fexp _nexp _marr _mesg _cols="${CEN_COLS:-0}"
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -a)   _aopt="-a -n" ;;
+      -a)   _aopt=1 ; _sind="$CEN_AUTOIND" ;;
       -b)   shift ; _fbrk="$1" ;;
       -d)   shift ; _deco="$1" ;;
       -i)   shift ; _find="$1" ;;
       -j)   _fjoi=1 ;;
       -l)   _flin=$'\n' ;;
       -m)   _flin=$'\n' ; _fmul=1 ;;
-      -n)   _aopt="-n" ;;
+      -n)   _aopt=1 ;;
       -p)   _ffmt=1 ;;
       -v)   shift ; _fsav=1 ; local -n _svar="$1" ;;
-      -w)   shift ; _cols="${1:-0}" ; [ "$_cols" = "-" ] && _cols=0 ;;
+      -w)   shift ; _cols="${1:-0}" ; [ "$_cols" = '-' ] && _cols=0 ;;
       -x)   shift ; _fexp="$1"
-            if [ "${2::1}" != "-" ] ; then
+            if [ "${2::1}" != '-' ] ; then
                 _cexp="$2" ; shift
             fi ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
+
+    if [ -n "$_aopt" ] ; then
+        _aopt="${CEN_EMBED:-$CEN_NAME}: "
+        [ "$CEN_AUTOIND" = 2 ] && _sind=1 ; CEN_AUTOIND=1
+        [ -n "$_sind" ] && _aopt="${_snam//?/ }"    # no program name
+    fi
 
     # set argument array, handle printf and split
     if [ $# = 0 ] ; then
@@ -296,7 +364,7 @@ output() {
     fi
     [ -n "$_fmul" ] && splitjoin -d "\n" -s _marr "${_marr[@]}"
     [ -n "$_find" -a "$_cols" != 0 ] && ((_cols -= _find))
-    [ -n "$_aopt" -a "$_cols" != 0 ] && ((_cols -= ${#CEN_NAME} - 2))
+    [ -n "$_aopt" -a "$_cols" != 0 ] && ((_cols -= ${#_aopt}))
 
     # loop over argument array
     for _mesg in "${_marr[@]}" ; do
@@ -314,8 +382,8 @@ output() {
 
         # handle line deco attributes
         case "$_deco" in
-            -|one)  _mesg="${_mesg//[! ]/─}" ; _deco= ;;
-            =|two)  _mesg="${_mesg//[! ]/═}" ; _deco= ;;
+            -|one)  _mesg="${_mesg//[! ]/${CEN_CONS_UTF8::1}}" ; _deco= ;;
+            =|two)  _mesg="${_mesg//[! ]/${CEN_CONS_UTF8:1:1}}" ; _deco= ;;
         esac
 
         # varible or stdout
@@ -327,7 +395,7 @@ output() {
             if [ -n "$_fsav" ] ; then
                 _svar+="$CEN_CON_BREAK_RES"
             else
-                [ -n "$_aopt" ] && { _cen_message $_aopt "" ; _aopt="-a -n" ; }
+                [ -n "$_aopt" ] && { echo -n "$_aopt" ; _aopt="${_aopt//?/ }" ; }
                 echo -n -e "$CEN_CON_BREAK_RES"
             fi
         done
@@ -564,27 +632,30 @@ _cen_con_more() {
 # hook message functions to add "-d <deco>" and "-b <offs>"
 # ------------------------------------------------------------------------------
 _cen_con_mesg() {
-    local _deco _fatl _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _scal _args _verb="$CEN_VERB" _stat=0
+    local _eopt _hasi _fatl _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _scal _args _deco
+    local _verb="$CEN_VERB" _stat=0
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
 
       # added here
       -b)   shift ; [ "${CEN_COLS:-0}" = 0 ] || _fbrk="$1" ;;
-      -d)   shift ; [ "${1::1}" = "+" ] || _deco="$1" ;;
+      -d)   shift ; [ "${1::1}" = '+' ] || _deco="$1" ;;
 
       # standard options
-      -a)   [ -n "$CEN_AUTOIND" ] && _args+=("-i") ;;
-      -c)   shift ; _scal="$1" ;;
-      -e)   _args+=("$1") ; _stat="$CEN_EXIT" ; _verb=1 ;;
-      -f)   _args+=("$1") ; _stat="$CEN_EXIT" ; _verb=1 ; _fatl=1 ;;
-      -i|-r|-w)
+      -a)   [ -n "$CEN_AUTOIND" ] && { _hasi=1 ; _args+=("-i") ; } ;;
+      -c)   _scal=1 ;;
+      -e)   _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ;;
+      -f)   _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ; _fatl=1 ;;
+      -i|-r)
             _args+=("$1") ;;
-      -l)   _args+=("$1") ; _verb=1 ;;
-      -m)   _fmul=1 ;;
-      -n)   _args+=("$1") ; _fnnl=1 ; _fxnl= ;;
+      -l)   _args+=("$1") ; _hasi=1 ; _verb=1 ;;
+      -m)   _fmul=2 ;;
+      -n)   _fmul=1 ;;
       -p)   _ffmt=1 ;;
-      -t)   _args+=("$1") ;;
+      -s)   _args+=("$1") ; _fnnl=1 ; _fxnl= ;;
+      -t)   _eopt="$1" ;;
+      -w)   _eopt="$1" ;;
       *)    _cen_abort -2 - "$1"
       esac ; shift
     done
@@ -593,24 +664,39 @@ _cen_con_mesg() {
 
     # must handle printf here because of padding
     local _mesg _mlen _mret=:
+    if [ -n "$_scal" ] ; then               # option -c
+        _cen_shortfmt _scal - "$1" ; shift
+        [ "$1" == '--' ] && shift           # backward compatibility
+    fi
     if [ -n "$_ffmt" ] ; then
         printf -v _mesg "$@"
     else
         _mesg="$*"
     fi
-    if [ -n "$_scal" ] ; then                   # option -c
-        _cen_shortfmt _scal - "$_scal" ; _mesg="${_scal:1} $_mesg"
+    [ -n "$_scal" ] && _mesg="${_scal:1} $_mesg"
+
+    # simplified handling of -b for fatal/error/warning/trace
+    if [ -n "$_eopt" ] ; then
+        [ -n "$_fbrk" ] && _args+=('-b' "$_fbrk")
+        case "$_fmul" in
+        1)  _cen_message $_eopt -n "${_args[@]}" -- "$_mesg" ;;
+        2)  _cen_message $_eopt -m "${_args[@]}" -- "$@" ;;
+        *)  _cen_message $_eopt "${_args[@]}" -- "$_mesg"
+        esac
+        return
     fi
 
     # must handle multi line here
     if [ -n "$_fmul" ] ; then
-        local _sdec _sifs="$IFS" ; IFS=$'\n'
-        _mesg="${_mesg// \\n /$IFS}" ; _mesg="${_mesg//\\n/$IFS}"
-        set -f ; set -- $_mesg ; set +f ; IFS="$_sifs"
-        [ -n "$_deco" ] && _sdec="-d $_deco"
+        if [ "$_fmul" = 1 ] ; then
+            local _sifs="$IFS" ; IFS=$'\n'
+            _mesg="${_mesg// \\n /$IFS}" ; _mesg="${_mesg//\\n/$IFS}"
+            set -f ; set -- $_mesg ; set +f ; IFS="$_sifs"
+        fi
+        [ -n "$_deco" ] && _args+=('-d' "$_deco")
         while [ "$#" != 0 ] ; do
-            _cen_con_mesg $_sdec "${_args[@]}" -- "$1"
-            shift ; _args=("-i")
+            _cen_con_mesg "${_args[@]}" -- "$1"
+            shift ; [ -z "$_hasi" ] && _args+=('-i') ; _hasi=1
         done ; return "$_stat"
     fi
 
@@ -620,8 +706,8 @@ _cen_con_mesg() {
         local _obrk="$((CEN_COLS - ${#_snam} - 2))"
         [ -n "$_deco" ] && _sdec="-d $_deco"
         while _cen_con_break "$_obrk" "$_fbrk" "$_mesg" "$_fxnl" ; do
-            _cen_con_mesg -n $_sdec "${_args[@]}" -- "$CEN_CON_BREAK_RES"
-            _args=("-i")
+            _cen_con_mesg -s $_sdec "${_args[@]}" -- "$CEN_CON_BREAK_RES"
+            [ -z "$_hasi" ] && _args+=("-i") ; _hasi=1
         done ; return "$_stat"
     fi
 
@@ -647,7 +733,7 @@ _cen_con_mesg() {
     # do the output
     if [ -n "$_deco" ] ; then
         decorate -d "$_deco" -s _mesg "$_mesg"
-        _cen_message -n "${_args[@]}" -- "$_mesg$_fxnl"
+        _cen_message -s "${_args[@]}" -- "$_mesg$_fxnl"
     else
         _cen_message "${_args[@]}" -- "$_mesg"
     fi
@@ -668,7 +754,7 @@ _cen_con_mesg() {
 # called from progress() in _centauri_bash_pro
 # ------------------------------------------------------------------------------
 _cen_con_prog() {
-    [ "${CEN_CONSOLE:-0}" = '0' ] && return 1   # not in console mode
+    [ "${CEN_CONSOLE:-0}" = 0 ] && return 1     # not in console mode
     local _prog="$1" _fend="$2" _flin="$3" _find="$4" _step="$5" _ftxt="$6"
     shift 6
     [ -n "$_step" -a -z "${_step//[0-9]/}" ] && _prog='.'
@@ -696,14 +782,13 @@ _cen_con_prog() {
         [ -z "${_prog//[0-9]/}" ] && prog=      # skip number
     fi
 
-#    local _mesg="$_prog${_prog:+ }$*" ; _cen_compactify _mesg
     local _mesg="$_prog$*" ; _cen_compactify _mesg
     local _leng="${#_mesg}"
 
     # line output
     if [ -n "$_flin" ] ; then
         [ -n "$CEN_CONS_MSGLEN" ] || CEN_CONS_MSGLEN=0
-        _cen_con_mesg -l -n $_find -- "$_mesg"
+        _cen_con_mesg -s -l $_find -- "$_mesg"
         CEN_CONS_MSGLEN="$_leng" ; CEN_CONS_PROGLN=1
 
     # end progress mode, keep text
@@ -714,7 +799,7 @@ _cen_con_prog() {
     # incremental output (something like a sequence of dots)
     elif [ "$_leng" != 0 ] ; then
         if [ -n "$CEN_CONS_PROGLN" ] ; then     # exit line mode
-            [ "${CEN_CONS_MSGLEN:-0}" = 0 ] || _cen_con_mesg -l -n -i
+            [ "${CEN_CONS_MSGLEN:-0}" = 0 ] || _cen_con_mesg -s -l -i
             CEN_AUTOIND="$_aind" ; CEN_CONS_PROGLN= ; CEN_CONS_MSGTXT=
         fi
 
@@ -722,7 +807,7 @@ _cen_con_prog() {
             if [ -n "$CEN_CONS_MSGTXT" ] ; then
                 _mesg="$CEN_CONS_MSGTXT$_mesg" ; _leng="${#_mesg}"
             fi
-            _cen_con_mesg -l -n $_find -- "$_mesg"
+            _cen_con_mesg -s -l $_find -- "$_mesg"
             CEN_CONS_MSGLEN="$_leng" ; CEN_CONS_MSGTXT="$_mesg"
         else
             ((CEN_CONS_MSGLEN += _leng)) ; CEN_CONS_MSGTXT+="$_mesg"
@@ -731,7 +816,7 @@ _cen_con_prog() {
 
     # clear output
     elif [ -n "$CEN_CONS_MSGLEN" ] ; then
-        _cen_con_mesg -l -i -n ; CEN_CONS_PROGLN= ; CEN_CONS_MSGTXT=
+        _cen_con_mesg -s -l -i ; CEN_CONS_PROGLN= ; CEN_CONS_MSGTXT=
     fi
     CEN_AUTOIND="$_aind"
     [ -n "$_fdel" ] && sleep "$_fdel"
@@ -754,9 +839,9 @@ _cen_con_prog() {
     windialog() { error $"windialog: not available with _centauri_bash_con" ; }
 
 if [ "$1" = "-i" ] ; then
-    console || true
+    console
 elif ! [ "$1" = "-n" ] ; then
-    console -c 0 || true
+    console -c 0
 fi
 
 # _cen_con_quit() is disabled in _centauri_bash_lib, progress messages will

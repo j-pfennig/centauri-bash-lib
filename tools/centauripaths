@@ -4,7 +4,7 @@ CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2007-2022; BSD License"
 CEN_TITLE=$"Resolve/symlink path shortcuts to real filesystem paths"
 
 # Import the bash library, set name and version
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -t '-' "0.32:1" 1 + || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -r -t '-' '0.33:2' 1 || exit 2
 
 # Options
 CEN_OPT_ABSTRACT=       # path abstraction
@@ -53,6 +53,9 @@ get_deleted() {
 # Expand shortcut: <name>
 # ------------------------------------------------------------------------------
 get_shortcut() {
+    if [ -z "$1" ] ; then
+        error $"Shortcut name is empty" ; return 1
+    fi
     DAT_PATH_SHORT="$1" ; DAT_PATH_LONG= ; DAT_PATH_INFO=
 
     # not a short name?
