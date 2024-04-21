@@ -179,6 +179,8 @@ _cen_dyn_builtin() {
 attributes() { _cen_dyn_load atr "$@" ; }
 filestat() { _cen_dyn_load atr "$@" ; }
 
+backup() { _cen_dyn_load bak "$@" ; }
+
 cgiapp() { _cen_dyn_load cgi "$@" ; }
 
 console() { _cen_dyn_load con "$@" ; }
@@ -220,6 +222,23 @@ spliteval() { _cen_dyn_load iom "$@" ; }
 automount() { _cen_dyn_load mnt "$@" ; }
 blkdevice() { _cen_dyn_load mnt "$@" ; }
 findmount() { _cen_dyn_load mnt "$@" ; }
+
+netconfig() { _cen_dyn_load net "$@" ; }
+netconv() { _cen_dyn_load net "$@" ; }
+netgetip() { _cen_dyn_load net "$@" ; }
+nethost() { _cen_dyn_load net "$@" ; }
+netiface() { _cen_dyn_load net "$@" ; }
+netoption() { _cen_dyn_load net "$@" ; }
+netparse() { _cen_dyn_load net "$@" ; }
+nettemp() { _cen_dyn_load net "$@" ; }
+netlink() { _cen_dyn_load net "$@" ; }
+netfile() { _cen_dyn_load net "$@" ; }
+netpath() { _cen_dyn_load net "$@" ; }
+netproxy() { _cen_dyn_load net "$@" ; }
+netquery() { _cen_dyn_load net "$@" ; }
+netresolv() { _cen_dyn_load net "$@" ; }
+netserver() { _cen_dyn_load net "$@" ; }
+nettool() { _cen_dyn_load net "$@" ; }
 
 sysbind() { _cen_dyn_load pip "$@" ; }
 syspager() { _cen_dyn_load pip "$@" ; }
