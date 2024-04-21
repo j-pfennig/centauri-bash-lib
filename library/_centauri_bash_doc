@@ -97,10 +97,10 @@
 #.              done < "$file"
 #.          }
 #
-# Copyright Dr. J. Pfennig (c) 2019-2023
+# Copyright Dr. J. Pfennig (c) 2019-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_doc"]="0.22:2"
+CEN_MODULES["_centauri_bash_doc"]='0.23:2'
 
 CEN_DOC_VERSION=1       # serialized data format
 CEN_DOC_FLIST=()        # file list, see _cen_doc_flist
@@ -197,6 +197,7 @@ CEN_DOC_BLOCK=()        # text of documentation block
 #,          ","  **List**       full decoration, minimal formatting (HTML: preformatted)
 #,          "-"  **Literal**    minimal decoration, no formatting   (HTML: preformatted)
 #,          "."  **Example**    minimal decoration, no formatting   (HTML: preformatted)
+#,          "#"  **Comment**    this line is ignored by the parser
 #
 # Trimming:         This text starts at column 21, but all leading spaces are
 #               removed. The 1st **continuation** lines starts at column 17,
@@ -490,7 +491,7 @@ documentation() {
             case "$text" in
                 "")     aadd=
                         if [ -n "$asub" ] ; then
-                            # this line is ignred, so add 1 to line number
+                            # this line is ignored, so add 1 to line number
                             fhdr=1 ; CEN_DOC_BLOCK=("$((_lnum + 1))")
                         fi ;;
 
@@ -592,6 +593,7 @@ documentation() {
                     \#\ --------*)  ;;
                     \#--------*)    ;;
                     \#\ *)          _cen_doc_parser 1 "${_rlin:2}" ; continue ;;
+                    \#\#*)          continue ;;
                     \#*)            _cen_doc_parser 1 "${_rlin:1}" ; continue ;;
                     *)              _rblk= ;;
                 esac
@@ -1362,7 +1364,7 @@ _cen_doc_citem() {
 #         CEN_EXIT           error status, see [[error()]]
 #         CEN_HISTORY        use history/readline in [[confirm()]]
 #         CEN_NAME           script name, see [[_centauri_bash_lib]]
-#         CEN_NOCOLS         set for initial COLUMNS=0, shortens trace output lines
+#         CEN_NOBREAK        set for initial COLUMNS=0, shortens trace output lines
 #         CEN_PACKAGE        non-zero for packaged script, see [[uglify]] tool
 #         CEN_QUIT_SANE      run "stty sane" in quit if non-zero
 #         CEN_QUIT_TRAP      default signal to enter "quit -s 4"

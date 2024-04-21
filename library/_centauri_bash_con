@@ -184,6 +184,7 @@ console() {
         [ "$_fcol" = 0 ] || COLUMNS="$_fcol"
         [ -z "$COLUMNS" -a -n "$TERM" ] && sysrun -q -r -s COLUMNS tput cols
         CEN_COLS="$COLUMNS"
+        [ "$CEN_NOBREAK" = 1 ] && CEN_NOBREAK=
     fi
 
     # return ok if in console mode

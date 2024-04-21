@@ -107,7 +107,7 @@ _cen_iom_error() {
 #           (2) inpdata [-a <dest>] [-c <func>] [-q] [-r] -l [-x <ext>] -- <file>|+|-
 #           (3) inpdata [-a <dest>] [-c <func>] [-q] [-r] -h <hndl>
 #
-# Options:  -a  data array to reaad into
+# Options:  -a  data array to read into
 #           -c  reader call function
 #           -f  errors are fatal
 #           -h  use a handle for input, see [[redirect()]]
@@ -535,7 +535,7 @@ outfile() {
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
-        -)    _break ;;
+        -)    break ;;
         -a)   _fook=1 ;;
         -c)   _fcan=1 ;;
         -d)   _fdir=1 ;;
@@ -772,7 +772,7 @@ cachefile() {
 #           -c  simplify white space
 #           -i  callback if config was not found
 #           -l  literal mode callback -or- source input file using '-l .'
-#           -m  call reader also for section lines (option -a and -r)
+#           -m  call reader also for section lines (option -a -l and -r)
 #           -n  file name or a path containing "/", see remark below
 #           -p  try private file 1st in **~/.config**, **~/.local** then ***~.<name>**
 #           -q  quiet, no error messages
@@ -810,7 +810,7 @@ cachefile() {
 #           With option -p the locations **~/.config**, **~/.local** then ***~.<name>**
 #           are checked before that.
 #
-#           Form (2) and (3) report section lines only if option -m is used or with
+#+          Form (2) and (3) report section lines only if option -m is used or with
 #           option -l (literal mode). If one or more section filters are specified
 #           only matching sections are processed.
 #
@@ -1106,7 +1106,7 @@ configfile() {
 #
 # Arguments:<file>  a file path
 #           <mode>  octal file or folder mode, lower 9 bits only
-#           <name>  a path if it contains a **/** or a name in cache the folder
+#           <name>  a path if it contains a **/** or a name in the cache folder
 #           <var>   name of a variable to be serialized
 #
 #+Return:   **true** at success or **false** otherwise. After a successfull open

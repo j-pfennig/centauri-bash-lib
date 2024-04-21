@@ -302,19 +302,20 @@ syspager() {
 # syspipe - run a command in background using coproc or a pipe
 #
 # Call:     (1) syspipe -b <producer> -d <consumer>
-#                       [-c <error>|-|+] [-f] [-g] [-r] [-y] [--] <arg>...
+#                       [-c <error>|-|+] [-f] [-g] [-r] [-t] [-y] [--] <arg>...
 #           (2) syspipe -o <producer> -b <consumer>
-#                       [-c <error>|-|+] [-f] [-g] [-r] [-y] [--] <arg>...
+#                       [-c <error>|-|+] [-f] [-g] [-r] [-t] [-y] [--] <arg>...
 #
-#           (3) syspipe ORIGIN [DESTINATION] [-c <error>|-|+]
-#                       [-e|-f] [-g] [-n] [-r] [-v] [-x] [-y] [--] <cmd> <arg>...
+#           (3) syspipe ORIGIN [DESTINATION] [-c <error>|-|+] [-e|-f]
+#                       [-g] [-n] [-r] [-t] [-v] [-x] [-y] [--] <cmd> <arg>...
 #
 #               ORIGIN      := -o <producer> | -i <var> | -i -
 #               DESTINATION := -d <consumer> | -a <array> | -s <string>
 #
 # Options:  -a  [*] put output into an array (overrides -c)
-#           -d  [*] destination script function (stdin -> <consumer>)
+#           -b  producer runs in background sub-shell
 #           -c  error handler (also called from SIGPIPE trap)
+#           -d  [*] destination script function (stdin -> <consumer>)
 #           -e  error message if check fails, overrides -q, see -n
 #           -f  make errors fatal
 #           -g  accept command exit status=1 as non-error
@@ -323,10 +324,11 @@ syspager() {
 #           -o  [*] origin script function (<producer> => stdout)
 #           -r  ignore --dryrun option
 #           -s  [*] put output into a string variable (overrides -c)
+#           -t  use 'context -t +' to catch keyboard interrupts
 #           -x  run as 'coproc' (can have only one coproc at a time)
 #           -y  redirect **stderr** of <cmd> to **stdout**
 #
-#               [*] These options are mutually exclusive
+#           [*] These options are mutually exclusive
 #
 # Arguments:<cmd>       command to be run in background
 #           <arg>       command argument(s)
@@ -372,7 +374,8 @@ syspager() {
 #
 #+          The default handler reports an error after SIGPIPE or when <cmd> returns
 #           an error. A custom error handler can be provided (use "-c '+'" for a
-#           silent termination via [[quit()]]). Here an implementation example:
+#           silent termination via [[quit()]]). This code does not catch any singnals
+#           other than SIGPIPE (see option -t). Here an implementation example:
 #
 #.          # arguments on call: STATUS|SIGPIPE <status> <command>
 #.          pip_error() {
@@ -384,41 +387,50 @@ syspager() {
 #.              CEN_SYSPIPE=                        # tell producer to stop
 #.           }
 #
-# Examples: (1) fifo: send data through a pager
+# Examples: Fifo: send data through a pager
 #.          producer() {
 #.              for ((i=0 ; i<100; i++)) ; do
 #.                 [ -z "$CEN_SYSPIPE" ] && break   # stop after SIGPIPE error
 #.                 echo "Hello $i"
 #.              done 2>/dev/null                    # hide SIGPIPE error message
 #.          }
-#.          syspipe -o producer -- less -R -F -X
+#.          syspipe -o ___producer -- less -R -F -X
 #
-#           (2) fifo: faking coproc (uses a pipe and a temporary file)
+#           Fifo: faking coproc (uses a pipe and a temporary file)
 #.          syspipe -o producer -a result -- mycommand
 #
-#           (3) coproc: run external command (tr), capture program output
+#           coproc: run external command (tr), capture program output
 #.          local linp="Hi there!" lout
 #.          syspipe -x -o "echo $linp" -d "read -r lout" -- tr [:lower:] [:upper:]
 #.          quit "$lout"
 #
-#           (4) coproc: in this example _input/_output run in the caller's context
+#           Coproc: in this example _input/_output run in the caller's context
 #.          worker() {  local file ; read -r file && system -e -p -z cat "$file" ; }
 #.          input()  {  echo "$farg" ; }
 #.          output() {  local line ; while read -r line ; do echo "$line" ; done ; }
 #.          local farg="/etc/fstab"
 #.          syspipe -x -o input -d output -n -- worker
 #
+#           Simple pipe: producer in background sub-shell, worker in caller's context
+#.          worker() {
+#.              local line
+#.              while read -r line ; do echo "$line" ; done
+#.          }
+#.          syspipe -b 'ip' -c -d worker -t -- monitor link address
+#
 #+Variable CEN_SYSPIPE contains the pipe handle(s). The variable can also serve
 # as a condition for the <producer> to stop (the error handler clears SIGPIPE).
 #
-#+It might alse be a good idea to run "context -t +" to catch keyboard
-# interrupts. Especially for any <cmd> that executes for long time or creates
-# a lot of output.
+#+It might also be a good idea to run "context -t +" (see option -t) to catch
+# keyboard interrupts. Especially for any <cmd> that executes for long time or
+# creates a lot of output.
+#
+# With form (1) and (2) debug output gets disabled for the background worker.
 # ------------------------------------------------------------------------------
 CEN_SYSPIPE=
 syspipe() {
     #$CEN_DEBUG -c -- "$*"
-    local _fbak _fcop _fcap _fnoc _fqui \
+    local _fbak _fcop _fcap _fnoc _fqui _ftra \
           _ocal='_cen_pip_error' _ocon _odst _oerr _ogra _omsg='error -z' _osrc _oinp _oout _orun
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
@@ -436,6 +448,7 @@ syspipe() {
       -q)   _omsg="$CEN_TRACE" ;;
       -r)   _orun='-r' ;;
       -s)   shift ; _oout=1 ; _ocon="splitjoin -j $1 -i - -l -n" ;;
+      -t)   _ftra=1 ;;
       -x)   _fcop=1 ;;
       -y)   _fcap=1 ;;
       *)    _cen_abort - "$1"
@@ -481,18 +494,24 @@ syspipe() {
 
     # special case: stdin (no pipe/coproc, but creates a subshell)
     if [ "$_oinp" = '-' -a "${_oout:-0}" != 0 ] ; then
+        [ -n "$_ftra" ] && context -t +
         if [ "$_oout" = 2 ] ; then
             system -z $_orun -d '--' -n -- "${_acmd[@]}" || _stat=$?
         else
             system -m -s _cen_pip_temp $_orun -d '--' -n -- "${_acmd[@]}" || _stat=$?
             ${_ocon/-i -/-i _cen_pip_temp}
         fi
-        [ "${_ocal:--}" != '-' -a "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
+        case "${_ocal:--}" in
+        -|+) ;;
+        *)   [ "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
+        esac
+        [ -n "$_ftra" ] && context -t -
         return $_stat
     fi
 
     [ -z "$_fcop" ] && _cen_pip_temp='[PIPE]' || _cen_pip_temp='[COPROC]'
     dryrun $_orun "$_cen_pip_temp" "${_acmd[@]}" && return 1
+    [ -n "$_ftra" ] && context -t +
 
     # register a SIGPIPE handler that restores stderr and stdout
     if [ "$_ocal" != '-' ] ; then
@@ -531,6 +550,7 @@ syspipe() {
         # helper to run command: "<"|">"|"<>" <command>
         _cen_pip_worker() {
             if [ "$1" = '-' ] ; then
+               [ "$_verb" -gt 1 ] && context -v 1       # disable debug output
                [ -n "$_fcap" ] && exec 2>&1
                shift
                if isfunction -- "$_acmd" ; then
@@ -549,7 +569,6 @@ syspipe() {
                 tmpfile -r -s _pipe[1] -f ; CEN_SYSPIPE="${_pipe[*]}"
             fi
             trace -a -c "() $1" "worker: $_acmd"
-            [ "$_verb" -gt 1 ] && context -v 1          # disable debug output
 
             if [ "$1" = '<>' ] ; then
                 _cen_pip_worker - <"${_pipe[0]}" >"${_pipe[1]}" &
@@ -596,11 +615,13 @@ syspipe() {
     fi
 
     # unregister a SIGPIPE handler
-    if [ "$_ocal" != '-' ] ; then
-        trap SIGPIPE
-    fi
-
-    [ "${_ocal:--}" != '-' -a "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
+    case "${_ocal:--}" in
+    -)  ;;
+    +)  trap SIGPIPE ;;
+    *)  trap SIGPIPE
+        [ "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
+    esac
+    [ -n "$_ftra" ] && context -t -
     return $_stat
 }
 
@@ -610,7 +631,9 @@ _cen_pip_reset() {
     exec 1>&- 2>&-                              # close pipe
     exec 1>&$CEN_STDOUT 2>&$CEN_STDERR          # restore tty output
     trap SIGPIPE
-    if [ -n "$CEN_TRAPSIG" ] ; then             # kill reader after signal
+    if ! kill -0 "$CEN_PIP_WAIT" 2>/dev/null ; then
+        $CEN_TRACE2 "background pid invalid"
+    elif [ -n "$CEN_TRAPSIG" ] ; then           # kill reader after signal
         kill $CEN_PIP_WAIT
     else                                        # wait for reader to terminate
         wait $CEN_PIP_WAIT

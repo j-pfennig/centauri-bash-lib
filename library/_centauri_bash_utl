@@ -46,7 +46,7 @@ CEN_MODULES["_centauri_bash_utl"]="0.02:1"
 #.          message "Index $valn is '$valm'"
 # ------------------------------------------------------------------------------
 listsearch() {
-    local _fbin _fcas _fglo _finp _fwrd _fidx _frex _ftrm _funi _sdel _word _list _curr
+    local _fbin _fcas _fglo _finp _fwrd _fidx _frex _ftrm _funi _sdel _word _list
     while [ "${1::1}" = "-" ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -74,13 +74,14 @@ listsearch() {
     fi
 
     # iteration limits
-    local _ibeg=0 _iend="${#_list[@]}" _irun
+    local _ibeg=0 _iend="${#_list[@]}" _irun _curr _cwrd
     for ((_irun=_ibeg; _irun<_iend; _irun++)) ; do
         _curr="${_list[_irun]}"
         if [ -n "$_ftrm" ] ; then
             _curr="${_curr%"${_curr##*[![:space:]]}"}"
             _curr="${_curr#"${_curr%%[![:space:]]*}"}"
         fi
+        _cwrd="$_curr"                              # preserve case
         [ -z "$_fcas" ] && _curr="${_curr,,}"
         if [ -n "$_fglo" ] ; then                   # glob match ...
             [ $_fglo -ge ${#_curr} ] && continue    # find longest match
@@ -90,18 +91,18 @@ listsearch() {
                 [[ "$_curr" == $_word ]] || continue
             fi
             [ -n "$_fidx" ] && _vidx="$_irun"
-            [ -n "$_fwrd" ] && _vres="${_list[_irun]}"
+            [ -n "$_fwrd" ] && _vres="$_cwrd"
             _fglo=${#_curr} ; _funi=2
         elif [ -z "$_funi" ] ; then                 # full match only...
             [ "$_word" = "$_curr" ] || continue
             [ -n "$_fidx" ] && _vidx="$_irun"
-            [ -n "$_fwrd" ] && _vres="${_list[_irun]}"
+            [ -n "$_fwrd" ] && _vres="$_cwrd"
             return 0
         else                                        # allow partial match...
             [ "${_curr#$_word}" = "$_curr" ] && continue
             [ "$_funi" = 2 ] && return 2            # previous match, stop
             [ -n "$_fidx" ] && _vidx="$_irun"
-            [ -n "$_fwrd" ] && _vres="${_list[_irun]}"
+            [ -n "$_fwrd" ] && _vres="$_cwrd"
             ((_funi += 1))                          # _funi=2 is one match
         fi
     done

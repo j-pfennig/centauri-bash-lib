@@ -18,10 +18,10 @@
 # Example:  Add command line option --mount for automount (and unmount):
 #.          . _centauri_bash_mnt -m
 #
-# Copyright Dr. J. Pfennig (c) 2020-2022
+# Copyright Dr. J. Pfennig (c) 2020-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_mnt"]="0.10:1"
+CEN_MODULES["_centauri_bash_mnt"]='0.11:2'
 
 # used by findmount and automount
 
@@ -129,7 +129,7 @@ automount() {
     # is mount argument a label?
     if [ "${_desc::5}" = "/dev/" ] ; then
         _labl= ; _lmsg=$"device"
-    elif [ "${_desc::1}" = "/" ] ; then
+    elif [ "${_desc::1}" = '/' ] ; then
         _labl= ; _lmsg=$"path"
     else
         _labl="-c -l"; _lmsg=$"label"
@@ -141,12 +141,12 @@ automount() {
 
     if [ "$_umnt" = 2 ] ; then                  # unmount all automounts
         local _mkey _mtyp _mdir="$PWD"
-        folder -c "/"                           # may work in some cases
+        folder -c '/'                           # may work in some cases
         for _mkey in "${!CEN_MNT_AMAP[@]}" ; do
             _mtyp="${_mkey%%:*}" ; [ "$_mtyp" = "$_mkey" ] && _mtyp=
             automount -k "$_mtyp" -o "$CEN_MNT_OLVL" -u "${CEN_MNT_AMAP["$_mkey"]}"
         done
-        folder -c "$_mdir"
+        folder -q -c "$_mdir"
         return 0
 
     elif [ -n "$_umnt" -o -n "$_fchk" ] ; then
@@ -575,7 +575,7 @@ findmount() {
 
     # find device by kind
     elif [ -n "$_fknd" ] ; then
-        [ "${_mdev::1}" = "/" ] || return 1                    # cannot have a label
+        [ "${_mdev::1}" = '/' ] || return 1                    # cannot have a label
         for _mxxx in "/dev/disk/by-$_fknd/"* ; do
             [ "$_mdev" -ef "$_mxxx" ] || continue
             CEN_MOUNT_DIR="${_mxxx##*/}" ; return 0
@@ -601,7 +601,7 @@ findmount() {
         printf -v CEN_MOUNT_DIR "${CEN_MOUNT_DIR//%/$'\n'}"
         CEN_MOUNT_DEV="${CEN_MOUNT_DEV//$'\n'/%}"               # restore %
         CEN_MOUNT_DIR="${CEN_MOUNT_DIR//$'\n'/%}"
-        if [ "${CEN_MOUNT_DEV::1}" != "/" ] ; then              # a file system
+        if [ "${CEN_MOUNT_DEV::1}" != '/' ] ; then              # a file system
              [ "$_mdev" = '*' -o "$_mdev" = "$CEN_MOUNT_DEV" ] || continue
              [ "$_mdir" = "$_mdev" ] && return 0
         elif [ "$_mdev" -ef "$CEN_MOUNT_DEV" ] ; then           # a device
@@ -613,7 +613,7 @@ findmount() {
     done < "/proc/mounts"
 
     # not mounted
-    [ "$_fdev" = 2 ] && system -e -p -s CEN_MOUNT_FS -- lsblk -n -b -d -o FSTYPE "$_mdev"
+    [ "$_fdev" = 2 ] && system -e -p -r -s CEN_MOUNT_FS -- lsblk -n -b -d -o FSTYPE "$_mdev"
     CEN_MOUNT_DEV="$_mdev"
     [ -b "$CEN_MOUNT_DEV" ] || CEN_MOUNT_DEV=
     [ -z "$_fdev" ] && return 1

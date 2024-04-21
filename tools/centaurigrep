@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 # ------------------------------------------------------------------------------
-CEN_LEGAL=$"Dr. J. Pfennig (c) 2022-2023; BSD license"
+CEN_LEGAL=$"Dr. J. Pfennig (c) 2022-2024; BSD license"
 CEN_TITLE=$"Grep for (bash) source files"
 
 # Import the bash library, set mix/max arguments
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -t "$0" '0.02:1' || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -i -r -t - '0.03:2' || exit 2
 
 # Data
 CEN_OPT_COMMENT=                # see --comment
@@ -19,29 +19,36 @@ CEN_OPT_WORD=                   # see --word
 # The one and only action
 # ------------------------------------------------------------------------------
 run() {
-    # set current path
+    # --- <path> argument is a file ---
 
-    if [ -n "$CEN_OPT_PATH" ] ; then
-        shortpath -f -g -- "$CEN_OPT_PATH"
-        folder -c -f -- "${CEN_SHORTPATH:-$CEN_OPT_PATH}"
-    fi
+    if [ -n "$CEN_OPT_PATH" ] && [ -f "$CEN_OPT_PATH" ] ; then
+        CEN_WALK_FILES=("$CEN_OPT_PATH")
 
-    # default includes/excludes
+    # --- set current path and run walk ---
 
-    if [ "${#CEN_OPT_INCLEXCL[@]}" = 0 ] ; then
-        if [ "$PWD" -ef "$CEN_LIBRARY" ] ; then
-            CEN_OPT_INCLEXCL=('*_???')
-        elif [ "$PWD" -ef "$CEN_TOOLS" ] ; then
-            CEN_OPT_INCLEXCL=('centauri*')
-        fi
-    fi
-
-    # get file list
-
-    if [ -z "$CEN_OPT_RECURSE" ] ; then
-        walk -c -r -l 1 -- .
     else
-        walk -c -r -- .
+        if [ -n "$CEN_OPT_PATH" ] ; then
+            shortpath -f -g -- "$CEN_OPT_PATH"
+            folder -c -f -- "${CEN_SHORTPATH:-$CEN_OPT_PATH}"
+        fi
+
+        # default includes/excludes
+
+        if [ "${#CEN_OPT_INCLEXCL[@]}" = 0 ] ; then
+            if [ "$PWD" -ef "$CEN_LIBRARY" ] ; then
+                CEN_OPT_INCLEXCL=('*_???')
+            elif [ "$PWD" -ef "$CEN_TOOLS" ] ; then
+                CEN_OPT_INCLEXCL=('centauri*')
+            fi
+        fi
+
+        # get file list
+
+        if [ -z "$CEN_OPT_RECURSE" ] ; then
+            walk -c -r -l 1 -- .
+        else
+            walk -c -r -- .
+        fi
     fi
 
     # get comment sub-expression
@@ -51,7 +58,7 @@ run() {
     [ -n "$CEN_OPT_WORD" ] && opts+=(-w)
 
     case "${CEN_OPT_COMMENT:-bash}" in
-    [bh]ash)
+    [bd]ash)
         cexp='[[:space:]]*#' ;;
     semi|semicolon)
         cexp='[[:space:]]*;' ;;
@@ -132,19 +139,21 @@ usage() {
              -u $"is implied."
 
     usageset -o - \
-             -o "-C --comment <cexp>  "$"expression to match comments" \
-             -o "-N --native          "$"pass all options to grep" \
-             -o "-L --library         "$"use \$CEN_LIBRARY as path" \
-             -o "-P --path    <path>  "$"path to use (can be a shortpath)" \
-             -o "-R --recurse         "$"recurse folder" \
-             -o "-T --tools           "$"use \$CEN_TOOLS as path" \
-             -o "-W --word            "$"match only whole words"
+             -o '-C --comment <cexp>'  $"expression to match comments" \
+             -o '-N --native'          $"pass all options to grep" \
+             -o '-L --library'         $"[*] use \$CEN_LIBRARY as path" \
+             -o '-P --path    <path>'  $"[*] path to use (can be a shortpath)" \
+             -o '-R --recurse'         $"recurse folder" \
+             -o '-T --tools'           $"[*] use \$CEN_TOOLS as path" \
+             -o '-W --word'            $"match only whole words" \
+             -o - \
+             -o '[*] these options are mutually exclusive'
 
-    usageset -l $"arguments" \
-             -t "<cexp>               "$"regular expression, leading spaces skipped" \
-             -t "<garg>               "$"any argument to be passed to grep" \
-             -t "<gexp>               "$"a perl regular expression" \
-             -t "<path>               "$"configured shortpath or a path (or ./<path>)"
+    usageset -p '<cexp>'    $"regular expression or keyword, leading spaces skipped" \
+             -p '<garg>'    $"any argument to be passed to grep" \
+             -p '<gexp>'    $"a perl regular expression" \
+             -p '<path>'    $"a configured shortpath or a path (or ./<path>); this" \
+             -p -           $"parameter can specify a folder or a single file"
 
     usageset -l $"examples" \
              -t $"# search for 'black' or 'white' in \$CEN_TOOLS" \
@@ -157,8 +166,8 @@ usage() {
              -t "$CEN_NAME -P /etc/samba -C semicolon -x '*.*dist' 'path'" \
              -t - \
              -t $"# list samba/smb.conf without comments" \
-             -t "$CEN_NAME -P /etc/samba -i smb.conf -C '[;#]' '.*'" \
-             -t "$CEN_NAME -P /etc/samba -i 'smb.conf$' -C '[;#]' '[![:space:]]+'"
+             -t "$CEN_NAME -P /etc/samba/smb.conf -C '[;#]' '.*'" \
+             -t "$CEN_NAME -P /etc/samba/smb.conf -C '[;#]' '[![:space:]]+'"
 }
 
 # ------------------------------------------------------------------------------

@@ -414,6 +414,7 @@ xml_element() {
       esac ; shift
     done
     _satr+="$_scls$_scss"
+    [ "$_satr" = ' ' ] && _satr=
 
     # disable -n -i -u for variable output
     if [ -n "$_optv" ] ; then
@@ -427,7 +428,6 @@ xml_element() {
         *.*) _satr=" class='${_etag#*.}'$_satr" ; _etag="${_etag%%.*}" ;;
         esac
     fi
-    [ "$_satr" = " " ] && _satr=
 
     # imply -x for HTML if not a <br> tag ...
     if [ -z "$_optx" ] ; then

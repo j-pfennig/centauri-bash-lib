@@ -200,11 +200,15 @@ progress() {
     fi
     [ "$_fend" = 0 ] && _fend=
 
+    if [ -z "$_ftxt" ] && [ "${CEN_NOBREAK:-2}" = 2 ] && [ -z "$CEN_WINDOWS" ] ; then
+        local _text="$*" ; _cen_compactify _text ; set -- "$_text"
+    fi
+
     # run worker (always) or progress implementation
     if [ -n "$_work" ] ; then                   # worker mode
         local _mini="${_step#*:}" ; [ "$_mini" = "$_step" ] && _mini=1
         [ "$CEN_PROGRESS" = 0 ] && _mini=0
-        _cen_pro_work "$_work" "$_fdel" "${_step%:*}" "$_mini" "$_prog" "$@" || _stat=$?
+        _cen_pro_work "$_work" "$_fdel" "${_step%:*}" "$_mini" "$_prog" "$_text" || _stat=$?
     elif [ "$CEN_PROGRESS" != 0 ] ; then
         if [ -n "$CEN_WINDOWS" ] ; then         # foreward to _centauri_bash_win
             _cen_win_prog "$_prog" "$_fdel" "$_fend" "$_flin" "$_step" "$_ftxt" "$@" || _stat=$?

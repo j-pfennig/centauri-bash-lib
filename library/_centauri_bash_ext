@@ -18,10 +18,10 @@
 # documentation. Most functions notably [[move()]], [[remove()]], [[rename()]]
 # and [[symlink()]] are aware of these builtins.
 #
-# Copyright Dr. J. Pfennig (c) 2016-2023
+# Copyright Dr. J. Pfennig (c) 2016-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_ext"]="0.25:2"
+CEN_MODULES["_centauri_bash_ext"]="0.26:2"
 
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
@@ -330,7 +330,7 @@ joinpath() {
 # ------------------------------------------------------------------------------
 # matchpath - Match argument paths by type and access permission
 #
-# Call:    matchpath [-a|-s <rslt>] [-c <func>] [-d|-e|-f|-l] [-m] [-o] [-p] \
+# Call:    matchpath [-a|-s <rslt>] [-c <func>] [-d|-e|-f|-l|-n] [-m] [-o] [-p] \
 #                    [-r|-w|-x]... [--] <path>...
 #
 #          Simple filtering of paths, no recursion. See also: [[walk()]].
@@ -342,6 +342,7 @@ joinpath() {
 #          -f  match files only
 #          -l  match symlink (including stale symlink)
 #          -m  match against --include/--exclude
+#          -n  match non-existing paths only (finds stale links)
 #          -o  return first match only
 #          -p  run prettypath on matches
 #          -r  path must be readable
@@ -385,6 +386,7 @@ matchpath() {
       -f)   _otyp='-f' ;;
       -l)   _otyp='-h' ;;
       -m)   _smat='filter' ;;
+      -n)   _otyp='! -e' ;;
       -o)   _oone=1 ;;
       -p)   _opre=1 ;;
       -r)   _orea=1 ;;
@@ -412,7 +414,6 @@ matchpath() {
             [ -x "$_item" ] || continue
         fi
         _stat=0
-      #  [ -n "$_opre" ] && prettypath -s _item -p -- "$_item"
         [ -n "$_opre" ] && _cen_path_pretty -p _item "$_item"
         $_scal "$_item" || continue
         _varr+=("$_item")
@@ -1079,6 +1080,28 @@ resolve() {
 }
 
 # ------------------------------------------------------------------------------
+# splitkeyval - Split key/value pair using a single character delimiter
+#
+# Call:     splitkeyval <data> [<vkey>|- [<vval>|- [<deli>]]]
+#
+# Arguments:<data>  input: ''<key><deli><val>''
+#           <vkey>  name of a variable to receive ''<key>''
+#           <vval>  name of a variable to receive ''<val>''
+#           <deli>  single character delimiter (default: '=')
+#
+# Return:   0       found delimiter, split into ''<key>'' and ''<val>''
+#           1       no delimiter, ''<key>'' returns <data>, ''<val>'' is empty
+# ------------------------------------------------------------------------------
+splitkeyval() {
+    local _vkey="${2:--}" _vval="${3:--}" _deli="${4:-=}" _skey _sval _stat=0
+    _skey="${1%%$_deli*}"
+    [ "$_skey" = "$1" ] && _stat=1 || _sval="${1#*$_deli}"
+    [ "$_vkey" = '-' ] || printf -v $_vkey '%s' "$_skey"
+    [ "$_vval" = '-' ] || printf -v $_vval '%s' "$_sval"
+    return $_stat
+}
+
+# ------------------------------------------------------------------------------
 # splitpath - Split path name into components
 #
 # Call:     splitpath -a <rslt> [-e] [-f] [-g|-p] [-w] <path>
@@ -1204,14 +1227,15 @@ splitpath() {
 # ------------------------------------------------------------------------------
 # suffixpath - add or remove a suffix to or from a file path
 #
-# Call:     (1) suffixpath [-s <varname>] [-d] [-l] [-c <from>] [--] <suffix> [<path>]
-#           (2) suffixpath [-s <varname>] [-r] [-l] [-c <from>] [--] <suffix>|- [<path>]
+# Call:     (1) suffixpath [-s <varname>] [-d] [-l] [-c <from>] [-x] [--] <suffix> [<path>]
+#           (2) suffixpath [-s <varname>] [-r] [-l] [-c <from>] [-x] [--] <suffix>|- [<path>]
 #
 # Options:  -c  change suffix
 #           -d  only append if path has no other suffix
 #           -l  lower case
 #           -r  remove one suffix (use - to match any suffix)
 #           -s  variable to be used (default is CEN_SUFFIXPATH)
+#           -x  exclude folders
 #
 # Arguments:<varname>  a variable holding the path
 #           <suffix>   suffix to be append
@@ -1256,7 +1280,7 @@ splitpath() {
 # ------------------------------------------------------------------------------
 CEN_SUFFIXPATH=
 suffixpath() {
-    local _vnam="CEN_SUFFIXPATH" _suff _from _optd _olow _orem
+    local _vnam="CEN_SUFFIXPATH" _suff _from _optd _olow _orem _oxcl
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -1266,6 +1290,7 @@ suffixpath() {
         -l)   _olow=1 ;;
         -r)   _orem=1 ;;
         -s)   shift ; _vnam="$1" ;;
+        -x)   _oxcl=1 ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
@@ -1278,7 +1303,7 @@ suffixpath() {
     [ -z "$_snam" ] && return 1                     # empty or trailing / (is a folder)
     _snew="${1#.}" ; [ -z "$_snew" ] && return 1    # no suffix given
     if [ "${_snam:${#_snam}-1:1}" = "." ] ; then    # ending with .
-        [ -d "$_vsuf" ] && return 1                 # do not touch a folder name
+        [ -n "$_oxcl" -a -d "$_vsuf" ] && return 1  # do not touch a folder name
         _vsuf="${_vsuf::${#_vsuf}-1}" ; return 0    # remove dot
     fi
     local _scur="${_snam#*.}"                       # get current suffix
@@ -1286,10 +1311,10 @@ suffixpath() {
     # append a suffix
     if [ "$_scur" = "$_snam" ] ; then               # file has no suffix
         [ -n "$_orem" ] && return 0                 # nothing to remove
-        [ -d "$_vsuf" ] && return 1                 # ignore folder
+        [ -n "$_oxcl" -a -d "$_vsuf" ] && return 1  # ignore folder
         _vsuf+=".$_snew" ; return 0
     elif [ -z "$_optd" -a -z "$_from" -a -z "$_orem" ] ; then
-        [ -d "$_vsuf" ] && return 1                 # ignore folder
+        [ -n "$_oxcl" -a -d "$_vsuf" ] && return 1  # ignore folder
         _vsuf+=".$_snew" ; return 0
     fi
 
@@ -1300,14 +1325,14 @@ suffixpath() {
 
     # change current suffix
     if [ -n "$_from" ] && [ "$_from" = '-' -o "$_from" = "$_scur" ] ; then
-        [ -d "$_vsuf" ] && return 1                 # ignore folder
+        [ -n "$_oxcl" -a -d "$_vsuf" ] && return 1  # ignore folder
         _vsuf="${_snam%.*}.$_snew" ; _scur="$_snew"
     fi
 
     # remove suffix
     [ -z "$_orem" ] && return 0
     if [ "$_orem" = '-' -o "$_scur" = "$_orem" ] ; then
-        [ -d "$_vsuf" ] && return 1                 # ignore folder
+        [ -n "$_oxcl" -a -d "$_vsuf" ] && return 1  # ignore folder
         _vsuf="${_snam%.*}"
     fi
     return 0
@@ -1325,11 +1350,12 @@ suffixpath() {
 #           -d  allow that <link> is a folder
 #           -f  make errors fatal
 #           -i  [*] no error message for missing <target>
-#           -m  if link is a file/dir move it to '<link>.$CEN_NAME'
+#           -m  if <link> is a file/dir move it to '<link>.$CEN_NAME'
 #           -n  [*] no checks, <link> will replace file (ln -f -s)
 #           -q  do not report errors
 #           -r  make relative links
 #           -s  do not generate messages
+#           -w  report errors as warnings
 #           -x  if <link> is a file/dir explicitly delete it
 #
 #           [*] use '-i -n' to allow the creation of stale symlinks
@@ -1357,68 +1383,73 @@ symlink() {
       --)   shift ; break ;;
       -c)   _ocan=1 ;;
       -d)   _odir=1 ;;
-      -f)   _oftl="fatal" ; _osys="-f -p" ;;
+      -f)   _oftl='fatal' ; _osys='-f -p' ;;
       -i)   _fign=1 ;;
       -m)   _move=1 ;;
       -n)   _onck='-f' ;;
-      -q)   _oftl=":" ; _osys="-q" ;;
+      -q)   _oftl=':' ; _osys='-q' ;;
       -r)   _orel=1 ;;
       -s)   _mesg=: ;;
-      -v)   _mesg=message ;;
+      -v)   _mesg='message' ;;
+      -w)   _oftl='warning' ; _osys='-w -p' ;;
       -x)   _move=0 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
-    local _etxt _link="$2" _targ="$1"
+    [ -z "$1" ] && _cen_abort +
+    local _etxt _link="$2" _targ="${1%/}"
+    [ -z "$1" ] && _targ='/'
+    [ -z "$_link" ] && _link="${_targ##*/}"
 
-    # multiple targets, link must be a folder, run /usr/bin/ln
+    # multiple targets, link must be an existing folder, run /usr/bin/ln
     if [ $# -gt 2 ] ; then
         local _leng="$#" ; _link="${!_leng}"    # kde/kate highligt bug: ${!#}
         folder ${_osys//-[ep]/} -- "$_link" || return 1
-        sysrun $_osys -i -m "$_etxt" -d -- ln $_onck $_orel -s -- "$@" || return 1
-        return
+        sysrun $_osys -i -m "$_etxt" -d -- ln $_onck $_orel -s -- "$@" || return 2
+        return 0
     fi
 
-    if [ -z "$_link" ] ; then
-        _link="${_targ##*/}"
-    elif [ -n "$_odir" ] && [ -d "$_link" ] ; then
-        _link="${_link%/}/${_targ##*/}"
-    fi
-
+    # check if single target exists (allow stale link: -i -n)
     if [ -z "$_onck" -o -n "$_fign" ] ; then
         if [ ! -e "$_targ" ] ; then
             [ -z "$_fign" ] && $_oftl $"Link target does not exist:" "$_targ"
             [ -z "$_onck" ] && return 1
-        elif [ "$_targ" -ef "$_link" ] ; then
-            $_mesg -a -c $" valid" -- "$_link => $_targ" ; return 0
-        else
-            [ -n "$_ocan" ] && _cen_path_realp -c "$_targ" && _targ="$_logi"
+            $_mesg -a -c $"Stale symlink" "$_link"
         fi
+    fi
 
-        if [ -h "$_link" ] ; then
-            remove -s -- "$_link" || return 2
-            $_mesg -a -c $" removed" -- "$_link"
-        elif [ -e "$_link" ] ; then
-            if [ "$_move" = 0 ] ; then
-                remove -d -s -- "$_link" || return 2
-                $_mesg -a $"Link '$_link' file/fldr deleted"
-            elif [ -n "$_move" ] ; then
-                sysrun $_osys -b -- mv -f -- "$_link" "$_link.$CEN_NAME" || return 2
-                $_mesg -a $"Link '$_link' file/fldr moved"": $_link.$CEN_NAME"
-            elif [ -d "$_link" ] ; then
-                $_oftl $"Link target is an existing folder:" "$_link" ; return 2
-            else
-                $_oftl $"Link target is an existing file:" "$_link" ; return 2
+    # move existing link away
+    if [ -e "$_link" ] ; then
+        if [ "$_move" = 0 ] ; then              # always delete ...
+            remove -d -- "$_link" || return 2
+        elif [ -h "$_link" ] ; then
+            if [ -n "$_move" ] ; then
+                remove -- "$_link"              # do not dereference
+            elif [ "$_targ" -ef "$_link" ] ; then
+                $_mesg -a -c $"Link is current" "$_link" ; return 0
+            elif [ -z "$_odir" -a -n "$_onck" ] && [ -d "$_link" ] ; then
+                remove -d -- "$_link"           # do not dereference
             fi
+        elif [ -n "$_move" ] ; then             # move it away ...
+            sysrun $_osys -b -- mv -f -- "$_link" "$_link.$CEN_NAME" || return 2
+            $_mesg -a $"Link '$_link' file/fldr moved"": $_link.$CEN_NAME"
+        elif [ -d "$_link" ] ; then             # existing folder ...
+            if [ -n "$_odir" ] ; then
+                $_mesg -a $"Link is a folder:" "$_link"
+            else
+                $_oftl $"Link is an existing folder:" "$_link" ; return 2
+            fi
+        elif [ -z "$_onck" ] ; then
+            $_oftl $"Link is an existing file:" "$_link" ; return 2
         fi
     fi
 
     # run 'ln' and disable builtin for option '-r'
-    _etxt=$"Failed to create symbolic link"": $_link"
+    _etxt=$"Failed to create symbolic link"": %s%s"
     if [ -n "$_orel" ] ; then
-        sysrun $_osys -o 'symlink()' -m "$_etxt" -i -- ln $_onck -s -r -- "$_targ" "$_link" || return 1
+        sysrun $_osys -m "$_etxt" -i -- ln $_onck -s -r -- "$_targ" "$_link" || return 1
     else
-        sysrun $_osys -o 'symlink()' -b -m "$_etxt" -d -- ln $_onck -s "$_targ" "$_link" || return 1
+        sysrun $_osys -b -m "$_etxt" -d -- ln $_onck -s -- "$_targ" "$_link" || return 1
     fi
     $_mesg -a -c $" created" -- "$_link => $_targ" ; return 0
 }

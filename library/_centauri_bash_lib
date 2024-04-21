@@ -17,6 +17,7 @@
 #           -g  enable --gui option (windows or console extension)
 #           -i  enable --include --exclude options
 #           -m  load an extension module (next argument is <name>)
+#           -o  source $CEN_ROOT/defaults/$CEN_NAME on startup
 #           -r  do not dispatch action verbs, just call [[run()]]
 #           -s  enable --silent option
 #           -t  enable text translations
@@ -51,8 +52,8 @@ CEN_ARGOPT=             # option argument, see optarg() and main()
 CEN_ARGS=               # arguments used, see arguments() or options()
 CEN_AUTOIND=            # see _cen_message -a
 CEN_CMDARGS=            # array of script arguments (options removed)
-CEN_CMDCURR=            # index in CEN_CMDARGS[] for current action
-CEN_CMDINDX=            # index in CEN_CMDARGS[] for remaining actions
+CEN_CMDCURR=0           # index in CEN_CMDARGS[] for current action
+CEN_CMDINDX=0           # index in CEN_CMDARGS[] for remaining actions
 CEN_CMDOPTS=            # array of script options
 CEN_CONFIRM=            # result of confirm()
 CEN_DISPLAY=            # empty or 'x11' or 'wayland'
@@ -113,6 +114,7 @@ CEN_FEATURE_E=          # quit on errors
 CEN_FEATURE_F=          # enable --force
 CEN_FEATURE_G=          # enable --gui
 CEN_FEATURE_I=          # enable --include|--exclude
+CEN_FEATURE_O=          # read defaults at start
 CEN_FEATURE_R=          # enable simple run()
 CEN_FEATURE_S=          # enable --silent
 CEN_FEATURE_T=          # enable translations
@@ -147,6 +149,7 @@ while [ "${1::1}" = '-' ] ; do
     -g)   CEN_FEATURE_G=1 ;;
     -i)   CEN_FEATURE_I=1 ;;
     -m)   shift ; CEN_MODULES["_centauri_bash_$1"]= ;;
+    -o)   CEN_FEATURE_O=1 ;;
     -r)   CEN_FEATURE_R=1 ; CEN_RUN_MIN_ARGS='+' ;;
     -s)   CEN_FEATURE_S=1 ;;
     -t)   CEN_FEATURE_T=1 ;;
@@ -189,7 +192,7 @@ fi
 #           <msg_function> := trace | message | warning | error | fatal
 #
 # Options:  -a  print application name on 1st output, indent otherwise
-#           -b  used by console module, ignored here, see [[output()]]
+#           -b  used by console module, simplified here, see [[output()]]
 #           -c  output fixed size text prefix/function-name (intended for trace)
 #           -d  modules only, ignored here, see [[decorate()]] and [[_centauri_bash_win]]
 #           -i  indent (no program name)
@@ -232,6 +235,10 @@ fi
 #
 #+The -e|-f|-t|-w options are used by these implementation helpers and must not be used
 # from user script code. Also user scripts must not call _cen_message() directly.
+#
+#+Option -b only becomes fully functional when the console module is enabled. Otherwise
+# only the <offs> part of the argument is interpreted. See [[output()]] for more
+# information.
 #
 #+Examples: Option -m (simple multiline output) writes one output line per argument.
 #       It does not interpret any C-style escape sequences (like '\n'):
@@ -515,6 +522,7 @@ _cen_exit() {
 # called from trapped signals to terminate script
 _cen_trap() {
     trap - 1 2 3 15 ; CEN_TRAPLVL=              # avoid recursion
+    $CEN_TRACE2 "Got trap:" "${FUNCNAME[1]}" "$1"
     CEN_TRAPSIG="${1:--}"
     [ -n "$CEN_CONS_MSGLEN" ] && ((CEN_CONS_MSGLEN += 2))
     [ -n "$CEN_QUIT_WAIT" ] && CEN_QUIT_WAIT=3
@@ -524,7 +532,7 @@ _cen_trap() {
     quit -t - $"by signal" "$1"
 }
 
-# fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+ <arg>...
+# fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+|= <arg>...
 _cen_abort() {
     set +xeE ; IFS=$' \n\t' ; exec 1>&$CEN_STDOUT 2>&$CEN_STDERR
     local _fnot _indx=1 _idnt="| " _mesg _temp
@@ -1373,13 +1381,13 @@ context() {
 # ------------------------------------------------------------------------------
 create() {
     local _fapp _ftru _fhdr _fcpy _fout _frun _fvar _mdir
-    local _otra="$CEN_TRACE" _oftl="error -z" _mtxt=$"file"
+    local _otra="$CEN_TRACE" _oftl='error -z' _mtxt=$"file"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _fapp=1 ;;
       -c)   _fcpy=1 ;;
-      -f)   _oftl="fatal" ;;
+      -f)   _oftl='fatal' ;;
       -d)   _mdir=1 ; _mtxt=$"folder" ;;
       -h)   shift ; _fhdr="$1" ; _fcpy=1
             [ "${_fhdr:--}" = '-' ] && _fhdr="$CEN_NAME" ;;
@@ -1389,7 +1397,7 @@ create() {
       -s)   _otra=":" ;;
       -t)   _ftru=1 ;;
       -v)   shift ; _fvar="$1" ;;
-      -w)   _oftl="warning" ;;
+      -w)   _oftl='warning' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -1599,25 +1607,25 @@ embed() {
       -a)   shift ; _vset="$1" ; local -n _vsar="$1" ; _vsar=() ;;
       -c)   _modu=3 ;;
       -d)   shift ; [ "$1" = '--' ] && _vdel=(-n) || _vdel=("-d" "$1") ;;
-      -g)   if   windows ; then _verb+=" --gui=1"
-            elif console ; then _verb+=" --gui=2"
-            else                _verb+=" --gui=0"
+      -g)   if   windows ; then _verb+=' --gui=1'
+            elif console ; then _verb+=' --gui=2'
+            else                _verb+=' --gui=0'
             fi ;;
       -i)   [ -n "$CEN_AUTOIND" ] && _oind=":a" ; CEN_AUTOIND=1 ;;
-      -m)   _modu=1 ; _rdry="-r" ;;
+      -m)   _modu=1 ; _rdry='-r' ;;
       -n)   _terr=1 ;;
-      -q)   _modu=2 ; _rdry="-r" ;;
-      -r)   _rdry="-r" ;;
+      -q)   _modu=2 ; _rdry='-r' ;;
+      -r)   _rdry='-r' ;;
       -s)   shift ; local -n _vval="$1" ; _vval= ; _vset='-' ;;
       -t)   [ "$CEN_DONE" = 2 ] && return 1 ;;
       -u)   shift ; _cen_sudo _xcmd "$1" ;;
-      -v)   [ "$CEN_VERB" -gt 1 ] && _verb+=" --verbose"
-            [ "$CEN_VERB" -gt 2 ] && _verb+=" --verbose"
-            [ "$CEN_VERB" -lt 1 ] && _verb+=" --quiet" ;;
+      -v)   [ "$CEN_VERB" -gt 1 ] && _verb+=' --verbose'
+            [ "$CEN_VERB" -gt 2 ] && _verb+=' --verbose'
+            [ "$CEN_VERB" -lt 1 ] && _verb+=' --quiet' ;;
       -x)   _xexc=1 ;;
-      -y)   [ "$CEN_YESNO" = "y" ] && _verb+=" --yes"
-            [ "$CEN_YESNO" = "n" ] && _verb+=" --no" ;;
-      -z)   _rdry="-r" ; [ -n "$CEN_OPT_DRYRUN" ] && _odry="--dryrun" ;;
+      -y)   [ "$CEN_YESNO" = 'y' ] && _verb+=' --yes'
+            [ "$CEN_YESNO" = 'n' ] && _verb+=' --no' ;;
+      -z)   _rdry='-r' ; [ -n "$CEN_OPT_DRYRUN" ] && _odry='--dryrun' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -1636,7 +1644,7 @@ embed() {
             else
                 _sexi=1
             fi
-        elif [ -x "$_srun" ] ; then
+        elif [ -x "$_srun" -o -e "$_srun.p" ] ; then
             [ -n "$CEN_FEATURE_A" -a "$_modu" = 3 ] && return 0
             $CEN_TRACE2 -a -c $" module" "$_snam" "$@"
             [ -n "$TEXTDOMAIN" ] && TEXTDOMAIN="$_snam"
@@ -2002,6 +2010,7 @@ invoke() {
         # must catch ERR trap in _cen_abort
         $nact "${CEN_ACTARR[@]}"
     fi
+    CEN_ACTARR=()
     return 0
 }
 
@@ -2893,7 +2902,7 @@ main() {
             local _rarg=() ; CEN_ACTARR=()
             # remove the 1st '---' from arg list
             for _curr in  "${CEN_CMDARGS[@]}" ; do
-                if [ "$_curr" = "---" -a -z "$_olit" ] ; then
+                if [ "$_curr" = '---' ] && [ -z "$_olit" ] ; then
                     _olit=1 ; continue
                 fi
                 _rarg+=("$_curr")
@@ -2965,10 +2974,11 @@ if [ -z "${CEN_PATHS[5]}" ] ; then
     CEN_PATHS[5]="$CEN_PATHS/usr/lib" ; [ -d "${CEN_PATHS[5]}" ] || CEN_PATHS[5]="$CEN_PATHS/lib"
 fi
 
-# save stderr handle, check proxy , register error handlers
+# save stderr handle, check proxy, register error handlers, default options
 _cen_handle CEN_STDOUT CEN_STDERR ; eval exec "$CEN_STDOUT>&1" "$CEN_STDERR>&2"
 [ -z "$CEN_ROOT" -o -z "$CEN_LIBRARY" ] && fatal 'Environment not set (missing proxy?)'
 [ -n "$CEN_FEATURE_E" ] && context -e 3 || context -e 2
+[ -n "$CEN_FEATURE_O" ] && [ -r "$CEN_ROOT/default/$CEN_NAME" ] && . "$CEN_ROOT/default/$CEN_NAME"
 
 # load modules
 [ -n "$CEN_FEATURE_A" ] && embed -r -m '_centauri_bash_dyn' -f

@@ -24,10 +24,10 @@
 #.          # grep an array to a file (via stdout redirection)
 #.          txtgrep -i data -s - -x "^([A-M]|[a-m])" > "$my_file"
 #
-# Copyright Dr. J. Pfennig (c) 2021-2022
+# Copyright Dr. J. Pfennig (c) 2021-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_txt"]="0.02:1"
+CEN_MODULES["_centauri_bash_txt"]="0.03:2"
 
 CEN_TXT_SORT=                   # paths of tools
 CEN_TXT_UNIQ=
@@ -57,7 +57,7 @@ CEN_TXT_GREP=
 # Example:  In-place (same input/output array) numberic sort
 #
 #.          local data=(343 332 22)
-#.          txtsort -n -a _data -i _data
+#.          txtsort -n -i data -a data
 #
 #+This function runs a simple bubble sort unless the line count threshold
 # gets exceeded. In the later case [[extsort()]] is invoked. The rationale
@@ -71,7 +71,7 @@ txtsort() {
     #$CEN_DEBUG -c -- "$*"
     local _ffat _fqui _fmax=15 _frev _farr _leng _xopt _stat=0
     local _vinp _vout="-s -" _vsys _cen_sort_aarg
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _farr="$1" ; _vout="-s $1" ; _vsys="-a $1"  ;;
@@ -178,8 +178,8 @@ txtsort() {
 # ------------------------------------------------------------------------------
 extsort() {
     #$CEN_DEBUG -c -- "$*"
-    local _ferr='-e' _fopt _frev _funi _fnam _vinp _vout _acmd
-    while [ "${1::1}" = "-" ] ; do
+    local _ferr='-e' _fopt _frev _funi _fnam _vinp _vout='-s -' _acmd
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _fnam="$1" ; _vout="-a $1" ;;
@@ -245,7 +245,7 @@ extsort() {
 #
 # Arguments:<var>   name of a variable or array
 #           <expr>  regular expression -or- bash glob pattern
-#           <line>  text line to be sorted
+#           <line>  text line to be searched
 #
 #.Examples: # use a glob expression to remove comment lines
 #.          txtgrep -n -y "#*" -a data -i - <file.txt
@@ -265,7 +265,7 @@ extsort() {
 txtgrep() {
     #$CEN_DEBUG -c -- "$*"
     local _fnam _fnot _fexp _expr _vinp _vout _stop
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vout="$1" ;;
@@ -280,6 +280,7 @@ txtgrep() {
     done
     [ -z "$_fexp" ] && _cen_abort + '-x|-y'
     [ -n "$_fnot" ] && ((_fexp += 2))
+    [ -z "$_vout" -a -z "$_fnam" ] && _stop='break'
 
     # implementation uses input and output arrays
     local -n _varr _rslt
@@ -391,7 +392,7 @@ txtgrep() {
 extgrep() {
     #$CEN_DEBUG -c -- "$*"
     local _ferr='-e' _fexp _fnam _vinp _vout='-s -' _acmd=('-') _aopt
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _fnam="$1" ; _vout="-a $1" ;;
@@ -481,7 +482,7 @@ extgrep() {
 # ------------------------------------------------------------------------------
 txtfold() {
     local _deli _nmax _sout _frmt=:
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -d)   shift ; _deli="${1:--}" ;;
