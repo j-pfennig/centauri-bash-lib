@@ -21,7 +21,7 @@
 # Copyright Dr. J. Pfennig (c) 2016-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_ext"]="0.26:2"
+CEN_MODULES['_centauri_bash_ext']='0.26:2'
 
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
@@ -1442,6 +1442,9 @@ symlink() {
         elif [ -z "$_onck" ] ; then
             $_oftl $"Link is an existing file:" "$_link" ; return 2
         fi
+    # silently replace stale links
+    elif [ -h "$_link" ] ; then
+        _onck='-f'
     fi
 
     # run 'ln' and disable builtin for option '-r'

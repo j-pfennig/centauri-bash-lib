@@ -228,6 +228,7 @@ netconv() { _cen_dyn_load net "$@" ; }
 netgetip() { _cen_dyn_load net "$@" ; }
 nethost() { _cen_dyn_load net "$@" ; }
 netiface() { _cen_dyn_load net "$@" ; }
+netindex() { _cen_dyn_load net "$@" ; }
 netoption() { _cen_dyn_load net "$@" ; }
 netparse() { _cen_dyn_load net "$@" ; }
 nettemp() { _cen_dyn_load net "$@" ; }

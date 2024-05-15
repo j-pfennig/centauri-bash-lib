@@ -366,7 +366,7 @@ _cen_bash_init() {
     CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2020; BSD License"
     CEN_TITLE="Example of a packaged _centauri_bash_lib script"
 
-    # PATH+=":${0%/*}" . _centauri_bash_lib -d -r "$0" "0.0" || exit 2
+    # PATH+=":${0%/*}" . _centauri_bash_lib -d -r - '0.0' || exit 2
 
     CEN_RUN_MIN_ARGS=1              # min arg count, see arguments()
     CEN_RUN_MAX_ARGS=+              # max arg count
@@ -581,15 +581,9 @@ do_input() {
 
 # parse _centauri_bash_lib arguments: <arg>...
 do_libarg() {
-    local frst
     DAT_INP_LIBARG=
     while [ -n "$1" ] ; do
         case "$1" in
-        \"*|-)
-              if [ -z "$frst" ] ; then
-                DAT_INP_LIBARG+='"$CEN_NAME" '
-                frst=1 ; shift ; continue
-              fi ;;
         -a)   [ -z "$DAT_FLG_MODARGS" ] && DAT_FLG_DYNAMIC=1
               DAT_MAP_MODULE["dyn"]=1 ;;
         -g)   DAT_MAP_MODULE["con"]=1 ; DAT_MAP_MODULE["win"]=1 ; DAT_MAP_MODULE["run"]=1 ;;
@@ -598,7 +592,7 @@ do_libarg() {
         -v)   DAT_MAP_MODULE["svc"]=1 ;;
         -w)   DAT_MAP_MODULE["web"]=1 ;;
         -*)   ;;
-        [0-9]*) ;;
+        [\'\"\$0-9]*) ;;
         *)    break
         esac ; DAT_INP_LIBARG+="$1 " ; shift
     done
@@ -783,7 +777,7 @@ run() {
         do_package footer "$CEN_OUTFILE" "$load"
         do_package data   "$CEN_OUTFILE"
 
-        [ "${CEN_OUTFILE::5}" = "/dev/" ] || attributes -m 775 -- "$CEN_OUTFILE"
+        [ "${CEN_OUTFILE::5}" = '/dev/' ] || sysrun -e -p chmod 775 -- "$CEN_OUTFILE"
         [ "${#DAT_MAP_EMBED[@]}" -gt 0 ] &&
             message -a -c "External scripts" -- "${!DAT_MAP_EMBED[@]}"
         [ -n "$DAT_FLG_DYNAMIC" -a -z "$CEN_OPT_CONFIG" ] &&

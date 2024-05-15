@@ -379,7 +379,7 @@ fatal() {
 # quit - call CEN_HOOK_QUIT, terminate the script, optionally with message
 #
 # Call:     quit
-#           quit -e|-t [--] [-] <msg>...
+#           quit -e|-t|-u [--] [-] <msg>...
 #           quit [-a|-i] [-m|-n] [-p] [-r] [-s <code>] [--] <msg>...
 #           quit -h
 #
@@ -388,6 +388,7 @@ fatal() {
 #           -h  just run ''quit'' hook and reset to default (save for subshell)
 #           -s  override the exit code (CEN_EXIT)
 #           -t  sets CEN_EXIT=4, print "Terminated" if 1st arg is not '-'
+#           -u  sets CEN_EXIT=4, print "Terminated by user" if 1st arg is not '-'
 #           -y  run "stty sane" to restore terminal defaults
 #
 #+Return:   This function does not return, it calls an optional ''quit'' hook function
@@ -397,6 +398,7 @@ fatal() {
 #.          quit -e                         # stop with error, default message
 #.          quit -e - "sorry"               # ... extra info
 #.          quit -e "sorry for" this        # ... custom message
+#.          quit -t - "connection lost"     # ... prints "Teminated: connection lost"
 #
 #.          # using a quit hook function
 #.          my_quit() {
@@ -445,10 +447,12 @@ quit() {
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -e)   _flgt=2 ; _opts+=("$1") ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1 ;;
+      -e)   _opts+=("$1") ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1
+            _flgt=$"Terminated after error" ;;
       -h)   $CEN_HOOK_QUIT -h ; CEN_HOOK_QUIT=_cen_quit ; return 0 ;;
       -s)   CEN_EXIT="${2:-0}" ; shift ;;
-      -t)   _flgt=1 ; CEN_EXIT=4 ;;
+      -t)   CEN_EXIT=4 ; _flgt=$"Terminated" ;;
+      -u)   CEN_EXIT=4 ; _flgt=$"Terminated by user" ;;
       -y)   CEN_QUIT_SANE=1 ;;
       -)    break ;;                        # special case
       *)   _opts+=("$1")
@@ -458,13 +462,7 @@ quit() {
     if [ "$$" != "$BASHPID" ] ; then
         _cen_abort -n -2 $"quit from subshell" "PID=$BASHPID"
     elif [ -n "$_flgt" ] ; then
-        if [ "${1:--}" != '-' ] ; then
-            :
-        elif [ "$_flgt" = 1 ] ; then
-            shift ; set -- $"Terminated" "$@"
-        else
-            shift ; set -- $"Terminated after error""${1:+:}" "$@"
-        fi
+        [ "${1:--}" = '-' ] && set -- "$_flgt""${2:+:}" "${@:2}"
     fi || :
     $CEN_HOOK_QUIT "${_opts[@]}" ${1:+--} "$@" ; exit 2 # exit 2 on hook function failure
 }
@@ -527,9 +525,9 @@ _cen_trap() {
     [ -n "$CEN_CONS_MSGLEN" ] && ((CEN_CONS_MSGLEN += 2))
     [ -n "$CEN_QUIT_WAIT" ] && CEN_QUIT_WAIT=3
     if [ "$1" = 2 ] ; then
-        echo >&2 ; quit -t - $"by user"
+        echo >&2 ; quit -u
     fi
-    quit -t - $"by signal" "$1"
+    quit -t - $"caught signal" "$1"
 }
 
 # fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+|= <arg>...
