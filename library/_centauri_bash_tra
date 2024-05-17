@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_tra = centauri-bash-lib: Trash bin support
 #
@@ -21,10 +21,10 @@
 #,      --trash=1   autodetect method, fatal if no trash folder is found
 #,      --trash=2   autodetect method, fall back to "rm"
 #
-# Copyright Dr. J. Pfennig (c) 2021-2022
+# Copyright Dr. J. Pfennig (c) 2021-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_tra"]="0.10:1"
+CEN_MODULES['_centauri_bash_tra']='0.11:2'
 
 CEN_OPT_TRASH=                  # see --trash
 

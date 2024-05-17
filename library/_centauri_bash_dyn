@@ -248,6 +248,8 @@ sysloop() { _cen_dyn_load pip "$@" ; }
 
 progress() { _cen_dyn_load pro "$@" ; }
 
+repository() { _cen_dyn_load rep "$@" ; }
+
 launcher() { _cen_dyn_load run "$@" ; }
 shortpath() { _cen_dyn_load run "$@" ; }
 terminal() { _cen_dyn_load run "$@" ; }

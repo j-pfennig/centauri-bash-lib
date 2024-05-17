@@ -41,10 +41,10 @@
 # coreutils bash builtins can be enabled. For more details see [[_centauri_bash_ext]]
 # and [[builtin]].
 #
-# Copyright Dr. J. Pfennig (c) 2007-2023
+# Copyright Dr. J. Pfennig (c) 2007-2024
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.01:2:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.24:2:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()

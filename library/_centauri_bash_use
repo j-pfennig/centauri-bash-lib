@@ -469,7 +469,8 @@ _cen_usage() {
         usage ; usageset -x
     }
 
-    if [ "${CEN_OPT_PAGER:--}" = '-' -o "$CEN_OPT_PAGER" = 'yes' ] ; then
+    if [ "${CEN_OPT_PAGER:--}" = '-' -o "$CEN_OPT_PAGER" = 'yes' ] &&
+       [ -e "$CEN_LIBRARY/_centauri_bash_dyn" ] ; then
         # when no pager is set use centaurihelp for formatting. centaurihelp itself
         # will run less as pager: usage -> centaurihelp -> less
         # use full path because CEN_TOOLS is required by syspager (see CEN_PACKAGE)

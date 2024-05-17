@@ -15,7 +15,7 @@ msgid "Bad exit status ignored"
 msgstr "Fehlerstatus ignoriert"
 
 #: /var/centauri/library/_centauri_bash_use:398
-#: /var/centauri/library/_centauri_bash_use:687
+#: /var/centauri/library/_centauri_bash_use:688
 msgid "usage:"
 msgstr "Aufruf:"
 
@@ -91,23 +91,23 @@ msgstr "Programm für seitenweise Ausgabe, 'none' für keines"
 msgid "options:"
 msgstr "Optionen:"
 
-#: /var/centauri/library/_centauri_bash_use:606
-#: /var/centauri/library/_centauri_bash_use:662
+#: /var/centauri/library/_centauri_bash_use:607
+#: /var/centauri/library/_centauri_bash_use:663
 msgid "actions:"
 msgstr "Aktionen:"
 
-#: /var/centauri/library/_centauri_bash_use:610
+#: /var/centauri/library/_centauri_bash_use:611
 msgid "••• other actions •••"
 msgstr "••• andere Aktionen •••"
 
-#: /var/centauri/library/_centauri_bash_use:618
+#: /var/centauri/library/_centauri_bash_use:619
 msgid "examples:"
 msgstr "Beispiele:"
 
-#: /var/centauri/library/_centauri_bash_use:656
+#: /var/centauri/library/_centauri_bash_use:657
 msgid "arguments:"
 msgstr "Argumente:"
 
-#: /var/centauri/library/_centauri_bash_use:664
+#: /var/centauri/library/_centauri_bash_use:665
 msgid "••• service actions •••"
 msgstr "••• Dienst Aktionen •••"

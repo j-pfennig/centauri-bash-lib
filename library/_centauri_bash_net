@@ -27,7 +27,7 @@
 # Copyright Dr. J. Pfennig (c) 2013-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_net"]="0.28:2"
+CEN_MODULES['_centauri_bash_net']='0.28:2'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
@@ -111,6 +111,7 @@ netconfig() {
 
     CEN_NET_DOMAIN=             # domain name of the network
     CEN_NET_WIRELESS=           # client and AP WLAN ssids
+    CEN_NET_PUBLIC=             # our public dns name
     CEN_NET_REJECT_HOST=        # to set reject route for server nick
 
     CEN_NET_SERVER_GEN=         # generic server name (nick name)

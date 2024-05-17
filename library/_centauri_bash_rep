@@ -1,0 +1,153 @@
+#!/usr/bin/bash
+# ------------------------------------------------------------------------------
+# _centauri_bash_rep = centauri-bash-lib: Repository basic operations
+#
+# Call:     . _centauri_bash_rep
+#
+# The module implements exactly one public function: [[repository()]]
+#
+# Copyright Dr. J. Pfennig (c) 2024
+# ------------------------------------------------------------------------------
+
+CEN_MODULES['_centauri_bash_rep']='0.01:2'
+
+CEN_REP_DKEY=                   # distribution key, see 'distro'
+
+# ------------------------------------------------------------------------------
+# repository - Repository basic operations
+#
+# Call:     (1) repository escape  -d|-u <vnam> <name>
+#           (2) repository folder  [-l|-q] <vnam> <dist> <inst> [<host>|+|@]
+#           (3) repository distro  [-f] <anam> [<dist>]
+#           (4) repository locate  [-w] <vnam> <file> [<base> [<dkey>]]
+#
+#           (1) **Decorate/undecorate repository file names**
+#               This command implements to escape rules for file names
+#
+#           (2) **Get repository folder by distribution and instance**
+#               Returns the base folder for (2 arguments), the shared folder
+#               ('@' as 3rd argument), or a private folder ('+' for $HOSTNAME)
+#
+#           (3) **Get an OS distribution information array**
+#               Returns an array of: <dkey> <fkey> <dfam> <dist>
+#
+#           (4) **Locate a repository file by path and vendor key**
+#               Tries <dkey> as first and 'a' for any second attempt. When no
+#               <dkey> is passed it calls (3) to get one. Uses '$CEN_ROOT' if
+#               <base> is empty or '-'. Searches folders 'private', 'shared'
+#               and 'templates', which should be symlinks, see (2).
+#
+# Variables:<vnam>  name of a variable to receive a result value
+#           <anam>  name of an array  to receive a result
+#           <dkey>  distro key: d=debian r=raspbian s=suse t=termux u=ubuntu
+#           <fkey>  family key: d=debian r=raspbian s=suse d=termux d=ubuntu
+#           <dfam>  family name: 'debian' or 'suse'
+#           <dist>  distribution name: debian|raspbian|termux|ubuntu|suse
+#           <file>  full path of file to be located
+#           <base>  overrides '$CEN_ROOT'
+#
+# Options:  -d  decorate
+#           -l  create a symlink in $CEN_ROOT
+#           -q  quiet, no error messages
+#           -u  undo '-d' decoration
+#           -w  write state file, see [[sysversion()]]
+# ------------------------------------------------------------------------------
+repository() {
+    local _func="$1" ; shift
+    local _opti ; [ "${1::1}" = '-' ] && { _opti="$1" ; shift ; }
+    case "$#${_func::3}" in
+    2esc)       _cen_repo_esc "$@" ;;
+    [34]fol)    _cen_repo_fol "$@" ;;
+    [12]dis)    _cen_repo_dis "$@" ;;
+    [234]loc)   _cen_repo_loc "$@" ;;
+    *)          _cen_abort ? "$_func" $"(or wrong arg count)"
+    esac
+}
+
+_cen_repo_esc() {
+    local _sout _sinp _spat
+    case "$_opti" in
+    -d)     _spat="${2%/*}" ; _sinp="${2##*/}"
+            _spat="${_spat//_/°}"
+            _sout="${_spat//\//_}+$_sinp"
+            ;;
+    -u)     _spat="${2%+*}" ; _sinp="${2##*+}"
+            _spat="${_spat#*/?_}" ; _spat="${_spat#_}"
+            _spat="${_spat//_/\/}" ; _spat="${_spat//°/_}"
+            _sout="$_spat/$_sinp" ; [ "${_sout::1}" = '/' ] || _sout="/$_sout"
+            ;;
+    *)      fatal -t '?' "$_opti"
+    esac
+    printf -v "$1" '%s' "$_sout"
+}
+
+_cen_repo_fol() {
+    local _sout="$CEN_ROOT/configs/$2/$3" _link='private'
+    case "$4" in
+    '')     ;;
+    [a-z]*) _sout+="/$4" ;;
+    +)      _sout+="/$HOSTNAME" ;;
+    @)      _sout+="/@shared" ; _link='shared' ;;
+    *)      fatal -t '?' "$4"
+    esac
+    printf -v "$1" '%s' "$_sout"
+    if [ -d "$_sout" ] ; then
+        if [ "$_opti" = '-l' ] ; then
+            symlink -n -- "${_sout#$CEN_ROOT/}" "$CEN_ROOT/$_link" || return 1
+        fi
+        return 0
+    elif [ "$_opti" != '-q' ] ; then
+        error $"Repository folder is missing:" "$_sout"
+    fi
+    return 1
+}
+
+_cen_repo_dis() {
+    CEN_REP_DKEY=
+    local _sout _sopt _sdis
+    local -n _sarr="$1"
+    [ "$_opti" = '-w' ] && _sopt='-w'
+    if ! sysversion $_sopt ; then
+        _sarr=() ; return 1
+    fi
+
+    _sdis="${2:-$CEN_SYS_DISTRO}"
+    case "${_sdis,,}" in
+        ubu*)   _sarr=('u' 'u' 'debian' 'ubuntu') ;;
+        sus*)   _sarr=('s' 's' 'suse'   'suse') ;;
+        ras*)   _sarr=('r' 'd' 'debian' 'raspbian') ;;
+        ter*)   _sarr=('t' 'd' 'debian' 'termux') ;;
+        deb*)   _sarr=('d' 'd' 'debian' 'debian') ;;
+        *)      error $"Unknown linux distribution:" "$_sdis"
+                _sarr=() ; return 1
+    esac
+    CEN_REP_DKEY="$_sarr"
+    return 0
+}
+
+_cen_repo_loc() {
+    local _sbas="$3" _sdis="${4:-$CEN_REP_DKEY}" _stmp _sitm _sfid
+    [ "${_sbas:--}" = '-' ] && _sbas="$CEN_ROOT"
+    printf -v "$1" ''
+    if [ "${_sdis:--}" = '-' ] ; then
+        _opti= ; _cen_repo_dis _stmp || return 1
+        _sdis="$_stmp"
+    fi
+    _opti='-d' ; _cen_repo_esc _sfid "$2"
+
+    for _sitm in "private/$_sdis"   'private/a' \
+                 "shared/$_sdis"    'shared/a' \
+                 "templates/$_sdis" 'templates/a' ; do
+        [ -e "$_sbas/$_sitm$_sfid" ] || continue
+        printf -v "$1" '%s' "$_sbas/$_sitm$_sfid" ; return 0
+    done
+    return 1
+}
+
+# ------------------------------------------------------------------------------
+# Startup: [-n]
+# ------------------------------------------------------------------------------
+
+:                                           # return true to indicate success
+
+# end

@@ -26,12 +26,12 @@
 #
 #.Examples: data_2015.bak
 #.          jupiter_info_2015-07.lzo
-#.          alpha1_root_2015-12-31.tgz
-#.          alpha1_home_2015_12_31.tgz
+#.          computer1_root_2015-12-31.tgz
+#.          computer1_home_2015_12_31.tgz
 #
 #+The module was written when centauri-bash-lib was just emerging. It is still
-# used by [[centauribackup]] and [[centauriarchive]]. The -f (find) call should
-# not be used in new code, the [[walk()]] function is more efficient.
+# used by 'centauribackup' and 'centauriarchive'. The -f (find) call should not
+# be used in new code, the [[walk()]] function is more efficient.
 #
 # Copyright Dr. J. Pfennig (c) 2015-2024
 # ------------------------------------------------------------------------------
