@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_atr = centauri-bash-lib: File attribute support
 #
@@ -6,14 +6,15 @@
 #
 # Options:  -none-
 #
-# Copyright Dr. J. Pfennig (c) 2023
+# Copyright Dr. J. Pfennig (c) 2023-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_atr"]="0.10:2"
+CEN_MODULES['_centauri_bash_atr']='0.10:2'
 
-declare -A CEN_ATR_FILESSTAT_MAP
+# dynamically created by filestat() ...
+#declare -g -A CEN_ATR_FILESTAT_MAP
 
-CEN_ATR_HAVE_STAT=              # 1 := stat builtin loader, 0 := not available
+CEN_ATR_HAVE_STAT=              # 1 := stat builtin loaded, 0 := not available
 
 # ------------------------------------------------------------------------------
 # attributes - Create file/folder, set file/folder attributes
@@ -103,7 +104,7 @@ attributes() {
 #           (3) filestat
 #
 #           Form (1) gets data from the kernel, form (2) works on cached data
-#           and form (3) deletes the cached data. See: CEN_ATR_FILESSTAT_MAP
+#           and form (3) deletes the cached data. See: CEN_ATR_FILESTAT_MAP
 #
 # Options:  -a  return attributes as array
 #           -f  make errors fatal
@@ -116,43 +117,54 @@ attributes() {
 #           <what>   § keyword of an attribute
 #
 # Attributes:
-#           uid      owner's user id
-#           gid      owner's group id
+#           uid      owner's user id   (decimal)
+#           gid      owner's group id  (decimal)
 #           perms    permissions       (in octal)
 #           atime    access time       (epoch seconds)
 #           ctime    attr. change time (epoch seconds)
 #           mtime    modification time (epoch seconds)
-#           blocks   block count
-#           blksize  block size        (in bytes)
 #           size     file size         (in bytes)
-#           nlink    hard link count
-#           link     xxx
-#           rdev     xxx
-#           device   xxx
-#           inode    filesystem inode number
+#           nlink    hard link count   (decimal)
+#           inode    filesystem inode  (decimal)
 #           name     file path
 #
 # Return:   **true** at success or **false** otherwise.
+#
+#.Examples: # explicitly get info for a file
+#.          filestat -p '/etc/motd'
+#.          echo "size:" "${CEN_ATR_FILESTAT_MAP[size]}"
+#.          echo "mode:" "${CEN_ATR_FILESTAT_MAP[perms]}"
+#
+#.          # get info one by one
+#.          filestat -p '/etc/motd'
+#.          filestat -s temp size ; echo "size:" "$temp"
+#.          filestat -s temp modee ; echo "mode:" "$temp"
+#
+#.          # get info into array
+#.          filestat -s iarr -p '/etc/motd'
+#.          echo "size:" "${iarr[0]}"
+#.          echo "mode:" "${iarr[1]}"
 #
 #+This function loads the 'stat' bash-builtin which is not compatible with the
 # command line utility **/usr/bin/stat**. While system does not run builtins by
 # default [[sysrun]] just behaves the other way. Be carefull to use 'sysrun -i stat ...'
 # to run the command line version!
 # ------------------------------------------------------------------------------
-CEN_ATR_FILESTAT=
+#CEN_ATR_HAVE_STAT=0
 filestat() {
     if [ $# = 0 ] ; then
-        unset CEN_ATR_FILESSTAT_MAP ; return
+        unset CEN_ATR_FILESTAT_MAP ; return
     fi
 
-    local _oerr='error' _varr _vstr='CEN_ATR_FILESTAT' _path
+    local _oerr='error' _ferr='-e' _varr _vstr _path _item _cen_atr_tmp
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
-        -a)   shift ; _varr="$1" ; _vstr= ;;
-        -f)   _oerr='fatal' ;;
+        -a)   shift ; _varr="$1" ; _vstr=
+              local -n _cen_atr_arr="$_varr" ; _cen_atr_arr=() ;;
+        -f)   _oerr='fatal' ; _ferr='-f' ;;
         -p)   shift ; _path="$1" ;;
-        -q)   _oerr='trace' ;;
+        -q)   _oerr='trace' ; _ferr='-q' ;;
         -s)   shift ; _vstr="$1" ; _varr= ;;
         *)    _cen_abort - "$1"
         esac ; shift
@@ -163,18 +175,41 @@ filestat() {
         [ "$CEN_ATR_HAVE_STAT" = 'stat' ] && CEN_ATR_HAVE_STAT=1 || CEN_ATR_HAVE_STAT=0
     fi
 
-#    uid gid perms
-#    atime ctime mtime
-#    blocks blksize size
-#    nlink link rdev
-#    device inode name
-
-
-    if [ "$CEN_ATR_HAVE_STAT" = 1 ] ; then
-        sysrun -e -- stat -A CEN_ATR_FILESSTAT_MAP -- "$1"
-    else
-        fatal "No yet implemented"
+    if [ -n "$_path" ] ; then
+        declare -A -g CEN_ATR_FILESTAT_MAP
+        if [ "$CEN_ATR_HAVE_STAT" = 1 ] ; then
+            sysrun $_ferr -b -- stat -A CEN_ATR_FILESTAT_MAP -- "$_path" || return 1
+        else
+            local _indx=0 _flds='f u g a X Y Z b B s d i h N r n'
+            sysrun $_ferr -a _cen_atr_tmp -i -- \
+                   stat --printf="%${_flds// /\\n%}" -- "$_path" || return 1
+            for _flds in type uid gid perms atime ctime mtime blocks \
+                        blksize size device inode nlink link rdev name ; do
+                CEN_ATR_FILESTAT_MAP["$_flds"]="${_cen_atr_tmp[_indx++]}"
+            done
+            # debug CEN_ATR_FILESTAT_MAP
+        fi
     fi
+    [ -z "$_varr" -a -z "$_vstr" ] && return 0
+
+    _cen_atr_tmp=()
+    while [ -n "$1" ] ; do
+        _item="${CEN_ATR_FILESTAT_MAP["$1"]}"
+        if [ -n "$_item" ] ; then
+            _cen_atr_tmp+=("$_item")
+        elif [ -n "${1//[a-z]/}" ] ; then
+            $_oerr $"Invalid attribute name:" "$1" ; return 1
+        else
+            _cen_atr_tmp+=('-')
+        fi
+        shift
+    done
+    if [ -n "$_vstr" ] ; then
+        printf -v "$_vstr" '%s' "${_cen_atr_tmp[*]}"
+    else
+        local -n _cen_atr_arr="$_varr" ; _cen_atr_arr=("${_cen_atr_tmp[@]}")
+    fi
+    return 0
 }
 
 # end

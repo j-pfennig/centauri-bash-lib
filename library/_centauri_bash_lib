@@ -1428,11 +1428,13 @@ create() {
             system $_frun -b -e -p -- rm -f -- "$_fout"
         fi
         _cen_umask -s "$2"                          # set umask for <mode>
+
         {   [ -n "$_fhdr" ] && echo -e "# ${1##*/} - created by '$_fhdr' - do not edit!\n"
             [ -n "$_fvar" ] && { splitjoin -d "\n" -j - -l -i "$_fvar" ; _fcpy= ; }
             [ -n "$_fcpy" ] && while IFS= read -r _temp ; do printf "%s\n" "$_temp" ; done
             [ -n "$_fhdr" ] && echo -e "\n# end" ; true
         } 2>/dev/null >>"$_fout" || _stat=$?
+
         # setting special bits must use chmod
         [ "$((0${2:-0} & 07111))" = 0 ] || system $_frun -e -q -- chmod 0$2 "$_fout"
         _cen_umask -r "$2"                          # restore previous umask

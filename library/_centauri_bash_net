@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_net = centauri-bash-lib: Network information management
 #
@@ -494,7 +494,7 @@ netiface() {
     [ -z "$CEN_NET_IFNAMES" ] && _cen_net_mapinit
 
     if [ -n "$_pers" ] ; then               # create mapping file
-        _cen_abort - "option -p not implemented"
+        _cen_abort - $"option -p not implemented"
     fi
 
     # only ethernet and wlan names are mapped
@@ -533,7 +533,7 @@ netiface() {
     [ -z "$_vnam" ] && _netiface="$_rslt" || printf -v "$_vnam" "%s" "$_rslt"
     [ -z "$_exst" ] && return 0
     [ -e "/sys/class/net/$_cen_netiface_kern" ] && return 0
-    $_oerr "No such interface:" "$_cen_netiface_name ($_cen_netiface_kern)"
+    $_oerr $"No such interface:" "$_cen_netiface_name ($_cen_netiface_kern)"
     return 1
 }
 
@@ -609,7 +609,7 @@ _cen_net_maprule() {
         [[ "$HOSTNAME" == $2 ]] || continue
         [ "$3" = '-' ] && break                 # stop rule
         if [ "${3/:/}" != "$3" ] ; then         # mac rule
-            warning -c "not implemented" -- "iface $_item"
+            warning -c $"not implemented" -- "iface $_item"
             continue
         fi
         _cen_net_mapiadd "$1=$3" ; _cen_net_mapiadd "$3=$1"
@@ -667,10 +667,48 @@ _cen_net_mapiadd() {
 }
 
 # ------------------------------------------------------------------------------
-# netindex  get network index
+# netindex - Get index of (sub-)network by network name
+#
+# Call:    (1) netindex [-e|-f] [-s <vnet>] <name>      # get by name
+#          (2) netindex [-e|-f] [-s <vnet>] <indx>      # get by index
+#
+# Options:  -e  error if network not found
+#           -f  fatal error if network not found
+#           -s  save result to named variable
+#
+# Arguments:<name>  network name, see below
+#           <indx>  index to CEN_NET_NETWORKS array
+#           <vnet>  name of a variable to get CEN_NET_NETWORKS data
+#
+# Return:  **true** if an entry was found or **false** on failure
+#
+#          The **_netindex** variable is set on success or cleared on failure.
+#          If present <vnet> is set to the corresponding CEN_NET_NETWORKS entry.
+#
+# Networks:domain   whole IPv4 address range (all subnets)
+#          repeater used by repeater NAT subnet
+#          vpn      used by VPN
+#          iot      non-trusted address range for gadgets
+#          trusted  trusted address range
+#          guest    less-trusted address range
+#          dynamic  addresses assigned by DHCP to unknown MAC addresses
+#
+#+CEN_NET_NETWORKS and so this function use IPv4 addresses. IPv6 addressing is
+# handled by dynamically generating local ULA IPv6 addresses, see [[netconv()]].
 # ------------------------------------------------------------------------------
 _netindex=
 netindex() {
+    local _ferr=':' _ssav
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)    shift ; break ;;
+      -e)    _ferr='error' ;;
+      -f)    _ferr='fatal' ;;
+      -s)    shift ; _ssav="$1" ;;
+      *)     _cen_abort - "$1"
+      esac ; shift
+    done
+
     case "$1" in
     dom*)   _netindex=0 ;;
     rep*)   _netindex=1 ;;
@@ -679,9 +717,11 @@ netindex() {
     tru*)   _netindex=4 ;;
     gue*)   _netindex=5 ;;
     dyn*)   _netindex=6 ;;
-    0-9)    _netindex="$1" ;;
-    *)      _netindex= ; return 1
+    [0-6])  _netindex="$1" ;;
+    *)      [ -n "$_ssav" ] && printf -v "$_ssav" ''
+            _netindex= ; $_ferr $"No corresponding network:" "$1" ; return 1
     esac
+    [ -n "$_ssav" ] && printf -v "$_ssav" '%s' "${CEN_NET_NETWORKS[_netindex]}"
     return 0
 }
 
@@ -750,11 +790,13 @@ netoption() {
 # ------------------------------------------------------------------------------
 # netparse - Parse an IPv4 address and/or netmask
 #
-# Call:     netparse [-a] [-b] [<ipaddr>][/<maskbits>]
-#           netparse [-b] <maskbits>
+# Call:     netparse [-a] [-b] [-e|-f] [<ipaddr>][/<maskbits>]
+#           netparse [-b] [-e|-f] <maskbits>
 #
 # Options:  -a  address must be present
 #           -b  netmask bits must be present
+#           -e  report errors
+#           -f  make errors fatal
 #
 # Arguments:<ipaddr>   a dotted 4-part IPv4 address -or- a network reference
 #           <maskbits> number of maskbit as decimal number
@@ -768,7 +810,8 @@ netoption() {
 #.Reference:An <ipaddr> can be a network reference with a one or two byte
 #           offset: **<**<n>**>**<high>**.**<low> -or- **<**<n>**>**<low>
 #
-#           <n>         index to CEN_NET_NETWORKS array
+#           <n>         index to CEN_NET_NETWORKS array or a sub-network name
+#                       see: [[netindex()]]
 #           <high>      get added to the 3rd reference address byte
 #           <low>       get added to the 4th reference address byte
 #
@@ -777,8 +820,8 @@ netoption() {
 #.          message "Addr: $_netparse_addr $_netparse_mask"
 #
 #.          # Network references
-#.          netparse <2>1.100/22        # add to network #2
-#.          netparse <2>100/22
+#.          netparse <2>1.100/22        # add to sub-network #2
+#.          netparse <vpn>10/22         # add to sub-network 'vpn'
 #
 #.          # Get a netmask
 #           netparse 22
@@ -788,12 +831,14 @@ _netparse_addr=
 _netparse_bits=
 _netparse_mask=
 netparse() {
-    local _oadr _obit _aadd
+    local _oadr _obit _aadd _oerr=':'
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _oadr=1 ;;
       -b)   _obit=1 ;;
+      -e)   _oerr='error' ;;
+      -f)   _oerr='fatal' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -802,8 +847,8 @@ netparse() {
     if [[ "$1" == *\<[a-z]* ]] ; then
         if [[ "$1" =~ (.*<)([a-z].*)(>.*) ]] ; then
             if ! netindex "${BASH_REMATCH[2]}" ; then
-                error -c "Invalid network name" "$1"
-                _netparse_addr= ; return 1
+                $_oerr $"Invalid network name:" "$1"
+                _netparse_addr= ; return 2
             fi
             set -- "${BASH_REMATCH[1]}$_netindex${BASH_REMATCH[3]}"
         fi
@@ -811,9 +856,40 @@ netparse() {
 
     # syntax check for bad characters
     _aadd="${1#<[0-9]>}"
-    [ -n "${_aadd//[0-9.\/]/}" ] && return 1
+    if [ -n "${_aadd//[0-9.\/]/}" ] ; then
+        $_oerr $"Address contains invalid characters:" "$1"
+        _netparse_addr= ; return 3
+    fi
 
     # argument variants ...
+    if [ -n "$_obit" -a "${1%/*}" = "$1" ] ; then
+        $_oerr $"Address needs netmask bits:" "$1" ; return 4
+    elif ! _cen_net_addrget "$1" ; then
+        $_oerr $"Address has invalid syntax:" "$1" ; return 5
+    fi
+
+    # make netmask
+    if netconv -d $((((1 << 32) - 1) & ~((1 << (32 - _netparse_bits)) - 1))) ; then
+        _netparse_mask="$_netconv" ; return 0
+    else
+        _netparse_mask=0.0.0.0 ; return 1
+    fi
+}
+
+# add ip addr fields (no overflow): <bhig> <blow>
+_cen_net_addradd() {
+    [ -z "$_netparse_addr" ] && return 1
+    local bhig="${1:-0}" blow="${2:-0}"
+    set -- ${_netparse_addr//[.\/]/ }
+    ((bhig += $3)) ; [ "$bhig" -gt 255 ] && return 1
+    ((blow += $4)) ; [ "$blow" -gt 255 ] && return 1
+    _netparse_addr="$1.$2.$bhig.$blow"
+    [ -n "$5" ] && _netparse_bits="$5"
+    return 0
+}
+
+# parse address variants
+_cen_net_addrget() {
     _netparse_mask= ; _netparse_bits=
     case "$1" in
     [0-9]*.[0-9]*.[0-9]*.[0-9]*/[0-9]*)
@@ -848,24 +924,6 @@ netparse() {
     *)
                 _netparse_addr= ; return 1 ;;
     esac
-
-    # make netmask
-    if netconv -d $((((1 << 32) - 1) & ~((1 << (32 - _netparse_bits)) - 1))) ; then
-        _netparse_mask="$_netconv" ; return 0
-    else
-        _netparse_mask=0.0.0.0 ; return 1
-    fi
-}
-
-# add ip addr fields (no overflow): <bhig> <blow>
-_cen_net_addradd() {
-    [ -z "$_netparse_addr" ] && return 1
-    local bhig="${1:-0}" blow="${2:-0}"
-    set -- ${_netparse_addr//[.\/]/ }
-    ((bhig += $3)) ; [ "$bhig" -gt 255 ] && return 1
-    ((blow += $4)) ; [ "$blow" -gt 255 ] && return 1
-    _netparse_addr="$1.$2.$bhig.$blow"
-    [ -n "$5" ] && _netparse_bits="$5"
     return 0
 }
 
@@ -1052,7 +1110,7 @@ netfile() {
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)    shift ; break ;;
-      -h)    _opts+=' -h -' ;;
+      -h)    _opts+=' -h -' ; _cflg= ;;
       -v)    shift ; _opts+=" -v $1" ; _cflg= ;;
       *)     _cen_abort - "$1"
       esac ; shift
@@ -1070,7 +1128,10 @@ netfile() {
         $CEN_TRACE -c $"No base folder" -- "$hout"
         return 1
     fi
-    create $_opts -t -w -- "$hout" "$hmod"       # create, warning on failure
+
+    # make absolute paths
+    # [ "${hout::2}" = './' ] && resolve -m -s hout -- "$hout"
+    create $_opts -t -w -- "$hout" "$hmod"      # create, warning on failure
 }
 
 # ------------------------------------------------------------------------------
@@ -1285,7 +1346,7 @@ export no_proxy
 # and configuration variables are set.
 # ------------------------------------------------------------------------------
 netquery() {
-    local _ssav _valu _stat=1 _qual
+    local _ferr _ssav _valu _stat=1 _qual
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)    shift ; break ;;
