@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_svc = centauri-bash-lib: Service and syslog support
 #
@@ -739,7 +739,7 @@ runsysddir() {
 #           -u  use systemd user instance (error if not running systemd)
 #           -v  verbose, report status (implies -e)
 #
-# Arguments:<verb>  **start**|**stop**|**restart**
+# Arguments:<verb>  **start**|**stop**|**reload**|**restart**
 #           <name>  A service, target or unit name (**NOT** a path)
 #
 #+Return:   The **status** command returns **true** if the service is active. On
@@ -768,6 +768,7 @@ runsysddir() {
 # Variable: CEN_RUNSERVICE  "[failed]"  operation failed (translated)
 #                           "started"   (text translated)
 #                           "stopped"   (text translated)
+#                           "reloaded"  (text translated)
 #                           "restarted" (text translated)
 #           CEN_RUNSYSDDIR  not conserved, used internally
 #
@@ -818,7 +819,7 @@ runservice() {
 
     # check verb
     case "$_scmd" in
-    start|stop|restart|status|enabled)  ;;
+    start|stop|restart|reload|status|enabled)  ;;
     systemd|masked) [ "$_oerr" = 'trace' ] && _oerr=':'
                     _ssys=1 ;;                      # systemd only
     test)           [ "$_oerr" = 'trace' ] && _oerr=':' ;;
@@ -908,6 +909,7 @@ runservice() {
              return $_serr ;;
     start)   CEN_RUNSERVICE=$"started" ;;
     stop)    CEN_RUNSERVICE=$"stopped" ;;
+    reload)  CEN_RUNSERVICE=$"reloaded" ;;
     restart) CEN_RUNSERVICE=$"restarted" ;;
 
     enabled|status)

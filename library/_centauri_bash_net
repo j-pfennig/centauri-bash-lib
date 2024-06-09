@@ -4,11 +4,11 @@
 #
 # Call:     . _centauri_bash_net [-n]
 #
-# Options:  -n  do not call netconfig()
+# Options:  -n  do not call [[netconfig()]] on load
 #
 #+General:  This module reads/writes network configuration data, mostly used by
-#           the  tools centaurinetcfg, centauriswitch, centauriroute and
-#           centaurisecrets.
+#           the  tools **centaurinetcfg**, **centauriswitch**, **centauriroute** and
+#           **centaurisecrets**.
 #
 # Storage:  CEN_NET_DIR_LIB="$CEN_ROOT/persistent"      # for cached things
 #           CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
@@ -18,7 +18,7 @@
 #           CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
 #           CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
 #
-#+Variables: Most functions in this module return results in static variables.
+#+Variables: Many functions in this module return results in static variables.
 #           These variable names start with prefix '**_net**'. This differs from
 #           most other centauri-bash-lib modules which use '**_cen_**' as prefix.
 #           Do not expect result variables to stay valid after the next call of
@@ -27,7 +27,7 @@
 # Copyright Dr. J. Pfennig (c) 2013-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.28:2'
+CEN_MODULES['_centauri_bash_net']='0.29:2'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
@@ -39,8 +39,7 @@ CEN_NET_DIR_RUN="$CEN_ROOT/transient"                   # for temporary things
 CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
 CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
 
-CEN_NET_PREFIX_IP6_DFLT='fc01/72'
-CEN_NET_PREFIX_IP6="$CEN_NET_PREFIX_IP6_DFLT"
+CEN_NET_PREFIX_IP6_DFLT='fc01::/72'
 
 CEN_NET_IFNAMES=                # 0:=no mapping  1:=systemd names
 CEN_NET_IFMAP=                  # list of interface mappings
@@ -142,6 +141,8 @@ netconfig() {
 
     CEN_NET_PORT_SECR=          # port for centaurisecrets
     CEN_NET_PORT_ADNS=          # port for dns forwarder
+    CEN_NET_PORT_HTTP=          # port for http proxy
+    CEN_NET_PORT_HTTPS=         # port for https proxy
 
     if [ "$CEN_NET_OUTPUT" = '.' ] && [ -r ".$CEN_NET_FILE_CONF" ] ; then
         _file="./$CEN_NET_FILE_CONF"
@@ -222,7 +223,7 @@ netconv() {
             local _vhig=$((_vres >> 16))
             local _vlow=$((_vres & 0xffff))
             local _pre6="${CEN_NET_PREFIX_IP6:-$CEN_NET_PREFIX_IP6_DFLT}"
-            printf -v _netconv '%s::%x:%x' "${_pre6%/*}" "$_vhig" "$_vlow"
+            printf -v _netconv '%s::%x:%x' "${_pre6%%:*}" "$_vhig" "$_vlow"
             if [ "$_bits" != "$_addr" ] ; then
                 _bits=$((128 - (32 - _bits)))
                 _netconv+="/$_bits"
@@ -1182,55 +1183,137 @@ netpath() {
 # ------------------------------------------------------------------------------
 # netproxy - Save/load proxy status (http_proxy and no_proxy variables)
 #
-# Call:     netproxy [-w <server>]
+# Call:     (1) netproxy                        # load proxy config
+#           (2) netproxy -t                     # test proxy connection
+#           (3) netproxy [-w <server> [-p <http>[:<https>]] ] [-s <wpad>]
 #
-# Options:  -w  save proxy file (default is to load)
+# Options:  -a  always assume that "option proxy" is set in centaurinetcfg
+#           -p  ports to use (overrides defaults)
+#           -s  create "wpad.dat" PAC script
+#           -t  test if upstream proxy can be reached
+#           -w  save proxy file (default is to load)
 #
-# Return:   **true** if an entry was found or **false** on failure
+# Arguments:<server> hostname of server, "-" for none, "+" for auto-detect
+#           <http>   port for http proxy  (default: $CEN_NET_PORT_HTTP)
+#           <https>  port for https proxy (not used internally)
+#           <wpad>   script path, "-" for "/var/www/html/wpad.dat"
+#
+# Return:   **true** on success or **false** on failure
+#
+#+Tinyproxy:From an existing "/etc/tinyproxy/tinyproxy.conf.template" file a
+#           configuration for tinyproxy will be generated. This includes the
+#           current 'upstream' definitions for the active server.
 #
 # Storage:  CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
+#
+#+          This file contains variables describing the current proxy and should
+#           be sourced by login-shells:
+#
+#,          - **http_proxy**        upstream proxy or local tinyproxy
+#,          - **https_proxy**       ... for https
+#,          - **no_proxy**          patterns for proxy bypass
+#,          - **http_upstream**     upstream proxy (if any)
+#,          - **https_upstream**    ... for https
+#
+#+This function is called by [[netserver()]] when the actual server is set or
+# changed. This will update the "network_proxy" file and the "tinyproxy" config.
+# The actual server must have "option proxy" set to be used as proxy, use call
+# option -a to override this check.
+#
+#+The tool "tinyproxy" is a minimalistic proxy implementation that a client
+# computer may use as an intermediate abstraction layer. All software that
+# uses a proxy can be statically configured to use "tinyproxy".
+#
+#+If a local "tinyproxy" is running, an upstream proxy is added to its config
+# and the "network_proxy" variables "http_proxy" and "https_proxy" refer to the
+# local "tinyproxy" instance.
+#
+#+The "tinyproxy.conf.template" file is a standard configuration where a line
+# containing just the word "@UPSTREAM" gets replaced with upstream proxy info.
 # ------------------------------------------------------------------------------
 netproxy() {
+    local _oall _owrt _opad _oprt _otes
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -a)   _oall=1 ;;
+      -p)   shift ; _oprt="$1" ;;
+      -s)   shift ; _opad="$1" ;;
+      -t)   _otes=1 ;;
+      -w)   shift ; _owrt="$1" ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
     # read the file
-    if [ "$1" != "-w" ] ; then
+    if [ -z "$_owrt$_otes" ] ; then
         [ -r "$CEN_NET_FILE_PROX" ] || return 1
         . "$CEN_NET_FILE_PROX"
-        return
+        [ -z "$_opad" ] && return
     fi
 
-    # read configuration
-    shift ; netconfig
+### TODO http_upstream
 
+    # test if proxy can be reached
+    if [ -n "$_otes" ] ; then
+        #if echo 2>/dev/null >"/dev/tcp/$qual/$port" ; then
+        if [ -z "$http_proxy" ] ; then
+            [ -r "$CEN_NET_FILE_PROX" ] || return 1
+            . "$CEN_NET_FILE_PROX"
+        fi
+         [ -z "$http_proxy" ] && return 1
+        _otes="${http_proxy#http:/}" ; _otes="${_otes//:/\/}"
+        echo 2>/dev/null >"/dev/tcp$_otes" ; return     # return status
+    fi
+
+    # read configuration, get ports
+    netconfig
+    [ -n "$_oprt" ] && splitkeyval "$_oprt" CEN_NET_PORT_HTTP CEN_NET_PORT_HTTPS ':'
+    : ${CEN_NET_PORT_HTTPS:=$CEN_NET_PORT_HTTP}
+
+    # get 'option proxy' of '$serv'
     _cen_net_proxy() {
         local nsrv
         for nsrv in "${CEN_NET_OPTIONS[@]}" ; do
-            [ "${nsrv%% *}" = "proxy" ] || continue
+            [ "${nsrv%% *}" = 'proxy' ] || continue
             for nsrv in ${nsrv#* } ; do
                 [[ "$serv" == $nsrv ]] || continue
-                nprx="localhost" ; return
+                _oall=1 ; return
             done
             return
         done
     }
 
+    if [ "$_owrt" = '+' ] ; then                        # auto config
+        _owrt="$HOSTNAME.$CEN_NET_DOMAIN" ; _oall=1
+        if ! echo 2>/dev/null >"/dev/tcp/$_owrt/$CEN_NET_PORT_HTTPS" ; then
+            _owrt="$CEN_NET_SERVER_GEN.$CEN_NET_DOMAIN"
+            if ! echo 2>/dev/null >"/dev/tcp/$_owrt/$CEN_NET_PORT_HTTPS" ; then
+                _oall= ; _owrt=
+            fi
+        fi
+    elif [ "$_owrt" = '-' ] ; then                      # disable upstream proxy
+        _owrt=
+    fi
+    local serv="${_owrt%%.*}" nprx
+
     # does master name match an "option proxy ..." argument?
-    local serv="${1%%.*}" nprx
-    [ -n "$serv" ] && _cen_net_proxy
-    if [ -z "$nprx" ] ; then
+    [ -n "$serv" -a -z "$_oall" ] && _cen_net_proxy
+    if [ -z "$_oall" ] ; then
         netfile -h <<!EOF "$CEN_NET_FILE_PROX"
 # no proxy server
 !EOF
     else
         # generate proxy variables
         nprx="$CEN_NET_DOMAIN,*.$CEN_NET_DOMAIN,.$CEN_NET_DOMAIN"
-        for nnam in "${CEN_NET_SERVERS[@]}" "${CEN_NET_ROUTERS[@]}" ; do
+        for nnam in "${CEN_NET_SERVERS[@]}" ; do
             nprx+=",$nnam"
         done
 
         # write a new proxy file
         netfile -h <<!EOF "$CEN_NET_FILE_PROX"
-http_proxy="http://$serv.${CEN_NET_DOMAIN}:3128"
-https_proxy="http://$serv.${CEN_NET_DOMAIN}:3127"
+http_proxy="http://$serv.${CEN_NET_DOMAIN}:$CEN_NET_PORT_HTTP"
+https_proxy="http://$serv.${CEN_NET_DOMAIN}:$CEN_NET_PORT_HTTPS"
 no_proxy="$nprx"
 export http_proxy
 export https_proxy
@@ -1240,21 +1323,52 @@ export no_proxy
 
     # configure tinyproxy
     local tiny='/etc/tinyproxy/tinyproxy.conf'
-    if [ -f "$tiny.template" ] ; then
+    local tdef="$tiny.template"
+    if [ -d "${tiny%/*}" ] && [ -f "$tdef" ] ; then
         local tcfg tgen=()
-        if mapfile -t tcfg 2>/dev/null <"$tiny.template" ; then
+        if mapfile -t tcfg 2>/dev/null <"$tdef" ; then
             for line in "${tcfg[@]}" ; do
                 case "$line" in
                 '')     ;;
                 \#*)    ;;
+                @PORT)  tgen+=("Port $CEN_NET_PORT_HTTP")
+                        ;;
                 @UPSTREAM)
-                        [ -n "$nprx" ] && tgen+=("Upstream http $serv.${CEN_NET_DOMAIN}:3128")
+                        [ -n "$nprx" ] && tgen+=(
+                            "Upstream http $serv.$CEN_NET_DOMAIN:$CEN_NET_PORT_HTTP"
+                            "Upstream none \".$CEN_NET_DOMAIN\""
+                            "Upstream none \"$CEN_NET_NETWORKS\""
+                            "Upstream none \"$CEN_NET_PREFIX_IP6\""
+                            "Upstream none \".\""
+                        )
                         ;;
                 *)      tgen+=("$line")
                 esac
             done
             netfile -h -v tgen "$tiny"
         fi
+    fi
+
+    # write PAC script
+    [ "$_opad" = '-' ] && _opad='/var/www/html/wpad.dat'
+    if [ -n "$_opad" ] && [ -d "${_opad%/*}" ] ; then
+        [ -z "$serv" ] && serv="$HOSTNAME"
+        trace -c 'PAC Script' "$_opad" "$serv"
+        local _wpad=(
+            'function FindProxyForURL(url, host) {'
+            '    if ( url.substring(0, 5) != "http:" )'
+            '        return "DIRECT";'
+            '    if ( isPlainHostName(host) ||'
+            "         dnsDomainIs(host, \".$CEN_NET_DOMAIN\") ||"
+            "         isInNet(host, \"$CEN_NET_NETWORKS\", \"$CEN_NET_NETMASK\") )"
+            '           return "DIRECT";'
+            '    }'
+            '    else {'
+            "        return \"PROXY $serv.$CEN_NET_DOMAIN:$CEN_NET_PORT_HTTP; DIRECT\";"
+            '    }'
+            '}'
+        )
+        netfile -v _wpad "$_opad"
     fi
     return 0
 }
