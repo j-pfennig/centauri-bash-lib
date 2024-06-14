@@ -389,7 +389,7 @@ _cen_bash_main() {
     main "\$@" ; quit
 }
 
-$(do_deco "the packed code of library modules follow below")
+$(do_deco "the packed code of library modules follows below")
 
 !EOF
     elif [ "$1" = "footer" ] ; then

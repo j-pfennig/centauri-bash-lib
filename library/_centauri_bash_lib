@@ -56,6 +56,7 @@ CEN_CMDCURR=0           # index in CEN_CMDARGS[] for current action
 CEN_CMDINDX=0           # index in CEN_CMDARGS[] for remaining actions
 CEN_CMDOPTS=            # array of script options
 CEN_CONFIRM=            # result of confirm()
+CEN_DEFAULTS=           # file to be sourced, see CEN_FEATURE_O
 CEN_DISPLAY=            # empty or 'x11' or 'wayland'
 CEN_DEBUG=:             # call debug(), see _centauri_bash_dbg
 CEN_DONE=1              # 0:ignore error  1:quit on error  2:quit now
@@ -1812,7 +1813,7 @@ folder() {
             esac
             _adir=("$CEN_ROOT/$1")
             case "$1" in
-                default)    _tdir="${CEN_PATHS[2]}/default" ;;
+                default)    _tdir="${CEN_PATHS[6]}" ;;
                 persistent) _tdir="${CEN_PATHS[3]}/tmp" ;;
                 transient)  _tdir="${CEN_PATHS[4]}" ;;
                 *)          _tdir="$_adir"
@@ -2889,6 +2890,13 @@ main() {
         embed -r -q '_centauri_bash_pip' && syspager -y -d -c ''
     [ -n "$CEN_FEATURE_G" ] && context -g "$CEN_OPT_GUI"
     $CEN_HOOK_OPTIONS
+
+    # source the defaults file (override options and other stuff)
+    if [ -n "$CEN_DEFAULTS" ] && [ -r "$CEN_DEFAULTS" ] ; then
+        trace -a -c 'Sourcing' "$CEN_DEFAULTS"
+        . "$CEN_DEFAULTS"
+    fi
+
     if [ "$CEN_DONE" = 2 ] ; then                           # stop (after error)
         CEN_STAGE= ; return 0
     fi
@@ -2973,12 +2981,25 @@ fi
 if [ -z "${CEN_PATHS[5]}" ] ; then
     CEN_PATHS[5]="$CEN_PATHS/usr/lib" ; [ -d "${CEN_PATHS[5]}" ] || CEN_PATHS[5]="$CEN_PATHS/lib"
 fi
+if [ -z "${CEN_PATHS[6]}" ] ; then
+    CEN_PATHS[6]="$CEN_ROOT/default"
+    if [ -n "$CEN_PACKAGE" ] ; then
+        CEN_PATHS[6]="${CEN_PATHS[2]}/default"
+    elif [ "${CEN_PATHS[6]}" -ef "${CEN_PATHS[2]}/default" ] ; then
+        CEN_PATHS[6]="${CEN_PATHS[2]}/default"
+    fi
+fi
 
 # save stderr handle, check proxy, register error handlers, default options
 _cen_handle CEN_STDOUT CEN_STDERR ; eval exec "$CEN_STDOUT>&1" "$CEN_STDERR>&2"
 [ -z "$CEN_ROOT" -o -z "$CEN_LIBRARY" ] && fatal 'Environment not set (missing proxy?)'
 [ -n "$CEN_FEATURE_E" ] && context -e 3 || context -e 2
-[ -n "$CEN_FEATURE_O" ] && [ -r "$CEN_ROOT/default/$CEN_NAME" ] && . "$CEN_ROOT/default/$CEN_NAME"
+
+# private or global defaults file
+if [ -n "$CEN_FEATURE_O" ] ; then
+    CEN_DEFAULTS="$HOME/.config/${CEN_NAME%.package}"
+    [ ! -e "$CEN_DEFAULTS" ] && CEN_DEFAULTS="${CEN_PATHS[6]}/${CEN_NAME%.package}"
+fi
 
 # load modules
 [ -n "$CEN_FEATURE_A" ] && embed -r -m '_centauri_bash_dyn' -f

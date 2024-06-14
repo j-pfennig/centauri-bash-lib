@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_iom = centauri-bash-lib: Input/Output and caching support
 #
@@ -50,7 +50,7 @@
 #.          optarg "inpdir"  -   -d     # get input folder (must exist)
 #
 #.          optarg "logfile" -   -a     # open to append (will create file)
-#.          optarg "outfile" -   -r     # get input file (must exist)
+#.          optarg "inpfile" -   -r     # get input file (must exist)
 #.          optarg "outfile" -   -w     # get output file, prompt for overwrite
 #.                                      # unless --force option was seen
 #
@@ -103,9 +103,9 @@ _cen_iom_error() {
 # ------------------------------------------------------------------------------
 # inpdata - Read from an input file into an array
 #
-# Call:     (1) inpdata [-a <dest>] [-c <func>] [-q] [-r] -- <file>
-#           (2) inpdata [-a <dest>] [-c <func>] [-q] [-r] -l [-x <ext>] -- <file>|+|-
-#           (3) inpdata [-a <dest>] [-c <func>] [-q] [-r] -h <hndl>
+# Call:     (1) inpdata [-a <dest>] [-c <func>] [-f|-q] [-r] -- <file>
+#           (2) inpdata [-a <dest>] [-c <func>] [-f|-q] [-r] -l [-x <ext>] -- <file>|+|-
+#           (3) inpdata [-a <dest>] [-c <func>] [-f|-q] [-r] -h <hndl>
 #
 # Options:  -a  data array to read into
 #           -c  reader call function
@@ -230,7 +230,7 @@ _cen_iom_reader() {
 # ------------------------------------------------------------------------------
 # inpfile - Get an input file or folder
 #
-# Call:     inpfile [-o] [-s <var>]  [-x <ext>] [--] <file>|-|**+**
+# Call:     inpfile [-b] [-c] [-d] [-e] [-f|-q] [-l] [-o] [-s <var>] [-x <ext>] [--] <file>|-|**+**
 #
 # Options:  -b  expect a block-device as argument/input
 #           -c  canonicalize path (e.g return full path)

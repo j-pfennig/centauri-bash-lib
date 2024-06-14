@@ -855,7 +855,9 @@ remove() {
 # rename - Rename (or move) a file or folder using /usr/bin/mv
 #
 # Call:    (1) rename [-f] [-o|-x] [-q|-s|-v] [-r] <src> <des>
-#          (2) rename [-b <suf>] [-f] [-q|-s|-v] [-r] <src>
+#          (2) rename [-b <suff>] [-f] [-q|-s|-v] [-r] <src>
+#
+#          Form (2) renames <src> to <src>.bak or <src>.<suff>
 #
 # Options: -b  make backup '<src>.<suf>' (no <des> argument allowed)
 #          -f  make errors fatal
@@ -867,6 +869,10 @@ remove() {
 #          -v  report via [[message()]] (default is [[trace()]])
 #          -x  allow to replace an existing folder (implies -o)
 #
+# Arguments:<des>   new name or location
+#           <src>   current name or location
+#           <suff>  backup suffix (default: 'bak')
+#
 # Return:  **true** at success or **false** otherwise.
 #
 #+This is a conveniency wrapper for **/usr/bin/mv** that provides some extra
@@ -874,15 +880,15 @@ remove() {
 # function fails if <des> exists and neither option -o or -x are given.
 # ------------------------------------------------------------------------------
 rename() {
-    local _oftl _omis _orep _orun _osys="-e -p" _oerr=error _omsg="$CEN_TRACE" _suff
+    local _oftl _omis _orep _orun _osys='-e -p' _oerr=error _omsg="$CEN_TRACE" _suff
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -b)   shift ; _suff="${1#.}" ; _orem=1 ;;
-      -f)   _oftl="-f" ; _osys="-f -p" ; _oerr=fatal ;;
+      -f)   _oftl="-f" ; _osys='-f -p' ; _oerr=fatal ;;
       -m)   _omis=1 ;;
       -o)   _orem=1 ;;
-      -q)   _orep="-q" ; _osys="-q" ; _oerr="$CEN_TRACE" ;;
+      -q)   _orep="-q" ; _osys='-q' ; _oerr="$CEN_TRACE" ;;
       -r)   _orun="-r" ;;
       -s)   _orep="-s" ; _omsg=: ;;
       -v)   _orep="-v" ; _omsg=message ;;
@@ -894,12 +900,13 @@ rename() {
     if [ -n "$_omis" ] ; then
         [ -e "$1" -o -h "$1" ] || return 0
     fi
+    [ "$#" = 1 -o -z "$_suff" ] && _suff='bak'
 
     local _dest="$2"
     if [ -n "$_suff" -a $# -ge 1 ] ; then
         [ $# -gt 1 ] && _cen_abort $"Extra arg(s)" "$_dest"
         [ -e "$1" ] || return 0
-        _dest="$1.$_suff"
+        _dest="$1.$_suff" ; _orem=1
     elif [ $# -gt 2 ] ; then
         _cen_abort $"Extra arg(s)" "$*"
     elif [ $# -lt 2 ] ; then

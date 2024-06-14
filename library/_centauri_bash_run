@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_run = centauri-bash-lib: Configuration related functions
 #
@@ -51,7 +51,7 @@ CEN_SHORTPATH_LIB=(
         "library:$CEN_LIBRARY:centauri-bash-lib library "$"files"
         "tools:$CEN_TOOLS:centauritools "$"applications"
         "locale:$CEN_ROOT/locale:centauritools/library "$"translations"
-        "default:$CEN_ROOT/default|${CEN_PATHS[2]}/default:centauritools/library "$"configuration files"
+        "default:${CEN_PATHS[6]}:centauritools/library "$"configuration files"
         "persistent:$CEN_ROOT/persistent|${CEN_PATHS[4]}:centauritools "$"persistent cache"
         "transient:$CEN_ROOT/transient|${CEN_PATHS[4]}:centauritools "$"volatile cache"
         # cannot use single quote due to uglify limits. Using  unicode apostrophe

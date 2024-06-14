@@ -626,8 +626,8 @@ isservice() {
     if [ -n "$_fpro" ] ; then
         if   [ -f "$CEN_PATHS/lib/init/vars.sh" ] ; then
             . "$CEN_PATHS/lib/init/vars.sh"
-        elif [ -f "${CEN_PATHS[2]}/default/rcS" ]  ; then
-            . "${CEN_PATHS[2]}/default/rcS"
+        elif [ -f "${CEN_PATHS[6]}/rcS" ]  ; then
+            . "${CEN_PATHS[6]}/rcS"
         fi
         if [ "${VERBOSE:-no}" = "no" ] ; then
             _fpro=

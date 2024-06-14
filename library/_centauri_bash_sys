@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_sys = centauri-bash-lib: OS integration support
 #
@@ -468,7 +468,7 @@ sysinfo() {
 #           -s  check if systemd is to be used
 #           -u  update if neccessary
 #
-#+Reads the **[library]** section of **$CEN_ROOT/default/centauri_bash_lib**
+#+Reads the **[library]** section of **${CEN_PATHS[6]}/centauri_bash_lib**
 # (for Debian this path is equal to **/etc/default/centauri_bash_lib**).
 # Configuration file data overrides the built-in default configuration.
 #
@@ -476,7 +476,7 @@ sysinfo() {
 # can be generated.
 #
 #+Bootstrap:Usually there should be no **$CEN_ROOT/centauri_bash_lib** file.
-# But is it exists, it will override **$CEN_ROOT/default/centauri_bash_lib**.
+# But is it exists, it will override **${CEN_PATHS[6]}/centauri_bash_lib**.
 # This might be usefull for setup programs.
 # ------------------------------------------------------------------------------
 sysconfig() {
@@ -526,7 +526,7 @@ sysconfig() {
       -s)   _sopt=1 ;;
       -u)   [ "$CEN_LIBRARY/_centauri_bash_lib" -nt \
               "$CEN_LIBRARY/_centauri_bash_completion" ] || _copt=1
-            [ "$CEN_ROOT/default/centauri-bash-lib" -nt \
+            [ "${CEN_PATHS[6]}/centauri-bash-lib" -nt \
               "$CEN_TOOLS/_centauri_bash_lib" ] && _popt=1
             [ -d "$CEN_LIBRARY/systemd" ] || _sopt=1 ;;
       *)    _cen_abort - "$1"
@@ -539,7 +539,7 @@ sysconfig() {
     {   embed -m '_centauri_bash_run'                       # load modules ext/iom/run
         CEN_SYS_INCLUDE=() ; CEN_SYS_EXCLUDE=() ; CEN_SYS_OBSOLETE=()
         CEN_SYS_SERVICE=() ; CEN_PATH_REXP=()
-        _cen_run_config -p "$CEN_ROOT/default/centauri-bash-lib" \
+        _cen_run_config -p "${CEN_PATHS[6]}/centauri-bash-lib" \
                         -r ___cen_sys_read 'library' || _stat=$?
         shortpath -q || _stat=$?                            # init paths cache
 
@@ -580,7 +580,7 @@ if  [ "$EUID" = 0 ] ; then
         remove "$CEN_SYS_STATE_DIR/centaurisystem"
     fi
     # (re-)init global cache
-    [ "$CEN_ROOT/default/centauri-bash-lib" -nt "$CEN_SYS_STATE_DIR/centaurisystem" ] &&
+    [ "${CEN_PATHS[6]}/centauri-bash-lib" -nt "$CEN_SYS_STATE_DIR/centaurisystem" ] &&
         sysconfig                               # cache refresh
 fi
 sysversion -u                                   # get/update version info by default
