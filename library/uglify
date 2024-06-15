@@ -3,6 +3,9 @@
 CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2024; BSD License"
 CEN_TITLE="Pack centauri-bash-lib sources, create packaged script"
 
+# TODO optimize case statements
+# TODO function '(){'
+
 # cannot use autoload - might autolod .p before being written completely ...
 PATH+=":${0%/*}" . _centauri_bash_lib -d -f -m ext -r -y - '0.25:2' || exit 2
 
@@ -268,13 +271,13 @@ do_ugly() {
             fi
 
             trimjoin -s rlin -l -- "$rlin"          # trim left
-            if [ "${rlin::1}" = "#" ] ; then        # indented comment
+            if [ "${rlin::1}" = '#' ] ; then        # indented comment
                 [ -z "$DAT_FLG_PACKAGE" ] && echo
                 continue
             fi
 
             case "$rlin" in                         # bash glob for speed
-            "")         [ -z "$DAT_FLG_PACKAGE" ] && echo
+            '')         [ -z "$DAT_FLG_PACKAGE" ] && echo
                         continue ;;
             *\\)        flit=1 ;;                   # detect continuation
             *[\'\"\#]*) do_parser ;;
@@ -296,7 +299,7 @@ do_ugly() {
 
         # copy here document until !EOF
         else
-            [ "$rlin" = "!EOF" ] && feof=
+            [ "$rlin" = '!EOF' ] && feof=
             printf "%s\n" "$rlin"
         fi
     done
@@ -309,14 +312,14 @@ do_ugly() {
 do_package() {
     local line
 
-    if [ "$1" = "data" ] ; then
+    if [ "$1" = 'data' ] ; then
         [ "${#DAT_INP_DATA[@]}" = 0 ] && return 0
         trace -a -p "Adding %s data lines" "${#DAT_INP_DATA[@]}"
         create -a -v DAT_INP_DATA -- "$2"
         return 0
     fi
 
-    if [ "$1" = "header" ] ; then
+    if [ "$1" = 'header' ] ; then
         create -t -c -- "$2" <<!EOF
 #!${CEN_PATHS[1]}/bash
 $(do_deco "centauri-bash-package of:" "${CEN_INPFILE##*/}")
@@ -363,7 +366,7 @@ _cen_bash_init() {
         create -a -v DAT_INP_STATIC -- "$2"
     else
         create -a -c -- "$2" <<!EOF
-    CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2020; BSD License"
+    CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2020-2024; BSD License"
     CEN_TITLE="Example of a packaged _centauri_bash_lib script"
 
     # PATH+=":${0%/*}" . _centauri_bash_lib -d -r - '0.0' || exit 2

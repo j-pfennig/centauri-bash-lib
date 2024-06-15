@@ -900,7 +900,7 @@ rename() {
     if [ -n "$_omis" ] ; then
         [ -e "$1" -o -h "$1" ] || return 0
     fi
-    [ "$#" = 1 -o -z "$_suff" ] && _suff='bak'
+    [ "$#" = 1 -a -z "$_suff" ] && _suff='bak'
 
     local _dest="$2"
     if [ -n "$_suff" -a $# -ge 1 ] ; then

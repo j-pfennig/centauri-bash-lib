@@ -2997,8 +2997,8 @@ _cen_handle CEN_STDOUT CEN_STDERR ; eval exec "$CEN_STDOUT>&1" "$CEN_STDERR>&2"
 
 # private or global defaults file
 if [ -n "$CEN_FEATURE_O" ] ; then
-    CEN_DEFAULTS="$HOME/.config/${CEN_NAME%.package}"
-    [ ! -e "$CEN_DEFAULTS" ] && CEN_DEFAULTS="${CEN_PATHS[6]}/${CEN_NAME%.package}"
+    CEN_DEFAULTS="$HOME/.config/${CEN_NAME%.*}"
+    [ ! -e "$CEN_DEFAULTS" ] && CEN_DEFAULTS="${CEN_PATHS[6]}/${CEN_NAME%.*}"
 fi
 
 # load modules
