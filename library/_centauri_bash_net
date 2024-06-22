@@ -508,9 +508,10 @@ netiface() {
                 else
                     _cen_netiface_name='eth0' ; _bios=1
                 fi ;;
-    eth[01])    _bios=1 ;;
+    eth[09])    _bios=1 ;;
     en*)        _bios=0 ;;
-    wlan[01])   _bios=1 ;;
+    usb[09])    _bios=1 ;;
+    wlan[09])   _bios=1 ;;
     wl*)        _bios=0 ;;
     esac
     _cen_netiface_kern="$_cen_netiface_name"
@@ -589,12 +590,14 @@ _cen_net_mapping() {
     _netiface_mapname=
     if [ "$1" = '-b' ] ; then               # map to bios
         case "$_mapn" in
+        enx*)   _cen_net_mapbios "$_mapn" /sys/class/net/enx* ;;
         en*)    _cen_net_mapbios "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
         wl*)    _cen_net_mapbios "$_mapn" /sys/class/net/wlp* /sys/class/net/wl[!p]* ;;
         esac
     elif [ "$1" = '-s' ] ; then             # map to systemd
         case "$_mapn" in
         eth*)   _cen_net_mapsysd "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
+        usb*)   _cen_net_mapsysd "$_mapn" /sys/class/net/enx* ;;
         wlan*)  _cen_net_mapsysd "$_mapn" /sys/class/net/wlp* /sys/class/net/wl[!p]* ;;
         esac
     fi

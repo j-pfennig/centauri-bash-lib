@@ -280,6 +280,7 @@ usageset() { _cen_dyn_load use "$@" ; }
 usageopt() { _cen_dyn_load use "$@" ; }
 
 listsearch() { _cen_dyn_load utl "$@" ; }
+number() { _cen_dyn_load utl "$@" ; }
 optmake() { _cen_dyn_load utl "$@" ; }
 pluralize() { _cen_dyn_load utl "$@" ; }
 splitcall() { _cen_dyn_load utl "$@" ; }

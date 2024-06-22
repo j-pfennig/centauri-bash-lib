@@ -44,7 +44,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2024
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.24:2:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.30:3:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -276,11 +276,11 @@ warning()   {   $CEN_NOTRACE return 0 ; $CEN_HOOK_MESSAGE -w "$@" || : ; }
 # Options:  ... most [[message()]] options (the implementation calls **message -e**)
 #           -c  clear error state (resets CEN_EXIT and CEN_DONE from 2 to 1)
 #           -f  make error fatal - same as calling [[fatal()]]
+#           -q  call [[quit()]] if a previous ''error'' has occurred
 #           -s  set exit code, saved as variable CEN_EXIT. The minimum value is 2,
 #               lower values are stored as 2. Updates CEN_DONE from 1 to 2.
 #           -t  silently check for pending error termination. Returns **false** for
 #               **CEN_DONE == 2** and **true** for all other cases.
-#           -q  call [[quit()]] if a previous ''error'' has occurred
 #           -x  don't modify CEN_DONE on errors (sets **CEN_DONE=0**). This disables
 #               error testing (-t and -q) and error termination by [[main()]].
 #           -z  return 0 status
@@ -344,12 +344,19 @@ error() {
 # fatal - fatal error message, terminate via quit()
 #
 # Call:     fatal [-a|-i] [-m|-n] [-p] [-r] [--] <msg>...
-#           fatal -t [-p <fmt>] <msg>...                    # call trace
+#           fatal -t [<mkey>] <msg>...                  # call trace
 #
 # Options:  ... most [[message()]] options (using **message -f**)
 #
 #           -t  print call trace and quit (no other options allowed).
 #               Output always goes to /dev/stderr, no quit hooks called.
+#
+# Arguments:<msg>   any message text
+#           <mkey>  optional message key for option -t:
+#                   "@" prints "Too many arguments"
+#                   "+" ...    "Missing argument"
+#                   "-" ...    "Invalid argument"
+#                   "=" ...    "Misssing option"
 #
 #+This function never returns to the caller. If called with -t options it exits
 # with status 4 and otherwise it sets CEN_EXIT=3 and invokes [[quit()]] to terminate
@@ -359,7 +366,7 @@ error() {
 # implied.
 # ------------------------------------------------------------------------------
 fatal() {
-    [ "$1" = "-t" ] && { shift ; _cen_abort -2 "$@" ; }
+    [ "$1" = '-t' ] && { shift ; _cen_abort -2 "$@" ; }
     if [ "$CEN_VERB" -gt 2 ] ; then
         local _text _ffmt
         while [ "${1::1}" = '-' ] ; do
@@ -381,12 +388,15 @@ fatal() {
 #
 # Call:     quit
 #           quit -e|-t|-u [--] [-] <msg>...
-#           quit [-a|-i] [-m|-n] [-p] [-r] [-s <code>] [--] <msg>...
+#           quit [-m|-n] [-p] [-r] [-s <code>] [--] <msg>...
 #           quit -h
 #
-# Options:  ... most [[message()]] options (the implementation calls **message**)
-#           -e  error exit, print "Terminated after error" if 1st arg is not '-'
+# Options:  -e  error exit, print "Terminated after error" if 1st arg is not '-'
 #           -h  just run ''quit'' hook and reset to default (save for subshell)
+#           -m  multiple lines, one <arg> per line (short for '-m -p "%s\n"')
+#           -n  print multiple lines (new-line or '\n' separated)
+#           -p  use printf formatting (1st arg is format)
+#           -r  output real script name (see --embed)
 #           -s  override the exit code (CEN_EXIT)
 #           -t  sets CEN_EXIT=4, print "Terminated" if 1st arg is not '-'
 #           -u  sets CEN_EXIT=4, print "Terminated by user" if 1st arg is not '-'
@@ -451,6 +461,8 @@ quit() {
       -e)   _opts+=("$1") ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1
             _flgt=$"Terminated after error" ;;
       -h)   $CEN_HOOK_QUIT -h ; CEN_HOOK_QUIT=_cen_quit ; return 0 ;;
+      -n|-m|-p|-r)
+            _opts+=("$1") ;;
       -s)   CEN_EXIT="${2:-0}" ; shift ;;
       -t)   CEN_EXIT=4 ; _flgt=$"Terminated" ;;
       -u)   CEN_EXIT=4 ; _flgt=$"Terminated by user" ;;
@@ -531,7 +543,7 @@ _cen_trap() {
     quit -t - $"caught signal" "$1"
 }
 
-# fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+|= <arg>...
+# fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+|=|@ <arg>...
 _cen_abort() {
     set +xeE ; IFS=$' \n\t' ; exec 1>&$CEN_STDOUT 2>&$CEN_STDERR
     local _fnot _indx=1 _idnt="| " _mesg _temp
@@ -539,6 +551,7 @@ _cen_abort() {
     while [ "${1::1}" = '-' -o "${#1}" = 1 ] ; do
       case "$1" in
       --) shift ; break ;;
+      @)  shift ; _mesg=$"Too many arguments" ; break ;;
       +)  shift ; _mesg=$"Missing argument" ; break ;;
       =)  shift ; _mesg=$"Missing option" ; break ;;
       ?)  shift ; _mesg=$"Invalid argument" ; break ;;

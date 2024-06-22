@@ -4,10 +4,10 @@
 #
 # Call:     . _centauri_bash_utl
 #
-# Copyright Dr. J. Pfennig (c) 2022-2023
+# Copyright Dr. J. Pfennig (c) 2022-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_utl"]="0.02:1"
+CEN_MODULES["_centauri_bash_utl"]="0.03:1"
 
 # ------------------------------------------------------------------------------
 # listsearch - search a word in a list
@@ -47,7 +47,7 @@ CEN_MODULES["_centauri_bash_utl"]="0.02:1"
 # ------------------------------------------------------------------------------
 listsearch() {
     local _fbin _fcas _fglo _finp _fwrd _fidx _frex _ftrm _funi _sdel _word _list
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -b)   _fbin=1 ;;
@@ -110,6 +110,74 @@ listsearch() {
 }
 
 # ------------------------------------------------------------------------------
+# number - check numeric value
+#
+# Call:     number [-e|-f] [-d <dflt>] [--] <narg> [<nmin>|- [<nmax>|-]]
+#
+#           This function works with decimal integers only
+#
+# Options:  -d  default value if <narg> is '-' or empty
+#           -e  generate error messages
+#           -f  make errors fatal
+#           -s  save numbre to variable (default: CEN_NUMER)
+#           -u  number must be unsigned
+#
+# Arguments:<narg>  string that should be a ''number'' (optinally signed)
+#           <nmin>  optional minimum value
+#           <nmax>  optional maximum value
+#
+# Return:   0   input is valid
+#           1   value below minimum
+#           2   value above maximum
+#           3   input is not a decimal integer ''number''
+# ------------------------------------------------------------------------------
+CEN_NUMBER=
+number() {
+    local _dflt _oerr=':' _ouns _narg _nmin _nmax _nabs _vnam='CEN_NUMBER'
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -|-[0-9]*)
+            break ;;
+      -d)   shift ; _dflt="$1" ;;
+      -e)   _oerr='error' ;;
+      -f)   _oerr='fatal' ;;
+      -s)   shift ; _vnam="$1" ;;
+      -u)   _ouns=1 ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+    [ $# -gt 3 ] && _cen_abort @
+    local -n _cen_txt_number="$_vnam" ; _cen_txt_number='-'
+
+    _narg="${1:--}" ; _nmin="${2:--}" ; _nmax="${3:--}"
+    [ "$_narg" = '-' ] && _narg="$_dflt"
+    _narg="${_narg%"${_narg##*[![:space:]]}"}"
+    _narg="${_narg#"${_narg%%[![:space:]]*}"}"
+
+    case "$_narg" in
+    ''|-|0[0-9xX]*)
+            $_oerr $"Not a decimal integer number:" "$_narg" ; return 3 ;;
+    -*)     if [ -n "$_ouns" ] ; then
+                $_oerr $"Not an unsigned decimal number:" "$_narg" ; return 3
+            fi
+            _nabs="${_narg:1}" ;;
+    *)      _nabs="$_narg"
+    esac
+    if [ -n "${_nabs//[0-9]/}" ] ; then
+        $_oerr $"Unexpected text data, not a number:" "$_narg" ; return 3
+    fi
+
+    if   [ "$_nmin" != '-' ] && [ "$_narg" -lt "$_nmin" ] ; then
+        $_oerr -p $"Value to small (min is %s):" "$_nmin" "$_narg" ; return 1
+    elif [ "$_nmax" != '-' ] && [ "$_narg" -gt "$_nmax" ] ; then
+        $_oerr -p $"Value to large (max is %s):" "$_nmax" "$_narg" ; return 2
+    fi
+    _cen_txt_number="$_narg"
+    return 0
+}
+
+# ------------------------------------------------------------------------------
 # optmake - Build options string or array
 #
 # Call:     optmake -s|-j|-a <dest> [-k|-n <name>] [-f|-v|-z] <valu>
@@ -156,7 +224,7 @@ listsearch() {
 # ------------------------------------------------------------------------------
 optmake() {
     local _vset _name _vflg _asep _blti _fmin _valu
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vset="a" ; local -n _vvaa="$1" ;;
@@ -289,7 +357,7 @@ optmake() {
 # ------------------------------------------------------------------------------
 pluralize() {
     local _opts=() _caps _numi _zero _word _waut _frmt _oone _ogen _omsg='message'
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a|-i)
@@ -315,11 +383,11 @@ pluralize() {
         [ -n "$_zero" ] && _word="$3" || _word="$2"
         [ -z "$_numi" ] && _numi=$"zero" || _numi=0
         [ "$_numi" = 'zero' ] && _numi='no'         # fix english translation
-        [ "${4:--}" = "-" ] || _numi="$4"
+        [ "${4:--}" = '-' ] || _numi="$4"
     elif [ "$1" = 1 ] ; then
         _word="$2"
         [ -z "$_numi" ] && _numi=$"one" || _numi=1
-        [ "${5:--}" = "-" ] || _numi="$5"
+        [ "${5:--}" = '-' ] || _numi="$5"
     else
         _word="$3" ; _numi="$1"
     fi
@@ -344,7 +412,7 @@ pluralize() {
                                                     # capitalize
     [ "$((_caps & 1))" = 1 ] && _word="${_word^}"
     [ "$((_caps & 2))" = 2 ] && _numi="${_numi^}"
-    [ "${_frmt:--}" = "-" ] && _frmt="%s %s"        # default format
+    [ "${_frmt:--}" = '-' ] && _frmt="%s %s"        # default format
     if [ -n "$_save" ] ; then
         printf -v "$_save" -- "$_frmt" "$_numi" "$_word"
     else
@@ -411,7 +479,7 @@ pluralize() {
 # ------------------------------------------------------------------------------
 splitcall() {
     local _oerr _vnam _call _deli _fdry _fpre _good _ivar _maxi _ppar _srun
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vnam="$1" ;;
@@ -673,7 +741,7 @@ CEN_UTL_SLEEP=                                  # see 'sysfind -b sleep'
 [ -v CEN_UTL_STIME ] || CEN_UTL_STIME="$EPOCHREALTIME"
 timer() {
     local _call=: _vnam _aopt _hopt _ropt _spri _sset _stic _swai _mesg _time _stat
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _aopt="$1" ;;
@@ -792,7 +860,7 @@ timer() {
 CEN_TRIMJOIN=
 trimjoin() {
     local _oapp _octl _olea=1 _omax _otra=1 _ospa _deli=' ' _drun _strm _snam='CEN_TRIMJOIN'
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   _oapp=1 ;;

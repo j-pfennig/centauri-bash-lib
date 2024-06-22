@@ -58,6 +58,8 @@ run() {
     [ -n "$CEN_OPT_WORD" ] && opts+=(-w)
 
     case "${CEN_OPT_COMMENT:-bash}" in
+    none)
+        cexp=$'\1' ;;
     [bd]ash)
         cexp='[[:space:]]*#' ;;
     semi|semicolon)
@@ -76,9 +78,10 @@ run() {
     esac
 
     # assemble grep command and run
-
     if [ -n "$CEN_OPT_NATIVE" ] ; then
         opts=("$@")
+    elif [ $# = 0 ] ; then
+        opts+=('^(?!'"$cexp"').*\K[![:space:]]+')
     elif [ $# -gt 1 ] ; then
         splitjoin -j expr -d '|' -- "$@"
         opts+=('^(?!'"$cexp"').*\K'"($expr)")
@@ -153,7 +156,12 @@ usage() {
              -p '<garg>'    $"any argument to be passed to grep" \
              -p '<gexp>'    $"a perl regular expression" \
              -p '<path>'    $"a configured shortpath or a path (or ./<path>); this" \
-             -p -           $"parameter can specify a folder or a single file"
+             -p -           $"parameter can specify a folder or a single file" \
+             -p - \
+             -p $"By default '--comment=bash' and search for '[![:space]]+' apply." \
+             -p $"Use '--comment=none' and search for '.?' to see all text lines." \
+             -p $"The following keywords add predefined <cexp> expressions:" \
+             -p -           '**bash dash  semi semicolon  c cpp java slash**'
 
     usageset -l $"examples" \
              -t $"# search for 'black' or 'white' in \$CEN_TOOLS" \
@@ -166,8 +174,11 @@ usage() {
              -t "$CEN_NAME -P /etc/samba -C semicolon -x '*.*dist' 'path'" \
              -t - \
              -t $"# list samba/smb.conf without comments" \
-             -t "$CEN_NAME -P /etc/samba/smb.conf -C '[;#]' '.*'" \
-             -t "$CEN_NAME -P /etc/samba/smb.conf -C '[;#]' '[![:space:]]+'"
+             -t "$CEN_NAME -P /etc/samba/smb.conf -C '[;#]'" \
+             -t - \
+             -t $"# list all text of etc/fstab" \
+             -t "$CEN_NAME -P /etc/samba/smb.conf -C none '.*'" \
+
 }
 
 # ------------------------------------------------------------------------------

@@ -1,62 +1,82 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_utl:192
+#: /var/centauri/library/_centauri_bash_utl:160
+msgid "Not a decimal integer number:"
+msgstr "Keine Dezimalzahl:"
+
+#: /var/centauri/library/_centauri_bash_utl:162
+msgid "Not an unsigned decimal number:"
+msgstr "Keine vorzeichenlose Dezimalzahl:"
+
+#: /var/centauri/library/_centauri_bash_utl:168
+msgid "Unexpected text data, not a number:"
+msgstr "Unpassende Zeichen, keine Zahl:"
+
+#: /var/centauri/library/_centauri_bash_utl:172
+msgid "Value to small (min is %s):"
+msgstr "Wert zu klein (Min. ist %s):"
+
+#: /var/centauri/library/_centauri_bash_utl:174
+msgid "Value to large (max is %s):"
+msgstr "Wert zu gross (Max. ist %s):"
+
+#: /var/centauri/library/_centauri_bash_utl:260
 msgid "unknown option:"
 msgstr "Unbekannte Option:"
 
-#: /var/centauri/library/_centauri_bash_utl:316
+#: /var/centauri/library/_centauri_bash_utl:384
 msgid "zero"
 msgstr "kein|keine"
 
-#: /var/centauri/library/_centauri_bash_utl:321
+#: /var/centauri/library/_centauri_bash_utl:389
 msgid "one"
 msgstr "ein|eine"
 
-#: /var/centauri/library/_centauri_bash_utl:328
+#: /var/centauri/library/_centauri_bash_utl:396
 msgid "s"
 msgstr "n"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "line"
 msgstr "Zeile|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "lines"
 msgstr "Zeilen|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "file"
 msgstr "Datei"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "files"
 msgstr "Dateien|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "folder"
 msgstr "Verzeichnis"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "folders"
 msgstr "Verzeichnisse|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "error"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_utl:333
+#: /var/centauri/library/_centauri_bash_utl:401
 msgid "errors"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_utl:445
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "No '@' in arguments array:"
 msgstr "Kein '@' im Argumentfeld:"
 
-#: /var/centauri/library/_centauri_bash_utl:467
+#: /var/centauri/library/_centauri_bash_utl:535
 msgid "invalid 'wait' result"
 msgstr "Ungültiges 'wait' Ergebnis"
 
-#: /var/centauri/library/_centauri_bash_utl:709
+#: /var/centauri/library/_centauri_bash_utl:777
 msgid "Elapsed time: %s [ms]"
 msgstr "Vergangene Zeit: %s [ms]"
