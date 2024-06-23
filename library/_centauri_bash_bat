@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_bat = centauri-bash-lib: Batch job support
 #
@@ -34,10 +34,12 @@
 #           --logfile=**-**     # no logging at all
 #           --logfile=**+**     # (default) use $CEN_NAME.log as <file>
 #
-# Copyright Dr. J. Pfennig (c) 2017-2022
+# Copyright Dr. J. Pfennig (c) 2017-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_bat"]="0.11:1"
+CEN_MODULES['_centauri_bash_bat']='0.12:2'
+
+embed -c '_centauri_bash_utl'   # import on demand, see timer()
 
 CEN_OPT_BATCH=                  # see --batch
 CEN_OPT_LOGFILE=                # see --logfile
@@ -84,7 +86,7 @@ CEN_BAT_LOGFILE=1               # enable logfile
 #.
 #.              # end of option parsing, register batch commands
 #.              "")
-#.                  if [ "${CEN_OPT_BATCH:-none}" != "none" ] ; then
+#.                  if [ "${CEN_OPT_BATCH:-none}" != 'none' ] ; then
 #.                      batchmode -c -- --number=3 one 1
 #.                      batchmode -c one 2 -- two tick tack
 #.                  fi ;;
@@ -98,7 +100,7 @@ batchmode() {
 
     # helper to start a batch (used to redirect output)
     _cen_bat_launch() {
-        if [ "$CEN_OPT_BATCH" = "none" ] ; then
+        if [ "$CEN_OPT_BATCH" = 'none' ] ; then
             embed "${args[@]}" 2>&1
         elif [ "$CEN_OPT_BATCH" = "nohup" ] ; then
             system -e nohup "${args[@]}" 2>&1 &
@@ -158,7 +160,7 @@ ${args[@]}
     # --- batchmode ---
 
     local _optc _opti _optr _logf
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -c)   _optc=1 ;;
@@ -170,17 +172,17 @@ ${args[@]}
 
     # handle batch commands
 
-    [ -z "$CEN_OPT_BATCH" ] && CEN_OPT_BATCH="none"
+    [ -z "$CEN_OPT_BATCH" ] && CEN_OPT_BATCH='none'
 
     if [ -n "$_optc" ] ; then
-        [ "$CEN_OPT_BATCH" = "none" ] &&
+        [ "$CEN_OPT_BATCH" = 'none' ] &&
             fatal -p $"Call to '%s' without '--batch'" "${FUNCNAME[0]}"
         [ "$#" = 0 ] && return
         [ "${#CEN_BAT_COMMANDS[@]}" = 0 ] || CEN_BAT_COMMANDS+=("--")
         CEN_BAT_COMMANDS+=("$@")
         CEN_BAT_STATE= ; return
     fi
-    [ "$CEN_OPT_BATCH" = "none" -a "${CEN_OPT_LOGFILE:--}" = "-" ] && return
+    [ "$CEN_OPT_BATCH" = 'none' -a "${CEN_OPT_LOGFILE:--}" = '-' ] && return
 
     if [ -n "$_opti" ] ; then
         if ! error -t ; then
@@ -194,7 +196,7 @@ ${args[@]}
         if [ "${CEN_OPT_BATCH::1}" = "@" ] ; then
             CEN_BAT_STATE="done"
             _logf="${CEN_OPT_BATCH##*@}"
-            if [ "${_logf:--}" = "-" ] ; then
+            if [ "${_logf:--}" = '-' ] ; then
                 _cen_bat_runit "$0" "${CEN_CMDOPTS[@]}" "${CEN_CMDARGS[@]}"
             else
                 _cen_bat_runit "$0" "${CEN_CMDOPTS[@]}" "${CEN_CMDARGS[@]}" 2>&1 | tee -a "$_logf"
@@ -209,11 +211,11 @@ ${args[@]}
         if [ -z "$CEN_BAT_STATE" ] ; then
             CEN_BAT_STATE="init"
             _logf="${CEN_OPT_LOGFILE:--}"
-            if [ "$_logf" = "-" ] ; then
-                [ "$CEN_OPT_BATCH" = "echo" -o "$CEN_OPT_BATCH" = "none" ] && quit
+            if [ "$_logf" = '-' ] ; then
+                [ "$CEN_OPT_BATCH" = 'echo' -o "$CEN_OPT_BATCH" = 'none' ] && quit
                 quit -a -p $"Running in batchmode as '%s'" "$CEN_OPT_BATCH"
             else
-                [ "$CEN_OPT_BATCH" = "echo" -o "$CEN_OPT_BATCH" = "none" ] &&
+                [ "$CEN_OPT_BATCH" = 'echo' -o "$CEN_OPT_BATCH" = 'none' ] &&
                     quit -a -p $"Output redirected, logfile='%s'" "$_logf"
                 quit -a -p $"Running in batchmode as '%s', logfile='%s'" "$CEN_OPT_BATCH" "$_logf"
             fi
@@ -230,14 +232,14 @@ ${args[@]}
 
     # handle batch execution ...
 
-    [ "$CEN_BAT_STATE" = "run" ] || return
-    CEN_BAT_STATE="done"
+    [ "$CEN_BAT_STATE" = 'run' ] || return
+    CEN_BAT_STATE='done'
 
     # option/argument processing
     local item="$0" args=() ; _cen_bat_quote
-    [ "$CEN_OPT_BATCH" = "batch" ] && args+=("--batch=@$CEN_OPT_LOGFILE")
-    [ "$CEN_OPT_BATCH" = "nohup" ] && args+=("--batch=@")
-    [ -n "$CEN_FEATURE_Y" -a -z "$CEN_YESNO" ] && args+=("--yes")
+    [ "$CEN_OPT_BATCH" = 'batch' ] && args+=("--batch=@$CEN_OPT_LOGFILE")
+    [ "$CEN_OPT_BATCH" = 'nohup' ] && args+=('--batch=@')
+    [ -n "$CEN_FEATURE_Y" -a -z "$CEN_YESNO" ] && args+=('--yes')
 
     if [ ${#CEN_BAT_COMMANDS[@]} = 0 ] ; then       # explicit args
         _cen_bat_addopts "${CEN_CMDOPTS[@]}"
@@ -248,12 +250,12 @@ ${args[@]}
     fi
 
     # lauch batch
-    if [ -n "$CEN_OPT_DRYRUN" -o "${CEN_OPT_LOGFILE:--}" = "-" ] ; then
+    if [ -n "$CEN_OPT_DRYRUN" -o "${CEN_OPT_LOGFILE:--}" = '-' ] ; then
         _cen_bat_launch
     else
         _cen_bat_launch >> "$CEN_OPT_LOGFILE"
     fi
-    [ -t 1 ] && sleep .1            # allow batchmode to start
+    [ -t 1 ] && timer -w 0.1                        # allow batchmode to start
 }
 
 # ------------------------------------------------------------------------------
@@ -270,16 +272,16 @@ ${args[@]}
 logfile() {
     local logf="${1:-$CEN_OPT_LOGFILE}"
     if [ -z "$logf" -a -n "$CEN_OPT_BATCH" ] ; then
-        [ "${CEN_OPT_BATCH::1}" = "@" ] || logf="+"
-        [ "$CEN_OPT_BATCH" = "echo" -o "$CEN_OPT_BATCH" = "none" ] && logf=
+        [ "${CEN_OPT_BATCH::1}" = '@' ] || logf='+'
+        [ "$CEN_OPT_BATCH" = 'echo' -o "$CEN_OPT_BATCH" = 'none' ] && logf=
     fi
-    [ "$logf" = "+" ] && logf="$CEN_NAME.log"
+    [ "$logf" = '+' ] && logf="$CEN_NAME.log"
     CEN_OPT_LOGFILE="${logf:--}"
-    [ "${CEN_OPT_LOGFILE:--}" = "-" ] && return         # no logfile at all
+    [ "${CEN_OPT_LOGFILE:--}" = '-' ] && return         # no logfile at all
 
     # partial log init for batch execution
     CEN_BAT_LOGFILE=1
-    [ "${CEN_OPT_BATCH::1}" = "@" ] && return
+    [ "${CEN_OPT_BATCH::1}" = '@' ] && return
 
     # exiting logfile?
     local fapp sbat="$CEN_BAT_STATE" ; CEN_BAT_STATE=
@@ -359,8 +361,8 @@ elif [ "$1" = "-n" ] ; then         # do not init
 fi
 
 # register option/action hooks
-CEN_BAT_HOOK_OPTIONS="$CEN_HOOK_OPTIONS" ; CEN_HOOK_OPTIONS="_cen_bat_option"
-CEN_BAT_HOOK_ACTIONS="$CEN_HOOK_ACTIONS" ; CEN_HOOK_ACTIONS="_cen_bat_action"
+CEN_BAT_HOOK_OPTIONS="$CEN_HOOK_OPTIONS" ; CEN_HOOK_OPTIONS='_cen_bat_option'
+CEN_BAT_HOOK_ACTIONS="$CEN_HOOK_ACTIONS" ; CEN_HOOK_ACTIONS='_cen_bat_action'
 
 :
 # end

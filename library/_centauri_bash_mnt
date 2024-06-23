@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_mnt = centauri-bash-lib: Storage device mount support
 #
@@ -21,15 +21,17 @@
 # Copyright Dr. J. Pfennig (c) 2020-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_mnt"]='0.11:2'
+CEN_MODULES['_centauri_bash_mnt']='0.11:2'
+
+embed -c '_centauri_bash_utl'   # import on demand, see timer()
 
 # used by findmount and automount
 
-CEN_MOUNT_DEV=              # device path
-CEN_MOUNT_DIR=              # mount dir
-CEN_MOUNT_LBL=              # mount label
-CEN_MOUNT_FS=               # fs type
-CEN_MOUNT_ARR=()            # find by type
+CEN_MOUNT_DEV=                  # device path
+CEN_MOUNT_DIR=                  # mount dir
+CEN_MOUNT_LBL=                  # mount label
+CEN_MOUNT_FS=                   # fs type
+CEN_MOUNT_ARR=()                # find by type
 
 CEN_MOUNT_EXC=(cgroup cgroup2 proc \
                autofs binfmt_misc configfs bpf debugfs devpts devtmpfs efivarfs fusectl \
@@ -37,12 +39,12 @@ CEN_MOUNT_EXC=(cgroup cgroup2 proc \
 
 # used by automount
 
-CEN_MNT_OPT_D=              # automount options ...
+CEN_MNT_OPT_D=                  # automount options ...
 CEN_MNT_OPT_M=
 
-CEN_MNT_OLVL=               # unmount flag, output mode
+CEN_MNT_OLVL=                   # unmount flag, output mode
 
-declare -g -A CEN_MNT_AMAP  # automount map
+declare -g -A CEN_MNT_AMAP      # automount map
 
 # ------------------------------------------------------------------------------
 # automount - Automatic volume mount and unmount
@@ -177,7 +179,7 @@ automount() {
                 return 3                        # could not unmount
             fi
             system -q -r -- udisksctl unmount -b "$CEN_MOUNT_DEV" --no-user-interaction && break
-            _cen_automount_mesg -w ; sleep $_umnt
+            _cen_automount_mesg -w ; timer -w "$_umnt"
         done
         _cen_automount_mesg -d $"Unmounted:" ; return 0
     fi
@@ -201,7 +203,7 @@ automount() {
             if [ "$_umnt" = "0" ] ; then
                 _cen_automount_mesg -i $"Waiting for" ; continue
             elif [ "$_umnt" != "-" ] ; then
-                _cen_automount_mesg -w ; sleep "$_umnt" ; continue
+                _cen_automount_mesg -w ; timer -w "$_umnt" ; continue
             fi
         fi
         _cen_automount_mesg -e $"Cannot find #K by #L '#A'" ; return 1
@@ -229,7 +231,7 @@ automount() {
                 return 3
             fi
             findmount "$CEN_MOUNT_DEV" && break
-            _cen_automount_mesg -w ; sleep $_umnt
+            _cen_automount_mesg -w ; timer -w "$_umnt"
         done
         _cen_automount_mesg -d $"Mounted: " ; return 0
     fi

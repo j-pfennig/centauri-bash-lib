@@ -508,10 +508,10 @@ netiface() {
                 else
                     _cen_netiface_name='eth0' ; _bios=1
                 fi ;;
-    eth[09])    _bios=1 ;;
+    eth[0-9])   _bios=1 ;;
     en*)        _bios=0 ;;
-    usb[09])    _bios=1 ;;
-    wlan[09])   _bios=1 ;;
+    usb[0-9])   _bios=1 ;;
+    wlan[0-9])  _bios=1 ;;
     wl*)        _bios=0 ;;
     esac
     _cen_netiface_kern="$_cen_netiface_name"

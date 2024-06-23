@@ -1,43 +1,43 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_bat:177
+#: /var/centauri/library/_centauri_bash_bat:179
 msgid "Call to '%s' without '--batch'"
 msgstr "Aufruf von '%s' ohne '--batch'"
 
-#: /var/centauri/library/_centauri_bash_bat:214
+#: /var/centauri/library/_centauri_bash_bat:216
 msgid "Running in batchmode as '%s'"
 msgstr "Läuft im Hintergrund als '%s'"
 
-#: /var/centauri/library/_centauri_bash_bat:217
+#: /var/centauri/library/_centauri_bash_bat:219
 msgid "Output redirected, logfile='%s'"
 msgstr "Ausgabe umgeleitet, Protokolldatei='%s'"
 
-#: /var/centauri/library/_centauri_bash_bat:218
+#: /var/centauri/library/_centauri_bash_bat:220
 msgid "Running in batchmode as '%s', logfile='%s'"
 msgstr "Läuft im Hintergrund als '%s', Protokolldatei='%s'"
 
-#: /var/centauri/library/_centauri_bash_bat:287
+#: /var/centauri/library/_centauri_bash_bat:289
 msgid "Truncate logfile:"
 msgstr "Protokolldatei überschreiben:"
 
-#: /var/centauri/library/_centauri_bash_bat:290
+#: /var/centauri/library/_centauri_bash_bat:292
 msgid "Cannot write logfile:"
 msgstr "Kann Protokolldatei nicht schreiben:"
 
-#: /var/centauri/library/_centauri_bash_bat:291
+#: /var/centauri/library/_centauri_bash_bat:293
 msgid "Create logfile:"
 msgstr "Protokolldatei erstellen:"
 
-#: /var/centauri/library/_centauri_bash_bat:292
+#: /var/centauri/library/_centauri_bash_bat:294
 msgid "Cannot create logfile:"
 msgstr "Kann Protokolldatei nicht erstellen:"
 
-#: /var/centauri/library/_centauri_bash_bat:318
+#: /var/centauri/library/_centauri_bash_bat:320
 msgid "run in batchmode (<brun>:=echo|batch|nohup|none)"
 msgstr "Im Hintergrund ausführen (<brun>:=echo|batch|nohup|none)"
 
-#: /var/centauri/library/_centauri_bash_bat:321
+#: /var/centauri/library/_centauri_bash_bat:323
 msgid "logfile (use - to disable, + for %s)"
 msgstr "Protokolldatei (- zum Abschalten, + für %s)"
 

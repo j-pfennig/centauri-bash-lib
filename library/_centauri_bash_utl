@@ -119,6 +119,7 @@ listsearch() {
 # Options:  -d  default value if <narg> is '-' or empty
 #           -e  generate error messages
 #           -f  make errors fatal
+#           -r  accept real value (min/max tests not allowed)
 #           -s  save numbre to variable (default: CEN_NUMER)
 #           -u  number must be unsigned
 #
@@ -133,7 +134,7 @@ listsearch() {
 # ------------------------------------------------------------------------------
 CEN_NUMBER=
 number() {
-    local _dflt _oerr=':' _ouns _narg _nmin _nmax _nabs _vnam='CEN_NUMBER'
+    local _dflt _oerr=':' _orea _ouns _narg _nmin _nmax _nabs _vnam='CEN_NUMBER'
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -142,6 +143,7 @@ number() {
       -d)   shift ; _dflt="$1" ;;
       -e)   _oerr='error' ;;
       -f)   _oerr='fatal' ;;
+      -r)   _orea=1 ;;
       -s)   shift ; _vnam="$1" ;;
       -u)   _ouns=1 ;;
       *)    _cen_abort - "$1"
@@ -164,6 +166,9 @@ number() {
             _nabs="${_narg:1}" ;;
     *)      _nabs="$_narg"
     esac
+    if [ -n "$_orea" ] ; then
+        _nmin='-' ; _nmax='-' ; _nabs="${_nabs/./}"
+    fi
     if [ -n "${_nabs//[0-9]/}" ] ; then
         $_oerr $"Unexpected text data, not a number:" "$_narg" ; return 3
     fi
@@ -754,7 +759,7 @@ timer() {
       -r)   _ropt="$1" ;;
       -s)   shift ; _vnam="$1" ;;
       -t)   _mesg="$CEN_TRACE" ;;
-      -w)   shift ; _swai="$1" ;;
+      -w)   shift ; number -e -r -u -s _swai -- "$1" || return ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done

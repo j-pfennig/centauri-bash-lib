@@ -438,7 +438,7 @@ fatal() {
 #
 #,          °°CEN_QUIT_WAIT=1   # prompt: Press any key to continue...
 #,          °°CEN_QUIT_WAIT=2   # prompt: Press any key to close the window...
-#,          °°CEN_QUIT_WAIT=3   # run "sleep 3": after trap in console emulator
+#,          °°CEN_QUIT_WAIT=3   # run "timer -w 3": after trap in console emulator
 #
 #+The "console°-c" sets "CEN_QUIT_WAIT=". You can disable prompting by clearing
 # the variable before calling quit.
@@ -518,7 +518,7 @@ _cen_exit() {
     $CEN_TRACE2 -r -c $"Exit status" -- "${CEN_EXIT:-0}"
     [ -n "$CEN_QUIT_SANE" ] && system -r -q -- stty sane
     if [ "$CEN_QUIT_WAIT" = 3 ] ; then
-        system -b -r sleep 2
+        system -b -r sleep 2                    # do not load 'timer'
     elif [ "$CEN_QUIT_WAIT" = 2 ] ; then
         trap "exit ${CEN_EXIT:-0}" 1 2 3 15
         read -n1 -p $"Press any key to close the window..." 1>&2

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_pro = centauri-bash-lib: Progress display support
 #
@@ -14,10 +14,12 @@
 # Some functions implicitly load one of these modules. So the [[progress()]] function
 # will load [[_centauri_bash_con]] implicitly if not yet in windows mode.
 #
-# Copyright Dr. J. Pfennig (c) 2022
+# Copyright Dr. J. Pfennig (c) 2022-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_pro"]="0.02:1"
+CEN_MODULES['_centauri_bash_pro']='0.03:2'
+
+embed -c '_centauri_bash_utl'                       # import on demand, see timer()
 
 # CEN_CONSOLE           # imported ...
 # CEN_WINDOWS
@@ -77,30 +79,30 @@ CEN_PROGRESS=           # 0:disabled  1:enbabled  2:active
 #
 #     simple line output (notification messages for windows mode)...
 #.    progress -l "Breakfast at 7:00"         # notification for windows
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -p "%s at %s" "Lunch" "13:00"  # notification for windows
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -t "Dinner at 19:00"           # ignored for windows
-#.    sleep 0.4
+#.    timer -w 0.4
 #
 #     appending line output (shows a dialog in windows mode)...
 #.    progress "Meals:"                       # windows: creates dialog
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -c "Breakfast "                # windows: increment only
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -c "Lunch "
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -c "Dinner"
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress                                # clear mesg., close dialog
 #
 #     show a list of steps (notification messages for windows mode)...
 #.    progress -l "Winter" "Jan - Mar"
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -l "Spring" "Apr - Jun"
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -l "Summer" "Jul - Sep"
-#.    sleep 0.4
+#.    timer -w 0.4
 #.    progress -l "Autumn" "Oct - Dec"
 #
 #     run an iterator (calling a worker **totl** times, progress report is made
@@ -112,7 +114,7 @@ CEN_PROGRESS=           # 0:disabled  1:enbabled  2:active
 #     Show dots progress bar (compatible with windows mode) ...
 #.    progress "Running "
 #.    for item in 0 1 2 3 4 5 6 7 8 9 ; do
-#.    °   sleep 1
+#.    °   timer -w 1
 #.    °   progress -c "."
 #.    °   done
 #.    quit "Demo over"
@@ -121,15 +123,15 @@ CEN_PROGRESS=           # 0:disabled  1:enbabled  2:active
 #
 #           Incremental progress reporting ...
 #.          progress -l "Wait for init ..."     # temporary message
-#.          sleep 3
+#.          timer -w 3
 #.          message "Init done"                 # replace temp msg
 #.
 #.          progress -a -l "Phase I"            # new temp msg
-#.          sleep 3
+#.          timer -w 3
 #.          progress -a -l "Phase II"           # replace tmp msg
-#.          sleep 3
+#.          timer -w 3
 #.          progress                            # remove tmp msg
-#.          sleep 3
+#.          timer -w 3
 #.          quit "Demo over"
 #
 #           ••• windows mode only •••
@@ -214,7 +216,7 @@ progress() {
             _cen_win_prog "$_prog" "$_fdel" "$_fend" "$_flin" "$_step" "$_ftxt" "$@" || _stat=$?
         else
             _cen_con_prog "$_prog" "$_fend" "$_flin" "$_find" "$_step" "$_ftxt" "$@" || _stat=$?
-            [ -n "$_fdel" ] && sleep "$_fdel"
+            [ -n "$_fdel" ] && timer -w "$_fdel"
         fi
     fi
     return "$_stat"
@@ -261,20 +263,20 @@ _cen_pro_work() {
 
         $_work "$_curr" || _stat=$?             # call worker
         [ "$_stat" = 0 ] || break               # error stop
-        [ -n "$_fdel" ] && sleep "$_fdel"
+        [ -n "$_fdel" ] && timer -w "$_fdel"
     done
 
     # clear progress, close dialog, flush worker
     if [ -n "$_plst" ] ; then
         if [ "${_done:--}" != '-' ] ; then
             progress -a -c 100 -t "$_text" "$_done"
-            sleep 0.5
+            timer -w 0.5
         else
             progress -a -c 100
         fi
     fi
     $_work 0 || _stat=$?                        # flush worker
-    [ -n "$_fdel" ] && sleep "$_fdel"
+    [ -n "$_fdel" ] && timer -w "$_fdel"
     [ -n "$CEN_CONSOLE" ] && context -t -       # reset trap handler
     return "$_stat"
 }
