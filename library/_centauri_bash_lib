@@ -44,7 +44,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2024
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.30:3:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.31:3:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -1878,7 +1878,8 @@ folder() {
     done
     _vval="$_tdir$_tsuf$1"
 
-    # create folder
+    # prettify name, create folder
+    _vval="${_vval//\/\//\/}" ; _vval="${_vval//\/.\//\/}"
     [ "$_vval" = '/' ] || _vval="${_vval%/}"
     [ -z "$_ogen" ] && while [ ! -d "$_vval" ] ; do
         if [ -n "$_omak" ] ; then

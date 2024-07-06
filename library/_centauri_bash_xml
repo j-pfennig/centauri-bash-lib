@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_xml = centauri-bash-lib: Support for generating XML/HTML
 #
@@ -18,10 +18,10 @@
 #
 # Template: The **centauriCgiforms** template demonstrates the use of this module.
 #
-# Copyright Dr. J. Pfennig (c) 2016-2023
+# Copyright Dr. J. Pfennig (c) 2016-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_xml']='0.21:2'
+CEN_MODULES['_centauri_bash_xml']='0.22:2'
 
 CEN_XML_BUFFER=
 CEN_XML_ERROR=          # error flag
@@ -75,7 +75,7 @@ embed -c _centauri_bash_iom         # reference declaration
 #.          xml_anchor -n -j "navigate" -u "dest.html" -- "Show Result"
 # ------------------------------------------------------------------------------
 xml_anchor() {
-    local _sref _satr _scls _scss _smrk _href _jscr _onew _otxt="-t" _optv
+    local _sref _satr _scls _scss _smrk _href _jscr _onew _otxt='-t' _optv
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -85,7 +85,7 @@ xml_anchor() {
       -j)   shift ; _jscr="$1" ;;
       -l)   _otxt= ;;
       -m)   shift ; _href="#${1#\#}" ;;
-      -n)   _onew="-n" ;;
+      -n)   _onew='-n' ;;
       -s)   shift ; _scss=" style='$1'" ;;
       -v)   shift ; _optv="-v $1" ;;
       -u)   shift ; _href="${1:--}" ;;
@@ -431,7 +431,7 @@ xml_element() {
 
     # imply -x for HTML if not a <br> tag ...
     if [ -z "$_optx" ] ; then
-        [ "${_etag,,}" = "br" -o "${_etag,,}" = "hr" ] || _optx="$CEN_XML_HTML"
+        [ "${_etag,,}" = 'br' -o "${_etag,,}" = 'hr' ] || _optx="$CEN_XML_HTML"
     fi
 
     # unindent, new line
@@ -444,14 +444,14 @@ xml_element() {
         if [ -n "$_func" ] ; then
             [ -n "$_optb" ] && CEN_XML_BUFFER+="<$_etag$_satr>"
             if [ -n "$_opti" ] ; then
-                CEN_XML_INDENT+="  " ; xml_flush -n ; _opti=
+                CEN_XML_INDENT+='  ' ; xml_flush -n ; _opti=
                 xml_script "$_func" "$1"
                 CEN_XML_INDENT="${CEN_XML_INDENT:2}" ; xml_flush -n
             else
                 xml_script "$_func" "$1"
             fi
             [ -n "$_opte" ] && CEN_XML_BUFFER+="</$_etag>"
-        elif [ "$_optb$_opte" = "11" ] ; then
+        elif [ "$_optb$_opte" = '11' ] ; then
             if [ -z "$1" -a -z "$_optx" ] ; then
                 CEN_XML_BUFFER+="<$_etag$_satr/>"
             elif [ -z "$_optt" ] ; then
@@ -474,7 +474,7 @@ xml_element() {
 
     # indent, save to variable
     if [ -n "$_opti" ] ; then
-        CEN_XML_INDENT+="  " ; xml_flush -n
+        CEN_XML_INDENT+='  ' ; [ -n "$_optn" ] && CEN_XML_BUFFER+='  '
     fi
     [ -z "$_optv" ] && return
     local -n _rvar="$_optv" ; _rvar="$CEN_XML_BUFFER" ; CEN_XML_BUFFER="$_buff"
@@ -545,8 +545,10 @@ xml_flush() {
     [ -n "$_over" ] && CEN_XML_HTML="$_over"
     [ -z "$CEN_XML_OUTPUT" ] && CEN_XML_OUTPUT="$_ohan"
 
-    # right trim
+    # there should be no indentation
     [ -z "$CEN_XML_BUFFER" ] && return 0
+
+    # right trim
     local _blen="${#CEN_XML_BUFFER}"
     while [ "$_blen" -gt 0 ] ; do
         [ "${CEN_XML_BUFFER:_blen-1:1}" = ' ' ] || break
@@ -569,7 +571,7 @@ xml_flush() {
     elif [ "$_blen" -gt 0 ] ; then
         if [ "$_ohan" = '+' ] ; then            # keep in buffer
             CEN_XML_BUFFER="${CEN_XML_BUFFER::_blen}"
-            [ "$CEN_XML_FORMAT" = "1" ] && CEN_XML_BUFFER+="$CEN_XML_INDENT"
+            [ "$CEN_XML_FORMAT" = 1 ] && CEN_XML_BUFFER+="$CEN_XML_INDENT"
             return 0
         elif [ "$_ohan" = 1 ] ; then            # send to stdout
             printf '%s' "${CEN_XML_BUFFER::_blen}" 2>/dev/null
@@ -581,7 +583,7 @@ xml_flush() {
         fi
     fi
 
-    if [ "$CEN_XML_FORMAT" = '1' ] ; then
+    if [ "$CEN_XML_FORMAT" = 1 ] ; then
         CEN_XML_BUFFER="$CEN_XML_INDENT"
     else
         CEN_XML_BUFFER=
@@ -630,7 +632,7 @@ xml_input() {
       -a)   shift ; _satr=" $1" ;;
       -c)   shift ; _scls=" class='$1'" ;;
       -l)   _olit=1 ;;
-      -n)   _onew="-n" ;;
+      -n)   _onew='-n' ;;
       -s)   shift ; _scss=" style='$1'" ;;
       -v)   shift ; _optv="-v $1" ;;
       *)    _cen_abort - "$1"
@@ -688,7 +690,7 @@ xml_list() {
     local _selt="${1:--}" ; shift
     [ "${_selt::1}" = '-' ] && _cen_abort $"Missing type" 'xml_list'
 
-    local _sdel _satr _satr _scls _stxt="-t" _onew _item _sliav _gelt
+    local _sdel _satr _satr _scls _stxt='-t' _onew _item _sliav _gelt
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -697,7 +699,7 @@ xml_list() {
       -d)   shift ; _sdel="$1" ;;
       -g)   shift ; _gelt="$1" ;;
       -l)   _stxt= ;;
-      -n)   _onew="-n" ;;
+      -n)   _onew='-n' ;;
       -s)   shift ; _scss=" style='$1'" ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -835,7 +837,7 @@ xml_sequence() {
     local _etag="$1" ; shift
     [ "${_etag::1}" = '-' ] && _cen_abort $"Missing tag"
 
-    local _sdel _satr _scls _scss _stxt="-t" _onew _optt _felt _func
+    local _sdel _satr _scls _scss _stxt='-t' _onew _optt _felt _func
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -845,7 +847,7 @@ xml_sequence() {
       -e)   shift ; _felt="$1" ;;
       -f)   shift ; _func="$1" ;;
       -l)   _stxt= ;;
-      -n)   _onew="-n" ;;
+      -n)   _onew='-n' ;;
       -s)   shift ; _scss=" style='$1'" ;;
       -t)   shift ; _optt="$1" ;;
       *)    _cen_abort - "$1"
@@ -919,7 +921,7 @@ xml_sequence() {
 #.          ___rows() {
 #.              case "$2" in
 #.                  0)  CEN_XML_ARGS=("$1") ;;
-#.                  1)  CEN_XML_ARGS=("1" "2") ;;
+#.                  1)  CEN_XML_ARGS=(1 "2") ;;
 #.                  2)  CEN_XML_ARGS=("3" "4") ;;
 #.                 *)  return 1    # return false to stop
 #.              esac ; return 0
@@ -938,7 +940,7 @@ xml_sequence() {
 #.                    "N|north" "E|east" "S|south" "W|west"
 # ------------------------------------------------------------------------------
 xml_table() {
-    local _sdel="\t\n" _satr _scls _scss _stxt="-t" _onew _optt _narg _natr _nrow=0
+    local _sdel="\t\n" _satr _scls _scss _stxt='-t' _onew _optt _narg _natr _nrow=0
     local _fxtr _fhdr _fbdy _ffoo _frow="false"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
@@ -950,7 +952,7 @@ xml_table() {
       -f)   shift ; _ffoo="$1" ;;
       -h)   shift ; _fhdr="$1" ;;
       -l)   _stxt= ;;
-      -n)   _onew="-n" ;;
+      -n)   _onew='-n' ;;
       -r)   shift ; _frow="$1" ;;
       -s)   shift ; _scss=" style='$1'" ;;
       -t)   shift ; _optt="$1" ;;

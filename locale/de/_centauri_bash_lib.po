@@ -195,7 +195,7 @@ msgid "error trap"
 msgstr "Fehlersignal"
 
 #: /var/centauri/library/_centauri_bash_lib:1224
-#: /var/centauri/library/_centauri_bash_lib:2501
+#: /var/centauri/library/_centauri_bash_lib:2502
 msgid "command '%s' not found"
 msgstr "Programm '%s' nicht gefunden"
 
@@ -243,79 +243,79 @@ msgstr "Laden des Moduls fehlgeschlagen:"
 msgid "Failed to execute script:"
 msgstr "Skript nicht ausführbar:"
 
-#: /var/centauri/library/_centauri_bash_lib:1889
+#: /var/centauri/library/_centauri_bash_lib:1890
 msgid "Not a folder:"
 msgstr "Ist kein Verzeichnis:"
 
-#: /var/centauri/library/_centauri_bash_lib:1902
+#: /var/centauri/library/_centauri_bash_lib:1903
 msgid "Cannot use folder:"
 msgstr "Verzeichnis nicht verwendbar:"
 
-#: /var/centauri/library/_centauri_bash_lib:1906
+#: /var/centauri/library/_centauri_bash_lib:1907
 msgid " current"
 msgstr " aktuell"
 
-#: /var/centauri/library/_centauri_bash_lib:1995
+#: /var/centauri/library/_centauri_bash_lib:1996
 msgid "Action '%s': "
 msgstr "Aktion '%s': "
 
-#: /var/centauri/library/_centauri_bash_lib:2017
+#: /var/centauri/library/_centauri_bash_lib:2018
 msgid "Not yet implemented:"
 msgstr "Noch nicht implementiert:"
 
-#: /var/centauri/library/_centauri_bash_lib:2078
+#: /var/centauri/library/_centauri_bash_lib:2079
 msgid "Undefined function:"
 msgstr "Undefinierte Funktion:"
 
-#: /var/centauri/library/_centauri_bash_lib:2191
+#: /var/centauri/library/_centauri_bash_lib:2192
 msgid "no argument allowed"
 msgstr "Kein Argumentwert erlaubt"
 
-#: /var/centauri/library/_centauri_bash_lib:2204
+#: /var/centauri/library/_centauri_bash_lib:2205
 msgid "mutually exclusive options:"
 msgstr "Sich ausschliessende Optionen:"
 
-#: /var/centauri/library/_centauri_bash_lib:2207
+#: /var/centauri/library/_centauri_bash_lib:2208
 msgid "must have a numeric value"
 msgstr "Numerischer Wert erwartet"
 
-#: /var/centauri/library/_centauri_bash_lib:2213
+#: /var/centauri/library/_centauri_bash_lib:2214
 msgid "value must be 'off|on|auto' or '0|1|2'"
 msgstr "Wert muss 'off|on|auto' oder '0|1|2' sein"
 
-#: /var/centauri/library/_centauri_bash_lib:2217
+#: /var/centauri/library/_centauri_bash_lib:2218
 msgid "has an invalid value"
 msgstr "Ungültiger Argumentwert"
 
-#: /var/centauri/library/_centauri_bash_lib:2225
+#: /var/centauri/library/_centauri_bash_lib:2226
 msgid "must have a value"
 msgstr "Argumentwert fehlt"
 
-#: /var/centauri/library/_centauri_bash_lib:2506
+#: /var/centauri/library/_centauri_bash_lib:2507
 msgid "found no applicable command:"
 msgstr "Kein passendes Programm gefunden:"
 
-#: /var/centauri/library/_centauri_bash_lib:2725
-#: /var/centauri/library/_centauri_bash_lib:2728
+#: /var/centauri/library/_centauri_bash_lib:2726
+#: /var/centauri/library/_centauri_bash_lib:2729
 msgid "Running '%s' failed (status %s)"
 msgstr "Ausführen von '%s' fehlgeschlagen (Status %s)"
 
-#: /var/centauri/library/_centauri_bash_lib:2744
+#: /var/centauri/library/_centauri_bash_lib:2745
 msgid "No free file handle"
 msgstr "Keine freie Dateizugriffsnummer"
 
-#: /var/centauri/library/_centauri_bash_lib:2879
+#: /var/centauri/library/_centauri_bash_lib:2880
 msgid "Unknown option '%s', try '%q --help'"
 msgstr "Unbekannte Option '%s', siehe '%q --help'"
 
-#: /var/centauri/library/_centauri_bash_lib:2940
+#: /var/centauri/library/_centauri_bash_lib:2941
 msgid "Don't know what to do, try '%q --help'"
 msgstr "Weiss nicht was zu tun ist, siehe '%q --help'"
 
-#: /var/centauri/library/_centauri_bash_lib:2967
+#: /var/centauri/library/_centauri_bash_lib:2968
 msgid "Unknown action '%s', try '%q --help'"
 msgstr "Unbekannte Aktion '%s', siehe '%q --help'"
 
-#: /var/centauri/library/_centauri_bash_lib:2971
+#: /var/centauri/library/_centauri_bash_lib:2972
 msgid "Previous error: Not all actions were run"
 msgstr "Vorhergehender Fehler: Nicht alle Aktionen ausgeführt"

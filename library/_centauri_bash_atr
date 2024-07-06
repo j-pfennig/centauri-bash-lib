@@ -110,7 +110,7 @@ attributes() {
 #           -f  make errors fatal
 #           -p  filesystem path
 #           -q  no error reporting
-#           -s  return attributes as string (default: CEN_ATR_FILESTAT)
+#           -s  return attributes as string (default: CEN_FILESTAT)
 #
 # Arguments:<file>   § a file path
 #           <vnam>   § variable name
@@ -135,12 +135,12 @@ attributes() {
 #.          echo "size:" "${CEN_ATR_FILESTAT_MAP[size]}"
 #.          echo "mode:" "${CEN_ATR_FILESTAT_MAP[perms]}"
 #
-#.          # get info one by one
+#.          # get info one by one (uses CEN_ATR_FILESTAT_MAP internally)
 #.          filestat -p '/etc/motd'
 #.          filestat -s temp size ; echo "size:" "$temp"
-#.          filestat -s temp modee ; echo "mode:" "$temp"
+#.          filestat mode         ; echo "mode:" "$CEN_FILESTAT"
 #
-#.          # get info into array
+#.          # get info into an array
 #.          filestat -s iarr -p '/etc/motd'
 #.          echo "size:" "${iarr[0]}"
 #.          echo "mode:" "${iarr[1]}"
@@ -150,7 +150,7 @@ attributes() {
 # default [[sysrun]] just behaves the other way. Be carefull to use 'sysrun -i stat ...'
 # to run the command line version!
 # ------------------------------------------------------------------------------
-#CEN_ATR_HAVE_STAT=0
+CEN_FILESTAT=
 filestat() {
     if [ $# = 0 ] ; then
         unset CEN_ATR_FILESTAT_MAP ; return
@@ -190,7 +190,7 @@ filestat() {
             # debug CEN_ATR_FILESTAT_MAP
         fi
     fi
-    [ -z "$_varr" -a -z "$_vstr" ] && return 0
+    [ -z "$_varr" -a -z "$_vstr" ] &&  _vstr='CEN_FILESTAT' # return 0
 
     _cen_atr_tmp=()
     while [ -n "$1" ] ; do

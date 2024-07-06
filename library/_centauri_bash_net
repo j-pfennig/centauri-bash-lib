@@ -591,6 +591,7 @@ _cen_net_mapping() {
     if [ "$1" = '-b' ] ; then               # map to bios
         case "$_mapn" in
         enx*)   _cen_net_mapbios "$_mapn" /sys/class/net/enx* ;;
+        end*)   _cen_net_mapbios "$_mapn" /sys/class/net/end* ;;
         en*)    _cen_net_mapbios "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
         wl*)    _cen_net_mapbios "$_mapn" /sys/class/net/wlp* /sys/class/net/wl[!p]* ;;
         esac
@@ -1807,7 +1808,7 @@ nettool() {
         if [ ! -r "$_temp" ] ; then
             # currently ipv4 is always on
             [ "$_fipv" = '-4' -a  "$_cmnd" != 'off' ] && return 0
-            $_oerr "No such file:" "$_temp" ; return 2
+            $_oerr $"No such file:" "$_temp" ; return 2
         elif [ "$_cmnd" = 'sta' ] ; then
             read -r _stat < "$_temp"
             [ "$_stat" = 0 ] ; return               # return status

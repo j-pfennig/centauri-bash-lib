@@ -1,6 +1,12 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
+#: /var/centauri/library/_centauri_bash_con:438
+#: /var/centauri/library/_centauri_bash_con:441
+#: /var/centauri/library/_centauri_bash_con:442
+msgid "Not implemented"
+msgstr "Nicht implementiert"
+
 #: /var/centauri/library/_centauri_bash_con:834
 #: /var/centauri/library/_centauri_bash_con:836
 msgid "module conflict:"

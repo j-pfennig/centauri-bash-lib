@@ -2029,7 +2029,7 @@ run_generate() {
     }
     ___dummytxt() {
         local mesg ; splitjoin -d "\n" -j mesg \
-            $"To generate Html documentation please type (as a user with suffient rights):" \
+            $"To generate Html documentation please type (as a user with sufficient rights):" \
             "" "    $CEN_NAME --delete --generate=all" "" \
             $"If you want only centauritools or centauri-bash-lib documentation, replace" \
             $"the option value 'all' by 'tools' or 'library'."

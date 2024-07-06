@@ -423,8 +423,8 @@ sysinfo() {
 
     if [ "$_dopt" = 2 ] ; then
         for _stat in CEN_ROOT CEN_LIBRARY CEN_TOOLS CEN_INSTALL \
-                     CEN_PATHS[0] CEN_PATHS[1] CEN_PATHS[2] CEN_PATHS[3] CEN_PATHS[4] CEN_PATHS[5] \
-                     XDG_RUNTIME_DIR TMPDIR PATH ; do
+                     CEN_PATHS[0] CEN_PATHS[1] CEN_PATHS[2] CEN_PATHS[3] CEN_PATHS[4] \
+                     CEN_PATHS[5] CEN_PATHS[6] XDG_RUNTIME_DIR TMPDIR PATH ; do
            eval set -- \${$_stat}
            message -a -c "$_stat" -- "$1"
         done

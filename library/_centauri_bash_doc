@@ -1135,9 +1135,11 @@ _cen_doc_citem() {
 #+Hooks: The extension modules make use of so-called hooks (and scripts also
 #        can use them):
 #
-#       -  CEN_HOOK_OPTIONS  hook [[options()]] parsing
 #       -  CEN_HOOK_ACTIONS  hook [[actions()]] handling
 #       -  CEN_HOOK_GETLINE  acquire input, see [[confirm()]]
+#       -  CEN_HOOK_MAIN     get control before [[main()]] executes
+#       -  CEN_HOOK_MESSAGE  hook [[message()]] handling
+#       -  CEN_HOOK_OPTIONS  hook [[options()]] parsing
 #       -  CEN_HOOK_QUIT     terminate the script, see [[quit()]]
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------

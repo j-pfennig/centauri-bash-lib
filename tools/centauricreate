@@ -342,7 +342,7 @@ usage() {
              -t "$CEN_NAME -C myscript --- -e 1098 -W3" \
              -t "" \
              -t "# "$"replace shebang for bash scripts in a folder" \
-             -t "$CEN_NAME --shell /bin/bash --dryrun --yes myfolder" \
+             -t "$CEN_NAME --shell ${CEN_PATHS[1]}/bash --dryrun --yes myfolder" \
              -t "$CEN_NAME -S + /var/centauri/tools -i centauricreate" \
              -t "$CEN_NAME -S - /var/centauri/tools -x centauricreate"
 }
