@@ -44,7 +44,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2024
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.31:3:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.32:3:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -543,7 +543,7 @@ _cen_trap() {
     quit -t - $"caught signal" "$1"
 }
 
-# fatal error with stack trace: [-n] [-<indx>] <mesg>|-|+|=|@ <arg>...
+# fatal error with stack trace: [-n|-r] [-<indx>] <mesg>|-|+|=|@ <arg>...
 _cen_abort() {
     set +xeE ; IFS=$' \n\t' ; exec 1>&$CEN_STDOUT 2>&$CEN_STDERR
     local _fnot _indx=1 _idnt="| " _mesg _temp
@@ -555,7 +555,8 @@ _cen_abort() {
       +)  shift ; _mesg=$"Missing argument" ; break ;;
       =)  shift ; _mesg=$"Missing option" ; break ;;
       ?)  shift ; _mesg=$"Invalid argument" ; break ;;
-      -n) [ "$CEN_VERB" -le 2 ] && _fnot=1 ;;
+      -n) [ "$CEN_VERB" -le 2 ] && _fnot=1 ;;       # no function trace
+      -r) _fnot=2 ;;                                # return after trace
       -[0-9]) _indx=${1:1} ;
       esac ; shift
     done
@@ -563,11 +564,13 @@ _cen_abort() {
     if [ -z "$_mesg" ] ; then
         _mesg="$*"
     elif [ $# -gt 0 ] ; then
-        _mesg+=" '$*'"
+        _mesg+=" '$*'. "
+    else
+        _mesg+='. '
     fi
 
     CEN_AUTOIND=
-    if [ -n "$_fnot" ] ; then
+    if [ "$_fnot" = 1 ] ; then
         _idnt="${BASH_SOURCE[_indx]##*/}.${FUNCNAME[_indx]}"
         case "${_idnt##_centauri_bash_lib*.}" in
         invoke|options)
@@ -578,13 +581,16 @@ _cen_abort() {
         _cen_message -l -r $"***ABORT***" "$_mesg" ; _cen_exit 4
     fi
 
-    _mesg+=". "$"Function call stack..."$'\n'
+    _mesg+=$"Function call stack..."$'\n'
     while [ -n "${FUNCNAME[_indx]}" ] ; do
         _mesg+="$_idnt${BASH_SOURCE[_indx]}.${FUNCNAME[_indx]}() ${BASH_LINENO[_indx-1]}"$'\n'
-        ((_indx += 1)) ; _idnt+="   "
+        ((_indx += 1)) ; _idnt+='   '
     done
     _temp="$CEN_NAME ${CEN_CMDOPTS[*]} ${CEN_CMDARGS[*]}" ; _temp="${_temp% }"
     _cen_compactify _temp ; _mesg+="$_temp"
+    if [ "$_fnot" = 2 ] ; then
+        _cen_message -l -n -r "$_mesg" ; return 0
+    fi
     _cen_message -l -n -r $"***ABORT***" "$_mesg" ; _cen_exit 4
 }
 
@@ -2983,7 +2989,7 @@ main() {
 # fix system paths (set by proxy) using the $BASH variable
 if [ ! -x "${CEN_PATHS[1]}/bash" ] ; then
     # bash should be installed in the core binaries path
-    CEN_PATHS[1]="${BASH%/bash}" ; [ -d "${CEN_PATHS[1]}" ] || CEN_PATHS[1]="/usr/bin"
+    CEN_PATHS[1]="${BASH%/bash}" ; [ -d "${CEN_PATHS[1]}" ] || CEN_PATHS[1]='/usr/bin'
     # core binaries should be in <prefix>/usr/bin or <prefix>/bin
     CEN_PATHS[0]="${CEN_PATHS[1]%/usr/bin}"
     CEN_PATHS[0]="${CEN_PATHS%/bin}"
@@ -3001,6 +3007,8 @@ if [ -z "${CEN_PATHS[6]}" ] ; then
         CEN_PATHS[6]="${CEN_PATHS[2]}/default"
     elif [ "${CEN_PATHS[6]}" -ef "${CEN_PATHS[2]}/default" ] ; then
         CEN_PATHS[6]="${CEN_PATHS[2]}/default"
+#    elif [ ! -d "${CEN_PATHS[6]}" ] ; then
+#        CEN_PATHS[6]="${CEN_PATHS[2]}/default"
     fi
 fi
 

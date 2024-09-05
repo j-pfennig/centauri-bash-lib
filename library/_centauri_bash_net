@@ -27,7 +27,7 @@
 # Copyright Dr. J. Pfennig (c) 2013-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.29:2'
+CEN_MODULES['_centauri_bash_net']='0.30:2'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
@@ -82,11 +82,12 @@ CEN_NET_IFKCMD=                 # flag for net.ifnames
 # ------------------------------------------------------------------------------
 # netconfig - Load network configuration from status file
 #
-# Call:     netconfig [-e|-f] [-r] [<file>]
+# Call:     netconfig [-e|-f] [-r|-u] [<file>]
 #
 # Options:  -e  error if config file not found
 #           -f  fatal error if config file not found
-#           -r  re-read even if CEN_NET_DOMAIN is set
+#           -r  re-read even if CEN_NET_HOSTS is set
+#           -u  unset configuration variables
 #
 # Return:   **false** if configuration cannot be read
 #
@@ -103,12 +104,14 @@ netconfig() {
       -e)   _oerr=error ;;
       -f)   _oerr=fatal ;;
       -r)   _frea=1 ;;
+      -u)   _frea=0 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
     [ -n "$CEN_NET_HOSTS" -a -z "$_frea" ] && return 0
     local _file="${1:-$CEN_NET_FILE_CONF}"
 
+    CEN_NET_CONFIG=             # configuration name
     CEN_NET_DOMAIN=             # domain name of the network
     CEN_NET_WIRELESS=           # client and AP WLAN ssids
     CEN_NET_PUBLIC=             # our public dns name
@@ -145,6 +148,7 @@ netconfig() {
     CEN_NET_PORT_HTTP=          # port for http proxy
     CEN_NET_PORT_HTTPS=         # port for https proxy
 
+    [ "$_frea" = 0 ] && return 0
     if [ "$CEN_NET_OUTPUT" = '.' ] && [ -r ".$CEN_NET_FILE_CONF" ] ; then
         _file="./$CEN_NET_FILE_CONF"
     elif [ -r "$_file" ] ; then
@@ -408,7 +412,7 @@ nethost() {
 #           -d  return a device path (like "/dev/eth0")
 #           -e  generate error messages
 #           -i  return an internal device name (like "wlan0" or "eth0")
-#           -k  return a systemd/kernel device name
+#           -k  return a systemd/kernel device name or check/init mode
 #           -n  get kernel 'net.ifnames', no init
 #           -p  persist current mappings in a temporary file
 #           -s  save to variable (default is _netiface)
@@ -424,15 +428,15 @@ nethost() {
 # Return:   Form (3) returns **false** with option -k for BIOS naming.
 #
 #.Examples: # check naming mode
-#.          netiface -k
+#.          netiface -k && message "Using systemd names"
+#
+#.          # get kernel 'net.ifnames' status
+#.          netiface -n
 #.          case $? in
 #.          0)  message "Found net.ifnames=0" ;;
 #.          1)  message "Found net.ifnames=1" ;;
 #.          *)  message "No net.ifnames"
 #.          esac
-#
-#.          # get kernel 'net.ifnames' status
-#.          netiface -n  message "kernel has net.ifnames=0"
 #
 #.          # map internal name to kernel name and vice versa
 #.          netiface -k "wlan0"  -e && message "Kernel   name:" "$_netiface"
@@ -505,7 +509,7 @@ netiface() {
     done
 
     if [ -n "$_ncmd" ] ; then               # get cmdline status only
-        _cen_net_map_kcmd ; return
+        _cen_net_getkcmd ; return
     fi
     [ -z "$CEN_NET_IFNAMES" ] && _cen_net_mapinit
 
@@ -555,7 +559,7 @@ netiface() {
 }
 
 # get net.ifnames status from kernel cmd line
-_cen_net_map_kcmd() {
+_cen_net_getkcmd() {
     [ -n "$CEN_NET_IFKCMD" ] && return "$CEN_NET_IFKCMD"
     local _wrds _item
     read -r -a _wrds < '/proc/cmdline'
@@ -570,22 +574,23 @@ _cen_net_map_kcmd() {
 # get current map mode, set CEN_NET_IFNAMES, load rules
 _cen_net_mapinit()  {
     [ -z "$CEN_NET_DOMAIN" ] && { netconfig || return 1 ; }
+    [ -n "$CEN_NET_IFNAMES" ] && return
 
-    # get mapping mode from /etc/systemd/network or kernel cmdline
-    if [ -n "$CEN_NET_IFNAMES" ] ; then
-        :
-    elif [ '/etc/systemd/network/99-default.link' -ef '/dev/null' ] ; then
-        CEN_NET_IFNAMES=0
-    else
-        _cen_net_map_kcmd && CEN_NET_IFNAMES=0 || CEN_NET_IFNAMES=1
-        local _item
-        if [ "$CEN_NET_IFNAMES" = 0 ] ; then
-            _item='bios'
-        else
-            [ -n "$CEN_NET_IFACES" ] && _cen_net_maprule    # iface rules
-            _item='systemd'
+    # check for kernel net.ifnames
+    _cen_net_getkcmd && CEN_NET_IFNAMES=0 || CEN_NET_IFNAMES=1
+    # must use some heuristics as initrd might be out of sync
+    if [ "$CEN_NET_IFNAMES" = 1 ] ; then
+        if [ -e '/sys/class/net/eth0' ] || [ -e '/sys/class/net/wlan0' ] ; then
+            CEN_NET_IFNAMES=0
+        elif [ '/etc/systemd/network/99-default.link' -ef '/dev/null' ] ; then
+            CEN_NET_IFNAMES=0
         fi
-        trace -a -c "interface names" -- "$_item"
+    fi
+    if [ "$CEN_NET_IFNAMES" = 0 ] ; then
+        trace -a -c "interface names" 'bios'
+    else
+        [ -n "$CEN_NET_IFACES" ] && _cen_net_maprule    # iface rules
+        trace -a -c "interface names" 'systemd'
     fi
 }
 
@@ -1147,21 +1152,18 @@ netfile() {
     done
     _opts+="$_cflg"
 
-    local hout hmod="${2:-664}"
     if ! netpath "$1" ; then                    # write to /dev/stdout
         create $_opts -o -w -- "$1" ; return
     fi
 
     # we must have a valid base folder to create a file
-    hout="$_netpath"
-    if [ "${hout/\//}" != "$hout" ] && [ ! -d "${hout%/*}" ] ; then
-        $CEN_TRACE -c $"No base folder" -- "$hout"
+    local _hout="$_netpath" _hmod="${2:-664}"
+    if [ "${_hout/\//}" != "$_hout" ] && [ ! -d "${_hout%/*}" ] ; then
+        $CEN_TRACE -c $"No base folder" -- "$_hout"
         return 1
     fi
 
-    # make absolute paths
-    # [ "${hout::2}" = './' ] && resolve -m -s hout -- "$hout"
-    create $_opts -t -w -- "$hout" "$hmod"      # create, warning on failure
+    create $_opts -t -w -- "$_hout" "$_hmod"    # create, warning on failure
 }
 
 # ------------------------------------------------------------------------------
@@ -1169,6 +1171,8 @@ netfile() {
 #
 # Call:     (1) netpath [--] <path>                 # get file path
 #           (2) netpath -d [--] <base> [<suffix>]   # get folder path
+#
+# Options:  -d       check if <base> exists
 #
 # Arguments:<path>   (relative) file path, see below
 #           <base>   (relative) folder path, see below
@@ -1405,14 +1409,42 @@ export no_proxy
 }
 
 # ------------------------------------------------------------------------------
+# get trusted dns server: <vnam>
+# ------------------------------------------------------------------------------
+_cen_net_homedns() {
+    # are we server?
+    if [ "$HOSTNAME" = "${CEN_NET_SERVERS[0]}" ] ; then
+        printf -v "$1" '%s' "${CEN_NET_SERVERS[0]}" ; return 0
+    elif [ "$HOSTNAME" = "${CEN_NET_SERVERS[1]}" ] ; then
+        printf -v "$1" '%s' "${CEN_NET_SERVERS[1]}" ; return 0
+    fi
+
+    netresolv -r                        # read resolv.conf into netresolv
+    if [ -z "$_netresolv" -o -z "${_netresolv[1]}" ] ; then
+        printf -v "$1" 'localhost' ; return 0
+    fi
+
+    # loop over homedns entries in config
+    local _item _hkey _vnam="$1"
+    for _item in "${CEN_NET_HOMEDNS[@]}" ; do
+        set -- $_item ; set +f
+        [ "$1" != '-' -a "$1" != "$_netresolv" ] && continue        # filter by domain
+        [ "$2" != '-' -a "$2" != "${_netresolv[1]}" ] && continue   # filter by ip
+        printf -v "$_vnam" '%s' "$3" ; return 0
+    done
+    return 1
+}
+
+# ------------------------------------------------------------------------------
 # netquery - Get selected network information
 #
-# Call:     (1) netquery [-e|-f] [-q] [-s <vnam>] <keyword>
-#           (2) netquery [-e|-f] [-q] [-s <vnam>] <keyword> [<host>]
+# Call:     (1) netquery [-e|-f] [-q] [-r] [-s <vnam>] <keyword>
+#           (2) netquery [-e|-f] [-q] [-r] [-s <vnam>] <keyword> [<host>]
 #
 # Options:  -e  error if config file not found
 #           -f  fatal error if config file not found
 #           -q  return qualifed names
+#           -r  discard cache, reload data
 #           -s  save result to named variable
 #
 # Arguments:<keyword>     select information to be returned, see below
@@ -1434,6 +1466,7 @@ export no_proxy
 #           primary       get primary server name
 #           secondary     get secondary server name
 #           current       get current server name
+#           homedns       get trusted dns server name
 #
 #           connect       [*] get connection management mechanics
 #           class         [*] get device class
@@ -1497,12 +1530,13 @@ netquery() {
       --)    shift ; break ;;
       -e|-f) _ferr="$1" ;;
       -q)    _qual='.' ;;
-      -s)    shift ; _ssav="$1" ; printf -v "$_ssav" "" ;;
+      -r)    CEN_NET_HOSTS= ; CEN_NET_ROLE= ;;
+      -s)    shift ; _ssav="$1" ; printf -v "$_ssav" '' ;;
       *)     _cen_abort - "$1"
       esac ; shift
     done
 
-    [ -z "$CEN_NET_DOMAIN" ] && { netconfig $_ferr || return 1 ; }
+    [ -z "$CEN_NET_HOSTS" ] && { netconfig $_ferr || return 1 ; }
     if [ -z "$CEN_NET_ROLE" ] ; then
         netserver || _qual=
     fi
@@ -1544,6 +1578,11 @@ netquery() {
                         _valu="${CEN_NET_SERVERS[1]}" ; _stat=0
                     fi ;;
 
+    homedns)        _cen_net_homedns _valu && _stat=0
+                    _valu="${_valu%$_qual}"
+                    [ "$_valu" = 'localhost' ] && _qual=
+                    ;;
+
     connect)        # explicit host given, ignore '*'
                     [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
                     if   netoption -x 'manual' "$2" ; then  _valu='manual'
@@ -1557,6 +1596,7 @@ netquery() {
                     # nothing at all, same as 'manual'
                     else                                    _valu='manual'
                     fi
+                    _qual=
                     _stat=0 # ; [ -n "$_ssav" ] || CEN_NET_ADDR_METHOD="$_valu"
                     ;;
     class)          [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
@@ -1575,7 +1615,11 @@ netquery() {
                     else
                         _valu='generic'
                     fi
+                    _qual=
                     ;;
+
+    config)         _valu="${CEN_NET_CONFIG:-${CEN_NET_DOMAIN%%.*}}" ; _qual= ;;
+
     *)              _cen_abort - "$*"
     esac
 

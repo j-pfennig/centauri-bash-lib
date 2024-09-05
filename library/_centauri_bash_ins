@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_ins = centauri-bash-lib: Installation helpers
 #
@@ -286,6 +286,8 @@ _cen_ins_files() {
             _fcur="$_fldr" ; _full=
             if [ -d "$_dest/$_fldr" ] ; then
                 _copy=1
+            elif [ -z "$CEN_OPT_FORCE" ] ; then
+                _copy=
             elif folder -m -- "$_dest/$_fldr" 775 ; then
                 _copy=2
             else

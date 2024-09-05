@@ -43,10 +43,10 @@
 #,      [[syssetup()]]
 #,      °  └── [[_centauri_bash_ext]]
 #
-# Copyright Dr. J. Pfennig (c) 2019-2023
+# Copyright Dr. J. Pfennig (c) 2019-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_sys"]="0.26:2"
+CEN_MODULES["_centauri_bash_sys"]='0.27:2'
 
 CEN_SYS_STATE_DIR="$CEN_ROOT/persistent"    # non-volatile
 CEN_SYS_CACHE_DIR="$CEN_ROOT/transient"     # volatile
@@ -175,7 +175,7 @@ sysversion() {
         [ -n "$CEN_SYS_VERSION" ] && return 0       # do nothing if state is loaded
         [ "$EUID" = 0 ] && _flgu=1 || _flgw=0       # only root does implicit update
     fi
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -f)   _flgf=1 ;;
@@ -294,14 +294,14 @@ sysversion() {
 syssetup() {
     $CEN_DEBUG -c -- "$*"
     local _stat=0 _warn  _remv _updt _usrv
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -[nptu])
             _updt="$1" ;;
       -i)   ;;
-      -r)   _remv="-r" ;;
-      -s)   _usrv="-s" ;;
+      -r)   _remv='-r' ;;
+      -s)   _usrv='-s' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -329,7 +329,7 @@ syssetup() {
         _stat=$? ; [ "$_stat" = 128 ] && return 128 # cancelled
     } || :
 
-    if [ -z "$_remv" -a "$_updt" != "-t" ] ; then
+    if [ -z "$_remv" -a "$_updt" != '-t' ] ; then
         local _fold="$PWD"
         folder -c -f '/'                            # do not block CEN_ROOT
         if [ -n "$_updt" ] ; then                   # update only (see centauriconfig)
@@ -408,14 +408,14 @@ sysinfo() {
     local _dopt _iopt _fnoq _stat=0
     # help should not advertise the 'detailed' command
     case "$1" in
-        "")         ;;
+        '')         ;;
         help|-)     ___cen_sys_help ;;
-        install)    _iopt="-i" ;;
+        install)    _iopt='-i' ;;
         paths)      _dopt=2 ;;
-        refresh)    _iopt="-n" ;;
-        setup)      _iopt="-n" ; CEN_OPT_FORCE=1 ;;
-        uninst*)    _iopt="-r" ;;
-        update)     _iopt="-u" ;;
+        refresh)    _iopt='-n' ; CEN_OPT_FORCE= ;;
+        setup)      _iopt='-n' ; CEN_OPT_FORCE=1 ;;
+        uninst*)    _iopt='-r' ;;
+        update)     _iopt='-u' ;;
         detailed)   _dopt=1 ;;
         ver*)       sysversion -f -m -u ; quit ;;
         *)          ___cen_sys_help -f
@@ -518,7 +518,7 @@ sysconfig() {
     # --- main part ---
 
     local _copt _popt _sopt _stat=0
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -c)   _copt=1 ;;

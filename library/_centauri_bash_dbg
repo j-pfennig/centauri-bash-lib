@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_dbg = centauri-bash-lib: Debug support and documentation
 #
@@ -375,12 +375,13 @@ CEN_OPT_DEBUG=0                 # see --debug
 # Call:     (1) debug [-a] [-m] [-p] [-q] [-n] ...  # set trace options
 #           (2) debug ... [-i] <text>|<variable>    # dump output
 #           (3) debug ... -c|-f -- <text>...        # call tracing
-#           (4) debug -t on|off                     # bash trace on/off
+#           (4) debug -s -- <text>...               # print call stack
+#           (5) debug -t on|off                     # bash trace on/off
 #
 #+          Form (1) supports the same options that can be used at module load.
 #           Form (2) generates variable dump output. Using form (3) as the 1st
 #           statement of functions allows call tracing and function execution
-#           tracing via command line --debug. Form (4) should be used to control
+#           tracing via command line --debug. Form (5) should be used to control
 #           bash tracing (instead of "set -x" and "set +x").
 #
 # Options:  -a  "set -x" trace of actions()
@@ -395,6 +396,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #           -f  start function trace (only one at a time)
 #           -i  indent dump output
 #           -r  register (used internally on module load)
+#           -s  print function call stack
 #           -t  turn bash trace on/off (replaces "set -x" or "set +x")
 #
 # Bitmask:  The --debug option (or CEN_OPT_DEBUG) uses a bitmask to control the
@@ -449,7 +451,7 @@ debug() {
     fi
 
     # normal option handling
-    local _item _sout _fopt _ilog _iopt
+    local _item _sout _fopt _ilog _iopt _stra
     while [ "${1::1}" = "-" ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -463,6 +465,7 @@ debug() {
         -o)   CEN_DBG_OOPT=1 ; CEN_DBG_TRACE+="$1 " ; _item=1 ;;
         -q)   CEN_DBG_OQUI=1 ; CEN_DBG_TRACE+="$1 " ; _item=1 ;;
         -r)   _item=0 ;;
+        -s)   _stra='[debug] ' ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done || :
@@ -484,6 +487,12 @@ debug() {
         context -h CEN_HOOK_OPTIONS CEN_DBG_OPT_HOOK _cen_dbg_options
         context -h CEN_HOOK_QUIT    CEN_DBG_OPT_QUIT _cen_dbg_quit_hook
         context -h CEN_HOOK_MAIN    CEN_DBG_OPT_MAIN _cen_dbg_main
+    fi
+
+    # function call stack
+    if [ -n "$_stra" ] ; then
+        _cen_abort -r "$_stra$*"
+        return 0
     fi
 
     # function trace

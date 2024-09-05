@@ -339,7 +339,7 @@ $CEN_DEBUG -c -- "$@"
     done
 
     $CEN_DEBUG -c -- "$*"
-    local _pqml="$1" _titl ; shift
+    local _pqml="$1" _titl _full ; shift
     local _file _resx="${1:--}" _resy="${2:--}" _zoom="${3:--}"
     shift ; shift ; shift
 
@@ -364,8 +364,12 @@ $CEN_DEBUG -c -- "$@"
     [ "${_ainf[0]:--}" != '-' ] && _resx="${_ainf[0]}"
     [ "${_ainf[1]:--}" != '-' ] && _resy="${_ainf[1]}"
     [ "${_ainf[2]:--}" != '-' ] && _zoom="${_ainf[2]}"
+
+    [ "$_resx$_resy" = '++' ] && _full='; visibility: "FullScreen"'
     [ "$_resx" = '-' ] && _resx='(Screen.desktopAvailableWidth * 6) / 10'
     [ "$_resy" = '-' ] && _resy='(Screen.desktopAvailableHeight * 4) / 5'
+    [ "$_resx" = '+' ] && _resx='Screen.desktopAvailableWidth'
+    [ "$_resy" = '+' ] && _resy='Screen.desktopAvailableHeight'
     [ "$_zoom" = '-' ] && _zoom='Screen.pixelDensity / 4.5'
     if [ "${_titl:--}" = '-' ] ; then
         _titl="$CEN_NAME"
@@ -393,15 +397,15 @@ $CEN_DEBUG -c -- "$@"
     fi
     trace -c $"qml web url" -- "$DAT_URL"
     create -r -t -c -- "$_file" 400 <<!EOF || return 1
-import ${_qvar}Quick 2.0
-import ${_qvar}Quick.Window 2.0
+import ${_qvar}Quick 2.2
+import ${_qvar}Quick.Window 2.2
 import ${_qvar}WebEngine 1.2
 Window {
     function cen_posx() { return (Screen.desktopAvailableWidth - $_resx) / 2; }
     function cen_posy() { return (Screen.desktopAvailableHeight - $_resy) / 2; }
     x: cen_posx() ; y: cen_posy()
     width: $_resx ; height: $_resy
-    visible: true
+    visible: true $_full
     title: "$_titl"
 
     WebEngineView {

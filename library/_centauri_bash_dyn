@@ -198,6 +198,7 @@ matchpath() { _cen_dyn_load ext "$@" ; }
 move() { _cen_dyn_load ext "$@" ; }
 prettypath() { _cen_dyn_load ext "$@" ; }
 readline() { _cen_dyn_load ext "$@" ; }
+writeline() { _cen_dyn_load ext "$@" ; }
 redirect() { _cen_dyn_load ext "$@" ; }
 remove() { _cen_dyn_load ext "$@" ; }
 rename() { _cen_dyn_load ext "$@" ; }
