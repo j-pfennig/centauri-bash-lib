@@ -21,7 +21,7 @@
 # Copyright Dr. J. Pfennig (c) 2016-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_ext']='0.27:2'
+CEN_MODULES['_centauri_bash_ext']='0.27:3'
 
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
@@ -666,9 +666,9 @@ readline() {
 # ------------------------------------------------------------------------------
 # writeline - write a single line of text
 #
-# Call:     (1) writeline [-c <text>] [-e|-f|-w] -o <file>] [-r] [-q] <data>...
+# Call:     (1) writeline [-c <text>] [-e|-f|-w] -o <file> [-m <mask>] [-t] [-q] <data>...
 #           (2) writeline [-c <text>] [-e|-f|-w] -h <hnum> [-q] <data>...
-#           (3) writeline [-c <text>] [-e|-f|-w] [-q] <data>...
+#           (3) writeline [-c <text>] [-e|-f|-w] [-m <mask>] [-q] <data>...
 #
 #           This function writes data that can be retrieved by [[readline()]].
 #           Form (1) writes to a file, (2) to a file handle and (3) to **stdout**.
@@ -677,6 +677,7 @@ readline() {
 #           -e  report errors
 #           -f  make errors fatal
 #           -h  output to file handle
+#           -m  file mode (only bits 0666 are relevant)
 #           -o  output file path
 #           -q  no trace messages
 #           -t  truncate existing file
@@ -690,9 +691,17 @@ readline() {
 # Return:   0   success
 #           1   write error
 #           2   destination exists
+#
+#.Examples: writeline -e -t -o 'some-file' -- write these words
+#
+#.          writeline -m 644 -q 'another-file' -- "This is data"
+#.          case $? in
+#.          1)  error "Write failed" ;;
+#.          2)  warning "Existing file not altered"
+#.          esac
 # ------------------------------------------------------------------------------
 writeline() {
-    local _oerr='trace' _fout _oqui _orep _otxt
+    local _oerr='trace' _fout _mask _oqui _orep _otxt
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -701,6 +710,7 @@ writeline() {
       -e)   _oerr='error' ;;
       -f)   _oerr='fatal' ;;
       -h)   shift ; _fout="/dev/fd/$1" ; _orep=1 ;;
+      -m)   shift ; _mask="$1" ;;
       -o)   shift ; _fout="$1" ;;
       -q)   _oqui=1 ;;
       -t)   _orep=1 ;;
@@ -713,12 +723,16 @@ writeline() {
     elif [ -z "$_orep" ] && [ -e "$_fout" ] ; then
         $_oerr -- $"Destination already exists:" "$_fout" ; return 2
     fi
+    dryrun 'writeline' "$_fout" && return 0
+
+    [ -n "$_mask" ] && _cen_umask -s "$_mask"
     if printf '%s%s\n' "$_otxt" "$*" >"$_fout" 2>/dev/null ; then
-        [ -z "$_oqui" ] && trace -a -c ' file OK' -- "$_fout"
+        [ -n "$_mask" ] && _cen_umask -r
+        [ -z "$_oqui" ] && trace -a -c ' OK' -- "$_fout"
         return 0
     fi
+    [ -n "$_mask" ] && _cen_umask -r
     $_oerr -- $"Failed to write:" "$_fout" ; return 1
-    return 1
 }
 
 # ------------------------------------------------------------------------------

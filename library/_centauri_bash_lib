@@ -44,7 +44,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2024
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.32:3:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.33:3:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()

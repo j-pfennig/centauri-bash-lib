@@ -17,7 +17,7 @@
 #           _cen_ins_findsvc    § find service/file or unit
 #           _cen_ins_install    § (un)install SysV or systemd service(s)
 #           _cen_ins_isshared   § do we have a shared installation?
-#           _cen_ins_library    § library installation/update remove
+#           _cen_ins_library    § library installation/update remov
 #           _cen_ins_paths      § for _cen_ins_library, paths setup
 #           _cen_ins_proxy      § create library proxy
 #           _cen_ins_rootdefs   § fill CEN_ROOTDEFS from CEN_INSTALL
@@ -29,11 +29,11 @@
 #           _cen_ins_tools      § get list of (centauri)tools
 #           _cen_ins_version    § get OS and KDE versions
 #
-# Copyright Dr. J. Pfennig (c) 2019-2023
+# Copyright Dr. J. Pfennig (c) 2019-2024
 # ------------------------------------------------------------------------------
 
 # do not demand an api-version, we get loaded by centauriconfig
-CEN_MODULES["_centauri_bash_ins"]="0.10:2"
+CEN_MODULES["_centauri_bash_ins"]="0.11:3"
 
 embed -c '_centauri_bash_ext'               # dependency
 

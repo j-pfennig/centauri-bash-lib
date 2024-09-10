@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_pip = centauri-bash-lib: Coprocess, pipe and pager support
 #
@@ -12,10 +12,10 @@
 #,          - [[syspipe()]]  - run a command in background using coproc or a pipe
 #,          - [[sysloop()]]  - implements an event loop using a pipe
 #
-# Copyright Dr. J. Pfennig (c) 2021-2022
+# Copyright Dr. J. Pfennig (c) 2021-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_pip']='0.02:1'
+CEN_MODULES['_centauri_bash_pip']='0.03:3'
 
 CEN_PIP_WAIT=
 CEN_PIP_BUSY=                   # coproc recursion protection
@@ -387,7 +387,10 @@ syspager() {
 #.              CEN_SYSPIPE=                        # tell producer to stop
 #.           }
 #
-# Examples: Fifo: send data through a pager
+#.Examples: Pipe: simple stdout -> stdin passing
+#.          syspipe -o 'ls -1' -d 'wc -l'
+#
+#.          Fifo: send data through a pager
 #.          producer() {
 #.              for ((i=0 ; i<100; i++)) ; do
 #.                 [ -z "$CEN_SYSPIPE" ] && break   # stop after SIGPIPE error
@@ -466,6 +469,9 @@ syspipe() {
     fi
     CEN_SYSPIPE=                                # reset state
     local _stat=0 _verb="$CEN_VERB" _acmd=("$@") _cen_pip_temp
+    if [ "$_oout" = 0 -a -z "$_acmd" ] ; then
+        eval _acmd=("$_ocon") ; _oout= ; _ocon=
+    fi
 
     # check cmd and origin/destination
     if [ -z "$_fnoc" ] ; then
