@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 
 [ "${CEN_NAME:--}" = '-' ] && [ -x '/usr/local/bin/_centauri_bash_lib' ] &&
-    . /usr/local/bin/_centauri_bash_lib -a -f - '0.01:2' 0
+    . /usr/local/bin/_centauri_bash_lib -a -d -f - '0.01:2' 0
 
 # ------------------------------------------------------------------------------
 # Script supporting mini-bash-lib
@@ -24,6 +24,7 @@ else ###########################################################################
     else
         message "Using mini-bash-lib"
     fi
+    system -- "$@"
     quit
 fi #############################################################################
 }
@@ -33,7 +34,7 @@ fi #############################################################################
 # ------------------------------------------------------------------------------
 usage() {
     cat <<!EOF
-usage: $CEN_NAME [-v] [-f] [-h] <arg>... 
+usage: $CEN_NAME [-d] [-f] [-h] [-v] <arg>... 
 !EOF
 }
 
@@ -42,30 +43,35 @@ usage: $CEN_NAME [-v] [-f] [-h] <arg>...
 # ------------------------------------------------------------------------------
 #
 #   confirm     -a -i -n -y
-#   embed       [no options]
+#   dryrun      [no options]
+#   embed       [all options ignored]
 #   error       -a -t -q
 #   folder      -c -m -q
 #   message     -a -i
 #   symlink     -n
-#   system      [no options]
+#   system      -q -r -e -p [-e|-p ignored]
 #   trace       [all options ignored]
 #   quit        -e -s
 #
 # ------------------------------------------------------------------------------
 
 if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
+    CEN_OPT_DRYRUN=         # option -d
     CEN_OPT_FORCE=          # option -f
-    CEN_OPT_VERB=0          # option -v
+    CEN_VERB=1              # option -v
     CEN_EXIT=0              # exit code
     CEN_NAME="${BASH_SOURCE##*/}"
 
     message() {
-        [ "$1" = '-a' ] && shift
-        if [ "$1" = '-i' ] ; then
-            shift ; echo "${CEN_NAME//?/ }  $*"
-        else
-            echo "$CEN_NAME: $*" >&2
-        fi
+        local _pref="$CEN_NAME:"
+        while [ "${1::1}" = '-' ] ; do
+            case "$1" in
+            --) shift ; break ;;
+            -i) _pref="${_pref//?/ }" ;; 
+            esac ; shift
+        done
+        [ -z "$*" ] && return 0
+        echo "$_pref" "$@" >&2
     }
 
     trace() {
@@ -74,14 +80,25 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         echo "${CEN_NAME//?/ }  $*" >&2
     }
 
+    dryrun() {
+        [ -z "$CEN_OPT_DRYRUN" ] && return 1
+        trace "dryrun:" "$@" ; return 0
+    }
+
     # simplified error message: [-q|-t] <text>...
     error() {
-        case "$1" in
-        -a)     shift ;;
-        -q)     [ "${CEN_EXIT}" = 0 ] && return 0
-                shift ; quit -e "$*" ;;
-        -t)     [ "${CEN_EXIT}" = 0 ] && return 0 || return 1
-        esac
+        local _fqui
+        while [ "${1::1}" = '-' ] ; do
+            case "$1" in
+            --) shift ; break ;;
+            -q) _fqui=1 ;;   
+            -t) [ "${CEN_EXIT}" = 0 ] && return 0 || return 1
+            esac ; shift
+        done
+        if [ -n "$_fqui" ] ; then
+            [ "${CEN_EXIT}" = 0 ] && return 0
+            quit -e "$@"
+        fi 
         echo "$CEN_NAME: ***ERROR***" "$@" >&2
         CEN_EXIT=1 ; return 1
     }
@@ -92,10 +109,8 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         while [ "${1::1}" = '-' ] ; do
             case "$1" in
             --) shift ; break ;;
-            -a) ;;
             -i) oind=1 ;;
             -n) yesn='[y/N]' ; defn=1 ;;
-            -y) ;;
             esac ; shift
         done
 
@@ -110,8 +125,9 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
     }
 
     embed() {
+        while [ "${1::1}" = '-' ] ; do shift ; done
         local prog="$1" ; shift
-        system "$prog" --embed="$CEN_NAME" "$@"
+        system -r "$prog" ${CEN_OPT_DRYRUN:+--dryrun} --embed="$CEN_NAME" "$@"
     }
 
     folder() {
@@ -126,7 +142,7 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         done
         if [ -d "$1" ] ; then
             [ -z "$ochg" ] && return 0
-            system cd "$1" ; return
+            system -r cd "$1" ; return
         elif [ -n "$omak" ] ; then
             system mkdir -p "$1" ; return
         fi
@@ -147,27 +163,48 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
     }
 
     system() {
-        "$@" && return 0
+        local _fqui _frun
+        while [ "${1::1}" = '-' ] ; do
+            case "$1" in
+            --) shift ; break ;;
+            -e|-p) ;;
+            -q) _fqui=1 ;;
+            -r) _frun=1 ;;
+            esac ; shift
+        done
+
+        [ -z "$_frun" ] && dryrun "$@" && return 1
+        trace "system: $@"
+        if [ -n "$_fqui" ] ; then
+            "$@" &>/dev/null ; return
+        else
+            "$@" && return 0
+        fi
         error "Running '$1' failed (status $?)"
     }
 
     quit() {
-        case "$1" in
-        '')     ;;
-        -e)     shift ; error "$*" ;;
-        -s)     CEN_EXIT="${2:-2}" ;;
-        *)      message "$*"
-        esac
+        local _mesg='message'
+        while [ "${1::1}" = '-' ] ; do
+            case "$1" in
+            --) shift ; break ;;
+            -e) _mesg='error' ;;
+            -s) shift ; CEN_EXIT="${1:-2}"  
+            esac ; shift
+        done
+        $_mesg "$*"
         exit "$CEN_EXIT"
     }
 
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
-        -f|--for*)   CEN_OPT_FORCE=1 ; shift ;;
+        ---)         break ;;
+        -d|--dry*)   CEN_OPT_DRYRUN=1 ;;
+        -f|--for*)   CEN_OPT_FORCE=1 ;;
         -h|--help)   usage ; exit 2 ;;
-        -v|--ver*)   CEN_VERB=2 ; shift ;;
+        -v|--ver*)   CEN_VERB=2 ;;
         *)  break
-        esac
+        esac ; shift
     done
     run "$@" ; exit                         # using mini-bash-lib
 elif [ -n "$CEN_STAGE" ] ; then

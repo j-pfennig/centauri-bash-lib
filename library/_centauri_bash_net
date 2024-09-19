@@ -27,7 +27,7 @@
 # Copyright Dr. J. Pfennig (c) 2013-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.30:2'
+CEN_MODULES['_centauri_bash_net']='0.31:3'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
@@ -39,7 +39,7 @@ CEN_NET_DIR_RUN="$CEN_ROOT/transient"                   # for temporary things
 CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
 CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
 
-CEN_NET_PREFIX_IP6_DFLT='fc01::/72'
+CEN_NET_PREFIX_IP6_DFLT='fc01::/96'
 
 CEN_NET_IFNAMES=                # 0:=no mapping  1:=systemd names
 CEN_NET_IFMAP=                  # list of interface mappings
@@ -230,7 +230,7 @@ netconv() {
             local _pre6="${CEN_NET_PREFIX_IP6:-$CEN_NET_PREFIX_IP6_DFLT}"
             printf -v _netconv '%s::%x:%x' "${_pre6%%:*}" "$_vhig" "$_vlow"
             if [ "$_bits" != "$_addr" ] ; then
-                _bits=$((128 - (32 - _bits)))
+                _bits=$((96 + _bits))
                 _netconv+="/$_bits"
             fi
         else
@@ -718,13 +718,17 @@ _cen_net_mapiadd() {
 #          The **_netindex** variable is set on success or cleared on failure.
 #          If present <vnet> is set to the corresponding CEN_NET_NETWORKS entry.
 #
-# Networks:domain   whole IPv4 address range (all subnets)
-#          repeater used by repeater NAT subnet
-#          vpn      used by VPN
-#          iot      non-trusted address range for gadgets
-#          trusted  trusted address range
-#          guest    less-trusted address range
-#          dynamic  addresses assigned by DHCP to unknown MAC addresses
+# Networks: This function handles the domain network and 7 sub-nets. Names and
+#          indexes are hard-coded in the function but nowhere else.
+#
+#          domain   0: whole IPv4 address range (all subnets)
+#          repeater 1: used by repeater NAT subnet
+#          vpn      2: used by VPN
+#          iot      3: non-trusted address range for gadgets
+#          trusted  4: trusted address range
+#          guest    5: less-trusted address range
+#          dynamic  6: addresses assigned by DHCP to unknown MAC addresses
+#          other    7: not used by centauri, user defined
 #
 #+CEN_NET_NETWORKS and so this function use IPv4 addresses. IPv6 addressing is
 # handled by dynamically generating local ULA IPv6 addresses, see [[netconv()]].
@@ -744,13 +748,14 @@ netindex() {
 
     case "$1" in
     dom*)   _netindex=0 ;;
-    rep*)   _netindex=1 ;;
-    vpn)    _netindex=2 ;;
-    iot)    _netindex=3 ;;
-    tru*)   _netindex=4 ;;
-    gue*)   _netindex=5 ;;
-    dyn*)   _netindex=6 ;;
-    [0-6])  _netindex="$1" ;;
+    iot)    _netindex=1 ;;
+    tru*)   _netindex=2 ;;
+    gue*)   _netindex=3 ;;
+    dyn*)   _netindex=4 ;;
+    rep*)   _netindex=5 ;;
+    vpn)    _netindex=6 ;;
+    oth*)   _netindex=7 ;;
+    [0-7])  _netindex="$1" ;;
     *)      [ -n "$_ssav" ] && printf -v "$_ssav" ''
             _netindex= ; $_ferr $"No corresponding network:" "$1" ; return 1
     esac
@@ -1668,7 +1673,7 @@ netresolv() {
 
     # default host
     local ssvr dflt
-    if [ "$1" = "-d" ] ; then
+    if [ "$1" = '-d' ] ; then
         shift ; dflt="$1" ; shift
     fi
 
@@ -1728,9 +1733,9 @@ $sdom$ssvr
 # ------------------------------------------------------------------------------
 netserver() {
     # read the file
-    if [ "$1" != "-w" ] ; then
+    if [ "$1" != '-w' ] ; then
         [ -r "$CEN_NET_FILE_STAT" ] || return 1
-        . "$CEN_NET_FILE_STAT"
+        source "$CEN_NET_FILE_STAT"
         return                      # return status
     fi
 
@@ -1744,12 +1749,12 @@ netserver() {
     # role (imply WORKSTATION for CLIENT)
     local role="$1"
     if [ "${1:--}" = '-' ] ; then
-        role="UNKNOWN" ; [ "$2" = 'CLIENT' ] && role="WORKSTATION"
+        role='UNKNOWN' ; [ "$2" = 'CLIENT' ] && role="WORKSTATION"
     fi
 
     # find name of server
     local sgen smas
-    if [ "$2" = "GUEST" ] ; then
+    if [ "$2" = 'GUEST' ] ; then
         sgen="$3"
     else
         netconfig

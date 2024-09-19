@@ -3007,8 +3007,9 @@ if [ -z "${CEN_PATHS[6]}" ] ; then
         CEN_PATHS[6]="${CEN_PATHS[2]}/default"
     elif [ "${CEN_PATHS[6]}" -ef "${CEN_PATHS[2]}/default" ] ; then
         CEN_PATHS[6]="${CEN_PATHS[2]}/default"
-#    elif [ ! -d "${CEN_PATHS[6]}" ] ; then
-#        CEN_PATHS[6]="${CEN_PATHS[2]}/default"
+    elif [ ! -d "${CEN_PATHS[6]}" ] ; then
+        warning $"Invalid symlink:" "${CEN_PATHS[6]}"
+        CEN_PATHS[6]="${CEN_PATHS[2]}/default"
     fi
 fi
 

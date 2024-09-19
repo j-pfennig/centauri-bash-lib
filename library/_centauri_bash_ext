@@ -1462,7 +1462,7 @@ suffixpath() {
 # see form (4).
 # ------------------------------------------------------------------------------
 symlink() {
-    local _fign _targ _ocan _odir _oftl='error' _onck _orel _osys='-e -p' _move _mesg="$CEN_TRACE"
+    local _fign _targ _ocan _odir _oftl='error' _onck _orel _osil _osys='-e -p' _move _mesg="$CEN_TRACE"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -1474,7 +1474,7 @@ symlink() {
       -n)   _onck='-f' ;;
       -q)   _oftl=':' ; _osys='-q' ;;
       -r)   _orel=1 ;;
-      -s)   _mesg=: ;;
+      -s)   _mesg=: ; _osil='-s' ;;
       -v)   _mesg='message' ;;
       -w)   _oftl='warning' ; _osys='-w -p' ;;
       -x)   _move=0 ;;
@@ -1506,14 +1506,14 @@ symlink() {
     # move existing link away
     if [ -e "$_link" ] ; then
         if [ "$_move" = 0 ] ; then              # always delete ...
-            remove -d -- "$_link" || return 2
+            remove $_osil -d -- "$_link" || return 2
         elif [ -h "$_link" ] ; then
             if [ -n "$_move" ] ; then
-                remove -- "$_link"              # do not dereference
+                remove $_osil -- "$_link"       # do not dereference
             elif [ "$_targ" -ef "$_link" ] ; then
                 $_mesg -a -c $"Link is current" "$_link" ; return 0
             elif [ -z "$_odir" -a -n "$_onck" ] && [ -d "$_link" ] ; then
-                remove -d -- "$_link"           # do not dereference
+                remove $_osil -d -- "$_link"           # do not dereference
             fi
         elif [ -n "$_move" ] ; then             # move it away ...
             sysrun $_osys -b -- mv -f -- "$_link" "$_link.$CEN_NAME" || return 2
