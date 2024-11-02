@@ -42,10 +42,10 @@
 #,   [[actions()]]  -  verb dispatching
 #,   [[run()]]      -  non-verb script execution
 #
-# Copyright Dr. J. Pfennig (c) 2017-2022
+# Copyright Dr. J. Pfennig (c) 2017-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_dbg"]="0.03:1"
+CEN_MODULES['_centauri_bash_dbg']="0.04:4"
 
 CEN_OPT_DEBUG=0                 # see --debug
 
@@ -433,18 +433,18 @@ CEN_OPT_DEBUG=0                 # see --debug
 # ------------------------------------------------------------------------------
 debug() {
     # turn bash trace on/off (put here to avoid tracing the while loop)
-    if [ "$1" = "-t" ] ; then
-        if [ "$2" = "on" ] ; then
+    if [ "$1" = '-t' ] ; then
+        if [ "$2" = 'on' ] ; then
             CEN_NOTRACE= ; CEN_OPT_TRACE=1 ; set -x
         else
-            set +x ; CEN_NOTRACE=":" ; CEN_OPT_TRACE=
+            set +x ; CEN_NOTRACE=':' ; CEN_OPT_TRACE=
         fi
         return 0
     fi
     $CEN_NOTRACE return                     # stop here when tracing
 
     # return trap for function tracing
-    if [ "$1" = "-X" ] ; then
+    if [ "$1" = '-X' ] ; then
         [ "$2" = 'debug' -o "$2" = '_cen_dyn_load' ] && return 1
         _cen_dbg_mesg -l "[return] ${FUNCNAME[1]}"
         return
@@ -452,7 +452,7 @@ debug() {
 
     # normal option handling
     local _item _sout _fopt _ilog _iopt _stra
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -a)   CEN_DBG_OACT=1 ; CEN_DBG_TRACE+="$1 " ; _item=1 ;;
@@ -512,12 +512,12 @@ debug() {
     # debug output
     [ $((CEN_OPT_DEBUG & 2)) = 0 ] && return 0
     while [ $# -gt 0 ] ; do
-        local -n _varg="$1"                     # must be local
-        [ $? = 0 ] && _item="${_varg[@]@A}" || _item=
-        if [ -n "$_item" ] ; then
-            _sout+=" ${_item#declare -* }"
+        local -n _varg="$1"                         # must be local
+        if [ $? = 0 ] ; then                        # is a variable ...
+           [ -v "$1" ] && _item="${_varg[@]@A}" || _item="$1="
+           _sout+=" ${_item#declare -* }"
         else
-            _sout+=" $1"
+            _sout+=" '$1'"
         fi
         shift
     done &>/dev/null
@@ -528,7 +528,7 @@ debug() {
 # Startup: [-n]
 # ------------------------------------------------------------------------------
 
-[ "$1" = "-n" ] && return 0                         # do not init
+[ "$1" = '-n' ] && return 0                         # do not init
 
 CEN_DBG_LOGFILE=            # redirect output to file
 CEN_DBG_TRACE=              # tracing options
