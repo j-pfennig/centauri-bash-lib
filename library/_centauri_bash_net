@@ -10,6 +10,10 @@
 #           the  tools **centaurinetcfg**, **centauriswitch**, **centauriroute** and
 #           **centaurisecrets**.
 #
+#+          The implementation tries to avoid loading other centauri-bash-lib modules,
+#           see [[netfile()]], [[netlink()]] and [[nettemp()]]. These functions also
+#           handle the settings of CEN_NET_OUTPUT for output redirection.
+#
 # Storage:  CEN_NET_DIR_LIB="$CEN_ROOT/persistent"      # for cached things
 #           CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
 #           CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centaurifilter"
@@ -27,7 +31,7 @@
 # Copyright Dr. J. Pfennig (c) 2013-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.31:3'
+CEN_MODULES['_centauri_bash_net']='0.40:4'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
@@ -132,6 +136,7 @@ netconfig() {
     CEN_NET_ADDR_METHOD=        # method to configure IFs: nm dhcp static
 
     CEN_NET_NETWORKS=()         # allowed networks firewall/host.allow
+    CEN_NET_EXTERNAL=           # set to CEN_NET_NETWORKS[7] if external
 
     CEN_NET_FILTERS=()          # ... in samba syntax
 
@@ -149,15 +154,13 @@ netconfig() {
     CEN_NET_PORT_HTTPS=         # port for https proxy
 
     [ "$_frea" = 0 ] && return 0
-    if [ "$CEN_NET_OUTPUT" = '.' ] && [ -r ".$CEN_NET_FILE_CONF" ] ; then
-        _file="./$CEN_NET_FILE_CONF"
-    elif [ -r "$_file" ] ; then
-        _file="$CEN_NET_FILE_CONF"
-    else
-        $_oerr $"No network config:" "$_file" ; return 1
+
+    if [ "$CEN_NET_OUTPUT" = '.' ] && _cen_source ".$CEN_NET_FILE_CONF" ] ; then
+        return 0
+    elif _cen_source "$_file" ; then
+        return 0
     fi
-    $CEN_TRACE2 -c -a ' file' "$_file"
-    source "$_file" ; return 0
+    $_oerr $"No network config:" "$_file" ; return 1
 }
 
 # ------------------------------------------------------------------------------
@@ -587,10 +590,10 @@ _cen_net_mapinit()  {
         fi
     fi
     if [ "$CEN_NET_IFNAMES" = 0 ] ; then
-        trace -a -c "interface names" 'bios'
+        $CEN_TRACE -a -c "interface names" 'bios'
     else
         [ -n "$CEN_NET_IFACES" ] && _cen_net_maprule    # iface rules
-        trace -a -c "interface names" 'systemd'
+        $CEN_TRACE -a -c "interface names" 'systemd'
     fi
 }
 
@@ -704,6 +707,7 @@ _cen_net_mapiadd() {
 #
 # Call:    (1) netindex [-e|-f] [-s <vnet>] <name>      # get by name
 #          (2) netindex [-e|-f] [-s <vnet>] <indx>      # get by index
+#          (3) netindex [-e|-f] [-s <vnet>] <ipv4>      # get index from address
 #
 # Options:  -e  error if network not found
 #           -f  fatal error if network not found
@@ -755,12 +759,81 @@ netindex() {
     rep*)   _netindex=5 ;;
     vpn)    _netindex=6 ;;
     oth*)   _netindex=7 ;;
+
     [0-7])  _netindex="$1" ;;
+
+    [0-9]*.[0-9]*.[0-9]*.[0-9]*)
+            _netindex=7
+            while ! netmask "${CEN_NET_NETWORKS[_netindex]}" "$1" ; do
+                ((_netindex -= 1))
+                [ "$_netindex" -ge 0 ] && continue
+                _netindex= ; $_ferr $"Address not in a valid sub-net:" "$1" ; return 1
+            done
+            ;;
+
     *)      [ -n "$_ssav" ] && printf -v "$_ssav" ''
             _netindex= ; $_ferr $"No corresponding network:" "$1" ; return 1
     esac
+
     [ -n "$_ssav" ] && printf -v "$_ssav" '%s' "${CEN_NET_NETWORKS[_netindex]}"
     return 0
+}
+
+# ------------------------------------------------------------------------------
+# netmask - check if address is part of a sub-net
+#
+# Call:    (1) netmask [-e|-f] <base>/<bits>        # is base address valid?
+#          (2) netmask [-e|-f] <base>/<bits> <addr> # is <addr> in base net?
+#
+# Options:  -e  report syntax errors
+#           -f  make syntax errors fatal
+#
+# Arguments:<base>  sub-net base address
+#           <bits>  mask bits of sub-net
+#           <addr>  address to be checked
+#
+# Return:  **true** on success or **false** on failure
+#
+#+This function internally calls [[netparse()]] and [[netconv()]].
+# ------------------------------------------------------------------------------
+_netmask_addr=                          # current binary address
+_netmask_curr=                          # current argument
+_netmask_mask=                          # mask high bits
+netmask() {
+    local _oerr
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)       shift ; break ;;
+      -e|-f)    _oerr="$1" ;;
+      *)        _cen_abort - "$1"
+      esac ; shift
+    done
+    [ "${1:--}" = '-' ] && return 1
+
+    if [ "$1" != "$_netmask_curr" ] ; then      # update cache
+        _netmask_curr="$1" ; _netmask_addr=
+        netparse -a -b $_oerr -n "$1" || return 1
+        _netmask_mask="$((-1 << (32 - _netparse_bits)))"
+        netconv -b "$_netparse_addr" || return 1
+        _netmask_addr="$_netconv"
+        $CEN_TRACE2 -a -c -p " cache" "%-14s -> %x %x" "$1" "$_netmask_addr" "$_netmask_mask"
+    elif [ -z "$_netmask_addr" ] ; then
+        return 1                                # not a valid address
+    fi
+
+    if [ "${2:--}" = '-' ] ; then               # check for valid subnet
+        [ $((_netmask_addr & ~_netmask_mask)) = 0 ] && return 0
+        set "Invalid sub-net specification:" "$1"
+        [ "$_oerr" = '-e' ] && error "$@"
+        [ "$_oerr" = '-f' ] && fatal "$@"
+        return 1
+    fi
+
+    netparse -a $_oerr -n "$2" || return 1
+    netconv -b "$_netparse_addr" || return 1
+    $CEN_TRACE2 -a -c -p " check" "%-14s -> %x" "$2" "$_netconv"
+    [ $((_netconv & _netmask_mask)) = "$_netmask_addr" ]
+    return                                       # return status
 }
 
 # ------------------------------------------------------------------------------
@@ -828,13 +901,14 @@ netoption() {
 # ------------------------------------------------------------------------------
 # netparse - Parse an IPv4 address and/or netmask
 #
-# Call:     netparse [-a] [-b] [-e|-f] [<ipaddr>][/<maskbits>]
-#           netparse [-b] [-e|-f] <maskbits>
+# Call:     netparse [-a] [-b] [-e|-f] [-n] [<ipaddr>][/<maskbits>]
+#           netparse [-b] [-e|-f] [-n] <maskbits>
 #
 # Options:  -a  address must be present
 #           -b  netmask bits must be present
 #           -e  report errors
 #           -f  make errors fatal
+#           -n  do not fill _netparse_mask, just clear it
 #
 # Arguments:<ipaddr>   a dotted 4-part IPv4 address -or- a network reference
 #           <maskbits> number of maskbit as decimal number
@@ -869,7 +943,7 @@ _netparse_addr=
 _netparse_bits=
 _netparse_mask=
 netparse() {
-    local _oadr _obit _aadd _oerr=':'
+    local _oadr _obit _aadd _oerr=':' _onom
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -877,6 +951,7 @@ netparse() {
       -b)   _obit=1 ;;
       -e)   _oerr='error' ;;
       -f)   _oerr='fatal' ;;
+      -n)   _onom=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -886,7 +961,7 @@ netparse() {
         if [[ "$1" =~ (.*<)([a-z].*)(>.*) ]] ; then
             if ! netindex "${BASH_REMATCH[2]}" ; then
                 $_oerr $"Invalid network name:" "$1"
-                _netparse_addr= ; return 2
+                _netparse_addr= ; _netparse_bits= ; return 2
             fi
             set -- "${BASH_REMATCH[1]}$_netindex${BASH_REMATCH[3]}"
         fi
@@ -896,7 +971,7 @@ netparse() {
     _aadd="${1#<[0-9]>}"
     if [ -n "${_aadd//[0-9.\/]/}" ] ; then
         $_oerr $"Address contains invalid characters:" "$1"
-        _netparse_addr= ; return 3
+        _netparse_addr= ; _netparse_bits= ; return 3
     fi
 
     # argument variants ...
@@ -907,16 +982,19 @@ netparse() {
     fi
 
     # make netmask
-    if netconv -d $((((1 << 32) - 1) & ~((1 << (32 - _netparse_bits)) - 1))) ; then
-        _netparse_mask="$_netconv" ; return 0
+    if [ -n "$_onom" ] ; then
+        _netparse_mask=
+    elif netconv -d $((((1 << 32) - 1) & ~((1 << (32 - _netparse_bits)) - 1))) ; then
+        _netparse_mask="$_netconv"
     else
-        _netparse_mask=0.0.0.0 ; return 1
+        _netparse_mask='0.0.0.0' ; return 1
     fi
+    return 0
 }
 
 # add ip addr fields (no overflow): <bhig> <blow>
 _cen_net_addradd() {
-    [ -z "$_netparse_addr" ] && return 1
+    [ "${_netparse_addr:-/}" = '/' ] && return 1
     local bhig="${1:-0}" blow="${2:-0}"
     set -- ${_netparse_addr//[.\/]/ }
     ((bhig += $3)) ; [ "$bhig" -gt 255 ] && return 1
@@ -994,7 +1072,10 @@ _nettemp=
 nettemp() {
     # create/check temp dir
     _nettemp="$CEN_NET_DIR_RUN"
-    [ -d "$_nettemp" ] || folder -m -f "$_nettemp"
+    if [ ! -d "$_nettemp" ] ; then
+        [ -h "$_nettemp" ] && system -f -p -b -s _nettemp realpath "$_nettemp"
+        folder -m -f "$_nettemp"
+    fi
 
     # option and arguments
     local lopt
@@ -1019,8 +1100,7 @@ nettemp() {
                 _cen_net_remove "$_nettemp/$arg1" ;;
     -s)                                         # source file
                 _nettemp+="/$arg1"
-                [ -r "$_nettemp" ] || return 1
-                . "$_nettemp" ;;
+                _cen_source "$_nettemp" ;;
     -w)                                         # write file
                 _nettemp+="/$arg1" ; netfile -h "$_nettemp" ;;
     *)                                          # error
@@ -1287,8 +1367,7 @@ netproxy() {
 
     # read the file
     if [ -z "$_owrt$_otes" ] ; then
-        [ -r "$CEN_NET_FILE_PROX" ] || return 1
-        . "$CEN_NET_FILE_PROX"
+        _cen_source "$CEN_NET_FILE_PROX" || return 1
         [ -z "$_opad" ] && return
     fi
 
@@ -1298,8 +1377,7 @@ netproxy() {
     if [ -n "$_otes" ] ; then
         #if echo 2>/dev/null >"/dev/tcp/$qual/$port" ; then
         if [ -z "$http_proxy" ] ; then
-            [ -r "$CEN_NET_FILE_PROX" ] || return 1
-            . "$CEN_NET_FILE_PROX"
+            _cen_source "$CEN_NET_FILE_PROX" || return 1
         fi
          [ -z "$http_proxy" ] && return 1
         _otes="${http_proxy#http:/}" ; _otes="${_otes//:/\/}"
@@ -1393,7 +1471,7 @@ export no_proxy
     [ "$_opad" = '-' ] && _opad='/var/www/html/wpad.dat'
     if [ -n "$_opad" ] && [ -d "${_opad%/*}" ] ; then
         [ -z "$serv" ] && serv="$HOSTNAME"
-        trace -c 'PAC Script' "$_opad" "$serv"
+        $CEN_TRACE -c "PAC Script" "$_opad" "$serv"
         local _wpad=(
             'function FindProxyForURL(url, host) {'
             '    if ( url.substring(0, 5) != "http:" )'
@@ -1583,10 +1661,11 @@ netquery() {
                         _valu="${CEN_NET_SERVERS[1]}" ; _stat=0
                     fi ;;
 
-    homedns)        _cen_net_homedns _valu && _stat=0
-                    _valu="${_valu%$_qual}"
-                    [ "$_valu" = 'localhost' ] && _qual=
-                    ;;
+    homedns)        if _cen_net_homedns _valu ; then
+                        _stat=0
+                        _valu="${_valu%$_qual}"
+                        [ "$_valu" = 'localhost' ] && _qual=
+                    fi ;;
 
     connect)        # explicit host given, ignore '*'
                     [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
@@ -1601,8 +1680,7 @@ netquery() {
                     # nothing at all, same as 'manual'
                     else                                    _valu='manual'
                     fi
-                    _qual=
-                    _stat=0 # ; [ -n "$_ssav" ] || CEN_NET_ADDR_METHOD="$_valu"
+                    _qual= ; _stat=0
                     ;;
     class)          [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
                     if [ "$2" = "${CEN_NET_SERVERS[0]}" -o \
@@ -1734,8 +1812,7 @@ $sdom$ssvr
 netserver() {
     # read the file
     if [ "$1" != '-w' ] ; then
-        [ -r "$CEN_NET_FILE_STAT" ] || return 1
-        source "$CEN_NET_FILE_STAT"
+        _cen_source "$CEN_NET_FILE_STAT"
         return                      # return status
     fi
 
@@ -1773,14 +1850,14 @@ netserver() {
 
     netfile -h <<!EOF "${CEN_NET_FILE_STAT}"
 # The computer's role (PRIMARY, SECONDARY, WORKSTATION, UNKNOWN):
-CEN_NET_ROLE="$CEN_NET_ROLE"
+CEN_NET_ROLE='$CEN_NET_ROLE'
 
 # The current mode (MASTER, SLAVE, CLIENT, GUEST, SINGLE, UNKNOWN):
-CEN_NET_MODE="$CEN_NET_MODE"
+CEN_NET_MODE='$CEN_NET_MODE'
 
 # The domain server (empty if not connected to server):
-CEN_NET_SERVER="$CEN_NET_SERVER"
-CEN_NET_MASTER="$CEN_NET_MASTER"
+CEN_NET_SERVER='$CEN_NET_SERVER'
+CEN_NET_MASTER='$CEN_NET_MASTER'
 !EOF
 }
 
