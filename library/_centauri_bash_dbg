@@ -204,7 +204,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #
 # Examples: **(1) execution without main() does not parse the command line**
 #
-#.          #!/bin/bash
+#.          #!/usr/bin/bash
 #.          PATH+=":${0%/*}" . _centauri_bash_lib -m iom "$0" "0.00:1" || exit 2
 #.
 #.          message "Arguments and Options:" "$*"
@@ -214,7 +214,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #
 #           **(2) using non-verb script execution**
 #
-#.          #!/bin/bash
+#.          #!/usr/bin/bash
 #.          CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2007-2019; BSD License"
 #.          CEN_TITLE="Example of a simple script (no action syntax)"
 #.          PATH+=":${0%/*}" . _centauri_bash_lib -r "$0" "0.00:1" || exit 2
@@ -227,7 +227,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #
 #           **(3) using verb dispatching**
 #
-#.          #!/bin/bash
+#.          #!/usr/bin/bash
 #.          CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2007-2019; BSD License"
 #.          CEN_TITLE="Example of a script using command line verbs"
 #.          PATH+=":${0%/*}" . _centauri_bash_lib "$0" "0.00:1" || exit 2

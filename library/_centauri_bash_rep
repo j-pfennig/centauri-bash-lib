@@ -9,7 +9,7 @@
 # Copyright Dr. J. Pfennig (c) 2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_rep']='0.02:3'
+CEN_MODULES['_centauri_bash_rep']='0.02:4'
 
 CEN_REP_DKEY=                   # distribution key, see 'distro'
 
@@ -241,7 +241,7 @@ _cen_repo_dis() {
     CEN_REP_DKEY=
     local _sout _sopt _sdis
     local -n _sarr="$1"
-    [ "$_opti" = '-w' ] && _sopt='-w'
+    [ "$_opti" = '-w' ] && _sopt='-w -o'
     if ! sysversion $_sopt ; then
         _sarr=() ; return 1
     fi

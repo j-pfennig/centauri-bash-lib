@@ -20,10 +20,10 @@
 #,          CEN_SHORTPATH   default result variable of [[shortpath()]]
 #,          CEN_TERMINAL    default result variable of [[terminal()]]
 #
-# Copyright Dr. J. Pfennig (c) 2022-2023
+# Copyright Dr. J. Pfennig (c) 2022-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_run"]="0.11:2"
+CEN_MODULES['_centauri_bash_run']='0.12:4'
 
 embed -c '_centauri_bash_iom'           # reference declaration
 
@@ -736,15 +736,15 @@ _cen_run_tools() {
 # ------------------------------------------------------------------------------
 CEN_SHORTPATH=
 shortpath() {
-    local _vres="CEN_SHORTPATH" _emsg='error -z' _stat=0 _fqui _ferr
+    local _vres='CEN_SHORTPATH' _emsg='error -z' _stat=0 _fqui _ferr
     local _pref _plen _fgra _fraw _item _name _ndir _isok _full _ndef
     local _oerr='-e' _warn='_cen_run_config -m shortpath'
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -a)   shift ; _vres="$1" ;;
         -e)   _ferr=1 ;;
-        -f)   _oerr='-f' ; _emsg="fatal" ;;
+        -f)   _oerr='-f' ; _emsg='fatal' ;;
         -g)   _fgra=1 ;;
         -m)   shift ; _pref="$1" ; _plen="${#_pref}" ;;
         -n)   shift ; _ndir="$1" ;;
@@ -758,20 +758,21 @@ shortpath() {
 
     # read configuration file on 1st call
     if [ -z "$CEN_SHORTPATH_DAT" ] ; then
-        sysversion                                          # get CEN_SYS_xxx vars
+        [ -z "$CEN_SYS_NICKNAME" ] && sysversion            # get CEN_SYS_xxx vars
+        embed -m _centauri_bash_net -n ; netconfig
         _cen_run_config $_oerr 'shortpath' || return 1
         local _line _sifs="$IFS" _atmp
         for _line in "${CEN_RUN_SHORTPATH[@]}" ; do
             #$CEN_TRACE2 -a -c " parse" -- "$_line"
             local _skey="${_line%% *}" _sval="${_line#* }"
             if [ "$_skey" != 'path' ] ; then
-                warning -i -- $"1st argument must be 'path':" "$_line"
+                _cen_run_config -m $"1st argument must be 'path'" "$_line"
                 _stat=1 ; continue
             fi
             # _line entries should already be correctly quoted
             eval _atmp="($_sval)"                           # replace variables
             if [ -z "${_atmp[0]}" -o -z "${_atmp[1]}" -o -z "${_atmp[2]}" ] ; then
-                warning -i  -- $"Empty fields are invalid:" "$_line"
+                _cen_run_config -m $"Empty fields are invalid" "$_line"
                 _stat=1 ; continue
             fi
             IFS=':' _sval="${_atmp[*]}" ; IFS="$_sifs"
@@ -782,7 +783,7 @@ shortpath() {
     fi
 
     # error handling
-    [ "$_stat" != 0 ] && warning -p $"Error(s) in [%s] configuration: %s" 'shortcut' "$CEN_RUN_CONFIG"
+    [ "$_stat" != 0 ] && warning -p $"Error(s) in [%s] configuration: %s" 'shortpath' "$CEN_RUN_CONFIG"
     [ -z "$_plen" -a "$#" = 0 ] && return 0                 # nothing to find
     _stat=0
 
@@ -1034,7 +1035,7 @@ terminal() {
     local _bash _ochk _oerr='-e' _onot _orun _otit _over _mode=0 _stat=0 \
            _desk="$CEN_DESKTOP" _vnam='CEN_TERMINAL'
     local _warn='_cen_run_config -m terminal'
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -a)   shift ; _vnam="$1" ;;
@@ -1301,7 +1302,7 @@ _cen_run_command() {
 CEN_RUN_CONFIG=
 _cen_run_config() {
     local _ferr _read _ropt _fcch _fpri _fqui _stat=0 _smsg _path='centauri-bash-lib'
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -a|-l|-r)
@@ -1335,15 +1336,16 @@ _cen_run_config() {
         configfile -i true $_fpri $_ropt $_read -n "$_path" "$@" || _stat=$?
     elif [ -z "$CEN_RUN_CONFIG" ] ; then
         if ! cachefile $_ferr -s -w "$_path.dat" "$_path" ; then
-            configfile $_fqui $_fpri -r CEN_RUN_LAUNCHER  -v -x -n "$CEN_CONFIGFILE" 'launcher'
-            configfile $_fqui $_fpri -r CEN_RUN_TERMINAL  -v -x -n "$CEN_CONFIGFILE" 'terminal'
-            configfile $_fqui $_fpri -r CEN_RUN_SHORTPATH -v -x -n "$CEN_CONFIGFILE" 'shortpath'
-            CEN_RUN_CONFIG="$CEN_CONFIGFILE"
             if [ -s "$CEN_CONFIGFILE" ] ; then
+                configfile $_fqui $_fpri -r CEN_RUN_LAUNCHER  -v -x -n "$CEN_CONFIGFILE" 'launcher'
+                configfile $_fqui $_fpri -r CEN_RUN_TERMINAL  -v -x -n "$CEN_CONFIGFILE" 'terminal'
+                configfile $_fqui $_fpri -r CEN_RUN_SHORTPATH -v -x -n "$CEN_CONFIGFILE" 'shortpath'
+                CEN_RUN_CONFIG="$CEN_CONFIGFILE"
                 serialize $_ferr -w -n "$CEN_CACHEFILE" -m 664 -- CEN_RUN_CONFIG \
                         CEN_RUN_LAUNCHER CEN_RUN_TERMINAL CEN_RUN_SHORTPATH
             else
                 $CEN_TRACE -c " no data" $"Not writing config cache"
+                _stat=2
             fi
         fi
     fi

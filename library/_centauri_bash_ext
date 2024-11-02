@@ -655,7 +655,7 @@ readline() {
         while read $_oarr $_vnam ; do
             eval "_mesg=\"\$$_vnam\""
             [ "${_mesg::1}" = '#' ] && continue
-            [ -z "$_oqui" ] && trace -a -c ' file OK' -- "$_finp"
+            [ -z "$_oqui" ] && $CEN_TRACE -a -c ' file OK' -- "$_finp"
             return 0
         done <"$_finp" &>/dev/null
         _mesg=$"Failed to read from:"" $_finp"
@@ -728,7 +728,7 @@ writeline() {
     [ -n "$_mask" ] && _cen_umask -s "$_mask"
     if printf '%s%s\n' "$_otxt" "$*" >"$_fout" 2>/dev/null ; then
         [ -n "$_mask" ] && _cen_umask -r
-        [ -z "$_oqui" ] && trace -a -c ' OK' -- "$_fout"
+        [ -z "$_oqui" ] && $CEN_TRACE -a -c ' OK' -- "$_fout"
         return 0
     fi
     [ -n "$_mask" ] && _cen_umask -r
