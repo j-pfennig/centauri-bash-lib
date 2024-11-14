@@ -528,6 +528,12 @@ isservice() {
       esac ; shift
     done
 
+    # hook output for syslog
+    if [ -z "$CEN_SVC_HOOK_MESSAGE" -a "${CEN_SVC_SYSLOG:-0}" != 0 ] ; then
+        CEN_SVC_HOOK_MESSAGE="$CEN_HOOK_MESSAGE"
+        CEN_HOOK_MESSAGE='_cen_svc_message'
+    fi
+
     # generate a syslog entry
     if [ -n "$_flgl" ] ; then
         _cen_svc_logger "$_flgl" "$@"
@@ -559,11 +565,6 @@ isservice() {
     if [ -z "$CEN_SVC_HOOK_OPTIONS" ] ; then        # hook option parsing
         CEN_SVC_HOOK_OPTIONS="$CEN_HOOK_OPTIONS"
         CEN_HOOK_OPTIONS='_cen_svc_option'
-    fi
-
-    if [ -z "$CEN_SVC_HOOK_MESSAGE" ] ; then        # hook output
-        CEN_SVC_HOOK_MESSAGE="$CEN_HOOK_MESSAGE"
-        CEN_HOOK_MESSAGE='_cen_svc_message'
     fi
 
     if [ -z "$_fsvc" ] ; then                       # cannot run as a service

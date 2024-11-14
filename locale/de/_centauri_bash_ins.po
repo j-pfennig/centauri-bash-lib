@@ -226,51 +226,51 @@ msgstr "Verzeichnis nicht schreibbar:"
 msgid "Install/uninstall without root rights"
 msgstr "Installation/Entfernen ohne 'root' Rechte"
 
-#: /var/centauri/library/_centauri_bash_ins:1492
+#: /var/centauri/library/_centauri_bash_ins:1484
 msgid "System version"
 msgstr "System  Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1493
+#: /var/centauri/library/_centauri_bash_ins:1485
 msgid "System family"
 msgstr "System  Familie"
 
-#: /var/centauri/library/_centauri_bash_ins:1494
+#: /var/centauri/library/_centauri_bash_ins:1486
 msgid "Bash    version"
 msgstr "Bash    Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1495
+#: /var/centauri/library/_centauri_bash_ins:1487
 msgid "Library version"
 msgstr "Library Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1496
+#: /var/centauri/library/_centauri_bash_ins:1488
 msgid "shared"
 msgstr "geteilt"
 
-#: /var/centauri/library/_centauri_bash_ins:1496
+#: /var/centauri/library/_centauri_bash_ins:1488
 msgid "private"
 msgstr "privat"
 
-#: /var/centauri/library/_centauri_bash_ins:1497
+#: /var/centauri/library/_centauri_bash_ins:1489
 msgid "Library setup"
 msgstr "Library Setup"
 
-#: /var/centauri/library/_centauri_bash_ins:1500
-#: /var/centauri/library/_centauri_bash_ins:1502
+#: /var/centauri/library/_centauri_bash_ins:1492
+#: /var/centauri/library/_centauri_bash_ins:1494
 msgid "KDE     version"
 msgstr "KDE     Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1500
+#: /var/centauri/library/_centauri_bash_ins:1492
 msgid "-unknown-"
 msgstr "-unbekannt-"
 
-#: /var/centauri/library/_centauri_bash_ins:1503
+#: /var/centauri/library/_centauri_bash_ins:1495
 msgid "Qt      version"
 msgstr "Qt      Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1504
+#: /var/centauri/library/_centauri_bash_ins:1496
 msgid "Plasma  version"
 msgstr "Plasma  Version"
 
-#: /var/centauri/library/_centauri_bash_ins:1506
+#: /var/centauri/library/_centauri_bash_ins:1498
 msgid "Session type"
 msgstr "Sitzungstyp"

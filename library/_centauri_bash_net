@@ -45,9 +45,14 @@ CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
 
 CEN_NET_PREFIX_IP6_DFLT='fc01::/96'
 
+# data for netiface ...
+
 CEN_NET_IFNAMES=                # 0:=no mapping  1:=systemd names
 CEN_NET_IFMAP=                  # list of interface mappings
 CEN_NET_IFKCMD=                 # flag for net.ifnames
+CEN_NET_IFIEN=0                 # ethernet index
+CEN_NET_IFIWL=0                 # wlan ...
+CEN_NET_IFIUS=0                 # usb ...
 
 # ------------------------------------------------------------------------------
 # Interface Naming + About BIOS, systemd and internal interface names
@@ -514,10 +519,14 @@ netiface() {
     if [ -n "$_ncmd" ] ; then               # get cmdline status only
         _cen_net_getkcmd ; return
     fi
-    [ -z "$CEN_NET_IFNAMES" ] && _cen_net_mapinit
-
+    if [ -z "$CEN_NET_IFNAMES" ] ; then
+        _cen_net_mappers -r
+        if [ -z "$CEN_NET_IFNAMES" ] ; then
+            _cen_net_mapinit ; _pers=1
+        fi
+    fi
     if [ -n "$_pers" ] ; then               # create mapping file
-        _cen_abort - $"option -p not implemented"
+        _cen_net_mappers -w || return 1
     fi
 
     # only ethernet and wlan names are mapped
@@ -574,26 +583,85 @@ _cen_net_getkcmd() {
     return "$CEN_NET_IFKCMD"
 }
 
+_cen_net_maptest() {
+    local _vote=1 _name
+    while [ $# -gt 0 ] ; do
+        _name="$1" ; shift
+        [ -e "$_name" ] || continue
+        case "${_name##*/}" in
+        en?p?)  ((_vote += 1)) ;;
+        wl?p?)  ((_vote += 1)) ;;
+        end?)   ((_vote += 1)) ;;
+        eth?)   ((_vote -= 1)) ;;
+        wlan?)  ((_vote -= 1)) ;;
+        esac
+    done
+    $CEN_TRACE2 -a -c "interface votes" "$_vote"
+    [ "$_vote" -le 0 ]                              # return status
+}
+
 # get current map mode, set CEN_NET_IFNAMES, load rules
 _cen_net_mapinit()  {
     [ -z "$CEN_NET_DOMAIN" ] && { netconfig || return 1 ; }
     [ -n "$CEN_NET_IFNAMES" ] && return
 
-    # check for kernel net.ifnames
-    _cen_net_getkcmd && CEN_NET_IFNAMES=0 || CEN_NET_IFNAMES=1
-    # must use some heuristics as initrd might be out of sync
-    if [ "$CEN_NET_IFNAMES" = 1 ] ; then
-        if [ -e '/sys/class/net/eth0' ] || [ -e '/sys/class/net/wlan0' ] ; then
-            CEN_NET_IFNAMES=0
-        elif [ '/etc/systemd/network/99-default.link' -ef '/dev/null' ] ; then
-            CEN_NET_IFNAMES=0
-        fi
+    # check for kernel net.ifnames, then try some heuristics
+    if _cen_net_getkcmd ; then                      # this is mandatory
+        CEN_NET_IFNAMES=0
+    elif _cen_net_maptest "/sys/class/net/"[ew]* ; then
+        CEN_NET_IFNAMES=0
+    else
+        CEN_NET_IFNAMES=1
     fi
     if [ "$CEN_NET_IFNAMES" = 0 ] ; then
         $CEN_TRACE -a -c "interface names" 'bios'
     else
         [ -n "$CEN_NET_IFACES" ] && _cen_net_maprule    # iface rules
         $CEN_TRACE -a -c "interface names" 'systemd'
+
+        local _item _more=()
+        for _item in /sys/class/net/en* ; do
+            case "${_item##*/}" in
+            *u?)    [ -e "$_item" ] && _cen_net_mapiadd 'usb' "${_item##*/}" ;;
+            end?)   [ -e "$_item" ] && _cen_net_mapiadd 'eth' "${_item##*/}" ;;
+            *)      [ -e "$_item" ] && _more+=("$_item")
+            esac
+        done
+        for _item in "${_more[@]}" ; do
+            case "${_item##*/}" in
+            enp?s?) _cen_net_mapiadd 'eth' "${_item##*/}"
+            esac
+        done
+        for _item in "${_more[@]}" ; do
+            case "${_item##*/}" in
+            enp?s?) ;;
+            *)      _cen_net_mapiadd 'eth' "${_item##*/}"
+            esac
+        done
+        for _item in /sys/class/net/wlp* /sys/class/net/wl[!p]* ; do
+            [ -e "$_item" ] && _cen_net_mapiadd 'wlan' "${_item##*/}"
+        done
+    fi
+}
+
+# handle persistancy: -r|-w
+_cen_net_mappers()  {
+    if [ "$1" = '-w' ] ; then
+        if [ "$EUID" != 0 ] ; then
+            CEN_TRACE2 "ifnames not persisted for non-root user"
+            return 0
+        fi
+        local _imap="${CEN_NET_IFMAP[@]@A}" ; _imap="${_imap#declare -* }"
+        nettemp -w 'network_ifnames' <<!EOF
+${CEN_NET_IFKCMD@A}
+${CEN_NET_IFNAMES@A}
+$_imap
+${CEN_NET_IFIEN@A}
+${CEN_NET_IFIWL@A}
+${CEN_NET_IFIUS@A}
+!EOF
+    else
+        _cen_source "$CEN_NET_DIR_RUN/network_ifnames" ; return
     fi
 }
 
@@ -623,15 +691,17 @@ _cen_net_mapping() {
         case "$_mapn" in
         enx*)   _cen_net_mapbios "$_mapn" /sys/class/net/enx* ;;
         end*)   _cen_net_mapbios "$_mapn" /sys/class/net/end* ;;
+        enp*u?) _cen_net_mapbios "$_mapn" /sys/class/net/enp*u? ;;
         en*)    _cen_net_mapbios "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
         wl*)    _cen_net_mapbios "$_mapn" /sys/class/net/wlp* /sys/class/net/wl[!p]* ;;
         esac
     elif [ "$1" = '-s' ] ; then             # map to systemd
         case "$_mapn" in
-        eth*)   _cen_net_mapsysd "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
-        usb*)   _cen_net_mapsysd "$_mapn" /sys/class/net/enx* ;;
         wlan*)  _cen_net_mapsysd "$_mapn" /sys/class/net/wlp* /sys/class/net/wl[!p]* ;;
+        usb*)   _cen_net_mapsysd "$_mapn" /sys/class/net/enp*u? ;;
+        *)      _cen_net_mapsysd "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
         esac
+        _cen_net_mapsysd "$_mapn"
     fi
     printf -v "$_vnam" '%s' "$_netiface_mapname" ; return 0
 }
@@ -648,58 +718,74 @@ _cen_net_maprule() {
             warning -c $"not implemented" -- "iface $_item"
             continue
         fi
-        _cen_net_mapiadd "$1=$3" ; _cen_net_mapiadd "$3=$1"
+        _cen_net_mapiadd "$1" "$3"
     done ; set +f
     $CEN_TRACE -a -c "mapping iface" -- "${#CEN_NET_IFMAP[@]} rule(s)"
 }
 
-# map to bios name
+# map to bios name: <sysd> <candidate>...
 _netiface_mapname=
 _cen_net_mapbios() {
     local _mapn="$1" _item _bios _indx=0 _kern _kind='eth'
     [ "${_mapn::2}" = 'wl' ] && _kind='wlan'
     $CEN_TRACE2 -a -c "mapping bios" -- "$*"
 
-    # loop over interface and add bios name to cache
+    # loop over interfaces and add bios name to cache
     while [ $# -gt 1 ] ; do
         shift
         [ -e "$1" ] || continue
         _kern="${1##*/}"
-        _bios="$_kind$_indx" ; ((_indx += 1))   # make bios name
-        _cen_net_mapiadd "$_kern=$_bios"
-        if [ "$_kern" = "$_mapn" ] ; then       # stop on name match
-            _netiface_mapname="$_bios" ; return
-        fi
+        _cen_net_mapiadd "$_mapn" "$_kern" _netiface_mapname && return
     done
+    _netiface_mapname=
 }
 
-# map to systemd name
+# map to systemd name: <bios> <candidate>...
 _cen_net_mapsysd() {
     $CEN_TRACE2 -a -c "mapping systemd" -- "$*"
     local _mapn="$1" _item _kern
+
     while [ $# -gt 1 ] ; do
         shift
         [ -e "$1" ] || continue
         _kern="${1##*/}"
-
-        # skip interfaces that are already registered
-        for _item in "${CEN_NET_IFMAP[@]}" ; do
-            [ "${_item#*=}" = "$_kern" ] || continue
-            $CEN_TRACE2 -a -c "mapping skipped" -- "$_item" ; _kern= ; break
-        done
-        [ -z "$_kern" ] && continue
-        _netiface_mapname="${1##*/}"
-        _cen_net_mapiadd "$_mapn=$_netiface_mapname" ; return
+        if _cen_net_mapiadd "$_mapn" "$_kern" ; then
+            _netiface_mapname="$kern" ; return
+        fi
     done
+
+    # interface not registered
+    [ -e "$_mapn" ] && _netiface_mapname="$_mapn" : _netiface_mapname=
 }
 
-# add to list of known interfaces: <item>
+# Add to list of known interfaces: <bios> <sysd> [<vbio>]
+# This function always makes two entries:  <bios>=<sysd>  and  <sysd>=<bios>
 _cen_net_mapiadd() {
-    for _item in "${CEN_NET_IFMAP[@]}" ; do
-        [ "$_item" = "$1" ] && return
+    local _bios="$1" _sysd="$2" _entr _incr
+    case "$_bios" in
+    eth)    _bios+="$CEN_NET_IFIEN" ; _incr=1 ;;
+    wlan)   _bios+="$CEN_NET_IFIWL" ; _incr=2 ;;
+    en*)    _bios="eth$CEN_NET_IFIEN" ; _incr=1 ;;
+    wl*)    _bios="wlan$CEN_NET_IFIWL" ; _incr=2 ;;
+    us*)    _bios="usb$CEN_NET_IFIUS" ; _incr=3 ;;
+    esac
+    [ -n "$3" ] && printf -v "$3" '%s' "$_bios"
+
+    for _entr in "${CEN_NET_IFMAP[@]}" ; do
+        _entr="${_entr%=*}"
+        [ "$_entr" = "$_bios" ] && return 1
+        [ "$_entr" = "$_sysd" ] && return 1
     done
-    $CEN_TRACE -a -c "mapping added" -- "$1"
-    CEN_NET_IFMAP+=("$1")
+
+    if [ "$_incr" = 1 ] ; then                  # increment next index
+        ((CEN_NET_IFIEN += 1))
+    elif [ "$_incr" = 2 ] ; then
+        ((CEN_NET_IFIWL += 1))
+    elif [ "$_incr" = 3 ] ; then
+        ((CEN_NET_IFIUSS += 1))
+    fi
+    $CEN_TRACE -a -c "mappings added" -- "$_bios" "$_sysd"
+    CEN_NET_IFMAP+=("$_bios=$_sysd" "$_sysd=$_bios") ; return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -1557,6 +1643,14 @@ _cen_net_homedns() {
 #
 #           [*] Form (2) calls can have a <host> argement. If missing HOSTNAME is used.
 #
+#+The result for uppercase keywords is based on the dynamic CEN_NET_ROLE, and
+# **NOT** the static configuration data. Lowercase keywords return static data.
+#
+#+The function calls [[netserver()]] if CEN_NET_ROLE is not yet set. To refresh
+# the loaded information, [[netserver()]] must be called explicitly. It always
+# calls [[netconfig()]]. So after a call to [[netquery()]] all CEN_NET_XXX state
+# and configuration variables are set.
+#
 #+connect:  depending on centaurinetcfg option settings one of the following is returned:
 #
 #           manual        not managed by centaurinetcfg/centauriswitch
@@ -1597,14 +1691,6 @@ _cen_net_homedns() {
 #.          else
 #.              message "Stand alone, server:" "${snam:-<none>}"
 #.          fi
-#
-#+The result for uppercase keywords is based on the dynamic CEN_NET_ROLE, and
-# **NOT** the static configuration data. Lowercase keywords return static data.
-#
-#+The function calls [[netserver()]] if CEN_NET_ROLE is not yet set. To refresh
-# the loaded information, [[netserver()]] must be called explicitly. It always
-# calls [[netconfig()]]. So after a call to [[netquery()]] all CEN_NET_XXX state
-# and configuration variables are set.
 # ------------------------------------------------------------------------------
 netquery() {
     local _ferr _ssav _valu _stat=1 _qual
@@ -1663,7 +1749,8 @@ netquery() {
 
     homedns)        if _cen_net_homedns _valu ; then
                         _stat=0
-                        _valu="${_valu%$_qual}"
+                        # (1) remove our own domain name (2) never qualify localhost
+                        [ "${_valu#*.}" = "$CEN_NET_DOMAIN" ] && _valu="${_valu%%.*}"
                         [ "$_valu" = 'localhost' ] && _qual=
                     fi ;;
 
@@ -1685,24 +1772,19 @@ netquery() {
     class)          [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
                     if [ "$2" = "${CEN_NET_SERVERS[0]}" -o \
                          "$2" = "${CEN_NET_SERVERS[1]}" -o \
-                         "$2" = "$CEN_NET_SERVER_GEN" ] ; then
-                        _valu='server'
-                    elif netoption 'mobile' "$2" ; then
-                        _valu='mobile'
-                    elif netoption 'phone' "$2" ; then
-                        _valu='phone'
-                    elif netoption 'generic' "$2" ; then
-                        _valu='generic'
-                    elif nethost "$2" ; then
-                        _valu='client'
-                    else
-                        _valu='generic'
+                         "$2" = "$CEN_NET_SERVER_GEN" ]
+                    then                                    _valu='server'
+                    elif netoption 'mobile'  "$2" ; then    _valu='mobile'
+                    elif netoption 'phone'   "$2" ; then    _valu='phone'
+                    elif netoption 'generic' "$2" ; then    _valu='generic'
+                    elif nethost "$2" ; then                _valu='client'
+                    else                                    _valu='generic'
                     fi
-                    _qual=
+                    _qual= ; _stat=0
                     ;;
-
-    config)         _valu="${CEN_NET_CONFIG:-${CEN_NET_DOMAIN%%.*}}" ; _qual= ;;
-
+    config)         _valu="${CEN_NET_CONFIG:-${CEN_NET_DOMAIN%%.*}}"
+                    _qual= ; _stat=0
+                    ;;
     *)              _cen_abort - "$*"
     esac
 
@@ -2008,7 +2090,11 @@ nettool() {
                 [ "$_cmnd" = 'isu' ] && return 1
                 [ "$_cmnd" = 'dow' ] && return 0
                 [ "$_cmnd" = 'exi' ] && return 0
-                _tool='ifup' ; set -- '--force' "$_ifce"
+                if sysrun -q ifquery "$_ifce" ; then            # managed by ifup ...
+                    _tool='ifup' ; set -- '--force' "$_ifce"
+                else
+                    _tool='ip' ; set -- link set up "$_ifce"
+                fi
             fi
         fi
     fi

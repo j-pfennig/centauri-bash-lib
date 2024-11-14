@@ -1922,7 +1922,7 @@ folder() {
 #
 # Call:     (1) invoke [-c|-r|-s] <name> <action> [<minarg>|**-** [<maxarg>|-|**+** [<arg>...]]]
 #           (2) invoke [-e|-w] [<frmt>] <text>...
-#           (3) invoke -a [<anum>] <text>
+#           (3) invoke -a [<anum>|-] <text>
 #           (4) invoke -i <text>...
 #           (5) invoke -t
 #
@@ -1933,6 +1933,7 @@ folder() {
 # Options:  -a  report '1st argument must be:', see option -e
 #           -c  rerun script in a console if necessary, see [[context()]]
 #           -e  error message for action (like message -e -p ...)
+#           -i  report 'Not yet implemented', see option -e
 #           -r  check for root privilege
 #           -s  rerun via "sudo" if necessary, see [[context()]]
 #           -t  trim CEN_CMDARGS (implied before -c|-s re-run the script)
@@ -1944,6 +1945,7 @@ folder() {
 #           <maxarg>   max arg count, **-**:use <minarg>, **+**:no limit
 #           <arg>...   arguments passed to the action routine
 #
+#           <anum>     argument number to be printed
 #           <frmt>     a printf format string (containing one or more "%s")
 #           <text>     error message text or arguments for printf)
 #
@@ -1988,7 +1990,7 @@ folder() {
 #.          invoke other -                  # current args, CEN_ACTION='other'
 #.          invoke other - - - my args      # sets CEN_ACTARR, passing args
 #
-#           (2) call a function like an action
+#           (3) call a function like an action
 #.          worker() {
 #.              message "$CEN_ACTION:" "$@"
 #.          }
@@ -2005,7 +2007,8 @@ invoke() {
       --)   shift ; break ;;
 
       -a)   local _anum ; shift
-            [ "$1" = '-' -o $# != 1 ] && { _anum=" #$1" ; shift ; }
+            [ "$1" = '-' ] && shift
+            [ $# != 1 ] && { _anum=" #$1" ; shift ; }
             set x -e $"Argument%s must be: %s" "$_anum" "$@" ;;
       -e|-w)
             local _eflg _pmsg=$"Action '%s': "
@@ -2123,6 +2126,7 @@ isfunction() {
 #           -n  value must be a positive integer
 #           -o  ternary value, <val>:=off|0|on|1|auto|2
 #           -t  allow any text as value
+#           -v  value must be a variable name ([a-zA-Z._-]*)
 #
 #           -a  [*] value must be a file path for writing or appending
 #           -d  [*] value is an output directory path, normalize, must exist
@@ -2233,6 +2237,8 @@ optarg() {
             *)      _emsg=$"value must be 'off|on|auto' or '0|1|2'"
         esac ;;
     -t) ;;
+    -v) _expr="${CEN_ACTARR//[0-9a-zA-Z._-]/}"
+        [ -n "$_expr" -o -z "${CEN_ACTARR##[0-9.-]*}" ] && _emsg=$"not a valid name" ;;
     *)
         [[ $CEN_ACTARR =~ ^($_expr)$ ]] || _emsg=$"has an invalid value" ;;
     esac
