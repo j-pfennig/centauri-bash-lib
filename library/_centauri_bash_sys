@@ -163,7 +163,7 @@ sysversion() {
 
     ### main ###
 
-    local _flgk _flgo _flgu _flgw _fpla _otra _oerr=':'
+    local _flgk _flgo _flgu _flgw _fpla _otra _oerr=':' _errk
     if [ $# = 0 ] ; then                            # do nothing if state is loaded
         [ -n "$CEN_SYS_VERSION" -a -n "$CEN_SYS_KDEVERS" ] && return 0
         _flgo=1 ; _flgk=1 ; _flgu=1
@@ -172,7 +172,7 @@ sysversion() {
         case "$1" in
         -e)   _oerr='error' ;;
         -f)   _oerr='fatal'  ;;
-        -k)   _flgk=1
+        -k)   _flgk=1 ; _errk=1
                [ "${CEN_DISPLAY:-tty}" != 'tty' ] && _fpla=1 ;;
         -m)   _otra="$1" ;;
         -o)   _flgo=1 ;;
@@ -202,7 +202,7 @@ sysversion() {
         [ -z "$_flgo$_flgk" ] && return 0
     fi
 
-    # 2st step: try to read then write, may use private file
+    # 2nd step: try to read then write, may use private file
 
     if [ "$_flgw" = 1 ] ; then                      # opt '-w' skips read
         ___cen_sys_state -w ; _flgo=1 ; _flgk=1
@@ -237,7 +237,7 @@ sysversion() {
     if [ -n "$_flgk" ] ; then
         _cen_ins_version -k
         if [ "$CEN_SYS_KDEVERS" = '-' ] ; then
-            $_oerr $"No KDE version found" ; return 1
+            $_oerr $"No KDE version found" ; [ -n "$_errk" ] && return 1
         fi
     fi
     [ -n "$_otra" ] && _cen_ins_version $_otra

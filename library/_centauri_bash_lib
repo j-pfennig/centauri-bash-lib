@@ -275,18 +275,23 @@ warning()   {   $CEN_NOTRACE return 0 ; $CEN_HOOK_MESSAGE -w "$@" || : ; }
 #           error -s <exit>
 #           error [-c|-t|-x]
 #           error -q [-a|-i] [[-] <msg>...]
+#           error -e|-f|-w ...
 #
 # Options:  ... most [[message()]] options (the implementation calls **message -e**)
 #           -c  clear error state (resets CEN_EXIT and CEN_DONE from 2 to 1)
-#           -f  make error fatal - same as calling [[fatal()]]
+#           -e  [*] ignored
+#           -f  [*] make error fatal - same as calling [[fatal()]]
 #           -q  call [[quit()]] if a previous ''error'' has occurred
 #           -s  set exit code, saved as variable CEN_EXIT. The minimum value is 2,
 #               lower values are stored as 2. Updates CEN_DONE from 1 to 2.
 #           -t  silently check for pending error termination. Returns **false** for
 #               **CEN_DONE == 2** and **true** for all other cases.
+#           -w  [*] make error a warning, same as calling [[warning()]]
 #           -x  don't modify CEN_DONE on errors (sets **CEN_DONE=0**). This disables
 #               error testing (-t and -q) and error termination by [[main()]].
 #           -z  return 0 status
+#
+#           [*] used to simplify the handling of -e|-f|-w options in library functions
 #
 # Return:   The value of CEN_EXIT (unless -t or -z are used)
 #
@@ -325,10 +330,12 @@ error() {
       -a|-i|-n|-m|-p|-r)
             _popt+=("$1") ;;
       -c)   CEN_EXIT=0 ; [ "$CEN_DONE" = 2 ] && CEN_DONE=1 ; return 0 ;;
-      -f)   _fopt=1 ;;
+      -e)   ;;
+      -f)   _fopt='fatal' ;;
       -s)   CEN_EXIT="$2" ; _isok=1 ; shift ;;
       -t)   [ "$CEN_DONE" != 2 ] ; return ;;
       -q)   [ "$CEN_DONE" != 2 ] && return ; _fqui=1 ;;
+      -w)   _fopt='warning' ;;
       -x)   CEN_DONE=0 ; return $CEN_EXIT ;;
       -z)   _zero=0 ;;
        *)   _cen_abort - "$1"
@@ -336,7 +343,7 @@ error() {
     done
 
     CEN_AUTOIND=
-    [ -n "$_fopt" ] && fatal ${_popt[@]} -- "$@"
+    [ -n "$_fopt" ] && { $_fopt ${_popt[@]} -- "$@" ; return 1 ; }
     [ -n "$_fqui" ] && quit ${_popt[@]} ${1:+-e} -- "$@"
     [ -n "$CEN_NOTRACE" ] && [ -z "$_isok" -a -n "$*" ] && message -e ${_popt[@]} -- "$@"
     [ "$CEN_DONE" = 1 ] && CEN_DONE=2
@@ -2554,7 +2561,7 @@ sysfind() {
 #           -m  message for all output (implies -s and -q)
 #           -n  do not check command (implied if <cmd> is **eval**), allow script calls
 #           -p  [*] pretty print errors (implies -s and -q)
-#           -q  redirect **/dev/stderr** and **/dev/stdout** (to **/dev/null** without -s)
+#           -q  redirect **/dev/stderr** and **/dev/stdout** (to **/dev/null** without -a or -s)
 #           -r  ignore option --dryrun
 #           -s  [*] set <var> from **/dev/stdout**
 #           -t  do not run <cmd> after previous error

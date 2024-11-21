@@ -1039,6 +1039,7 @@ _cen_svc_message() {
     else
         _sfmt="$*"
     fi
+    [ -n "$_scal" ] && _sfmt="${_scal:1} $_sfmt"
 
     # can send "info" messages to stderr in some cases ...
     _mlog="$CEN_SVC_SYSLOG"
@@ -1069,7 +1070,6 @@ _cen_svc_message() {
     fi
 
     if [ "$_mlog" != 0 ] ; then
-        [ -n "$_scal" ] && _sfmt="${_scal:1} $_sfmt"
         _cen_svc_logger "daemon.${_spri:-info}" "$_sfmt"
     fi
     return "$CEN_EXIT"

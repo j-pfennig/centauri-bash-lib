@@ -1395,9 +1395,9 @@ _cen_ins_version() {
         # get family
         case "$CEN_SYS_DISTRO" in
         arch*)
-            CEN_SYS_DISTRO="arch" ; CEN_SYS_FAMILY="arch" ;;
+            CEN_SYS_DISTRO='arch' ; CEN_SYS_FAMILY='arch' ;;
         *suse*)
-            CEN_SYS_DISTRO="suse" ; CEN_SYS_FAMILY="suse" ;;
+            CEN_SYS_DISTRO='suse' ; CEN_SYS_FAMILY='suse' ;;
         raspbian|termux|ubuntu)
             ;;
         *)
@@ -1434,7 +1434,7 @@ _cen_ins_version() {
         local _kini
         if ! sysfind -c -o -s _kini -- kdeinit6 kdeinit5 ; then
             CEN_SYS_KDEVERS='-' ; CEN_SYS_PLASMA='-' ; CEN_SYS_QTVERS=
-            return
+            return 0
         fi
         CEN_SYS_KDEVERS= ; CEN_SYS_PLASMA= ; CEN_SYS_QTVERS=
 
@@ -1447,6 +1447,7 @@ _cen_ins_version() {
 
         [ -z "$CEN_SYS_QTVERS"  ] && CEN_SYS_QTVERS='000.000.000'
         [ -z "$CEN_SYS_PLASMA"  ] && CEN_SYS_PLASMA='000.000.000'
+        return 0
     }
 
     ___cen_vers_wrt() {

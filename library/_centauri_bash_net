@@ -31,7 +31,7 @@
 # Copyright Dr. J. Pfennig (c) 2013-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.40:4'
+CEN_MODULES['_centauri_bash_net']='0.41:4'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
@@ -565,7 +565,7 @@ netiface() {
     [ "$_mapm" = 'k' ] && _rslt="$_path$_cen_netiface_kern" || _rslt="$_path$_cen_netiface_name"
     [ -z "$_vnam" ] && _netiface="$_rslt" || printf -v "$_vnam" "%s" "$_rslt"
     [ -z "$_exst" ] && return 0
-    [ -e "/sys/class/net/$_cen_netiface_kern" ] && return 0
+    [ -n "$_cen_netiface_kern" ] && [ -e "/sys/class/net/$_cen_netiface_kern" ] && return 0
     $_oerr $"No such interface:" "$_cen_netiface_name ($_cen_netiface_kern)"
     return 1
 }
@@ -750,12 +750,12 @@ _cen_net_mapsysd() {
         [ -e "$1" ] || continue
         _kern="${1##*/}"
         if _cen_net_mapiadd "$_mapn" "$_kern" ; then
-            _netiface_mapname="$kern" ; return
+            _netiface_mapname="$_kern" ; return
         fi
     done
 
     # interface not registered
-    [ -e "$_mapn" ] && _netiface_mapname="$_mapn" : _netiface_mapname=
+    [ -e "/sys/class/net/$_mapn" ] && _netiface_mapname="$_mapn" : _netiface_mapname=
 }
 
 # Add to list of known interfaces: <bios> <sysd> [<vbio>]
@@ -878,7 +878,9 @@ netindex() {
 #           <bits>  mask bits of sub-net
 #           <addr>  address to be checked
 #
-# Return:  **true** on success or **false** on failure
+# Return:  **0**   success
+#          **1**   general synstax failure
+#          **2**   invalid network mask
 #
 #+This function internally calls [[netparse()]] and [[netconv()]].
 # ------------------------------------------------------------------------------
@@ -909,10 +911,8 @@ netmask() {
 
     if [ "${2:--}" = '-' ] ; then               # check for valid subnet
         [ $((_netmask_addr & ~_netmask_mask)) = 0 ] && return 0
-        set "Invalid sub-net specification:" "$1"
-        [ "$_oerr" = '-e' ] && error "$@"
-        [ "$_oerr" = '-f' ] && fatal "$@"
-        return 1
+        [ -n "$_oerr" ] && error $_oerr $"Invalid sub-net specification:" "$1"
+        return 2
     fi
 
     netparse -a $_oerr -n "$2" || return 1
@@ -1612,7 +1612,7 @@ _cen_net_homedns() {
 #
 # Options:  -e  error if config file not found
 #           -f  fatal error if config file not found
-#           -q  return qualifed names
+#           -q  return qualifed names (or nm|simple for 'connect')
 #           -r  discard cache, reload data
 #           -s  save result to named variable
 #
@@ -1637,6 +1637,8 @@ _cen_net_homedns() {
 #           current       get current server name
 #           homedns       get trusted dns server name
 #
+#           nm            get NetworkManager config folder, return true if installed
+#
 #           connect       [*] get connection management mechanics
 #           class         [*] get device class
 #           server        [*] get generic server name, return true if on a server
@@ -1653,14 +1655,18 @@ _cen_net_homedns() {
 #
 #+connect:  depending on centaurinetcfg option settings one of the following is returned:
 #
+#           auto          uses 'smart' if nm is installed or 'simple' otherwise
 #           manual        not managed by centaurinetcfg/centauriswitch
-#           auto          uses NetworkManager if installed or 'simple' otherwise
-#           static        no NetworkManager, no DHCP
-#           simple        uses DHCP
-#           smart         NetworkManager with generic address switching
 #           nm            uses NetworkManager
+#           simple        uses DHCP
+#           static        uses neither NetworkManager, nor DHCP
 #
-##           without option -s the CEN_NET_ADDR_METHOD variable is set.
+#           without option -s the CEN_NET_ADDR_METHOD variable is set:
+#
+#           dhcp          for 'simple' -or- for 'auto'|'nm' without nm installed
+#           manual        for 'manual'
+#           nm            for 'auto'|'nm' with nm installed
+#           static        for 'static'
 #
 #+class:    depending on centaurinet option settings one of the following is returned.
 #           Option checks are made in the listed order, 1st match winns:
@@ -1754,6 +1760,16 @@ netquery() {
                         [ "$_valu" = 'localhost' ] && _qual=
                     fi ;;
 
+    nm)             _stat=1 ; _valu='/etc/NetworkManager'
+                    [ "$CEN_NET_OUTPUT" = '.' ] && _valu=".$_valu"
+                    if [ -d "$_valu" ] ; then
+                        _stat='/usr/sbin/NetworkManager'
+                        [ "$CEN_NET_OUTPUT" = '.' ] && _stat=".$_stat"
+                        if [ -x "$_stat" ] || [ -x "${_stat/sbin/bin}" ] ; then
+                            _stat=0
+                        fi
+                    fi ; _qual= ;;
+
     connect)        # explicit host given, ignore '*'
                     [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
                     if   netoption -x 'manual' "$2" ; then  _valu='manual'
@@ -1766,6 +1782,12 @@ netquery() {
                     elif netoption    'auto'   "$2" ; then  _valu='auto'
                     # nothing at all, same as 'manual'
                     else                                    _valu='manual'
+                    fi
+                    if [ -z "$_ssav" ] ; then
+                        if [ "$_valu" = 'nm' -o "$_valu" = 'auto' ] ; then
+                            netquery 'nm' && _valu='nm' || _valu='dhcp'
+                        fi
+                        _ssav='CEN_NET_ADDR_METHOD'
                     fi
                     _qual= ; _stat=0
                     ;;
@@ -2007,8 +2029,8 @@ nettool() {
         -c)     _carr=1 ;;
         -d)     shift ; _ifce="$1" ;;
         -f)     _ferr='-f -p' ; _oerr=fatal ;;
-        -i)     shift ; _tool=ip ; _what="$1" ;;
-        -o)     _tool=ip ; _what='route' ;;
+        -i)     shift ; _tool='ip' ; _what="$1" ;;
+        -o)     _tool='ip' ; _what='route' ;;
         -q)     _ferr='-q' ; _oerr=: ;;
         -r)     _orun='-r' ;;
         -t)     shift ; _tool="$1" ;;
@@ -2017,7 +2039,7 @@ nettool() {
         esac ; shift
     done
 
-    # do we need a device label (ifonfig compatibility)
+    # do we need a device label (ifconfig compatibility)
     if [ "$_ifce" != "${_ifce%:*}" ] ; then
         _labl="${_ifce##*:}" ; _ifce="${_ifce%:*}"
     fi
@@ -2090,7 +2112,7 @@ nettool() {
                 [ "$_cmnd" = 'isu' ] && return 1
                 [ "$_cmnd" = 'dow' ] && return 0
                 [ "$_cmnd" = 'exi' ] && return 0
-                if sysrun -q ifquery "$_ifce" ; then            # managed by ifup ...
+                if sysrun -q ifquery "/dev/$_ifce" ; then       # managed by ifup ...
                     _tool='ifup' ; set -- '--force' "$_ifce"
                 else
                     _tool='ip' ; set -- link set up "$_ifce"
