@@ -334,60 +334,98 @@ netgetip() {
 }
 
 # ------------------------------------------------------------------------------
-# nethost - Search a host network configuration entry
+# nethost - Search a host entry in network host configuration table
 #
-# Call:    nethost [-c|-s] [--] <host>|<addr>
+# Call:    nethost [-e|-f] [-c|-n|-s] [--] <host>|<addr>|<mac>|-
 #
 # Options:  -c  do not match a configured server
+#           -e  report errors
+#           -f  make errors fatal
+#           -n  check for name syntax only
 #           -s  only match a configured server
 #
 # Arguments:<host>  a host name (optionally fully qualified)
 #           <addr>  an IPv4 address like **10.21.2.11**
+#           <mac>   a mac address
+#
+#           All input must be in lowercase
 #
 # Variables:**_nethost_name**   array of host names/aliases
+#           **_nethost_dom**    domain name stripped from <host> arugment
 #           **_nethost_mac**    the mac address    (or '-' if unknown)
 #           **_nethost_ip**     the ipv4 address   (or '-' if unknown)
 #
 # Return:  **true** if <host> was found or **false** on failure
 #
-#+         The **_nethost_mac** **_nethost_ip** and **_nethost_name** variables are
-#          set on success or cleared on failure.
+#+         This routine can either check for a valid name synstax (-n option)
+#          or search the CEN_NET_HOSTS configuration table.
+#
+#+         The **_nethost_mac**, **_nethost_ip**, **_nethost_dom** and **_nethost_name**
+#          variables are set on success or cleared on failure. Any domain name
+#          is removed from **_nethost_name[0]** and saved in **_nethost_dom**.
+#
 # ------------------------------------------------------------------------------
 _nethost_mac=
 _nethost_ip=
 _nethost_name=()
+_nethost_domain=
 nethost() {
-    local _only
+    local _only _oerr _onam
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
-      --)   shift ; break ;;
-      -c)   _only='c' ;;
-      -s)   _only='s' ;;
-      *)    _cen_abort - "$1"
+      -)     break ;;
+      --)    shift ; break ;;
+      -c)    _only='c' ;;
+      -e|-f) _oerr="$1" ;;
+      -n)    _onam=1 ;;
+      -s)    _only='s' ;;
+      *)     _cen_abort - "$1"
       esac ; shift
     done
 
-    _nethost_mac= ; _nethost_ip= ; _nethost_name=()
-    netconfig || return 1
+    _nethost_mac= ; _nethost_ip= ; _nethost_name=() ; _nethost_domain=
+    netconfig $_oerr || return 1
 
     local host snam sdom name="${1:--}"
-    [ "$name" = '-' ] && return 1
 
-    if [ "${name//[0-9]/}" != '...' ] ; then            # not an ipv4 address...
+    if [ "${name//[0-9]/}" = '...' ] ; then             # is an ipv4 address...
+        _nethost_ip="$name"
+    elif [ "${name//[0-9a-f]/}" = ':::::' ] ; then      # is a mac address...
+        _nethost_mac="$name"
+    else
         snam="${name%%.*}" ; sdom="${name#*.}"
-        [ "$name" = "$sdom" ] && sdom=
-        [ "$sdom" = "$CEN_NET_DOMAIN" ] && name="$snam" # no local dom in hosts
+        if [ "${name:--}" = '-' ] ; then
+            [ -n "$_oerr" ] && error $_oerr $"Missing hostname" ; return 1
+        elif [ -n "${name//[a-z0-9-]/}" ] ; then
+            [ -n "$_oerr" ] && error $_oerr $"Invalid hostname:" "$name" ; return 1
+        fi
+        _net_host_name="$name"
+        if [ "$name" = "$sdom" ] ; then                 # no domain specified
+            sdom=
+        elif [ "$sdom" = "$CEN_NET_DOMAIN" ] ; then
+            sdom= ; name="$snam"                        # no local dom in hosts
+        else
+            if [ -n "$_onam" ] ; then                   # name check only
+                _nethost_domain="$sdom" ; return 0
+            fi
+            [ -n "$_oerr" ] && error $_oerr $"Domain mismatch:" "$name" ; return 1
+        fi
     fi
+    [ -n "$_onam" ] && return 0                         # name check only
+
+    # loop over host table
 
     for host in "${CEN_NET_HOSTS[@]}" '-' ; do
-        if [ "$host" = '-' ] ; then                     # no find
-            _nethost_mac= ; _nethost_ip= ; return 1
+        if [ "$host" = '-' ] ; then                     # nothing found
+            [ -n "$_oerr" ] && error $_oerr $"Host not found:" "$name"
+            _nethost_mac= ; _nethost_ip= ; _nethost_name=() ; return 1
         fi
         [ "${host/$name/}" = "$host" ] && continue      # quick pre-check
         set -- $host
         _nethost_mac="$1" ; shift
         _nethost_ip="$1"  ; shift
-        if [ "$name" = "$_nethost_ip" ] ; then          # match by ip address
+        if [ "$name" = "$_nethost_ip" -o \
+             "$name" = "$_nethost_mac" ] ; then         # match by ip/mac address
             _nethost_name=("$@") ; break
         fi
         [ -z "$snam" ] && continue                      # no name to search

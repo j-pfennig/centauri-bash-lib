@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # ------------------------------------------------------------------------------
 # _centauri_bash_txt = centauri-bash-lib: Text tools (grep, sort)
 #
@@ -252,7 +252,7 @@ extsort() {
 #
 #.          # in-place filtering
 #.          local days=(monday montag wednesday mercredi friday)
-#.          txtgrep -o days -i days -x ".*day"
+#.          txtgrep -a days -i days -x ".*day"
 #
 #+Return:   Without option -a or -s status **true** is returned after the 1st match
 #           and **false** if no match is found (this implies option -m).
