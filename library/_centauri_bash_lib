@@ -2130,10 +2130,11 @@ isfunction() {
 #           (3)   optarg **-** **-** -i|-x <value>
 #
 # Options:  -f  [default] simple flag, the ''option'' has no value
+#           -h  value must be a hostname, see [[isname()]]
 #           -n  value must be a positive integer
 #           -o  ternary value, <val>:=off|0|on|1|auto|2
 #           -t  allow any text as value
-#           -v  value must be a variable name ([a-zA-Z._-]*)
+#           -v  value must be a variable name, see [[isname()]]
 #
 #           -a  [*] value must be a file path for writing or appending
 #           -d  [*] value is an output directory path, normalize, must exist
@@ -2147,7 +2148,7 @@ isfunction() {
 #           -i  add --include option to CEN_OPT_INCLEXCL, see [[filter()]]
 #           -x  add --exclude option to CEN_OPT_INCLEXCL, see [[filter()]]
 #
-#           [*] These options can only be called from inside [[options()]]
+#           [*] These options can only be used from inside [[options()]]
 #
 # Arguments:<optname>  option name (used for bash input completion)
 #           <varname>  variable to be set (auto-generated if "-")
@@ -2217,6 +2218,7 @@ optarg() {
     -a|-d|-r|-s|-w)
         embed -r -m '_centauri_bash_iom' ; _cen_optarg_iom "$_expr" "$1" "$_vnam" ;;
     -e) CEN_ACTARR="$2" ; CEN_ARGOPT=0 ; _emsg="$4" ;;
+    -h) isname -h -m _emsg -- "$CEN_ACTARR" ;;
     -f|-)
         CEN_CMDOPTS+=("--$1") ; printf -v "$_vnam" "%s" "${4:-1}" ; CEN_ARGS=1
         [ -z "$CEN_ARGOPT" ] && return 0  ; _emsg=$"no argument allowed" ;;
@@ -2233,9 +2235,7 @@ optarg() {
     -m)
         [ "${1:-1}" = 1 ] && return 0 ; shift 3
         error -r $"mutually exclusive options:" "$@" ; CEN_ARGS=1 ; return 1 ;;
-    -n)
-        _expr="${CEN_ACTARR//[0-9]/}"
-        [ -n "$_expr" -a "$_expr" != '-' ] && _emsg=$"must have a numeric value" ;;
+    -n) isnumber -m _emsg -- "$CEN_ACTARR" ;;
     -o)
         case "$CEN_ACTARR" in
             off|0)  CEN_ACTARR=0 ;;
@@ -2244,15 +2244,14 @@ optarg() {
             *)      _emsg=$"value must be 'off|on|auto' or '0|1|2'"
         esac ;;
     -t) ;;
-    -v) _expr="${CEN_ACTARR//[0-9a-zA-Z._-]/}"
-        [ -n "$_expr" -o -z "${CEN_ACTARR##[0-9.-]*}" ] && _emsg=$"not a valid name" ;;
+    -v) isname -v -m _emsg -- "$CEN_ACTARR" ;;
     *)
         [[ $CEN_ACTARR =~ ^($_expr)$ ]] || _emsg=$"has an invalid value" ;;
     esac
 
     if [ -n "$CEN_ARGOPT" ] ; then
         CEN_ARGOPT=
-    elif [ "$_expr" != "-o" ] ; then
+    elif [ "$_expr" != '-o' ] ; then
         case "$CEN_ACTARR" in
         --*|-[a-zA-Z]*|"")
             _emsg=$"must have a value" ; _acnt=1 ; CEN_ACTARR= ;;
