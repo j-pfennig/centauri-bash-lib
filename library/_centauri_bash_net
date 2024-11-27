@@ -396,7 +396,7 @@ nethost() {
         snam="${name%%.*}" ; sdom="${name#*.}"
         if [ "${name:--}" = '-' ] ; then
             [ -n "$_oerr" ] && error $_oerr $"Missing hostname" ; return 1
-        elif [ -n "${name//[a-z0-9-]/}" ] ; then
+        elif [ -n "${name//[a-z0-9_-]/}" ] ; then
             [ -n "$_oerr" ] && error $_oerr $"Invalid hostname:" "$name" ; return 1
         fi
         _net_host_name="$name"
