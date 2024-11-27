@@ -7,7 +7,149 @@
 # Copyright Dr. J. Pfennig (c) 2022-2024
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_utl"]="0.03:1"
+CEN_MODULES['_centauri_bash_utl']='0.10:4'
+
+# helper for error messages: _cen_utl_err -e|-f|<vnam> <data> <fmt>...
+_cen_utl_err() {
+    local ___utl_emsg ___utl_vnam="$1" ___utl_data="${2:+: $2}" ; shift 2
+    printf -v ___utl_emsg "$@"
+    case "$___utl_vnam" in
+    -e) error -- "$___utl_emsg$___utl_data" ;;
+    -f) fatal -- "$___utl_emsg$___utl_data" ;;
+    *)  printf -v "$___utl_vnam" '%s' "$___utl_emsg"
+    esac
+}
+
+# ------------------------------------------------------------------------------
+# isname - check name syntax
+#
+# Call:     isname [-e|-f|-m <evar>] [-h|-v] [--] <name>
+#
+# Options:  -e  generate error messages
+#           -f  make errors fatal
+#           -h  must be an internet host name (not qualified)
+#           -m  save error message to variable
+#           -v  generic variable
+#
+# Arguments:<name>  text to be checked
+#           <evar>  name of a variable
+#
+# Checks:   -       must not be empty
+#           -       printable+nonspace chars only
+#           - (-h)  only [a-z0-9_-] are allowed
+#           - (-v)  only [a-zA-Z0-9_-] are allowed, 1st char [!0-9-]
+#
+# Return:   0       name is valid
+#           1       empty
+#           2       contains spaces or control chars
+#           3       invalid chars
+#           4       starts with digit or '-'
+#           5       is not lower case
+# ------------------------------------------------------------------------------
+isname() {
+    local _oerr=(':') _ovar _omeg=$"Name"
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -e)   _oerr=(_cen_utl_err -e) ;;
+      -f)   _oerr=(_cen_utl_err -f) ;;
+      -h)   _ovar=2 ; _omeg=$"Hostname" ;;
+      -m)   shift ; printf -v "$1" '' ; _oerr=(_cen_utl_err "$1") ;;
+      -v)   _ovar=1 ; _omeg=$"Variable name" ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+    _oerr+=("$1")
+
+    [ -z "$1" ] && { "${_oerr[@]}" $"%s missing" "$_omeg" ; return 1 ; }
+    [ "$1" != "${1/[[:cntrl:][:space:]]/}" ] &&
+                   { "${_oerr[@]}" $"%s contains space characters" "$_omeg" ; return 2 ; }
+    [ -z "$_ovar" ] && return 0
+    [ -n "${1//[a-zA-Z0-9_-]/}" ] &&
+                   { "${_oerr[@]}" $"%s contains invalid characters" "$_omeg" ; return 3 ; }
+    [ "$_ovar" = 1 ] && [ "$1" = "${1#[a-zA-Z_]}" ] &&
+                   { "${_oerr[@]}" $"%s 1st char must be a letter or '_'" "$_omeg" ; return 4 ; }
+    [ "$_ovar" = 2 ] && [ "$1" != "${1,,}" ] &&
+                   { "${_oerr[@]}" $"%s must be lower case" "$_omeg" ; return 5 ; }
+    return 0
+}
+
+# ------------------------------------------------------------------------------
+# isnumber - check numeric value
+#
+# Call:     isnumber [-e|-f|-m <evar>] [-d <dflt>] [--] <narg> [<nmin>|- [<nmax>|-]]
+#
+#           This function works with decimal integers only
+#
+# Options:  -d  default value if <narg> is '-' or empty
+#           -e  generate error messages
+#           -f  make errors fatal
+#           -m  save error message to variable
+#           -r  accept real value (min/max tests not allowed)
+#           -s  save number to variable (default: CEN_NUMER)
+#           -u  number must be unsigned
+#
+# Arguments:<narg>  string that should be a ''number'' (optinally signed)
+#           <nmin>  optional minimum value
+#           <nmax>  optional maximum value
+#           <evar>  name of a variable
+#
+# Return:   0   input is valid
+#           1   value below minimum
+#           2   value above maximum
+#           3   input is not a decimal integer ''number''
+# ------------------------------------------------------------------------------
+CEN_NUMBER=
+isnumber() {
+    local _dflt _oerr=(':') _orea _ouns _narg _nmin _nmax _nabs _vnam='CEN_NUMBER'
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -|-[0-9]*)
+            break ;;
+      -d)   shift ; _dflt="$1" ;;
+      -e)   _oerr=(_cen_utl_err -e) ;;
+      -f)   _oerr=(_cen_utl_err -f) ;;
+      -m)   shift ; printf -v "$1" '' ; _oerr=(_cen_utl_err "$1") ;;
+      -r)   _orea=1 ;;
+      -s)   shift ; _vnam="$1" ;;
+      -u)   _ouns=1 ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+    [ $# -gt 3 ] && _cen_abort @
+    printf -v "$_vnam" '-'
+
+    _narg="${1:--}" ; _nmin="${2:--}" ; _nmax="${3:--}"
+    [ "$_narg" = '-' ] && _narg="$_dflt"
+    _narg="${_narg%"${_narg##*[![:space:]]}"}"
+    _narg="${_narg#"${_narg%%[![:space:]]*}"}"
+    _oerr+=("$_narg")
+
+    case "$_narg" in
+    ''|-|0[0-9xX]*)
+            "${_oerr[@]}" $"Not a decimal integer number" ; return 3 ;;
+    -*)     if [ -n "$_ouns" ] ; then
+                "${_oerr[@]}" $"Not an unsigned decimal number" ; return 3
+            fi
+            _nabs="${_narg:1}" ;;
+    *)      _nabs="$_narg"
+    esac
+    if [ -n "$_orea" ] ; then
+        _nmin='-' ; _nmax='-' ; _nabs="${_nabs/./}"
+    fi
+    if [ -n "${_nabs//[0-9]/}" ] ; then
+        "${_oerr[@]}" $"Unexpected text data, not a number" ; return 3
+    fi
+
+    if   [ "$_nmin" != '-' ] && [ "$_narg" -lt "$_nmin" ] ; then
+        "${_oerr[@]}" $"Value to small (min is %s)" "$_nmin" ; return 1
+    elif [ "$_nmax" != '-' ] && [ "$_narg" -gt "$_nmax" ] ; then
+        "${_oerr[@]}" $"Value to large (max is %s)" "$_nmax" ; return 2
+    fi
+    printf -v "$_vnam" '%s' "$_narg"
+    return 0
+}
 
 # ------------------------------------------------------------------------------
 # listsearch - search a word in a list
@@ -110,79 +252,6 @@ listsearch() {
 }
 
 # ------------------------------------------------------------------------------
-# number - check numeric value
-#
-# Call:     number [-e|-f] [-d <dflt>] [--] <narg> [<nmin>|- [<nmax>|-]]
-#
-#           This function works with decimal integers only
-#
-# Options:  -d  default value if <narg> is '-' or empty
-#           -e  generate error messages
-#           -f  make errors fatal
-#           -r  accept real value (min/max tests not allowed)
-#           -s  save numbre to variable (default: CEN_NUMER)
-#           -u  number must be unsigned
-#
-# Arguments:<narg>  string that should be a ''number'' (optinally signed)
-#           <nmin>  optional minimum value
-#           <nmax>  optional maximum value
-#
-# Return:   0   input is valid
-#           1   value below minimum
-#           2   value above maximum
-#           3   input is not a decimal integer ''number''
-# ------------------------------------------------------------------------------
-CEN_NUMBER=
-number() {
-    local _dflt _oerr=':' _orea _ouns _narg _nmin _nmax _nabs _vnam='CEN_NUMBER'
-    while [ "${1::1}" = '-' ] ; do
-      case "$1" in
-      --)   shift ; break ;;
-      -|-[0-9]*)
-            break ;;
-      -d)   shift ; _dflt="$1" ;;
-      -e)   _oerr='error' ;;
-      -f)   _oerr='fatal' ;;
-      -r)   _orea=1 ;;
-      -s)   shift ; _vnam="$1" ;;
-      -u)   _ouns=1 ;;
-      *)    _cen_abort - "$1"
-      esac ; shift
-    done
-    [ $# -gt 3 ] && _cen_abort @
-    local -n _cen_txt_number="$_vnam" ; _cen_txt_number='-'
-
-    _narg="${1:--}" ; _nmin="${2:--}" ; _nmax="${3:--}"
-    [ "$_narg" = '-' ] && _narg="$_dflt"
-    _narg="${_narg%"${_narg##*[![:space:]]}"}"
-    _narg="${_narg#"${_narg%%[![:space:]]*}"}"
-
-    case "$_narg" in
-    ''|-|0[0-9xX]*)
-            $_oerr $"Not a decimal integer number:" "$_narg" ; return 3 ;;
-    -*)     if [ -n "$_ouns" ] ; then
-                $_oerr $"Not an unsigned decimal number:" "$_narg" ; return 3
-            fi
-            _nabs="${_narg:1}" ;;
-    *)      _nabs="$_narg"
-    esac
-    if [ -n "$_orea" ] ; then
-        _nmin='-' ; _nmax='-' ; _nabs="${_nabs/./}"
-    fi
-    if [ -n "${_nabs//[0-9]/}" ] ; then
-        $_oerr $"Unexpected text data, not a number:" "$_narg" ; return 3
-    fi
-
-    if   [ "$_nmin" != '-' ] && [ "$_narg" -lt "$_nmin" ] ; then
-        $_oerr -p $"Value to small (min is %s):" "$_nmin" "$_narg" ; return 1
-    elif [ "$_nmax" != '-' ] && [ "$_narg" -gt "$_nmax" ] ; then
-        $_oerr -p $"Value to large (max is %s):" "$_nmax" "$_narg" ; return 2
-    fi
-    _cen_txt_number="$_narg"
-    return 0
-}
-
-# ------------------------------------------------------------------------------
 # optmake - Build options string or array
 #
 # Call:     optmake -s|-j|-a <dest> [-k|-n <name>] [-f|-v|-z] <valu>
@@ -273,7 +342,7 @@ optmake() {
     fi
 
     case "$_name" in
-    "")         ;;
+    '')         ;;
     --*)        _asep=1 ;;
     -*)         ;;
     =*)         _name="${_name:1}" ;;
@@ -290,18 +359,113 @@ optmake() {
     # simple output string
     else
         _valu="${_valu//\"/\\\"}"
-        [ -n "$_vvaa" ] && _vvaa+=" "
+        [ -n "$_vvaa" ] && _vvaa+=' '
         [ -n "$_name" ] && _vvaa+="$_name"
         if [ "${_vflg:-0}" != 0 ] ; then
             if [ -n "$_asep" ] ; then
                 _vvaa+="=\"$_valu\""
             else
-                [ -n "$_vvaa" ] && _vvaa+=" "
+                [ -n "$_vvaa" ] && _vvaa+=' '
                 _vvaa+="\"$_valu\""
             fi
         fi
         [ $# -gt 0 ] && _vvaa+=" $*"
     fi
+}
+
+# ------------------------------------------------------------------------------
+# password - get a password
+#
+# Call:     password [-e|-f] [-m <minc>] [-l] [-n] [-u <user>|-] [-x|-z] [--]
+#                    <vpwd> [<seed>|- [<envn>|- [<mesg>|-]]]
+#
+#           Get a password via [[confirm()]] or an environment variable
+#
+# Options:  -e  generate error messages
+#           -f  make errors fatal
+#           -l  repeat prompt until valid input was entered
+#           -m  minimal chars needed (default is 0)
+#           -n  never prompt on console (overrides test for stdin/stdout)
+#           -u  user name for <mesg> prompt (replaces '%s')
+#           -x  message on empty password and return **false**
+#           -z  accept an empty password and return **true**
+#
+# Arguments:<vpwd>  name of a variable to save the password
+#           <seed>  returned as password if not empty or '-'
+#           <envn>  name of an environment variable to use if <seed> fails
+#           <mesg>  override default prompt text
+#           <minc>  positive integer
+#           <user>  any string, can be empty or '-'
+#
+# The function 1st tries the <seed> value and if empty or '-' the environment variable
+# specified by <envn>.
+#
+# If the result is still empty or '-' it tries to prompt a console user for input, but
+# only if stdin are stderr are via tty. Input will not be read from a file or a pipe.
+#
+# Passwords read from console get trimmed.
+#
+# Return:   **true** at success or **false** otherwise.
+#
+#           A '-' password causes a return value of  **false**. Unless option '-z'
+#           is used an empty password also causes **false** to be returned.
+#
+#.Example:  password -l -m 4 my_pasw "$CEN_OPT_PASSWORD" PASSWORD || quit -t
+#.          message "Password is:" "$my_pasw"
+# ------------------------------------------------------------------------------
+password() {
+    local _oerr='message -a' _vpwd _pasw _oloo _omin _onop _ousr _ozer
+    local _mesg=$"Enter password"
+    while [ "${1::1}" = '-' ] ; do
+        case "$1" in
+        -)  break ;;
+        --) shift ; break ;;
+        -e) _oerr='error' ;;
+        -f) _oerr='fatal' ;;
+        -l) _oloo=1 ;;
+        -m) shift ; _omin="$1" ;;
+        -n) _onop=1 ;;
+        -u) shift ; _ousr="${1:--}"
+            [ "$_ousr" != '-' ] && _mesg=$"Enter '%s' password" ;;
+        -x) _ozer=2 ;;
+        -z) _ozer=1 ;;
+        *)  _cen_abort - "$1"
+        esac ; shift
+    done
+
+    while [ "${_pasw:--}" = '-' ] ; do
+        if [ -z "$_pasw" ] ; then                   # initial pass ...
+            _pasw="${2:--}"
+            [ "$_pasw" = '-' -a "${3:--}" != '-' ] && eval "_pasw=\"\$$3\""
+            [ "${4:--}" != '-' ] && _mesg="$4"
+            [ -n "$_ozer" -a -z "$_pasw" ] && break # allow empty passw
+        fi
+        if  [ "${_pasw:--}" = '-' ] ; then          # read from console ...
+            [ -z "$_onop" ] && [ -t 0 ] && [ -t 2 ] && _onop=0
+            [ "$_onop" = 0 ] || break               # no console IO
+            if [ -z "$_ousr" ] ; then
+                confirm -s _pasw -u -p + "$_mesg"
+            else
+                confirm -f -s _pasw -u -p + "$_mesg" "$_ousr"
+            fi
+            [ -n "$_ozer" -a -z "$_pasw" ] && break # allow empty passw
+        fi
+        if [ -z "$_omin" ] ; then
+            break
+        else
+            [ "${#_pasw}" -ge "$_omin" ] && break
+            _pasw='-'
+            $_oerr -p $"Password too short (min %s chars)" "$_omin"
+        fi
+        [ -z "$_oloo" ] && break
+    done
+
+    printf -v "$1" '%s' "$_pasw"
+    if [ "$_ozer" = 2 -a "${_pasw:--}" = '-' ] ; then
+        $_oerr -p $"Password required" ; return 1
+    fi
+    [ -n "$_ozer" -a -z "$_pasw" ] && return 0      # allow empty passw
+    [ "${_pasw:--}" != '-' ]                        # return status
 }
 
 # ------------------------------------------------------------------------------
@@ -759,7 +923,7 @@ timer() {
       -r)   _ropt="$1" ;;
       -s)   shift ; _vnam="$1" ;;
       -t)   _mesg="$CEN_TRACE" ;;
-      -w)   shift ; number -e -r -u -s _swai -- "$1" || return ;;
+      -w)   shift ; isnumber -e -r -u -s _swai -- "$1" || return ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
