@@ -835,7 +835,7 @@ _cen_net_mapiadd() {
 #
 # Options:  -e  error if network not found
 #           -f  fatal error if network not found
-#           -s  save result to named variable
+#           -s  save network entry to named variable
 #
 # Arguments:<name>  network name, see below
 #           <indx>  index to CEN_NET_NETWORKS array
@@ -906,10 +906,11 @@ netindex() {
 # ------------------------------------------------------------------------------
 # netmask - check if address is part of a sub-net
 #
-# Call:    (1) netmask [-e|-f] <base>/<bits>        # is base address valid?
-#          (2) netmask [-e|-f] <base>/<bits> <addr> # is <addr> in base net?
+# Call:    (1) netmask [-e|-f] [-a] <base>/<bits>        # is base address valid?
+#          (2) netmask [-e|-f] [-a] <base>/<bits> <addr> # is <addr> in base net?
 #
-# Options:  -e  report syntax errors
+# Options:  -a  accept invalid netmask
+#           -e  report syntax errors
 #           -f  make syntax errors fatal
 #
 # Arguments:<base>  sub-net base address
@@ -926,10 +927,11 @@ _netmask_addr=                          # current binary address
 _netmask_curr=                          # current argument
 _netmask_mask=                          # mask high bits
 netmask() {
-    local _oerr
+    local _oerr _oain
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)       shift ; break ;;
+      -a)       _oain=1 ;;
       -e|-f)    _oerr="$1" ;;
       *)        _cen_abort - "$1"
       esac ; shift
@@ -948,12 +950,15 @@ netmask() {
     fi
 
     if [ "${2:--}" = '-' ] ; then               # check for valid subnet
+        [ -n "$_oain" ] && return 0
         [ $((_netmask_addr & ~_netmask_mask)) = 0 ] && return 0
         [ -n "$_oerr" ] && error $_oerr $"Invalid sub-net specification:" "$1"
         return 2
     fi
 
+#local _bit1="$_netparse_bits"
     netparse -a $_oerr -n "$2" || return 1
+#[ "$_netparse_bits" != "$_bit1" ] && trace -a -c " mask#2" "$_bit1 $_netparse_bits"
     netconv -b "$_netparse_addr" || return 1
     $CEN_TRACE2 -a -c -p " check" "%-14s -> %x" "$2" "$_netconv"
     [ $((_netconv & _netmask_mask)) = "$_netmask_addr" ]
@@ -1025,14 +1030,16 @@ netoption() {
 # ------------------------------------------------------------------------------
 # netparse - Parse an IPv4 address and/or netmask
 #
-# Call:     netparse [-a] [-b] [-e|-f] [-n] [<ipaddr>][/<maskbits>]
-#           netparse [-b] [-e|-f] [-n] <maskbits>
+# Call:     netparse [-a] [-b] [-e|-f] [-n] [-r] [<ipaddr>][/<maskbits>]
+#           netparse [-b] [-e|-f] [-n] [-r] <maskbits>
 #
 # Options:  -a  address must be present
 #           -b  netmask bits must be present
 #           -e  report errors
 #           -f  make errors fatal
 #           -n  do not fill _netparse_mask, just clear it
+#           -r  check min/max of mask bits (minimum is 16, maximum is 21)
+#               also check network address class if <ipaddr> is passed
 #
 # Arguments:<ipaddr>   a dotted 4-part IPv4 address -or- a network reference
 #           <maskbits> number of maskbit as decimal number
@@ -1076,6 +1083,7 @@ netparse() {
       -e)   _oerr='error' ;;
       -f)   _oerr='fatal' ;;
       -n)   _onom=1 ;;
+      -r)   _orng=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -1105,13 +1113,31 @@ netparse() {
         $_oerr $"Address has invalid syntax:" "$1" ; return 5
     fi
 
+    # check bitmask limits and network class
+    if [ -n "$_orng" -a -n "$_netparse_bits" ] ; then
+        local _mmin=0
+        case "$1" in
+        192.168.*)  _mmin=16 ;;
+        172.16.[0-9].*|172.16.1[0-5].*)
+                    _mmin=20 ;;
+        10.*)       _mmin=16
+        esac
+        if [ "$_mmin" = 0 ] ; then
+            warning -p $"Address '%s' is in a public IPv4 range"
+        elif [ "$_netparse_bits" -gt 21 ] ; then
+            $_oerr -p $"Netmask is too long (max %s): %s" 21 "$1" ; return 6
+        elif [ "$_netparse_bits" -lt "$_mmin" ] ; then
+            $_oerr -p $"Netmask is too short (min %s): %s" "$_mmin" "$1" ; return 7
+        fi
+    fi
+
     # make netmask
     if [ -n "$_onom" ] ; then
         _netparse_mask=
     elif netconv -d $((((1 << 32) - 1) & ~((1 << (32 - _netparse_bits)) - 1))) ; then
         _netparse_mask="$_netconv"
     else
-        _netparse_mask='0.0.0.0' ; return 1
+        _netparse_mask='0.0.0.0' ; return 8
     fi
     return 0
 }
@@ -2024,7 +2050,8 @@ CEN_NET_MASTER='$CEN_NET_MASTER'
 #           an interface to exist. Form (4) runs **ip**°<what> and can insert <dev>
 #           after <cmd>. Any tool can be run using form (5).
 #
-#+          Form (6) sets or checks "/proc/sys/net/ipv?/conf/.../disable_ipv?"
+#+          Form (6) sets or checks "/proc/sys/net/ipv?/conf/.../disable_ipv?" to enable
+#           or disable the IPv6 protocol stack.
 #
 # Options:  -4  [*] use ipv4 (adds option -4 when running a tool)
 #           -6  use ipv6 (adds option -6 when running a tool)

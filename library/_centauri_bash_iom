@@ -477,7 +477,7 @@ outdata() {
     fi
 
     if [ "$_stat" = 0 ] ; then
-        $CEN_TRACE -p $"Wrote %s line(s) to: %s" "${#_vwrt[@]}" "$_line"
+        $CEN_TRACE2 -p $"Wrote %s line(s) to: %s" "${#_vwrt[@]}" "$_line"
     else
         $_oerr -p $"Failed to write to: %s" "$_line"
     fi

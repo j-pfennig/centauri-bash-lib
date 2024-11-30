@@ -1,12 +1,16 @@
 #!/usr/bin/bash
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2007-2024; BSD License"
+CEN_TITLE="Template for a minimal script using mini-bash-lib"
 
 # ------------------------------------------------------------------------------
 # This tool can be run without centauri-bash-lib being installed. If so it uses
 # a couple simplified library equivalents that are created below ...
 # ------------------------------------------------------------------------------
 
+# CEN_NAME=.        # uncomment this to disable autoload of _centauri_bash_lib
+
 [ "${CEN_NAME:--}" = '-' ] && [ -x '/usr/local/bin/_centauri_bash_lib' ] &&
-    . /usr/local/bin/_centauri_bash_lib -a -d -f - '0.01:2' 0
+    . /usr/local/bin/_centauri_bash_lib -a -d -f - '0.01:4' 0
 
 # ------------------------------------------------------------------------------
 # Script supporting mini-bash-lib
@@ -22,9 +26,9 @@ else ###########################################################################
     if [ -n "$CEN_HOOK_MESSAGE" ] ; then
         message -p "Using centauri-bash-lib version '%s'" "${CEN_MODULES['_centauri_bash_lib']}"
     else
-        message "Using mini-bash-lib"
+        message "Using mini-bash-lib version" "'$CEN_MINI_VERSION'"
     fi
-    system -- "$@"
+    [ "$1" = '-' ] || system -- "$@"
     quit
 fi #############################################################################
 }
@@ -33,27 +37,67 @@ fi #############################################################################
 # help display
 # ------------------------------------------------------------------------------
 usage() {
-    cat <<!EOF
-usage: $CEN_NAME [-d] [-f] [-h] [-v] <arg>... 
-!EOF
+    echo "usage: $CEN_NAME [-d] [-f] [-h] [-v] <arg>..." >&2
+    [ "${CEN_TITLE:--}" = '-' ] && return
+    printf '\n       %s\n' "$CEN_TITLE" >&2
 }
 
+if $MINIMAL ; then #############################################################
+else ###########################################################################
 # ------------------------------------------------------------------------------
 # The mini-bash-lib contains these functions and options ...
 # ------------------------------------------------------------------------------
+#   The mini-bash-lib has practical and educational use. Please always remember:
 #
-#   confirm     -a -i -n -y
-#   dryrun      [no options]
-#   embed       [all options ignored]
-#   error       -a -t -q
-#   folder      -c -m -q
-#   message     -a -i
-#   symlink     -n
-#   system      -q -r -e -p [-e|-p ignored]
-#   trace       [all options ignored]
-#   quit        -e -s
+#   -   it implements only something around 1% of _centauri_bash_lib
+#   -   it can be used simplify scripting and to support debugging
+#   -   it demonstrates some of the main desing goals of _centauri_bash_lib:
+#           application framework: here only some option parsing, run() and usage()
+#           debug support: options -t|--trace and -d|--dryrun, trace()
+#   -   error handling: error(), fatal(), quit(), system() to run commands
+#   -   simplify programming: folder(), splitjoin(), symlink(), confirm()
+#   -   reasonable console output: message(), warning(), trace()
+#
+#   These functions are implemented:
+#       confirm     -a -i -n -y
+#       dryrun      # no options
+#       embed       # all options ignored
+#       error       -a -t -q
+#       fatal       # all options ignored
+#       folder      -c -m -q
+#       message     -a -i
+#       splitjoin   (-j -|-j <vnam>|-s -|-s <varr>)
+#       symlink     -n
+#       system      -q -r -e -p     # -e|-p are ignored
+#       trace       # all options ignored
+#       warning     # all options ignored
+#       quit        -e -s
 #
 # ------------------------------------------------------------------------------
+# confirm - prompt for console input
+# ------------------------------------------------------------------------------
+# Call:     confirm [-a|-i] [-n|-y] [--] <text>...
+#
+# Options:  -a
+#           -i
+#           -n
+#           -y
+#
+# Arguments:<text>
+#
+# Return:   ...
+#
+# ------------------------------------------------------------------------------
+# dryrun - test for option --dry, generate trace message
+# ------------------------------------------------------------------------------
+# Call:     dryrun <opti>...  [--] <text>...
+#
+# Options:  [none]
+#
+# Arguments:<opti>      all options not listed in 'Options:' are ignored
+#           <text>
+# ------------------------------------------------------------------------------
+fi #############################################################################
 
 if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
     CEN_OPT_DRYRUN=         # option -d
@@ -61,13 +105,14 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
     CEN_VERB=1              # option -v
     CEN_EXIT=0              # exit code
     CEN_NAME="${BASH_SOURCE##*/}"
+    CEN_MINI_VERSION='0.01'
 
     message() {
         local _pref="$CEN_NAME:"
         while [ "${1::1}" = '-' ] ; do
             case "$1" in
             --) shift ; break ;;
-            -i) _pref="${_pref//?/ }" ;; 
+        #   -a)
             esac ; shift
         done
         [ -z "$*" ] && return 0
@@ -87,21 +132,29 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
 
     # simplified error message: [-q|-t] <text>...
     error() {
-        local _fqui
+        local _fqui _ferr="ERROR" _fexi=1
         while [ "${1::1}" = '-' ] ; do
             case "$1" in
             --) shift ; break ;;
-            -q) _fqui=1 ;;   
+            -i) _pref="${_pref//?/ }" ;;
+            -f) _ferr="FATAL ERROR" ; _fexi=3 ;;
+            -w) _ferr="WARNING" ; _fexi=0 ;;
+            -q) _fqui=1 ;;
             -t) [ "${CEN_EXIT}" = 0 ] && return 0 || return 1
             esac ; shift
         done
         if [ -n "$_fqui" ] ; then
             [ "${CEN_EXIT}" = 0 ] && return 0
             quit -e "$@"
-        fi 
-        echo "$CEN_NAME: ***ERROR***" "$@" >&2
-        CEN_EXIT=1 ; return 1
+        fi
+        echo "$CEN_NAME: ***$_ferr***" "$@" >&2
+        [ "$_fexi" = 0 ] && return 0
+        [ "$_fexi" = 1 ] && { CEN_EXIT=1 ; return 1 ; }
+        exit $_fexi
     }
+
+    fatal()   {  while [ "${1::1}" = '-' ] ; do shift ; done ; error -f "$@" ; }
+    warning() {  while [ "${1::1}" = '-' ] ; do shift ; done ; error -w "$@" ; }
 
     # yes/no confirm: [-y|-n] [-a|-i] <text>...
     confirm() {
@@ -150,6 +203,23 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         return 1
     }
 
+    splitjoin() {
+        local _splt _join
+        while [ "${1::1}" = '-' ] ; do
+            case "$1" in
+            --) shift ; break ;;
+            -s) shift ; _splt="$1" ;;
+            -j) shift ; _join="$1" ;;
+            esac ; shift
+        done
+        if [ -n "$_splt" ] ; then
+            read -ra "$_splt" <<<"$*"
+        elif [ -n "$_splt" ] ; then
+            printf -v "$_join" '%s' "$*"
+        fi
+        return 0
+    }
+
     symlink() {
         local nock
         while [ "${1::1}" = '-' ] ; do
@@ -183,19 +253,21 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         error "Running '$1' failed (status $?)"
     }
 
+    # terminate execution
     quit() {
         local _mesg='message'
         while [ "${1::1}" = '-' ] ; do
             case "$1" in
             --) shift ; break ;;
             -e) _mesg='error' ;;
-            -s) shift ; CEN_EXIT="${1:-2}"  
+            -s) shift ; CEN_EXIT="${1:-2}"
             esac ; shift
         done
         $_mesg "$*"
         exit "$CEN_EXIT"
     }
 
+    # minimalistic option parsing ('---' stops the parser)
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         ---)         break ;;
@@ -203,6 +275,8 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         -f|--for*)   CEN_OPT_FORCE=1 ;;
         -h|--help)   usage ; exit 2 ;;
         -v|--ver*)   CEN_VERB=2 ;;
+        --info)      printf "mini-bash-lib; '%s; %s'\n" "$CEN_MINI_VERSION" "$CEN_LEGAL" >&2
+                     quit ;;
         *)  break
         esac ; shift
     done

@@ -24,8 +24,8 @@ msgid "wait for synchronization:"
 msgstr "Auf Synchronisation warten:"
 
 #: /var/centauri/tools/centaurilauncher:338
-msgid "The centauri-bash-lib shell terminated (status=%s). Restarting..."
-msgstr "'centaur-bash-lib' Shell beendet (Status=%s). Neusstart..."
+msgid "The %s shell terminated (status=%s). Restarting..."
+msgstr "'%s' Shell beendet (Status=%s). Neusstart..."
 
 #: /var/centauri/tools/centaurilauncher:362
 msgid "ignored, already started:"
@@ -118,4 +118,3 @@ msgstr "einer von:"
 #: /var/centauri/tools/centaurilauncher:890
 msgid "0:wait (default)  1:exec  2:background  3:disown"
 msgstr "0:warten (Voreinst.)  1:exec  2:Hintergrund  3:disown"
-

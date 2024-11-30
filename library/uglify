@@ -7,7 +7,7 @@ CEN_TITLE="Pack centauri-bash-lib sources, create packaged script"
 # TODO function '(){'
 
 # cannot use autoload - might autolod .p before being written completely ...
-PATH+=":${0%/*}" . _centauri_bash_lib -d -f -m ext -r -y - '0.25:2' || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -d -f -m ext -r -y - '0.26:4' || exit 2
 
 embed -m _centauri_bash_iom -o
 embed -m _centauri_bash_utl
@@ -30,7 +30,7 @@ DAT_FLG_DYNAMIC=                # set in do_libarg (-a option)
 DAT_FLG_LOCALE=                 # ...              (-t option)
 DAT_FLG_MOVED=                  # see do_special
 
-DAT_LIB_USER="_*_*_usr"         # glob pattern for user libraries
+DAT_LIB_USER='_*_*_usr'         # glob pattern for user libraries
 
 declare -A DAT_MAP_EMBED        # map for external apps
 declare -A DAT_MAP_MODULE       # map for module status
@@ -259,7 +259,7 @@ do_ugly() {
 
         # not in !EOF block
         if [ -z "$feof" ] ; then
-            if [ "${rlin::1}" = "#" ] ; then        # full line comment
+            if [ "${rlin::1}" = '#' ] ; then        # full line comment
                 [ -z "$DAT_FLG_PACKAGE" ] && echo
                 continue
             fi

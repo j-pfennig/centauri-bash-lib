@@ -70,17 +70,17 @@ CEN_TXT_GREP=
 txtsort() {
     #$CEN_DEBUG -c -- "$*"
     local _ffat _fqui _fmax=15 _frev _farr _leng _xopt _stat=0
-    local _vinp _vout="-s -" _vsys _cen_sort_aarg
+    local _vinp _vout='-s -' _vsys _cen_sort_aarg
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _farr="$1" ; _vout="-s $1" ; _vsys="-a $1"  ;;
-      -f)   _ffat="-f" ;;
+      -f)   _ffat='-f' ;;
       -i)   shift ; _vinp="$1" ;;
       -m)   shift ; _fmax="$1" ;;
-      -n)   _xopt="-o -n" ;;
-      -q)   _fqui="-q" ;;
-      -r)   _frev="-r" ;;
+      -n)   _xopt='-o -n' ;;
+      -q)   _fqui='-q' ;;
+      -r)   _frev='-r' ;;
       -s)   shift ; _vout="-j $1 -d \n" ; _vsys="-s $1" ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -119,8 +119,8 @@ txtsort() {
     _barr=("${_varr[@]}")                   # copy input
 
     # performing a bubble sort
-    local _iter _curr _next _temp _oper=">"
-    [ -n "$_frev" ] && _oper="<"
+    local _iter _curr _next _temp _oper='>'
+    [ -n "$_frev" ] && _oper='<'
 
     for ((_iter=0; _iter < _leng; _iter++)) ; do
         if [ -n "$_xopt" ] ; then           # numeric sort
@@ -183,11 +183,11 @@ extsort() {
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _fnam="$1" ; _vout="-a $1" ;;
-      -f)   _ferr="-f" ;;
+      -f)   _ferr='-f' ;;
       -i)   shift ; _vinp="-i $1" ;;
       -o)   shift ; _fopt="$1" ;;
-      -q)   _ferr="-q" ;;
-      -r)   _frev="-r" ;;
+      -q)   _ferr='-q' ;;
+      -r)   _frev='-r' ;;
       -s)   shift ; _fnam="$1" ; _vout="-s $1" ;;
       -u)   _funi=1 ;;
       *)    _cen_abort - "$1"
@@ -203,7 +203,7 @@ extsort() {
     else                                            # sort with uniq
         _acmd=('_cen_sort_uniq')
         if [ -z "$CEN_TXT_UNIQ" ] ; then
-            sysfind ${_ferr/.q/} -s CEN_TXT_UNIQ -c uniq || return 1
+            sysfind ${_ferr/-q/} -s CEN_TXT_UNIQ -c uniq || return 1
             _cen_sort_uniq() {                      # helper for uniq
                 set -o pipefail ; "$CEN_TXT_SORT" $_frev $_fopt | "$CEN_TXT_UNIQ"
             }
@@ -396,13 +396,13 @@ extgrep() {
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _fnam="$1" ; _vout="-a $1" ;;
-      -f)   _ferr="-f" ;;
+      -f)   _ferr='-f' ;;
       -i)   shift ; _vinp="-i $1" ;;
       -l)   _acmd+=('-n') ;;
       -m)   _acmd+=('-q') ;;
       -n)   _acmd+=('-v') ;;
       -o)   shift ; _aopt+=("$1") ;;
-      -q)   _ferr="-q" ;;
+      -q)   _ferr='-q' ;;
       -s)   shift ; _fnam="$1" ; _vout="-s $1" ;;
       -u)   _acmd+=('-i') ;;
       -x)   shift ; _fexp=1 ; _acmd+=('-e' "$1") ;_acmd+=('-E') ;;
@@ -431,12 +431,11 @@ extgrep() {
 
     # additional error reporting
     if [ -n "$_fnam" -o "$_ferr" != '-q' ] ; then
-        splitjoin -d "\n" -i "$_fnam" -j _sout
+        splitjoin -d '\n' -i "$_fnam" -j _sout
         message -a -n -- "$_sout"
     fi
     return $_stat
 }
-
 
 # ------------------------------------------------------------------------------
 # txtfold - folding of long text lines, fetch limited text size
