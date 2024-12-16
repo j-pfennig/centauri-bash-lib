@@ -568,8 +568,7 @@ launcher_service() {
                 shift ;;
         esac ; shift
     done
-    timer -m
-    #system $orun $oerr -- "$@"
+    system $orun $oerr -- "$@"
 }
 
 # ------------------------------------------------------------------------------

@@ -18,6 +18,7 @@
 #           -i  enable --include --exclude options
 #           -l  enable syslog output
 #           -m  load an extension module (next argument is <name>)
+#           -n  reserved for mini-bash-lib
 #           -o  source $CEN_ROOT/defaults/$CEN_NAME on startup
 #           -r  do not dispatch action verbs, just call [[run()]]
 #           -s  enable --silent option
@@ -89,8 +90,9 @@ CEN_OPT_SILENT=         # see --silent
 CEN_OPT_TRACE=          # see --trace
 CEN_OPT_ZOMBIE=         # see --zombie
 
-CEN_RUN_MIN_ARGS=       # run min args (-:=no checks at all)
-CEN_RUN_MAX_ARGS=       # run max args (+:=no limit)
+# variables that may be set before loading:
+# CEN_RUN_MIN_ARGS=     # run min args (-:=no checks at all)
+# CEN_RUN_MAX_ARGS=     # run max args (+:=no limit)
 
 # variables defined by the proxy:
 # CEN_INSTALL=          # installation defaults
@@ -104,6 +106,8 @@ CEN_RUN_MAX_ARGS=       # run max args (+:=no limit)
 # CEN_PACKAGE=          # packaged script flag
 # CEN_IS_SOURCED=       # app is sourced, do not run main/quit
 # CEN_NOBREAK=          # 0: no compactify, 1: no line break, 2: compactify
+
+# CEN_FEATURE_N=        # mini-bash-library, see option --mini
 
 declare -g -A CEN_COMMANDS  # dictionary used by sysfind
 
@@ -151,6 +155,7 @@ while [ "${1::1}" = '-' ] ; do
     -i)   CEN_FEATURE_I=1 ;;
     -l)   CEN_FEATURE_L=1 ; CEN_MODULES['_centauri_bash_svc']= ;;
     -m)   shift ; CEN_MODULES["_centauri_bash_$1"]= ;;
+    -n)   ;;                                # reserved
     -o)   CEN_FEATURE_O=1 ;;
     -r)   CEN_FEATURE_R=1 ; CEN_RUN_MIN_ARGS='+' ;;
     -s)   CEN_FEATURE_S=1 ;;
@@ -162,7 +167,7 @@ while [ "${1::1}" = '-' ] ; do
     esac ; shift
 done
 
-[ "${1:--}" = '-' ] && CEN_NAME="${BASH_SOURCE[2]:-$BASH_SOURCE}" || CEN_NAME="$1"
+[ "${1:--}" = '-' ] && CEN_NAME="$BASH_ARGV0" || CEN_NAME="$1"
 CEN_NAME="${CEN_NAME##*/}"
 if [ -n "$CEN_FEATURE_T" -a -z "$TEXTDOMAIN" ] ; then
     TEXTDOMAIN='_centauri_bash_lib'; TEXTDOMAINDIR="$CEN_ROOT/locale"
@@ -342,7 +347,7 @@ error() {
 
     CEN_AUTOIND=
     [ -n "$_fopt" ] && { $_fopt ${_popt[@]} -- "$@" ; return 1 ; }
-    [ -n "$_fqui" ] && quit ${_popt[@]} ${1:+-e} -- "$@"
+    [ -n "$_fqui" ] && quit ${_popt[@]} -e -- "$@"
     [ -n "$CEN_NOTRACE" ] && [ -z "$_isok" -a -n "$*" ] && message -e ${_popt[@]} -- "$@"
     [ "$CEN_DONE" = 1 ] && CEN_DONE=2
     [ "${CEN_EXIT:-0}" -le 1 ] && CEN_EXIT=2
@@ -385,7 +390,7 @@ fatal() {
         esac ; shift
         done
         [ -z "$_ffmt" ] && _text="$*" || printf -v _text "$@"
-        _cen_abort -2 $"fatal:" "$_text"
+        _cen_abort -2 $"Fatal:" "$_text"
     fi
     CEN_AUTOIND=
     [ -n "$CEN_NOTRACE" ] && message -f -r "$@"
@@ -397,11 +402,13 @@ fatal() {
 #
 # Call:     quit
 #           quit -e|-t|-u [--] [-] <msg>...
-#           quit [-m|-n] [-p] [-r] [-s <code>] [--] <msg>...
+#           quit [-a|-i] [-m|-n] [-p] [-r] [-s <code>] [--] <msg>...
 #           quit -h
 #
-# Options:  -e  error exit, print "Terminated after error" if 1st arg is not '-'
+# Options:  -a  print application name on 1st output, indent otherwise
+#           -e  error exit, print "Terminated after error" if 1st arg is not '-'
 #           -h  just run ''quit'' hook and reset to default (save for subshell)
+#           -i  indent (no program name)
 #           -m  multiple lines, one <arg> per line (short for '-m -p "%s\n"')
 #           -n  print multiple lines (new-line or '\n' separated)
 #           -p  use printf formatting (1st arg is format)
@@ -416,6 +423,7 @@ fatal() {
 #
 #.Examples: quit "Stop here:" "$FUNCNAME"   # stop with message
 #.          quit -e                         # stop with error, default message
+#.          quit -e -                       # stop with error, no message
 #.          quit -e - "sorry"               # ... extra info
 #.          quit -e "sorry for" this        # ... custom message
 #.          quit -t - "connection lost"     # ... prints "Teminated: connection lost"
@@ -463,15 +471,15 @@ quit() {
     [ -n "$CEN_IS_SOURCED" -a -z "$CEN_STAGE" ] && return 0
     exec 1>&$CEN_STDOUT 2>&$CEN_STDERR
 
-    local _flgt _opts=()
+    local _flgt _opts=() _opte
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
+      -a|-i|-n|-m|-p|-r)
+            _opts+=("$1") ;;
       --)   shift ; break ;;
-      -e)   _opts+=("$1") ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1
+      -e)   _opte='-e' ; [ "$CEN_EXIT" = 0 ] && CEN_EXIT=1
             _flgt=$"Terminated after error" ;;
       -h)   $CEN_HOOK_QUIT -h ; CEN_HOOK_QUIT=_cen_quit ; return 0 ;;
-      -n|-m|-p|-r)
-            _opts+=("$1") ;;
       -s)   CEN_EXIT="${2:-0}" ; shift ;;
       -t)   CEN_EXIT=4 ; _flgt=$"Terminated" ;;
       -u)   CEN_EXIT=4 ; _flgt=$"Terminated by user" ;;
@@ -482,11 +490,16 @@ quit() {
     done
 
     if [ "$$" != "$BASHPID" ] ; then
-        _cen_abort -n -2 $"quit from subshell" "PID=$BASHPID"
+        _cen_abort -n -2 $"Called 'quit' from subshell" "PID=$BASHPID"
     elif [ -n "$_flgt" ] ; then
-        [ "${1:--}" = '-' ] && set -- "$_flgt""${2:+:}" "${@:2}"
+        if [ "$*" = '-' ] ; then
+            set -- ; _opte=
+        elif [ "${1:--}" = '-' ] ; then
+            set -- "$_flgt""${2:+:}" "${@:2}"
+        fi
     fi || :
-    $CEN_HOOK_QUIT "${_opts[@]}" ${1:+--} "$@" ; exit 2 # exit 2 on hook function failure
+    $CEN_HOOK_QUIT $_opte "${_opts[@]}" ${1:+--} "$@"
+    exit 2                                          # on hook function failure
 }
 
 # called via CEN_HOOK_QUIT: [-h] <mesg>...
@@ -549,7 +562,7 @@ _cen_trap() {
     if [ "$1" = 2 ] ; then
         echo >&2 ; quit -u
     fi
-    quit -t - $"caught signal" "$1"
+    quit -t - $"Caught signal" "$1"
 }
 
 # fatal error with stack trace: [-n|-r] [-<indx>] <mesg>|-|+|=|@ <arg>...
@@ -1137,10 +1150,11 @@ context() {
 #
 # Return:   **true** on successs and **false** on failure.
 #
-#+When <path> exists and without -t (truncate) the function returns **true**. The
-# <mode> of an existing folder will never be changed. An existing file will not
-# be modified unless the -t option is used. See [[attributes()]] on how to change
-# modes or owner of an existing file or folder.
+#+When <path> exists and without -a (append) or -t (truncate) the function does
+# nothing and returns **true**. The mode and owner of an existing folder will never
+# be changed, and for an existing file these will not be modified unless the -t
+# option is used. See [[attributes()]] on how to change modes or owner of an
+# existing file or folder.
 #
 #.Examples: create -d /etc/hello 750        # create folder with mode 0750
 #.          create "myfile" 644 root:staff  # create file if non-existent
@@ -1170,9 +1184,9 @@ create() {
       -h)   shift ; _fhdr="$1" ; _fcpy=1
             [ "${_fhdr:--}" = '-' ] && _fhdr="$CEN_NAME" ;;
       -o)   _fout='-' ;;
-      -q)   _oftl=":" ;;
-      -r)   _frun="-r" ;;
-      -s)   _otra=":" ;;
+      -q)   _oftl=':' ;;
+      -r)   _frun='-r' ;;
+      -s)   _otra=':' ;;
       -t)   _ftru=1 ;;
       -v)   shift ; _fvar="$1" ;;
       -w)   _oftl='warning' ;;
@@ -1205,7 +1219,7 @@ create() {
         elif [ "$#" = 1 ] && [ -f "$_fout" -a -w "$_fout" ] ; then
             >"$_fout" || _stat=$?                   # really truncate
         elif [ -e "$1" ] ; then
-            system $_frun -b -e -p -- rm -f -- "$_fout"
+            system $_frun -b -e -p -- rm -f -- "$_fout" || _stat=1
         fi
         _cen_umask -s "$2"                          # set umask for <mode>
 
@@ -1455,9 +1469,7 @@ embed() {
     fi
     [ "$_sexi" = 0 ] && return 0
     [ -n "$_terr" ] && return $_sexi
-    if [ "$_sexi" = 3 -o  "$_sexi" = 4 ] ; then
-        CEN_EXIT="$_sexi" ; quit
-    fi
+    [ "$_sexi" = 3 -o "$_sexi" = 4 ] && quit -s "$_sexi"
     [ "$CEN_DONE" = 1 ] && CEN_DONE=2
     [ "$CEN_EXIT" -le 1 ] && CEN_EXIT=2
     return $_sexi
@@ -1625,7 +1637,7 @@ folder() {
                 *)      _cen_abort - "$1"
             esac ;;
       -v)   local _name="${LOGNAME:-$USER}"
-            [ "$EUID" = 0 ] && _name="root" ; _name="${_name:-uid-$EUID}"
+            [ "$EUID" = 0 ] && _name='root' ; _name="${_name:-uid-$EUID}"
             _tdir="${CEN_PATHS[3]}/tmp"                 # use /var/tmp
             [ -d "$_tdir" ] || _tdir="${CEN_PATHS[4]}"  # fallback to /tmp
             _tdir+="/$CEN_NAME-$_name" ;;
@@ -1650,7 +1662,7 @@ folder() {
     [ -z "$_ogen" ] && while [ ! -d "$_vval" ] ; do
         if [ -n "$_omak" ] ; then
             create -d $_oopt $_rdry -- "$_vval" "$2" "$3" && break
-        elif [ -n "$_tdir" -a "$_ocwd" = ":" ] ; then
+        elif [ -n "$_tdir" -a "$_ocwd" = ':' ] ; then
             return 1                            # do not clear _vval!
         else
             $_oftl $"Not a folder:" "$_vval"
@@ -1664,7 +1676,7 @@ folder() {
         _vval="${_vval//\/\//\/}" ; _vval="${_vval//\/.\//\/}"
         [ "$_vval" -ef "$PWD" ] && _vval="$PWD"
     fi
-    [ "$_ocwd" = ":" ] && return 0
+    [ "$_ocwd" = ':' ] && return 0
     if ! $_ocwd "$_vval" >/dev/null 2>&1 ; then
         $_oftl $"Cannot use folder:" "$_vval"
         _vval= ; return 1
@@ -1833,12 +1845,12 @@ isfunction() {
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -a)   _msg_="_cen_abort" ;;
+      -a)   _msg_='_cen_abort' ;;
       -c)   _run_=1 ;;
-      -e)   _msg_="error -z" ;;
-      -f)   _msg_="fatal" ;;
+      -e)   _msg_='error -z' ;;
+      -f)   _msg_='fatal' ;;
       -t)   _msg_="$CEN_TRACE" ;;
-      -w)   _msg_="warning" ;;
+      -w)   _msg_='warning' ;;
       -x)   _exe_=1 ;;
       -y)   _dmy_=0 ;;
       -z)   _dmy_=1 ;;
@@ -1852,7 +1864,7 @@ isfunction() {
     elif [ "${_nam_/\//}" != "$_nam_" ] ; then      # function names have no /
        _sta_=1
     else                                            # function only (drop PATH)
-        PATH= type -t -- "$_nam_" || _sta_=1
+        PATH=' ' type -t -- "$_nam_" || _sta_=1
     fi >/dev/null
     if [ $_sta_ != 0 ] ; then                       # function not found...
         $_msg_ $"Undefined function:" "$_nam_"
@@ -1937,7 +1949,7 @@ isfunction() {
 #           CEN_ACTARR    [in] next argument, can be a value
 #           CEN_CMDOPTS   [out] array of processed options
 #
-#+The functions check an ''option'' (usually passed via command line to [[main()]])
+#+The function checks an ''option'' (usually passed via command line to [[main()]])
 # and sets the given <varname>. If the ''option'' has a value, the value gets
 # validated.  When using <varname>**[]** the ''option'' value is added to an array.
 #
@@ -2064,7 +2076,7 @@ optarg() {
 #           <del>     delimiter string, used to set IFS
 #           <var>     string variable to receive join result
 #           <inp>     input array (<arg>... will be ignored)
-#           <exec>    function or command, not checks made
+#           <exec>    function or command, no checks made
 #
 #           It is explicitly allowed for <inp> and <arr> to be the same array.
 #
@@ -2165,7 +2177,7 @@ splitjoin() {
             for _spl_ in "${_buf_[@]}" ; do $_exe_ "$_spl_" || break ; done
         elif [ "$_nam_" = '-' -a "${#_buf_[*]}" != 0 ] ; then
             IFS=$'\n' ; [ -z "$_lin_" ] && IFS=' '
-            printf "%s\n" "${_buf_[*]}" ; IFS="$_ifs_"
+            printf '%s\n' "${_buf_[*]}" ; IFS="$_ifs_"
         fi
     fi || :
 }
@@ -2279,7 +2291,7 @@ sysfind() {
                     if BASH_LOADABLES_PATH= enable -a "$_snam" &>/dev/null ; then
                         _scmd="$_snam"
                     # if it's a shell function then try dynamic load
-                    elif PATH= type -t -- "$_snam" >/dev/null ; then
+                    elif PATH=' ' type -t -- "$_snam" >/dev/null ; then
                         [ -n "$CEN_FEATURE_A" ] &&
                             _cen_dyn_builtin "$_snam" >/dev/null && _scmd="$_snam"
                     fi
@@ -2436,8 +2448,8 @@ system() {
       -b)   _bflg='-b' ;;
       -c)   _cpro=1 ;;
       -d)   shift ; [ "$1" = '--' ] && _vdel=(-n) || _vdel=('-d' "$1") ;;
-      -e)   _ferr="-e" ; _ecmd=error ;;
-      -f)   _ferr="-f" ; _ecmd=fatal ;;
+      -e)   _ferr='-e' ; _ecmd=error ;;
+      -f)   _ferr='-f' ; _ecmd=fatal ;;
       -g)   shift ; _good="$1" ;;
       -i)   _mind="-i" ;;
       -m)   _nout=3 ;;
@@ -2537,12 +2549,11 @@ system() {
     elif [ -n "$_ferr" ] ; then
         $_ecmd -p -- $"Running '%s' failed (status %s)" "$_earg" "$_stat"
     fi
-   ### [ -n "$_ferr" ] && CEN_AUTOIND=
     $CEN_NOTRACE set -x ; return $_stat
 }
 
 # ------------------------------------------------------------------------------
-# Return free file handle(s) in range 10..99: <vnam>...
+# Return free file handle(s) in range 10..99: <vnam>
 # ------------------------------------------------------------------------------
 _cen_handle() {
     local _ihan=9
@@ -2668,7 +2679,7 @@ main() {
             _isok="$CEN_FEATURE_S" ; optarg 'silent' - ;;
         -v|--verb*)
             context -v + || :
-            optarg "verbose" CEN_VERB -f "$CEN_VERB" ;;
+            optarg 'verbose' CEN_VERB -f "$CEN_VERB" ;;
         -n|--no)
             _isok="$CEN_FEATURE_Y" ; [ -n "$_isok" ] && optarg 'no'  CEN_YESNO -f 'n' ;;
         -y|--yes)
@@ -2686,6 +2697,8 @@ main() {
             [ "$CEN_EMBED" = "$CEN_NAME" ] && CEN_EMBED= ;;
         --info)
             _oinf=1 ; CEN_FEATURE_D=1 ; CEN_FEATURE_Y=1 ;;
+        --mini*)
+            [ -z "$CEN_FEATURE_N" ] && _isok= ;; #|| optarg 'mini' CEN_FEATURE_N -t ;;
         --pager)
             optarg 'pager' - -t ;;
         --trace)
@@ -2745,7 +2758,7 @@ main() {
                 fi
                 _rarg+=("$_curr")
             done
-            invoke "run" run "$CEN_RUN_MIN_ARGS" "$CEN_RUN_MAX_ARGS" "${_rarg[@]}"
+            invoke 'run' run "$CEN_RUN_MIN_ARGS" "$CEN_RUN_MAX_ARGS" "${_rarg[@]}"
             return 0
         fi
         CEN_STAGE='actions'

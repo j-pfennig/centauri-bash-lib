@@ -70,6 +70,7 @@ CEN_IOM_OPT_W=
 CEN_SERIALIZE=          # set by serialize()
 
 embed -c '_centauri_bash_ext'           # import on demand
+embed -c '_centauri_bash_cfm'           # ... confirm()
 
 # ------------------------------------------------------------------------------
 # get library cache dir: [-r|-w] <vnam>

@@ -36,6 +36,7 @@
 CEN_MODULES['_centauri_bash_ins']='0.13:4'
 
 embed -c '_centauri_bash_ext'               # dependency
+embed -c '_centauri_bash_cfm'               # ... confirm()
 
 CEN_INS_SYSTEMD=                            # flags that systemd is supported
 CEN_INS_SYSVOK=                             # flags that sysv is supported

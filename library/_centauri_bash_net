@@ -601,7 +601,7 @@ netiface() {
     esac
 
     [ "$_mapm" = 'k' ] && _rslt="$_path$_cen_netiface_kern" || _rslt="$_path$_cen_netiface_name"
-    [ -z "$_vnam" ] && _netiface="$_rslt" || printf -v "$_vnam" "%s" "$_rslt"
+    [ -z "$_vnam" ] && _netiface="$_rslt" || printf -v "$_vnam" '%s' "$_rslt"
     [ -z "$_exst" ] && return 0
     [ -n "$_cen_netiface_kern" ] && [ -e "/sys/class/net/$_cen_netiface_kern" ] && return 0
     $_oerr $"No such interface:" "$_cen_netiface_name ($_cen_netiface_kern)"
@@ -627,11 +627,11 @@ _cen_net_maptest() {
         _name="$1" ; shift
         [ -e "$_name" ] || continue
         case "${_name##*/}" in
-        en?p?)  ((_vote += 1)) ;;
-        wl?p?)  ((_vote += 1)) ;;
-        end?)   ((_vote += 1)) ;;
-        eth?)   ((_vote -= 1)) ;;
-        wlan?)  ((_vote -= 1)) ;;
+        en*[su]*)   ((_vote += 1)) ;;
+        wl*[su]*)   ((_vote += 1)) ;;
+        end?)       ((_vote += 1)) ;;
+        eth?)       ((_vote -= 1)) ;;
+        wlan?)      ((_vote -= 1)) ;;
         esac
     done
     $CEN_TRACE2 -a -c "interface votes" "$_vote"
@@ -660,20 +660,14 @@ _cen_net_mapinit()  {
         local _item _more=()
         for _item in /sys/class/net/en* ; do
             case "${_item##*/}" in
-            *u?)    [ -e "$_item" ] && _cen_net_mapiadd 'usb' "${_item##*/}" ;;
-            end?)   [ -e "$_item" ] && _cen_net_mapiadd 'eth' "${_item##*/}" ;;
+            en*u*)  [ -e "$_item" ] && _cen_net_mapiadd 'usb' "${_item##*/}" ;;
+            end*)   [ -e "$_item" ] && _cen_net_mapiadd 'eth' "${_item##*/}" ;;
             *)      [ -e "$_item" ] && _more+=("$_item")
             esac
         done
         for _item in "${_more[@]}" ; do
             case "${_item##*/}" in
-            enp?s?) _cen_net_mapiadd 'eth' "${_item##*/}"
-            esac
-        done
-        for _item in "${_more[@]}" ; do
-            case "${_item##*/}" in
-            enp?s?) ;;
-            *)      _cen_net_mapiadd 'eth' "${_item##*/}"
+            en*s*) _cen_net_mapiadd 'eth' "${_item##*/}"
             esac
         done
         for _item in /sys/class/net/wlp* /sys/class/net/wl[!p]* ; do
@@ -737,7 +731,7 @@ _cen_net_mapping() {
         case "$_mapn" in
         wlan*)  _cen_net_mapsysd "$_mapn" /sys/class/net/wlp* /sys/class/net/wl[!p]* ;;
         usb*)   _cen_net_mapsysd "$_mapn" /sys/class/net/enp*u? ;;
-        *)      _cen_net_mapsysd "$_mapn" /sys/class/net/enp* /sys/class/net/en[!p]* ;;
+        *)      _cen_net_mapsysd "$_mapn" /sys/class/net/enp*[!u]? /sys/class/net/en[!p]* ;;
         esac
         _cen_net_mapsysd "$_mapn"
     fi
@@ -2085,21 +2079,21 @@ CEN_NET_MASTER='$CEN_NET_MASTER'
 #.          nettool -d wlan0 -w -t iw dev wlan0 set 4addr on
 # ------------------------------------------------------------------------------
 nettool() {
-    local _ifce _fipv _ferr='-e -p' _oerr=error _orun _labl _tool _carr _cmnd _mode _temp _what _stat
+    local _ifce _fipv _ferr='-e -p' _oerr='error' _orun _labl _tool _carr _cmnd _mode _temp _what _stat
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)     shift ; break ;;
         -4|-6)  _fipv="$1" ;;
-        -a)     _tool=ip ; _what='address' ;;
+        -a)     _tool='ip' ; _what='address' ;;
         -c)     _carr=1 ;;
         -d)     shift ; _ifce="$1" ;;
-        -f)     _ferr='-f -p' ; _oerr=fatal ;;
+        -f)     _ferr='-f -p' ; _oerr='fatal' ;;
         -i)     shift ; _tool='ip' ; _what="$1" ;;
         -o)     _tool='ip' ; _what='route' ;;
         -q)     _ferr='-q' ; _oerr=: ;;
         -r)     _orun='-r' ;;
         -t)     shift ; _tool="$1" ;;
-        -w)     _ferr='-w -p' ; _oerr=warning ;;
+        -w)     _ferr='-w -p' ; _oerr='warning' ;;
         *)      _cen_abort - "$1"
         esac ; shift
     done
@@ -2177,7 +2171,7 @@ nettool() {
                 [ "$_cmnd" = 'isu' ] && return 1
                 [ "$_cmnd" = 'dow' ] && return 0
                 [ "$_cmnd" = 'exi' ] && return 0
-                if sysrun -q ifquery "/dev/$_ifce" ; then       # managed by ifup ...
+                if sysrun -q ifquery "$_ifce" ; then            # managed by ifup ...
                     _tool='ifup' ; set -- '--force' "$_ifce"
                 else
                     _tool='ip' ; set -- link set up "$_ifce"

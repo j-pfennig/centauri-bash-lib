@@ -4,13 +4,21 @@ CEN_TITLE="Template for a minimal script using mini-bash-lib"
 
 # ------------------------------------------------------------------------------
 # This tool can be run without centauri-bash-lib being installed. If so it uses
-# a couple simplified library equivalents that are created below ...
+# a couple of simplified library equivalents that are created below ...
 # ------------------------------------------------------------------------------
 
 # CEN_NAME=.        # uncomment this to disable autoload of _centauri_bash_lib
 
-[ "${CEN_NAME:--}" = '-' ] && [ -x '/usr/local/bin/_centauri_bash_lib' ] &&
-    . /usr/local/bin/_centauri_bash_lib -a -d -f - '0.01:4' 0
+if [ "${CEN_NAME:--}" = '-' ] && [ -x '/usr/local/bin/_centauri_bash_lib' ] ; then
+    local _cen_arg
+    for _cen_arg in "$@" ; do       # option '--mini' disables _centauri_bash_lib
+        case "$1" in
+        --)      break ;;
+        --mini*) __cen_arg='--mini' ; break ;;
+        esac ; shift
+    done
+    [ "$_cen_arg" != '--mini' ] && . /usr/local/bin/_centauri_bash_lib -a -d -f - '0.01:4' 0
+fi
 
 # ------------------------------------------------------------------------------
 # Script supporting mini-bash-lib
@@ -44,59 +52,202 @@ usage() {
 
 if $MINIMAL ; then #############################################################
 else ###########################################################################
+# The following text is formatted for: centaurihelp -U <file>
 # ------------------------------------------------------------------------------
-# The mini-bash-lib contains these functions and options ...
+# mini bash lib + A very minimal sub-set of centauri-bash-library
+#
+# Purpose: The mini-bash-lib has practical and educational use. Please always remember:
+#
+#, - it implements only something around 1% of _centauri_bash_lib
+#, - it can be used simplify scripting and to support debugging
+#, - it demonstrates some of the main design goals of _centauri_bash_lib:
+#,     °    application framework: here only some option parsing, run() and usage()
+#,     °    debug support: options -t|--trace and -d|--dryrun, trace()
+#, - error handling: [[error()]], fatal(), quit(), system() to run commands
+#, - simplify programming: folder(), splitjoin(), symlink(), confirm()
+#, - reasonable console output: message(), warning(), trace()
+#
+# Content: The following functions and options are implemented:
+#
+#       confirm     [-a|-i] [-n|-y] [-p <what>] [--] <text>...
+#       copy        [-f|-q] [-r] [-a] [-u] [--] <arg>...
+#       create      [-r] [-t] [-c] [-v <vnam>] [--] <path>|-
+#       dryrun      [-r]
+#       embed       [-a|-s <vnam>] [-r] [--] <tool> <arg>...
+#       error       [-a|-i] [-m|-p] [-q|-t] [--] <text>...
+#       fatal       [-a|-i] [-m|-p] [--] <text>...
+#       folder      [-c] [-m] [-p] [-f|-q] [--] <path>
+#       main        [<opt>...] [---] [<arg>...]
+#       message     [-a|-i] [-m|-p] [--] <text>...          # also: -e|-f|-w -q|-t
+#       optarg      <name> <vnam>|- [-t|-f] [<valu>]
+#       rename      [-f|-q] [-r] [--] <arg>...
+#       remove      [-f|-q] [-r] [-d] [-o] [--] <arg>...
+#       splitjoin   -j|-s <vnam>
+#       symlink     [-f|-q] [-r] [-n] [-r] [--] <arg>...
+#       system      [-a|-s <vnam>] [-c] [-e|-f|-q|-t|-w] [-p] [-r] [-z] [--] <tool> <arg>...
+#       tmpfile     [-r] [-s <vnam>]
+#       trace       [-a|-i] [-m|-p] [--] <text>...
+#       warning     [-a|-i] [-m|-p] [--] <text>...
+#       quit        [-a|-i] [-e|-t|-u] [-m|-p] [-s <code>] [--] <text>...
+#
+#+General:  The order of options is not relevant, '--' terminates the option
+#           list (if not used and the next argument starts with a '-' that
+#           argument is parsed as an option).
+#
+#   error -t        # status test
+#   error -q        # test and call quit -e
+#
+#   quit -e         # 'terminated after error'
+#   quit -t         # 'terminated'
+#
+#
 # ------------------------------------------------------------------------------
-#   The mini-bash-lib has practical and educational use. Please always remember:
+
+# coexistence + Using mini-bash-lib script with centauri-bash-library installed
 #
-#   -   it implements only something around 1% of _centauri_bash_lib
-#   -   it can be used simplify scripting and to support debugging
-#   -   it demonstrates some of the main desing goals of _centauri_bash_lib:
-#           application framework: here only some option parsing, run() and usage()
-#           debug support: options -t|--trace and -d|--dryrun, trace()
-#   -   error handling: error(), fatal(), quit(), system() to run commands
-#   -   simplify programming: folder(), splitjoin(), symlink(), confirm()
-#   -   reasonable console output: message(), warning(), trace()
-#
-#   These functions are implemented:
-#       confirm     -a -i -n -y
-#       dryrun      # no options
-#       embed       # all options ignored
-#       error       -a -t -q
-#       fatal       # all options ignored
-#       folder      -c -m -q
-#       message     -a -i
-#       splitjoin   (-j -|-j <vnam>|-s -|-s <varr>)
-#       symlink     -n
-#       system      -q -r -e -p     # -e|-p are ignored
-#       trace       # all options ignored
-#       warning     # all options ignored
-#       quit        -e -s
-#
+#   Option: --mini      never load _centauri-bash-lib
+
+# template + Generating mini-bash-lib scripts with centauricreate
+
+# run + The run function
+
+# usage + Providing help
+
 # ------------------------------------------------------------------------------
 # confirm - prompt for console input
-# ------------------------------------------------------------------------------
-# Call:     confirm [-a|-i] [-n|-y] [--] <text>...
 #
-# Options:  -a
-#           -i
-#           -n
-#           -y
+# Call:     [-a|-i] [-n|-y|-p <what>] [-d <dflt>] [-s <vnam>] [-u] [--] <text>...
 #
-# Arguments:<text>
+# Options:  -a  indent automatically
+#           -i  always indent
+#           -n  yes/No prompt, short for: -p ' [y/N]? ' -d 'no'
+#           -p  appended to prompt text if not '-'
+#           -s  save reply to <vnam> variable
+#           -u  allow upper case characters in reply
+#           -y  Yes/no prompt, short for: -p ' [n/Y]? ' -d 'yes'
+#
+# Arguments:<dflt>
+#           <text>
+#           <what>  -       ask for free text input
+#                   +       asl for a password (no echo)
+#                   .       append ' [<dflt>]: ' to prompt text
+#                   <text>  append ' <dflt> ' to prompt text
 #
 # Return:   ...
 #
-# ------------------------------------------------------------------------------
-# dryrun - test for option --dry, generate trace message
-# ------------------------------------------------------------------------------
-# Call:     dryrun <opti>...  [--] <text>...
+#+Remarks:  The options --yes/--no passed to main cause prompts to be not shown
+#           and with the following result:
 #
-# Options:  [none]
+#           --no    confirm always returns false
+#           --yes   accept the default answer (as if <return> were hit)
 #
-# Arguments:<opti>      all options not listed in 'Options:' are ignored
-#           <text>
+# Examples: confirm -p '.' -d 'good' 'How do you feel today'
+#
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# copy - conveniency wrapper for corutils 'cp'
+#
+# Call:     copy [-f|-q] [-r] [-a] [-u] [--] <arg>...
+#
+# Options:  -a  run 'cp -a' (archive)
+#           -f  make errors fatal
+#           -q  do not report errors
+#           -r  ignore --dryrun
+#           -u  run 'cp -u' (update)
+#
+#           options not listed above are ignored
+#
+# Arguments:<arg>   all arguments are literally passed to 'cp'
+#
+# Return:   The status of 'cp' or **false** with --dryrun
+#
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# dryrun - test for option --dryrun, generate trace message
+#
+# Call:     dryrun [-r] [--] <text>...
+#
+# Options:  -r  ignore --dryrun (return **false**)
+#
+#           options not listed above are ignored
+#
+# Arguments:<text>  text for --dryrun [[trace()]] message
+#
+# Return:   **true** for --dryrun, **false** otherwise
+#
+#.Examples: dryrun "skip some steps" && return
+#
+#.          if ! dryrun "Create file list:" "$PWD" ; then
+#.              ls -1 > "$tmpfile"
+#.          fi
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# embed - run another script like a sub-routine
+#
+# Call:     embed [-a|-s <vnam>] [-r] [--] <tool> <arg>...
+#
+# Options:  -a  return output as array of lines in <vnam>
+#           -r  ignore --dryrun
+#           -s  return output as a single line in <vnam>
+#
+# Arguments:<tool>  a mini-bash-lib or centauri-bash-lib script to be run
+#           <arg>   options or arguments passed to the script
+#
+# The current script name is passed to <tool> as --embed=$CEN_NAME.
+#
+#+Return:   The return code of <tool> unless 3 (abort). In the later case
+#           embed() does call "quit°-s°3".
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# error - output an error message
+#
+# Call:     error [-a|-i] [-m|-p] [-q|-t] [--] <text>...
+#
+# Options:  -a  auto-indent (e.g. do not repeat to script name)
+#           -i  always indent
+#           -m  multi-line output (one line per <text> argument)
+#           -p  printf formatting (1st <text> arg. is format)
+#           -q  call [[quit -q]] if a previous error has occurred
+#           -t
+#
+# Arguments:...
+#
+# Return:   ...
+#
+#.Examples: system    cmd1
+#.          system -t cmd2
+#.          error -q "A previous command has failed"
+#
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# fatal - output a fatal error message and quit
+#
+# Call:     fatal [-a|-i] [-m|-p] [--] <text>...
+#
+# Options:  ...
+#
+# Arguments:...
+#
+# Return:   ...
+# ------------------------------------------------------------------------------
+#       error       [-a|-i] [-m|-p] [-q|-t] [--] <text>...
+#       fatal       [-a|-i] [-m|-p] [--] <text>...
+#       folder      [-c] [-m] [-p] [-f|-q] [--] <path>
+#       main        [<opt>...] [---] [<arg>...]
+#       message     [-a|-i] [-m|-p] [--] <text>...          # also: -e|-f|-w -q|-t
+#       optarg      <name> <vnam>|- [-t|-f] [<valu>]
+#       rename      [-f|-q] [-r] [--] <arg>...
+#       remove      [-f|-q] [-r] [-d] [-o] [--] <arg>...
+#       splitjoin   -j|-s <vnam>
+#       symlink     [-f|-q] [-r] [-n] [-r] [--] <arg>...
+#       system      [-a|-s <vnam>] [-c] [-e|-f|-q|-w] [-p] [-r] [-z] [--] <tool> <arg>...
+#           todo: -t
+#
+#       tmpfile     [-r] [-s <vnam>]
+#       trace       [-a|-i] [-m|-p] [--] <text>...
+#       warning     [-a|-i] [-m|-p] [--] <text>...
+#       quit        [-a|-i] [-e] [-m|-p] [-s <code>] [-t] [--] <text>...
+
 fi #############################################################################
 
 if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
@@ -127,6 +278,7 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
 
     dryrun() {
         [ -z "$CEN_OPT_DRYRUN" ] && return 1
+        while [ "${1::1}" = '-' ] ; do shift ; done
         trace "dryrun:" "$@" ; return 0
     }
 
@@ -277,6 +429,7 @@ if [ -z "$CEN_HOOK_MESSAGE" ] ; then                # have no centauri-bash-lib
         -v|--ver*)   CEN_VERB=2 ;;
         --info)      printf "mini-bash-lib; '%s; %s'\n" "$CEN_MINI_VERSION" "$CEN_LEGAL" >&2
                      quit ;;
+        --mini*)     ;;
         *)  break
         esac ; shift
     done
