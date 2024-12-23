@@ -1188,7 +1188,7 @@ serialize() {
             _sout+="$_item" ; _sout+=$'\n'
         done
 
-        dryrun "serialize: $_ffil" && return
+        dryrun -s "serialize: $_ffil" && return
         create $_fqui -v _sout -h - -s -t -- "$_ffil" $_mode || return 1
         $_otra -c $" write" -- "$_ffil"
 
