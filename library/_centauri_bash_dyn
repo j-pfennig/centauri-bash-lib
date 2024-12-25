@@ -273,6 +273,7 @@ sysconfig() { _cen_dyn_load sys "$@" ; }
 
 trash() { _cen_dyn_load tra "$@" ; }
 
+regexp() { _cen_dyn_load txt "$@" ; }
 txtsort() { _cen_dyn_load txt "$@" ; }
 extsort() { _cen_dyn_load txt "$@" ; }
 txtgrep() { _cen_dyn_load txt "$@" ; }

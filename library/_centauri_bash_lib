@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2024
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.35:4:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.40:4:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -786,11 +786,11 @@ apicheck() {
     # check versions
     if [ "${_varr[1]}" \> "${CEN_VERSION[2]}" ] ; then
         local _swho=$"Script" ; [ -n "$_fmod" ] && _swho=$"Module"
-        $_fchk -p $"%s '%s' API version to high (got %s max %s)" \
+        $_fchk -p $"%s '%s' API version to high (wants %s, max %s)" \
                   "$_swho" "$_scal" "${_varr[1]}" "${CEN_VERSION[2]}" ; return 1
     elif [ "${_varr[1]}" \< "${CEN_VERSION[3]}" ] ; then
         local _swho=$"Script" ; [ -n "$_fmod" ] && _swho=$"Module"
-        $_fchk -p $"%s '%s' API version to low (got %s min %s)" \
+        $_fchk -p $"%s '%s' API version to low (wants %s, min %s)" \
                   "$_swho" "$_scal" "${_varr[1]}" "${CEN_VERSION[3]}" ; return 1
     fi
     return 0
