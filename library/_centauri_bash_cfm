@@ -10,7 +10,8 @@
 CEN_MODULES['_centauri_bash_cfm']='0.01:4'
 
 CEN_CONFIRM=            # result of confirm()
-CEN_HISTORY=            # use history/readline in confirm
+
+# CEN_HISTORY=          # use history/readline in confirm
 
 # ------------------------------------------------------------------------------
 # confirm - ask for confirmation, get text input
