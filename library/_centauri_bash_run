@@ -775,8 +775,9 @@ shortpath() {
     # read configuration file on 1st call
     if [ -z "$CEN_SHORTPATH_DAT" ] ; then
         [ -z "$CEN_SYS_NICKNAME" ] && sysversion            # get CEN_SYS_xxx vars
-        embed -m _centauri_bash_net -n ; netconfig
-        _cen_run_config $_oerr 'shortpath' || return 1
+        embed -m _centauri_bash_net -n ; netconfig          # set net conf vars
+        _cen_run_config $_oerr 'shortpath' ||
+            warning $"Failed to load 'shortpath' configuration"
         local _line _sifs="$IFS" _atmp
         for _line in "${CEN_RUN_SHORTPATH[@]}" ; do
             #$CEN_TRACE2 -a -c " parse" -- "$_line"
@@ -795,7 +796,7 @@ shortpath() {
             CEN_SHORTPATH_DAT+=("$_sval")
         done
         unset CEN_RUN_SHORTPATH                             # drop config data
-        [ -z "${#CEN_SHORTPATH_DAT[@]}" ] && CEN_SHORTPATH_DAT=(-)
+        [ "${#CEN_SHORTPATH_DAT[@]}" = 0 ] && CEN_SHORTPATH_DAT=(-)
     fi
 
     # error handling
@@ -1356,12 +1357,13 @@ _cen_run_config() {
                 configfile $_fqui $_fpri -r CEN_RUN_TERMINAL  -v -x -n "$CEN_CONFIGFILE" 'terminal'
                 configfile $_fqui $_fpri -r CEN_RUN_SHORTPATH -v -x -n "$CEN_CONFIGFILE" 'shortpath'
                 CEN_RUN_CONFIG="$CEN_CONFIGFILE"
-                serialize $_ferr -w -n "$CEN_CACHEFILE" -m 664 -- CEN_RUN_CONFIG \
-                        CEN_RUN_LAUNCHER CEN_RUN_TERMINAL CEN_RUN_SHORTPATH
             else
-                $CEN_TRACE -c " no data" $"Not writing config cache"
-                _stat=2
+                CEN_RUN_LAUNCHER=(); CEN_RUN_TERMINAL=(); CEN_RUN_SHORTPATH=()
+                CEN_RUN_CONFIG='-'
+                warning "Missing configuration file:" "$_path"
             fi
+            serialize $_ferr -w -n "$CEN_CACHEFILE" -m 664 -- CEN_RUN_CONFIG \
+                      CEN_RUN_LAUNCHER CEN_RUN_TERMINAL CEN_RUN_SHORTPATH || _stat=2
         fi
     fi
     return $_stat

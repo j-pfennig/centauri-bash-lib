@@ -595,6 +595,11 @@ if  [ "$EUID" = 0 ] ; then
 fi
 sysversion -u                                   # get/update version info by default
 
+# TODO $CEN_DEBUG in _run
+# TODO symlink /etc/default
+# TODO need dummy shortpath
+# TODO copy tools/library to $CEN_ROOT even before rsync
+
 :
 
 # end

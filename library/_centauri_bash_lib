@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2025
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.50:5:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.51:5:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -211,7 +211,7 @@ fi
 #
 # Arguments:<cls>   internal use: -e|-f|-s|-t|-w. Do not use in own script code
 #           <fmt>   a printf format string
-#           <prf>   prefix text (function-name printed if 1st char is space)
+#           <pre>   prefix text (function-name printed if 1st char is space)
 #           <arg>   data to be output
 #
 # Return:   **error** returns the value of CEN_EXIT,
@@ -1537,8 +1537,8 @@ filter() {
 # folder - assert/create valid folder, change directory, get special path
 #
 # Call:     folder [-c|-p] [-f|-q|-w] [-n] [-r] [-s <vnam>] ... # ... options
-#           folder ... [-l|-t|-v] <path>                        # check/cd
-#           folder ... [-l|-t|-v] -m <path> [<mode> [<owner>]]  # create folder
+#           folder ... [-t|-u|-v] <path>                        # check/cd
+#           folder ... [-t|-u|-v] -m <path> [<mode> [<owner>]]  # create folder
 #           folder ... [-b|-u] <name> [<path> <mode> [<owner>]] # special folder
 #
 # Options:  -b  [*] special ''folder'' (<path> is prefixed with $CEN_ROOT)

@@ -744,7 +744,11 @@ _cen_net_maprule() {
     CEN_NET_IFMAP=() ; set -f
     for _item in "${CEN_NET_IFACES[@]}" ; do
         set -- $_item
-        [[ "$HOSTNAME" == $2 ]] || continue
+        case "$2" in
+            $HOSTNAME)  ;;
+            *[?*\[]*)   [[ "$HOSTNAME" == $2 ]] || continue ;;
+            *)          continue
+        esac
         [ "$3" = '-' ] && break                 # stop rule
         if [ "${3/:/}" != "$3" ] ; then         # mac rule
             warning -c $"not implemented" -- "iface $_item"
