@@ -121,7 +121,7 @@ _cen_iom_error() {
 #           <ext>   an extension
 #           <file>  a file path
 #           <hndl>  a file handle used for input
-#           <func>  function called to each line read
+#           <func>  function called for each line read
 #
 #+Form (1) reads the given file, form (2) can prompt for a file, see [[inpfile()]].
 # Form (3) reads from a file handle, see [[redirect()]].

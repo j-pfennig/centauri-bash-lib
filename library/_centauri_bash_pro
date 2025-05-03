@@ -212,7 +212,7 @@ progress() {
         [ "$CEN_PROGRESS" = 0 ] && _mini=0
         _cen_pro_work "$_work" "$_fdel" "${_step%:*}" "$_mini" "$_prog" "$_text" || _stat=$?
     elif [ "$CEN_PROGRESS" != 0 ] ; then
-        if [ -n "$CEN_WINDOWS" ] ; then         # foreward to _centauri_bash_win
+        if [ -n "$CEN_WINDOWS" ] ; then         # forward to _centauri_bash_win
             _cen_win_prog "$_prog" "$_fdel" "$_fend" "$_flin" "$_step" "$_ftxt" "$@" || _stat=$?
         else
             _cen_con_prog "$_prog" "$_fend" "$_flin" "$_find" "$_step" "$_ftxt" "$@" || _stat=$?

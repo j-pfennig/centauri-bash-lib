@@ -342,7 +342,7 @@ CEN_TERMINAL_DAT=
 #           <lsel>  0:all  1:session  2:paths  3:valids generic names
 #           <mode>  0:just run   1:exec   2:background   3:disown
 #           <rslt>  variable name, receives returned data as array
-#           <desk>  "tty", "kde", "lxqt", ... (see $XDG_SESSION_DESKTOP)
+#           <desk>  "tty", "kde", "lxqt", ... (see $XDG_CURRENT_DESKTOP)
 #           <titl>  window title text
 #           <what>  generic name for a command like "browser" or "editor"
 #
@@ -616,7 +616,7 @@ _cen_run_tools() {
 
         _want="${_pard[-wants:$_name]}"                     # installation requirement...
         if [ -n "$_want" ] ; then
-            for _want in $_want "" ; do
+            for _want in $_want '' ; do
                 [ -e "$_want" ] && break
             done
             $CEN_TRACE2 -c -p ' WANTS' '%-18s => %s' "$_nice" "${_want:--miss-}"
@@ -806,7 +806,7 @@ shortpath() {
 
     # handling of missing entries
     case "$_ndir" in
-        "")     _ndef='E' ;;
+        '')     _ndef='E' ;;
         dash)   _ndef='-' ;;
         empty)  ;;
         ignore) _ndef='I' ;;
@@ -1149,7 +1149,7 @@ terminal() {
     fi
 
     if [ -z "$CEN_DISPLAY" ] ; then
-        $CEN_TRACE $"No desktop running, see $DISPLAY or $XDG_SESSION_DESKTOP"
+        $CEN_TRACE $"No desktop running, see $DISPLAY or $XDG_CURRENT_DESKTOP"
         CEN_IS_DESKTOP=0
     fi
 

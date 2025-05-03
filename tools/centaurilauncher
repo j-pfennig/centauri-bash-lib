@@ -737,14 +737,11 @@ port_check() {
         elif isfunction -c netserver ; then
             host="$CEN_NET_SERVER"
         # try resolv.conf instead
-        elif [ -r "${CEN_PATHS[2]}/resolv.conf" ] ; then
-            while read rkey rval ; do
-                [ "$rkey" = 'nameserver' ] || continue
-                host="$rval" ; break
-            done <"${CEN_PATHS[2]}/resolv.conf"
+        elif netresolv -r 'nameserver' ; then
+            host="$_netresolv" ; break
         fi
         DAT_HOST="$host"
-        [ "$host" = '-' ] && return 1
+        [ "${host:--}" = '-' ] && return 1
     fi
     dryrun ">/dev/tcp/$host/$2" && return 0
     echo 2>/dev/null >"/dev/tcp/$host/$2"           # return status
@@ -785,12 +782,11 @@ quit_hook() {
 terminal_mode() {
     [ -z "$CEN_OPT_TERMINAL" ] && return
     case "$1" in
-    -b) context -g 1                        # window mode
-        DAT_GEOM=('+' '+')                  # full-screen
-        embed -v -z centauripower --force dpms on
+    -b) DAT_GEOM=('+' '+')                  # full-screen
+        embed -v -z centauripower --force dpms off
         ;;
     -e)
-        embed -v -z centauripower --force dpms off
+        embed -v -z centauripower --force dpms on
         ;;
     esac
 }
@@ -804,6 +800,7 @@ actionList() {
         error $"allowed 'list' modes are:" 'all session executable' || return
     fi
 
+    [ -n "$CEN_OPT_DESKTOP" ] && CEN_DESKTOP="$CEN_OPT_DESKTOP"
     [ "$indx" -lt 3 ] && help= || indx=2
     launcher -l "$indx" || return 1
 
@@ -848,6 +845,7 @@ options() {
     -P|--por|--port)
         optarg 'port'       -      -n ;;        # number argument
     -T|--ter*)
+        CEN_OPT_GUI=1
         optarg 'terminal'   -      -f ;;        # flag
     esac
 }
