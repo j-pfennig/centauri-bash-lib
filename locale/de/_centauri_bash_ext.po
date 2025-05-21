@@ -49,13 +49,13 @@ msgstr "Verschiebe '%s' nach '%s'"
 msgid "No such file or folder:"
 msgstr "Datei oder Ordner nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_ext:653
-msgid "Cannot read from:"
-msgstr "Datei nicht lesbar:"
-
-#: /var/centauri/library/_centauri_bash_ext:661
+#: /var/centauri/library/_centauri_bash_ext:658
 msgid "Failed to read from:"
 msgstr "Fehler beim Lesen von:"
+
+#: /var/centauri/library/_centauri_bash_ext:661
+msgid "Cannot read from:"
+msgstr "Datei nicht lesbar:"
 
 #: /var/centauri/library/_centauri_bash_ext:708
 msgid "Created by"

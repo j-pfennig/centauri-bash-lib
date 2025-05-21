@@ -232,7 +232,7 @@ fi
 # windows or send it to the system log.
 #
 #+The command-line option --quiet disables **warning()** and message() output. And to
-# see trace() messages --verbose must be used. The commmd-line option --quiet can be
+# see trace() messages --verbose must be used. The command-line option --quiet can be
 # overridden with 'message -l ...' and 'warning -l ...'.
 #
 #+The hook CEN_HOOK_MESSAGE is used to call the implementation function. By default
@@ -370,7 +370,7 @@ error() {
 #                   "@" prints "Too many arguments"
 #                   "+" ...    "Missing argument"
 #                   "-" ...    "Invalid argument"
-#                   "=" ...    "Misssing option"
+#                   "=" ...    "Missing option"
 #
 #+This function never returns to the caller. If called with -t options it exits
 # with status 4 and otherwise it sets CEN_EXIT=3 and invokes [[quit()]] to terminate
@@ -867,7 +867,7 @@ arguments() {
 #           (5) context -v [0-3] ...
 #           (6) context ... [-r] [-s] [-c|-q|-x] [--] <arg>...
 #
-# Options:  -c  [*] rerun script in a console if neccessary
+# Options:  -c  [*] rerun script in a console if necessary
 #           -e  enable/disable 'abort on error' traps
 #           -g  init gui (0:off  1:window  2:console  -:auto)
 #           -h  register a hook
@@ -913,7 +913,7 @@ arguments() {
 # The [[confirm()]] function uses **-t +**|**-** by default to capture keyboard
 # interrupts. The internal trap handler sanitizes input and calls [[quit()]].
 #
-#+Form (5): Is the correct way of changing the --verbose state, see expample. **DO°NOT**
+#+Form (5): Is the correct way of changing the --verbose state, see example. **DO°NOT**
 # modify CEN_VERB directly.
 #
 #+Form (6): Option -r (without -s) is used to stop a non-root user via [[fatal()]]. The
@@ -1399,6 +1399,10 @@ _cen_compactify() {
 #
 #+Unless option -n is used, a <script> exit code of 3 (fatal error) or 4
 # (abort / quit) results in a call to [[quit()]].
+#
+#+Using Option -r together with -m/-q is redundant (as -r gets ignored when
+# loading a module). This combination is used to let [[uglify]] ignore the
+# module reference, so the module will not be added to the packaged source.
 # ------------------------------------------------------------------------------
 embed() {
     local _modu _terr _verb _vval _vset _vdel _xexc _rdry _odry _oind _xcmd=()
@@ -1580,7 +1584,7 @@ filter() {
 #                   ° **cache**      (get ~/.cache ~/.config or ~/.local or ~)
 #           <path>  a (relative) file system path
 #
-#+Return:   On successs the used path is saved (see option -s) and is **true**
+#+Return:   On success the used path is saved (see option -s) and is **true**
 #           returned, otherwise the return value is **false**.
 #
 #.Examples: folder -c -m -f /ding/dong   # create path and cd or fatal error
@@ -1596,7 +1600,7 @@ filter() {
 #
 #.          # get a file path in user's cache folder
 #.          local path stat
-#.          folder -s path -u cache -- "hello" && stat="exists" || stat="misssing"
+#.          folder -s path -u cache -- "hello" && stat="exists" || stat="missing"
 #.          message -p "Cache File: % (%s)" "$path" "$stat"
 #
 #.          # create a (per user) config file
@@ -1851,7 +1855,7 @@ invoke() {
 #           -z  create a dummy function returning false (if missing)
 #
 #.Examples: isfunction my_function          # check for function or builtin
-#.          isfunction -y my_function       # create function if neccessary
+#.          isfunction -y my_function       # create function if necessary
 #.          isfunction -c my_function       # call a function if it exists
 # ------------------------------------------------------------------------------
 isfunction() {
@@ -1898,7 +1902,7 @@ isfunction() {
 # Arguments:<tool>     xxx
 #           <scri>     xxx
 #
-# Only the monitoring state of the current script and its future children can be
+#+Only the monitoring state of the current script and its future children can be
 # modified.
 #
 # Variables:CEN_MONITOR     global array, use the proxy to preset monitoring for
@@ -1929,7 +1933,7 @@ isfunction() {
 #           (2.1) optarg <optname> <value> -e <message>
 #           (2.2) optarg <optname> <value> -m <message>
 #
-#           Programmatically add --include/--exclude
+#           Programatically add --include/--exclude
 #           (3)   optarg **-** **-** -i|-x <value>
 #
 # Options:  -f  [default] simple flag, the ''option'' has no value
@@ -2220,7 +2224,7 @@ splitjoin() {
 # Return:   **true** at success or **false** otherwise.
 #
 # Examples: Check availability of external commands:
-#.          sysfind -f -c -- convert efiftool
+#.          sysfind -f -c -- convert efitool
 #
 #           Get path of an external editor tool, and run it:
 #.          local edit
@@ -2250,7 +2254,7 @@ splitjoin() {
 #
 #+Loadable builtins will not be autoloaded by this function, use "enable -a" to
 # do so. See the BASH_LOADABLES_PATH variable. The [[_cen_bash_dyn]] module uses
-# wrapper functions for autoload and uses "enbale -f" explicitly.
+# wrapper functions for autoload and uses "enable -f" explicitly.
 #
 #+Bash script functions are never visible to sysfind. This is why [[system()]]
 # must be called like "system°-n°..." to run a function.
@@ -2393,7 +2397,7 @@ sysfind() {
 #           functions are ignored and do not shadow external commands.
 #
 #+          Option -n bypasses all <cmd> checks (and therefore also run builtins).
-#           Without option -n external comands are prefixed with a filesystem
+#           Without option -n external commands are prefixed with a filesystem
 #           path. and bash builtins (see option -b) are run as "builtin°<cmd>".
 #
 #+          Unless option -q is used, the execution takes place in a subshell
@@ -2654,7 +2658,7 @@ main() {
     # source the defaults file (override options and other stuff)
     [ -n "$CEN_DEFAULTS" ] && _cen_source "$CEN_DEFAULTS"
 
-    # command line parsing (via CEN_HOOK_MAIN arguments can be overriden)
+    # command line parsing (via CEN_HOOK_MAIN arguments can be overridden)
     local _cont=2 _isok _help _oinf
     [ -n "$CEN_CMDARGS" ] && { set -- "${CEN_CMDARGS[@]}" ; CEN_CMDARGS=() ; }
 

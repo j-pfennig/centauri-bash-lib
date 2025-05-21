@@ -225,6 +225,10 @@ actionJoin() {
     done
 
     folder -m -- "$CEN_OPT_OUTPUT/LC_MESSAGES" || return
+    #tmpfile -f -s iall '1.po'
+    #system -e -p -t -- msgcat -o "$iall" "${args[@]}" || return
+    #tmpfile -f -s item '2.po'
+    #system -e -p -t -- msguniq -o "$item" "$iall" || return
     tmpfile -f -s item '.po'
     system -e -p -t -- msgcat -o "$item" -u "${args[@]}" || return
     system -e -p -t -- msgfmt -o "$CEN_OPT_OUTPUT/LC_MESSAGES/$name.mo" "$item"

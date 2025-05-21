@@ -9,6 +9,8 @@
 
 CEN_MODULES['_centauri_bash_utl']='0.11:4'
 
+embed -c '_centauri_bash_ext'               # dependency
+
 # helper for error messages: _cen_utl_err -e|-f|<vnam> <data> <fmt>...
 _cen_utl_err() {
     local ___utl_emsg ___utl_vnam="$1" ___utl_data="${2:+: $2}" ; shift 2
@@ -262,7 +264,7 @@ listsearch() {
 #           optmake -s|-j|-a <dest> -b <opti>
 #
 # Options:  -a  add result to <dest> array
-#           -b  copy a builitin option
+#           -b  copy a builtin option
 #           -f  option is a flag, no value
 #           -j  add result to <dest> variable
 #           -k  key name (not an option)
@@ -295,7 +297,7 @@ listsearch() {
 # puts the <valu> into an extra array element. For string output only
 # simple quoting is used, e.g. '''"''' in <valu> are changed to '''\"'''.
 #
-#+For builitin options (-b) the following <opti> values are recognized:
+#+For builtin options (-b) the following <opti> values are recognized:
 #
 #,      dryrun|force|silent|trace|quiet|zombie
 #,      embed|gui|pager|verb*|yesno
