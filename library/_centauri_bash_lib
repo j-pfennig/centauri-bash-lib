@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2025
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.52:5:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.60:6:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -191,10 +191,10 @@ fi
 # message - output a message
 # warning - output a warning message
 #
-# Call:     <msg_function> [<cls>] [-a|-i] [-l] [-r] [-m|-n] [--] <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-r] [-m] -p [--] <fmt> <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-r] -c    [--] <pre> <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-r] -c -p [--] <pre> <fmt> <arg>...
+# Call:     <msg_function> [<cls>] [-a|-i] [-l] [-r] [-m|-n|y] [--] <arg>...
+#           <msg_function> [<cls>] [-a|-i] [-l] [-r] [-m|-y] -p [--] <fmt> <arg>...
+#           <msg_function> [<cls>] [-a|-i] [-l] [-r] -c    [-y] [--] <pre> <arg>...
+#           <msg_function> [<cls>] [-a|-i] [-l] [-r] -c -p [-y] [--] <pre> <fmt> <arg>...
 #
 #           <msg_function> := trace | message | warning | error | fatal
 #
@@ -208,6 +208,7 @@ fi
 #           -n  print multiple lines (new-line or '\n' separated)
 #           -p  use printf formatting (1st arg is format)
 #           -r  output real script name (see --embed)
+#           -y  compactify text to fit into a single tty output line
 #
 # Arguments:<cls>   internal use: -e|-f|-s|-t|-w. Do not use in own script code
 #           <fmt>   a printf format string
@@ -330,7 +331,7 @@ error() {
       case "$1" in
       --)   shift ; break ;;
       -)    break ;;
-      -a|-i|-n|-m|-p|-r)
+      -a|-i|-n|-m|-p|-r|-y)
             _popt+=("$1") ;;
       -c)   CEN_EXIT=0 ; [ "$CEN_DONE" = 2 ] && CEN_DONE=1 ; return 0 ;;
       -e)   ;;
@@ -619,7 +620,7 @@ _cen_abort() {
 # implementation of output functions (see also: _centauri_bash_con|_svc|_win)
 _cen_message() {
     local _scal _sfmt _smul _serr _sind _snam="${CEN_EMBED:-$CEN_NAME}:" _verb="$CEN_VERB" _stat=0
-    local _bopt _deco _norm _oesc
+    local _bopt _deco _norm _oesc _ocfy
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -639,6 +640,7 @@ _cen_message() {
       -s)   _oesc='-en' ;;                      # used by _cen_con_prog
       -t)   _deco="$CEN_DECO_TRCE" ;;           # flag trace() call for hooks
       -w)   _deco="$CEN_DECO_WARN" ; _serr=$" ***WARNING***" ;;
+      -y)   _ocfy=1 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
@@ -653,6 +655,11 @@ _cen_message() {
     if [ -n "$_scal" ] ; then                   # option '-c'
         _cen_shortfmt _scal - "$1" ; _serr+="$_scal" ; shift
         [ "$1" = '--' ] && shift                # backward compatibility
+    fi
+
+    if [ -n "$_ocfy" ] ; then
+        [ -n "$_serr" ] && _ocfy="${_serr# } $*" || _ocfy="$*"
+        _cen_compactify _ocfy ; set -- "$_ocfy" ; _serr=
     fi
 
     [ -n "$_deco" ] && _norm="$CEN_DECO_NORM"   # reset to normal mode
@@ -711,7 +718,7 @@ _cen_shortfmt() {
     if [ -z "${_temp//[[:ascii:]]/}" ] ; then
         printf -v "$1" "$CEN_SHORTFMT" "$_temp"         # is pure ascii
     else
-        _asci="${_temp//[[:alpha:]]/.}"   # this is unicode aware
+        _asci="${_temp//[[:alpha:]]/.}"                 # this is unicode aware
         printf -v _ugly "$CEN_SHORTFMT" "$_asci"        # get correct padding
         printf -v "$1" '%s' "${_ugly/$_asci/$_temp}"    # back to unicode
     fi
@@ -1328,18 +1335,30 @@ dryrun() {
     return $_rsta
 }
 
+# get length in chars of a unicode string: <vnam> <text>
+_cen_stringlen() {
+    [ -n "${2//[[:ascii:]]/}" ] &&
+        set -- "$1" "${2//[[:alpha:]]/.}"       # this is unicode aware
+    printf -v "$1" '%s' "${#2}"                 # is pure ascii
+}
+
 # compactify a long string: <vnam> [<lmax>|-|+]  (see trimjoin)
 _cen_compactify() {
     [ "${CEN_NOBREAK:-2}" = 2 ] || return 0         # COLUMNS=0 or disabled
     local -n _vcmp="$1"
+
+    local _leng _deco=$'\033'"\\[[0-9]m"
+    _vcmp="${_vcmp//$_deco/}"
+    _cen_stringlen _leng "$_vcmp"
+
     if [ "${2:--}" = '-' ] ; then                   # use with indent
         local _cols="${COLUMNS:-100}" _snam="${CEN_EMBED:-$CEN_NAME}"
         [ -z "${_cols//[0-9]/}" ] || _cols=0
-        local _leng=$(("${#_vcmp}" + ${#_snam} + 2))
+        ((_leng += (${#_snam} + 2)))
     elif [ "${2:--}" = '+' ] ; then                 # use full line
-        local _cols="${COLUMNS:-100}" _leng="${#_vcmp}"
+        local _cols="${COLUMNS:-100}"
     else
-        local _cols="$2" _leng="${#_vcmp}"
+        local _cols="$2"
     fi
     [ "$_leng" -le $_cols ] && return
     local _lmax=$((_cols - 6))
@@ -1937,11 +1956,8 @@ isfunction() {
 #           (3)   optarg **-** **-** -i|-x <value>
 #
 # Options:  -f  [default] simple flag, the ''option'' has no value
-#           -h  value must be a hostname, see [[isname()]]
-#           -n  value must be a positive integer
 #           -o  ternary value, <val>:=off|0|on|1|auto|2
 #           -t  allow any text as value
-#           -v  value must be a variable name, see [[isname()]]
 #
 #           -a  [*] value must be a file path for writing or appending
 #           -d  [*] value is an output directory path, normalize, must exist
@@ -1949,13 +1965,19 @@ isfunction() {
 #           -s  [*] value is an input directory path, normalize, must exist
 #           -w  [*] value must be a file path for writing
 #
+#           -h  [#] value must be a hostname, see [[isname()]]
+#           -n  [#] value must be a positive integer
+#           -v  [#] value must be a variable name, see [[isname()]]
+#
 #           -e  generate a '--xxx=value' error message
 #           -m  generate a 'mutually exclusive' error message, see examples
 #
 #           -i  add --include option to CEN_OPT_INCLEXCL, see [[filter()]]
 #           -x  add --exclude option to CEN_OPT_INCLEXCL, see [[filter()]]
 #
-#           [*] These options can only be used from inside [[options()]]
+#           [*] These options can only be used from inside [[options()]]. If module
+#               **_cen_bash_iom** cannot be loaded no checks are made (like -t)
+#           [#] If module **_cen_bash_utl** cannot be loaded no checks are made (-t)
 #
 # Arguments:<optname>  option name (used for bash input completion)
 #           <varname>  variable to be set (auto-generated if "-")
@@ -2022,10 +2044,14 @@ optarg() {
     fi
 
     case "$_expr" in
+
+    # if the module cannot be loaded treat as simple text argument
     -a|-d|-r|-s|-w)
-        embed -r -m '_centauri_bash_iom' ; _cen_optarg_iom "$_expr" "$1" "$_vnam" ;;
+        embed -r -q '_centauri_bash_iom' && _cen_optarg_iom "$_expr" "$1" "$_vnam" ;;
+    -h|-n|-v)
+        embed -r -q '_centauri_bash_utl' && _cen_optarg_utl "$_expr" "$1" "$_vnam" ;;
+
     -e) CEN_ACTARR="$2" ; CEN_ARGOPT=0 ; _emsg="$4" ;;
-    -h) isname -h -m _emsg -- "$CEN_ACTARR" ;;
     -f|-)
         CEN_CMDOPTS+=("--$1") ; printf -v "$_vnam" '%s' "${4:-1}" ; CEN_ARGS=1
         [ -z "$CEN_ARGOPT" ] && return 0  ; _emsg=$"no argument allowed" ;;
@@ -2042,7 +2068,6 @@ optarg() {
     -m)
         [ "${1:-1}" = 1 ] && return 0 ; shift 3
         error -r $"mutually exclusive options:" "$@" ; CEN_ARGS=1 ; return 1 ;;
-    -n) isnumber -m _emsg -s _temp -- "$CEN_ACTARR" && CEN_ACTARR="$_temp" ;;
     -o)
         case "$CEN_ACTARR" in
             off|0)  CEN_ACTARR=0 ;;
@@ -2051,7 +2076,6 @@ optarg() {
             *)      _emsg=$"value must be 'off|on|auto' or '0|1|2'"
         esac ;;
     -t) ;;
-    -v) isname -v -m _emsg -- "$CEN_ACTARR" ;;
     *)
         [[ $CEN_ACTARR =~ ^($_expr)$ ]] || _emsg=$"has an invalid value" ;;
     esac

@@ -7,7 +7,7 @@
 # Copyright Dr. J. Pfennig (c) 2022-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_utl']='0.11:4'
+CEN_MODULES['_centauri_bash_utl']='0.12:5'
 
 embed -c '_centauri_bash_ext'               # dependency
 
@@ -20,6 +20,21 @@ _cen_utl_err() {
     -f) fatal -- "$___utl_emsg$___utl_data" ;;
     *)  printf -v "$___utl_vnam" '%s' "$___utl_emsg"
     esac
+}
+
+# helper for optarg() options
+_cen_optarg_utl() {
+    local _emsg
+    case "$1" in
+    -h) isname -h -m _emsg -- "$CEN_ACTARR" ;;
+    -n) isnumber  -m _emsg -s "$3" -- "$CEN_ACTARR" && return 0 ;;
+    -v) isname    -m _emsg -- "$CEN_ACTARR" ;;
+    *)  _cen_abort - "$1"
+    esac
+    if [ -z "$_emsg" ] ; then
+        printf -v "$3" '%s' "$CEN_ACTARR" ; return 0
+    fi
+    optarg "$2" "$CEN_ACTARR" -e "$_emsg" ; return 1
 }
 
 # ------------------------------------------------------------------------------

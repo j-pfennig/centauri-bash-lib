@@ -17,6 +17,7 @@
 # Storage:  CEN_NET_DIR_LIB="$CEN_ROOT/persistent"      # for cached things
 #           CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
 #           CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centaurifilter"
+#           CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centauriswitch"
 #
 #           CEN_NET_DIR_RUN="$CEN_ROOT/transient"       # for temporary things
 #           CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
@@ -28,16 +29,17 @@
 #           Do not expect result variables to stay valid after the next call of
 #           a function in this module.
 #
-# Copyright Dr. J. Pfennig (c) 2013-2024
+# Copyright Dr. J. Pfennig (c) 2013-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.41:4'
+CEN_MODULES['_centauri_bash_net']='0.43:4'
 
 # IMPORTED: CEN_NET_OUTPUT                              # see netfile()
 
 CEN_NET_DIR_LIB="$CEN_ROOT/persistent"                  # for cached things
 CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
 CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centaurifilter"     # used as prefix
+CEN_NET_FILE_SWIT="$CEN_NET_DIR_LIB/centauriswitch"
 
 CEN_NET_DIR_RUN="$CEN_ROOT/transient"                   # for temporary things
 CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
@@ -693,7 +695,7 @@ ${CEN_NET_IFIWL@A}
 ${CEN_NET_IFIUS@A}
 !EOF
     else
-        _cen_source "$CEN_NET_DIR_RUN/network_ifnames" ; return
+        nettemp -s 'network_ifnames' ; return
     fi
 }
 
@@ -942,7 +944,7 @@ netmask() {
         _netmask_mask="$((-1 << (32 - _netparse_bits)))"
         netconv -b "$_netparse_addr" || return 1
         _netmask_addr="$_netconv"
-        $CEN_TRACE2 -a -c -p " cache" "%-14s -> %x %x" "$1" "$_netmask_addr" "$_netmask_mask"
+        #$CEN_TRACE2 -a -c -p " cache" "%-14s -> %x %x" "$1" "$_netmask_addr" "$_netmask_mask"
     elif [ -z "$_netmask_addr" ] ; then
         return 1                                # not a valid address
     fi
@@ -956,7 +958,7 @@ netmask() {
 
     netparse -a $_oerr -n "$2" || return 1
     netconv -b "$_netparse_addr" || return 1
-    $CEN_TRACE2 -a -c -p " check" "%-14s -> %x" "$2" "$_netconv"
+    #$CEN_TRACE2 -a -c -p " check" "%-14s -> %x" "$2" "$_netconv"
     [ $((_netconv & _netmask_mask)) = "$_netmask_addr" ]
     return                                       # return status
 }
@@ -1192,9 +1194,9 @@ _cen_net_addrget() {
 # ------------------------------------------------------------------------------
 # nettemp - Temporary file operations in transient data folder
 #
-# Call:     nettemp [-r|-s|-w]  [<file>|-]
-#           nettemp [-c|--]     [<file>|-]
-#           nettemp -l <target> [<file>|-]
+# Call:     nettemp [-r|-s|-w] [--] [<file>|-]
+#           nettemp [-c] [--]       [<file>|-]
+#           nettemp -l [--] <target> [<file>|-]
 #
 # Options:  -c  create a file (default name is $CEN_NAME)
 #           -l  create and link a temp file to <target>
@@ -1217,38 +1219,37 @@ _cen_net_addrget() {
 _nettemp=
 nettemp() {
     # create/check temp dir
-    _nettemp="$CEN_NET_DIR_RUN"
-    if [ ! -d "$_nettemp" ] ; then
-        [ -h "$_nettemp" ] && system -f -p -b -s _nettemp realpath "$_nettemp"
-        folder -m -f "$_nettemp"
+    local _lopt _base="$CEN_NET_DIR_RUN" ; _nettemp=
+    if [ -n "$CEN_NET_OUTPUT" ] ; then
+        netpath -- "$_base" || return 1 ; _base="$_netpath"
+    fi
+    if [ ! -d "$_base" ] ; then
+        [ -h "$_base" ] && system -f -p -b -s _base realpath "$_base"
+        folder -m -f "$_base"
     fi
 
     # option and arguments
-    local _lopt
-    if [ "${1::1}" = '-' -a "$1" != '-' ] ; then
-        _lopt=$1 ; shift
-    fi
-    local _arg1="${1:--}" _arg2="${2:--}" _argp="$_nettemp"
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -?)   _lopt="$1"
+      esac ; shift
+    done
+    local _arg1="${1:--}" _arg2="${2:--}" _argp="$_base"
     [ "$_arg1" = '-' ] && _arg1="${CEN_NAME:-$0}"
     [ "$_arg1" != '.' ] && _argp+="/$_arg1"
+    _nettemp="$_argp"
 
     case "$_lopt" in
-    ''|--)                                      # make name, return status
-                _nettemp="$_argp" ; [ -e "$_argp" ] ;;
-    -c)                                         # create file, warn on failure
-                _nettemp="$_argp" ; create -w "$_argp" 664 ;;
-    -l)                                         # create link
-                [ "$_arg2" = '-' ] && _arg2="${CEN_NAME:-$0}"
-                _cen_net_symlink "$_arg1" "$_nettemp/$_arg2"
-                ;;
-    -r)                                         # remove file
-                _cen_net_remove "$_argp" ;;
-    -s)                                         # source file
-                _nettemp="$_argp" ; _cen_source "$_argp" ;;
-    -w)                                         # write file
-                _nettemp="$_argp" ; netfile -h "$_argp" ;;
-    *)                                          # error
-                _cen_abort - "$_lopt" ;;
+    '') [ -e "$_argp" ] ;;                          # make name, return status
+    -c) create -w "$_argp" 664 ;;                   # create file, warn on failure
+    -l) [ "$_arg2" = '-' ] && _arg2="$_base/${CEN_NAME:-$0}" || _arg2="$_base/$_arg2"
+        netpath -- "$_arg2" ; _nettemp="$_netpath"
+        _cen_net_symlink "$_arg1" "$_netpath" ;;    # create link
+    -r) _cen_net_remove "$_argp" ;;                 # remove file
+    -s) _cen_source "$_argp" ;;                     # source file
+    -w) create -t -h - "$_argp" ;;                  # write file
+    *)  _cen_abort - "$_lopt"                       # error
     esac
 }
 
@@ -1260,7 +1261,7 @@ _cen_net_symlink() {
 }
 
 _cen_net_remove() {
-    if [ $# -gt 1 ] || [ -e "$1" ] ; then
+    if [ $# -gt 1 ] || [ -e "$1" ] || [ -h "$1" ] ; then
         system -e -p -b -- rm -f -- "$@"
     fi
 }
@@ -1398,10 +1399,11 @@ netfile() {
 # ------------------------------------------------------------------------------
 # netpath - Get a path (respecting CEN_NET_OUTPUT rules)
 #
-# Call:     (1) netpath [--] <path>                 # get file path
+# Call:     (1) netpath [-r] [--] <path>            # get file path
 #           (2) netpath -d [--] <base> [<suffix>]   # get folder path
 #
 # Options:  -d       check if <base> exists
+#           -r       read only, ignore CEN_NET_OUTPUT='-'
 #
 # Arguments:<path>   (relative) file path, see below
 #           <base>   (relative) folder path, see below
@@ -1419,23 +1421,25 @@ netfile() {
 # ------------------------------------------------------------------------------
 _netpath=
 netpath() {
-    local _optd
-    if [ "$1" = '-d' ] ; then
-        _optd=1 ; shift
-    fi
-    [ "$1" = '--' ] && shift
+    local _optd _outp="$CEN_NET_OUTPUT"
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)    shift ; break ;;
+      -d)    _optd=1 ;;
+      -r)    [ "$_outp" = '-' ] && _outp= ;;
+      *)     _cen_abort - "$1"
+      esac ; shift
+    done
 
-    if [ -z "$CEN_NET_OUTPUT" ] ; then
-        _netpath="$1"
-    elif [ "$CEN_NET_OUTPUT" = '-' ] ; then
-        _netpath=
-        [ -n "$_optd" ] && return 0 ; return 1
-    elif [ "$CEN_NET_OUTPUT" = '.' ] ; then
-        _netpath="./${1#/}" ; _netpath="${_netpath//\/.\//\/}"  # /./ => /
-    else
-        _netpath="${CEN_NET_OUTPUT%/}/${1##*/}"
+    case "$_outp" in
+    '') _netpath="$1" ;;
+    -)  _netpath=
+        [ -n "$_optd" ] ; return ;;             # return status
+    .)  _netpath="./${1#/}"
+        _netpath="${_netpath//\/.\//\/}" ;;     # prettify /./ => /
+    *)  _netpath="${CEN_NET_OUTPUT%/}/${1##*/}"
         [ -n "$_optd" ] && return 0
-    fi
+    esac
     [ -z "$_optd" ] && return 0                 # no folder check
 
     [ -d "$_netpath" ] || return 1              # folder not found
@@ -1711,6 +1715,10 @@ _cen_net_homedns() {
 # calls [[netconfig()]]. So after a call to [[netquery()]] all CEN_NET_XXX state
 # and configuration variables are set.
 #
+#+trust:    the network trust level can be 'public', 'private' or 'managed'
+#
+#           trust         return the network trust level
+#
 #+connect:  depending on centaurinetcfg option settings one of the following is returned:
 #
 #           auto          uses 'smart' if nm is installed or 'simple' otherwise
@@ -1827,6 +1835,9 @@ netquery() {
                             _stat=0
                         fi
                     fi ; _qual= ;;
+
+    trust*)         readline -s _valu -i "$CEN_NET_FILE_SWIT" && _stat=0
+                    [ -z "$_valu" ] && _valu='managed' ; _qual= ;;
 
     connect)        # explicit host given, ignore '*'
                     [ "${2:--}" = '-' ] && set -- "$1" "$HOSTNAME"
@@ -1980,8 +1991,8 @@ $sdom$ssvr
 netserver() {
     # read the file
     if [ "$1" != '-w' ] ; then
-        _cen_source "$CEN_NET_FILE_STAT"
-        return                      # return status
+        netpath -r -- "$CEN_NET_FILE_STAT"
+        _cen_source "$_netpath" ; return            # return status
     fi
 
     # remove the status files

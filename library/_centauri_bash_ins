@@ -33,7 +33,7 @@
 # ------------------------------------------------------------------------------
 
 # do not demand an api-version, we get loaded by centauriconfig
-CEN_MODULES['_centauri_bash_ins']='0.18:4'
+CEN_MODULES['_centauri_bash_ins']='0.20:4'
 
 embed -c '_centauri_bash_ext'               # dependency
 embed -c '_centauri_bash_cfm'               # ... confirm()
@@ -836,7 +836,7 @@ _cen_ins_systemd() {
             forg="$farg" ; farg="$1/${farg##*/}" ; fena=
 
             # create preset folder/file
-            if [ "${farg##*.}" = "preset" ] ; then
+            if [ "${farg##*.}" = 'preset' ] ; then
                 fdir="$1-preset"
                 if [ -n "$_remove" ] ; then
                     rpre="$dest/$fdir"              # flag folder removal
@@ -846,7 +846,7 @@ _cen_ins_systemd() {
                 farg="$fdir/${farg##*/}"
 
             # create override folder/file
-            elif [ "${farg##*.}" = "override" ] ; then
+            elif [ "${farg##*.}" = 'override' ] ; then
                 fdir="${farg%.*}.d"
                 farg="$fdir/override.conf"
 
@@ -857,7 +857,7 @@ _cen_ins_systemd() {
                 create -d -- "$dest/$fdir" 755 || continue
 
             # unit file
-            elif [ "${farg##*.}" != "target" ] ; then
+            elif [ "${farg##*.}" != 'target' ] ; then
                 fena=1
             fi
 
@@ -1194,8 +1194,7 @@ _cen_ins_paths() {
 _cen_ins_proxy() {
     $CEN_TRACE -a -c " proxy" -- "$CEN_ROOT"
     local _repo _rexp _prox="$1"
-    _rexp="${CEN_PATH_REXP[*]@A}" ; _rexp="${_rexp#declare -* }"
-
+   _rexp="CEN_PATH_REXP=(${CEN_PATH_REXP[*]@Q})"
     [ -n "$_rexp" ] && _rexp=$'\n'"# path replacements from [library] section"$'\n'"$_rexp"
     [ -n "$_prox" ] && _prox=$'\n'$'\n'"# things from [proxy] section"$'\n'"$_prox"
     create -c -t -w "$CEN_TOOLS/_centauri_bash_lib" 775 <<!EOF || return 1
@@ -1493,6 +1492,9 @@ _cen_ins_version() {
     }
 
     ___cen_vers_wrt() {
+        $CEN_TRACE -a -c -p ' ' $"Update '%s'" "$CEN_SYS_STATE_FILE"
+        [ -d "$CEN_SYS_STATE_DIR" ] || _cen_ins_call paths  # CEN_SYS_CACHE_DIR setup
+
         create -h 'centauritools' -t -s -w "$CEN_SYS_STATE_FILE" 664 <<!EOF
 ${CEN_SYS_CONFIG@A}
 ${CEN_SYS_DISTRO@A}

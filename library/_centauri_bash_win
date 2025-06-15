@@ -38,7 +38,7 @@
 # Copyright Dr. J. Pfennig (c) 2015-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_win']='0.48:5'
+CEN_MODULES['_centauri_bash_win']='0.49:6'
 
 embed -c '_centauri_bash_ext'       # reference modules ...
 embed -c '_centauri_bash_txt'
@@ -756,7 +756,7 @@ _cen_win_txtfold() {
             _txtf="$_nout" ; _txtf="$_tinp"
         fi
     else                                            # text folding ...
-        txtfold -d "$_deli" -m "$_wide" -s _temp _tinp
+        txtfold -d "$_deli" -m "$_wide" -s _temp -i _tinp
         _txtf="$_nout" ; _txtf="$_temp"
     fi
     return 0

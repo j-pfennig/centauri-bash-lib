@@ -57,7 +57,7 @@
 # Copyright Dr. J. Pfennig (c) 2019-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_iom']='0.05:4'
+CEN_MODULES['_centauri_bash_iom']='0.06:4'
 
 CEN_IOM_QUEUE=()        # see _cen_optarg_iom()
 
@@ -612,7 +612,7 @@ outfile() {
         # handle file
         if [ -s "$_varg" -a ! -c "$_varg" ] ; then
             if ! [ -n "$_fexi" -o -n "$_fook" -o -n "$CEN_OPT_DRYRUN" ] ; then
-                confirm -n $"Overwrite existing output file" "'$_varg'" || return 2
+                confirm -n $"Overwrite existing output file" "'${_varg#$PWD/}'" || return 2
             fi
         elif [ -n "$_fexi" ] ; then
             _cen_iom_error "$_oerr" $"Output file does not exist" "$_varg" ; return 1

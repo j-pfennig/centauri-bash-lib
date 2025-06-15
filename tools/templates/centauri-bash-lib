@@ -34,8 +34,8 @@ else ###########################################################################
     path "configs"    ".. $CEN_ROOT/shared"     "repository branch - for machine"
 
     # network
-    path "network"    "$CEN_PATHS/data"         "Network shared data"
-    path "server"     "$CEN_PATHS/data/alpha"   "Network server data"
+    path "network"    "$CEN_PATHS/network"      "Network shared data"
+    path "server"     "$CEN_PATHS/network/alpha" "Network server data"
 
     # backup paths
     path "backup"     "$CEN_PATHS/backup|$CEN_PATHS/mnt/backup/Backup|~root/Backup" \
@@ -47,7 +47,7 @@ else ###########################################################################
     path "machines"   "~vbox/Machines"          "Virtualbox virtual machines"
 
     # others
-    path "docs"      "$CEN_PATHS/usr/share/doc" "Linux Dokumentation"
+    path "docs"      "$CEN_PATHS/usr/share/doc" "Linux Documentation"
 fi #############################################################################
 : CEN_PATHS is PREFIX in TERMUX (android linux) ################################
 if [ -z "$CEN_PATHS" ] ; then ##################################################
@@ -200,7 +200,7 @@ fi #############################################################################
     # service "centauriswitch" "centauriswap" 
 
     # redirections used by _centauri_bash_ext prettypath (option: -l local, -n network)
-    # repath -l "/var/lib/centauri/import/([a-z]+[0-9a-z]*)_([a-z]+[0-9a-z]*)(/.*)?" "/data/home" "/data/%1/%2%3"
+    # repath -l "/var/lib/centauri/import/([a-z]+[0-9a-z]*)_([a-z]+[0-9a-z]*)(/.*)?" "/network/home" "/network/%1/%2%3"
     # repath -l "/dev/shm(/.*)?" "/tmp%1"
 
 [proxy]

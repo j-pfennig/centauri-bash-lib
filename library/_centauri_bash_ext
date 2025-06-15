@@ -51,12 +51,12 @@ _cen_path_pretty() {
 
         # simple cases and some of their aliases
         ""|/)           return 0 ;;
-        .|./)           _vcpp="." ; [ -z "$_fpwd" ] && return 0
+        .|./)           _vcpp='.' ; [ -z "$_fpwd" ] && return 0
                         _vcpp="$PWD" ; return 0 ;;
         ..|../)         _vcpp=".." ; [ -z "$_fpwd" ] && return 0
                         _vcpp="${PWD%/*}"
-                        [ -z "$_vcpp" ] && _vcpp="/" ; return 0 ;;
-        //|/.|/..)      _vcpp="/" ; return 0 ;;
+                        [ -z "$_vcpp" ] && _vcpp='/' ; return 0 ;;
+        //|/.|/..)      _vcpp='/' ; return 0 ;;
 
         # remove redundant elements
         ./*)            _vcpp="${_vcpp:2}" ; [ -n "$_fpwd" ] && _vcpp="$PWD/$_vcpp" ;;
@@ -70,7 +70,7 @@ _cen_path_pretty() {
         ../*)           [ -z "$_fpwd" ] && break
                         _vcpp="${PWD%/*}${_vcpp:2}" ; break ;;
 
-        *)              [ -z "$_fpwd" -o "${_vcpp::1}" = "/" ] && break
+        *)              [ -z "$_fpwd" -o "${_vcpp::1}" = '/' ] && break
                         _vcpp="$PWD/$_vcpp"
         esac
     done
@@ -130,10 +130,10 @@ _cen_path_ltrim() {
     [ -n "$2" ] && _logi="$2"
     [ -z "$1" ] && return 1
     if [ "$1" = "$2" ] ; then       # same paths -> .
-        _logi="." ; return 0
+        _logi='.' ; return 0
     fi
     local _leng="${#1}"
-    [ "${_logi:_leng:1}" = "/" ] || return 1
+    [ "${_logi:_leng:1}" = '/' ] || return 1
     [ "${_logi::_leng}" = "$1" ] || return 1
     _logi="${_logi:_leng+1}" ; return 0
 }
@@ -215,14 +215,14 @@ copy() {
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -a)   _oarc="-a" ;;
+      -a)   _oarc='-a' ;;
       -f)   _oerr='fatal' ; _oflg='-f -p' ;;
       -n)   _ocow="--reflink=never" ;;
       -o)   _ocow="--reflink=auto" ;;
       -q)   _oerr="$CEN_TRACE" ; _oflg='-q' ;;
-      -r)   _orun="-r" ;;
+      -r)   _orun='-r' ;;
       -s)   _omsg=: ;;
-      -u)   _oupd="-u" ;;
+      -u)   _oupd='-u' ;;
       -v)   _omsg=message ;;
       -x)   _orem=1 ;;
       *)    _cen_abort - "$1"
@@ -286,9 +286,9 @@ joinpath() {
       --)   shift ; break ;;
       -a)   _oabs=1 ;;
       -c)   _opre="-q -c" ;;
-      -d)   _odef="-d" ;;
+      -d)   _odef='-d' ;;
       -e)   shift ; _opte="$1" ;;
-      -p)   _opre="-q" ;;
+      -p)   _opre='-q' ;;
       -r)   _orel=1 ;;
       -s)   shift ; _fset="$1" ;;
       *)    _cen_abort - "$1"
@@ -309,18 +309,18 @@ joinpath() {
             else
                 _path+="/$1"
             fi
-        elif [ "${1::1}" = "/" ] ; then
+        elif [ "${1::1}" = '/' ] ; then
             [ -z "$_orel" ] && _path=
             _path+="$1"
         else
             _path+="/$1"
-        fi ; shift ; [ "$_path" = "/" ] || _path="${_path%/}"
+        fi ; shift ; [ "$_path" = '/' ] || _path="${_path%/}"
     done
 
     _path="${_path//\/\//\/}"           # //  => /
     _path="${_path//\/.\//\/}"          # /./ => /
 
-    [ "${_opte:-.}" != "." ] && suffixpath -s _path $_odef -- "$_opte"
+    [ "${_opte:-.}" != '.' ] && suffixpath -s _path $_odef -- "$_opte"
 
     _path="${_path:-.}"
     [ -n "$_opre" ] && prettypath $_opre -s _path -- "$_path"
@@ -455,16 +455,16 @@ matchpath() {
 # <dest> must be a folder. In this case -o and -x are disabled.
 # ------------------------------------------------------------------------------
 move() {
-    local _oftl _orep _orun _osys="-e -p" _oerr=error _omsg="$CEN_TRACE"
+    local _oftl _orep _orun _osys='-e -p' _oerr=error _omsg="$CEN_TRACE"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
-      -f)   _oftl="-f" ; _osys="-f -p" ; _oerr=fatal ;;
+      -f)   _oftl='-f' ; _osys='-f -p' ; _oerr=fatal ;;
       -o)   _orem=1 ;;
-      -q)   _orep="-q" ; _osys="-q" ; _oerr="$CEN_TRACE" ;;
-      -r)   _orun="-r" ;;
-      -s)   _orep="-s" ; _omsg=: ;;
-      -v)   _orep="-v" ; _omsg=message ;;
+      -q)   _orep='-q' ; _osys='-q' ; _oerr="$CEN_TRACE" ;;
+      -r)   _orun='-r' ;;
+      -s)   _orep='-s' ; _omsg=: ;;
+      -v)   _orep='-v' ; _omsg=message ;;
       -x)   _orem=2 ;;
       *)    _cen_abort - "$1"
       esac ; shift
@@ -486,7 +486,7 @@ move() {
                 $_oerr $"Move destination not writable:" "$_dest" ; return 1
             fi
         elif [ "$_orem" = 2 ] ; then
-            [ "$_osmg" = ":" ] || $CEN_TRACE -a $"Removing destination before move:" "$_dest"
+            [ "$_osmg" = ':' ] || $CEN_TRACE -a $"Removing destination before move:" "$_dest"
             remove $_oftl $_orun $_orep -d -- "$_dest" || return 1     # may use builtins
         fi
     fi
@@ -552,22 +552,22 @@ move() {
 # ------------------------------------------------------------------------------
 CEN_PRETTYPATH=
 prettypath() {
-    local _ocan _oerr="error" _oexi _obas _otrm _logi _phys
-    local _fset="CEN_PRETTYPATH" _fltr="-l"
+    local _ocan _oerr='error' _oexi _obas _otrm _logi _phys
+    local _fset="CEN_PRETTYPATH" _fltr='-l'
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -b)   _obas=1 ;;
         -c)   _ocan=2 ;;
         -e)   _oexi=1 ;;
-        -f)   _oerr="fatal" ;;
+        -f)   _oerr='fatal' ;;
         -l)   _ocan=1 ;;
-        -n)   _fltr="-n" ;;
+        -n)   _fltr='-n' ;;
         -p)   _phys=1 ;;
-        -q)   _oerr=":" ;;
+        -q)   _oerr=':' ;;
         -s)   shift ; _fset="$1" ;;
         -t)   shift ; _otrm="$1" ;;
-        -w)   _oerr="warning" ;;
+        -w)   _oerr='warning' ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
@@ -592,7 +592,7 @@ prettypath() {
     fi
 
     if [ -n "$_obas" ] ; then                       # base folder
-        _varg="${_varg%/*}" ; [ -z "$_varg" ] && _varg="/"
+        _varg="${_varg%/*}" ; [ -z "$_varg" ] && _varg='/'
     fi
 
     if [ -z "$_phys" ] ; then                       # apply repath expressions
@@ -726,7 +726,7 @@ writeline() {
     dryrun 'writeline' "$_fout" && return 0
 
     [ -n "$_mask" ] && _cen_umask -s "$_mask"
-    if printf '%s%s\n' "$_otxt" "$*" >"$_fout" 2>/dev/null ; then
+    if printf '%s%s\n' "$_otxt" "$*" 2>/dev/null >"$_fout" ; then
         [ -n "$_mask" ] && _cen_umask -r
         [ -z "$_oqui" ] && $CEN_TRACE -a -c ' OK' -- "$_fout"
         return 0
@@ -1007,7 +1007,7 @@ rename() {
             if [ "$_orem" != 2 ] ; then
                 $_oerr $"Rename destination is a folder:" "$_dest" ; return 1
             fi
-            [ "$_osmg" = ":" ] || $CEN_TRACE -a $"Removing destination before rename:" "$_dest"
+            [ "$_osmg" = ':' ] || $CEN_TRACE -a $"Removing destination before rename:" "$_dest"
             remove $_oftl $_orun $_orep -d -- "$_dest" || return 1     # may use builtins
         fi
     fi
@@ -1020,10 +1020,11 @@ rename() {
 # ------------------------------------------------------------------------------
 # resolve - Resolve and prettify (multiple) file/dir paths
 #
-# Call:     resolve [-a <arr>|-s <var>] [-t <trm>] [-e] [-f|-q] [-c|-l|-m] [-p] <path>...
-#           resolve [-s <var>] [-e] [-f|-q] [-c|-l|-m] [-p] -x|-y <exe>
+# Call:     resolve [-a <arr>|-s <var>] [-t <trm>] [-e] [-f|-q] [-b] [-c|-l|-m] [-p] <path>...
+#           resolve [-s <var>] [-e] [-f|-q] [-b] [-c|-l|-m] [-p] -x|-y <exe>
 #
 # Options:  -a  save result to array <arr> (default is CEN_RESOLVE)
+#           -b  remove trailing "/*" (get base folder)
 #           -c  canonicalize, ignore missing <path>s
 #           -e  error if <path>s does not exist
 #           -f  make errors fatal
@@ -1047,7 +1048,7 @@ rename() {
 # Return:   **true** at success or **false** otherwise.
 #
 #+In contrast to [[prettypath()]] this function calls **/usr/bin/readlink**
-# (unless option -p is used). Also it can pass multiple <path> args at once.
+# (unless option -p is used). Also it can handle multiple <path> args at once.
 #
 #+If option -p is given, the function prettifies the result paths in the same
 # way as [[prettypath()]] does. This option overrides option -m and only
@@ -1070,24 +1071,26 @@ rename() {
 #.          # read symlink (fails if arg is not a symlink)
 #.          resolve -q -l /usr/bin/sh && message "sh symlinked: $CEN_RESOLVE"
 #
-#.          # get my invocation path
-#.          resolve -x -p && message "Path:" "$CEN_RESOLVE"
+#.          # get my invocation path or my base folder
+#.          resolve    -x -p && message    "Path:" "$CEN_RESOLVE"
+#.          resolve -b -x -p && message -a "Base:" "$CEN_RESOLVE"
 # ------------------------------------------------------------------------------
 CEN_RESOLVE=
 resolve() {
-    local _ocan _otrm _oexe _osys='-e -p' _pret \
+    local _obas _ocan _otrm _oexe _osys='-e -p' _pret \
           _vset="CEN_RESOLVE" _varr _vrrr _xchk _xerr=error _nret=0
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vset= ; local -n _vvaa="$1" ; _vvaa=() ;;
+      -b)   _obas=1 ;;
       -c)   _ocan='-e' ;;
       -e)   _xchk=1 ;;
       -f)   _xerr=fatal ; _osys='-f -p' ;;
       -l)   _olnk='-l' ;;
       -m)   _ocan='-m' ;;
       -p)   _pret=1 ;;
-      -q)   _xerr=: ; _osys="-q" ;;
+      -q)   _xerr=: ; _osys='-q' ;;
       -s)   shift ; _vset="$1" ; _varr= ;;
       -t)   shift ; _otrm="$1" ;;
       -x)   _oexe=1 ;;
@@ -1142,8 +1145,8 @@ resolve() {
         fi
     fi
 
-    # try to find a nice path names
-    if [ -n "$_pret" -o -n "$_otrm" ] ; then
+    # try to find nice path names
+    if [ -n "$_pret" -o -n "$_otrm" -o -n "$_obas" ] ; then
         _vrrr=()
         for _logi in "$@" ; do
             if [ -n "$_pret" ] ; then
@@ -1151,6 +1154,7 @@ resolve() {
                 _cen_path_regex '-l' "$_logi"
             fi
             [ -n "$_otrm" ] && _cen_path_ltrim "$_otrm"
+            [ -n "$_obas" -a "$_logi" != '/' ] && _logi="${_logi%/*}"
             _vrrr+=("$_logi")
         done
         set -- "${_vrrr[@]}"
@@ -1158,7 +1162,7 @@ resolve() {
 
     # join array into string and return status
     if [ -n "$_vset" ] ; then
-        splitjoin -j "$_vset" -d '\n' -- "$@"
+        [ $# -le 1 ] && _vsss="$1" || splitjoin -j "$_vset" -d '\n' -- "$@"
     else
         _vvaa=("$@")
     fi
@@ -1202,7 +1206,7 @@ splitkeyval() {
 # Return:   0: success  1: path is root (no parent)  2: readlink error
 #
 #+The function does a simple prettify of the path to remove redundant or
-# trailing "/" chars or "./" and "/./" . Relative paths are made absolute
+# trailing '/' chars or "./" and "/./" . Relative paths are made absolute
 # and unnormalized paths like "weird/../path" need to invoke the
 # **/usr/bin/readlink** command.
 #
@@ -1211,8 +1215,8 @@ splitkeyval() {
 # it is empty when "$PWD" is the parent.
 #
 # Examples: results for path '/' '/one' '/one/two' :
-#.          splitpath    -p ...  #  =>  ("" "/" "")    # root has no parent
-#.          splitpath    -p ...  #  =>  ("/" "one" "")
+#.          splitpath    -p ...  #  =>  ("" '/' "")    # root has no parent
+#.          splitpath    -p ...  #  =>  ('/' "one" "")
 #.          splitpath    -p ...  #  =>  ("/one" "two" "")
 #
 #           results for path '/example/base.text' :
@@ -1232,13 +1236,13 @@ splitkeyval() {
 #   x/y/z       ([0]="x" [1]="y/z"   [2]="")      ([0]="x/y"  [1]="z"    [2]="")
 #   x/y/z/      ([0]="x" [1]="y/z"   [2]="")      ([0]="x/y"  [1]="z"    [2]="")
 #   a.b.c       ([0]=""  [1]="a.b"   [2]="c")     ([0]=""     [1]="a.b"  [2]="c")
-#   /a.b        ([0]="/" [1]="a"     [2]="b")     ([0]="/"    [1]="a"    [2]="b")
+#   /a.b        ([0]='/' [1]="a"     [2]="b")     ([0]='/'    [1]="a"    [2]="b")
 #   a.b/        ([0]=""  [1]="a.b"   [2]="")      ([0]=""     [1]="a.b"  [2]="")
-#   /a.b/       ([0]="/" [1]="a.b"   [2]="")      ([0]="/"    [1]="a.b"  [2]="")
-#   /x          ([0]="/" [1]="x"     [2]="")      ([0]="/"    [1]="x"    [2]="")
-#   /x/y        ([0]="/" [1]="x/y"   [2]="")      ([0]="/x"   [1]="y"    [2]="")
-#   /x/y/z      ([0]="/" [1]="x/y/z" [2]="")      ([0]="/x/y" [1]="z"    [2]="")
-#   /x/y/z/     ([0]="/" [1]="x/y/z" [2]="")      ([0]="/x/y" [1]="z"    [2]="")
+#   /a.b/       ([0]='/' [1]="a.b"   [2]="")      ([0]='/'    [1]="a.b"  [2]="")
+#   /x          ([0]='/' [1]="x"     [2]="")      ([0]='/'    [1]="x"    [2]="")
+#   /x/y        ([0]='/' [1]="x/y"   [2]="")      ([0]="/x"   [1]="y"    [2]="")
+#   /x/y/z      ([0]='/' [1]="x/y/z" [2]="")      ([0]="/x/y" [1]="z"    [2]="")
+#   /x/y/z/     ([0]='/' [1]="x/y/z" [2]="")      ([0]="/x/y" [1]="z"    [2]="")
 # ------------------------------------------------------------------------------
 splitpath() {
     local _vset _oext _odmy _opar _left _righ _path _ofir _ospl _owrk _pref
@@ -1260,9 +1264,9 @@ splitpath() {
     # remove trailing or leading slash, prettify
     case "$_path" in
         /)      ;;                              # special handling
-        /*/)    _path="${_path:1}" ; _pref="/"
+        /*/)    _path="${_path:1}" ; _pref='/'
                 _cen_path_pretty _path "${_path::-1}" ; [ -n "$_oext" ] && _odmy=1 ; _oext= ;;
-        /*)     _cen_path_pretty _path "${_path:1}" ; _pref="/" ;;
+        /*)     _cen_path_pretty _path "${_path:1}" ; _pref='/' ;;
         */)     _cen_path_pretty -p _path "${_path::-1}" ; [ -n "$_oext" ] && _odmy=1 ; _oext= ;;
         *)      _cen_path_pretty -p _path "$_path"
     esac
@@ -1327,7 +1331,7 @@ splitpath() {
 #           <suffix>   suffix to be append
 #           <path>     use this path or use current <varname> if missing
 #
-# Return:   **true** at success. If <path> is a folder or ends with a "/" or for an
+# Return:   **true** at success. If <path> is a folder or ends with a '/' or for an
 #           attempt to remove non-existing suffix **false** is returned.
 #
 #+The function implements some logic to handle default suffixes. It is used by
@@ -1388,7 +1392,7 @@ suffixpath() {
     local _snam="${_vsuf##*/}"                      # path with suffix removed
     [ -z "$_snam" ] && return 1                     # empty or trailing / (is a folder)
     _snew="${1#.}" ; [ -z "$_snew" ] && return 1    # no suffix given
-    if [ "${_snam:${#_snam}-1:1}" = "." ] ; then    # ending with .
+    if [ "${_snam:${#_snam}-1:1}" = '.' ] ; then    # ending with .
         [ -n "$_oxcl" -a -d "$_vsuf" ] && return 1  # do not touch a folder name
         _vsuf="${_vsuf::${#_vsuf}-1}" ; return 0    # remove dot
     fi
@@ -1668,7 +1672,7 @@ sysrun() {
       -o)   shift ; _owho="$1" ;;
       -p)   _ofmt=1 ; [ -z "$_oout" ] && _oout=0 ;;
       -q)   _fqui=1 ; [ -z "$_oout" ] && _oout=0 ;;
-      -r)   _orun="-r" ;;
+      -r)   _orun='-r' ;;
       -s)   shift ; _vstr="$1" ; _oout=0 ; _vnam='-' ;;
       -v)   _over=1 ;;
       -w)   _ecmd=warning ;;

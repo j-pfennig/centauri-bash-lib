@@ -639,7 +639,7 @@ _cen_con_mesg() {
         $CEN_CONS_HOOK_MESSAGE "$@" ; return    # next in chain, return status
     fi
     local _eopt _hasi _fatl _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _scal _args _deco
-    local _verb="$CEN_VERB" _stat=0
+    local _ecfy _verb="$CEN_VERB" _stat=0
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -662,6 +662,7 @@ _cen_con_mesg() {
       -s)   _args+=("$1") ; _fnnl=1 ; _fxnl= ;;
       -t)   _eopt="$1" ;;
       -w)   _eopt="$1" ;;
+      -y)   _ecfy=1 ;;
       *)    _cen_abort -2 - "$1"
       esac ; shift
     done
@@ -680,6 +681,7 @@ _cen_con_mesg() {
         _mesg="$*"
     fi
     [ -n "$_scal" ] && _mesg="${_scal:1} $_mesg"
+    [ -n "$_ecfy" ] && _cen_compactify _mesg
 
     # simplified handling of -b for fatal/error/warning/trace
     if [ -n "$_eopt" ] ; then
@@ -738,7 +740,7 @@ _cen_con_mesg() {
 
     # do the output
     if [ -n "$_deco" ] ; then
-        decorate -d "$_deco" -s _mesg "$_mesg"
+        decorate -d "$_deco" -s _mesg -- "$_mesg"
         _cen_message -s "${_args[@]}" -- "$_mesg$_fxnl"
     else
         _cen_message "${_args[@]}" -- "$_mesg"

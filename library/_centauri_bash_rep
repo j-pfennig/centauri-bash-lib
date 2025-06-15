@@ -20,24 +20,26 @@ CEN_REP_DKEY=                               # distribution key, see 'distro'
 # ------------------------------------------------------------------------------
 # override - mechanism to pass extra information to scripts
 #
-# Call:     (1) override -c <name>|- <value>
-#           (2) override -d <name>|-
-#           (3) override -r [-f] <name>|- <vnam>
+# Call:     (1) override [-b <base>] -c <name>|- <value>
+#           (2) override [-b <base>] -d <name>|-
+#           (3) override [-b <base>] -r [-f] <name>|- <vnam>
 #
-#+      Form (1) creates a file named "$CEN_ROOT/persistent/<name>-override" with
-# <value> as contents.
+#+      Form (1) creates a file named "<base>/$CEN_ROOT/persistent/<name>-override"
+# with <value> as contents.
 #
 #+      Form (2) deletes a file created by (1).
 #
 #+      Form (3) is used to read the content of an ''override'' file into variable
 #       <vnam>.
 #
-# Options:  -c  create file
+# Options:  -b  base (optional prefix for path)
+#           -c  create file
 #           -d  delete file
 #           -f  make errors fatal
 #           -r  read file
 #
-# Arguments:<name>      file name part (use '-' for script name)
+# Arguments:<base>      folder path
+#           <name>      file name part (use '-' for script name)
 #           <value>     string to be written (must be a single line)
 #           <vnam>      name of a variable that returns the file content
 #
@@ -45,11 +47,12 @@ CEN_REP_DKEY=                               # distribution key, see 'distro'
 # errors get reported.
 # ------------------------------------------------------------------------------
 override() {
-    local _name="$CEN_NAME" _file _fcre _fdel _frea
+    local _name="$CEN_NAME" _base _file _fcre _fdel _frea
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       -)    break ;;
       --)   shift ; break ;;
+      -b)   shift ; _base="${1%/}/" ;;
       -c)   _fcre=1 ;;
       -d)   _fdel=1 ;;
       -f)   [ -n "$CEN_OPT_FORCE" ] && return 1
@@ -58,8 +61,8 @@ override() {
       *)    _cen_abort - "$1"
       esac ; shift
     done
-    [ "${1:--}" != '-' ] && _name="$1" ; shift
-    _file="$CEN_ROOT/persistent/$_name-override"
+    [ "${1:--}" != '-' ] && _name="${1%-override}" ; shift
+    _file="$_base$CEN_ROOT/persistent/$_name-override"
     if [ -n "$_fcre" ] ; then
         writeline -c - -e -o "$_file" -t -- "$1" ; return
     elif [ -n "$_fdel" ] ; then

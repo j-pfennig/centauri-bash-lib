@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2019-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_sys']='0.29:4'
+CEN_MODULES['_centauri_bash_sys']='0.31:4'
 
 CEN_SYS_STATE_DIR="$CEN_ROOT/persistent"    # non-volatile
 CEN_SYS_CACHE_DIR="$CEN_ROOT/transient"     # volatile
@@ -84,8 +84,9 @@ CEN_SYS_INCLUDE=()              # include list for link tools
 CEN_SYS_EXCLUDE=('centauri*_*' '*.*' '*~' '*[ABCDEFGHIJKLMNOPQRSTUVWXYZ]*')
 CEN_SYS_OBSOLETE=()             # obsolete tool files, remove links
 CEN_SYS_SERVICE=()              # list of service tools to be installed/enabled
-CEN_PATH_REXP=()                # list of path replacements
 CEN_ROOTDEFS=()                 # see _cen_sys_rootdefs
+
+#CEN_PATH_REXP=()               # list of path replacements
 
 # ------------------------------------------------------------------------------
 # call function in _centauri_bash_ins: <func> <arg>...
@@ -165,17 +166,22 @@ _cen_sys_rootdefs() {
 sysversion() {
     $CEN_DEBUG -c -- "$*"
 
-    # get state file path: -r|-w
+    # get state file path and status, create private cache folder
+    #   -r  check if readable, return true if state file is current
+    #   -w  may create folder, return true if state file is current
     ___cen_sys_state() {
         CEN_SYS_STATE_FILE="$CEN_SYS_STATE_DIR/centaurisystem"
-        if [ ! -r "$CEN_SYS_STATE_FILE" ] ; then
-            [ "$EUID" = 0 ] && return 1
-        elif [ "$CEN_SYS_STATE_FILE" -nt "$CEN_TOOLS/_centauri_bash_lib"  ] ; then
-            [ "$1" != '-w' ] && return 0
-            [ "$EUID" = 0 ] && return 1
+        if [ "$CEN_SYS_STATE_FILE" -nt "$CEN_TOOLS/_centauri_bash_lib"  ] ; then
+            return 0
+        elif [ -r "$CEN_SYS_STATE_FILE" ] ; then    # readable but outdated
+            [ "$1" = '-r' ] && return 1
         fi
+        [ "$EUID" = 0 ] && return 1                 # root can create shared file
+
+        # non-root users must use a private state file
         local _usta="centauri-bash-lib_${CEN_MODULES['_centauri_bash_lib']%%:*}"
-        folder -g -r -s CEN_SYS_STATE_FILE -u 'cache' -- "$_usta/centaurisystem"
+        folder -m -r -s CEN_SYS_STATE_FILE -u 'cache' -- "$_usta" &&
+            CEN_SYS_STATE_FILE+="/centaurisystem"
         # return state
         [ "$CEN_SYS_STATE_FILE" -nt "$CEN_TOOLS/_centauri_bash_lib"  ]
     }
@@ -209,7 +215,7 @@ sysversion() {
 
     if [ -n "$_oarc" ] ; then
         _cen_ins_call archinfo $_otra CEN_SYS_CPU_ARCH CEN_SYS_PLATFORM ||
-            _oerr $"Unsuported architecture" "$CEN_SYS_CPU_ARCH"
+            _oerr $"Unsupported architecture" "$CEN_SYS_CPU_ARCH"
     fi
 
     # 1st step: try to read, prefer system file
@@ -262,7 +268,11 @@ sysversion() {
     if [ -n "$_flgk" ] ; then
         _cen_ins_call version -k
         if [ "$CEN_SYS_KDEVERS" = '-' ] ; then
-            $_oerr $"No KDE version found" ; [ -n "$_errk" ] && return 1
+            if [ -n "$_errk" ] ; then
+                $_oerr $"No KDE version found" ; return 1
+            else
+                $CEN_TRACE $"No KDE version found"
+            fi
         fi
     fi
     [ -n "$_otra" ] && _cen_ins_call version $_otra
@@ -272,9 +282,7 @@ sysversion() {
         [ -z "$_flgo$_flgk" ] && return 0           # nothing to do
     fi
 
-    $CEN_TRACE -a -c -p ' ' $"Update '%s'" "$CEN_SYS_STATE_FILE"
-    folder -m "${CEN_SYS_STATE_FILE%/*}" '775'
-    _cen_ins_call version -w                        # return state
+    _cen_ins_call version -w                        # write version return state
 }
 
 # ------------------------------------------------------------------------------
@@ -348,7 +356,7 @@ syssetup() {
         [ "${2:--}" = '-' ] && fatal $"Missing argument:" '<dest>'
         folder -c -f -- "${1:-$CEN_ROOT}" ; shift
         _cen_ins_call files ; return                # return status
-    fi || :
+    fi
 
     # sysconfig, is called twice during setup as the config file may have changed
     if ! sysconfig ; then
