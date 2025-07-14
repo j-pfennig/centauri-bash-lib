@@ -38,7 +38,7 @@
 # Copyright Dr. J. Pfennig (c) 2015-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_win']='0.49:6'
+CEN_MODULES['_centauri_bash_win']='0.49:5'
 
 embed -c '_centauri_bash_ext'       # reference modules ...
 embed -c '_centauri_bash_txt'
@@ -781,6 +781,7 @@ _cen_windmesg() {
             [ "$1" = "?" ] && _ftwo=1
             [ "$1" = '-' ] && _flib=1
             [ "${1::1}" = "+" ] && _popw="${1:1}" ;;
+      -h)   [ "$CEN_VERB" -lt 2 ] && _argx+=('-i') ;;
       -i)   _argx+=("$1") ;;
       -l)   _argx+=("$1") ; _verb=1 ;;
       -m)   _argx+=("$1") ;;

@@ -1161,6 +1161,7 @@ _cen_ins_paths() {
     elif [ -d "$CEN_ROOT/default" ] ; then
         $CEN_TRACE2 -a -c " keep" -- "$CEN_ROOT/default"
     elif [ "$EUID" = 0 -a -e "$CEN_INS_ETCPATH/default" ] ; then
+        # /var/centauri/default  ->  /etc/default  == ../../etc/default
         symlink -l -- "$CEN_INS_ETCPATH/default" "$CEN_ROOT/default"
     else
         create -d -- "$CEN_ROOT/default" 775 "$_sgrp"

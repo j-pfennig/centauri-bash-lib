@@ -337,6 +337,8 @@ inhibit() {
 #+          Form (1) creates a pid file, form (2) returns pid file information or
 #           deletes a pid file. A signal can be sent to a process using form (3).
 #
+#           **This function intentionally ignores the --dryrun option.**
+#
 # Options:  -c  check if saved PID is still running
 #           -d  delete the PID file
 #           -f  PID file path to be used
@@ -1045,6 +1047,7 @@ _cen_svc_message() {
             _serr=$" ***ERROR***" ;;
       -f)   _verb=1 ; _spri='crit'
             _serr=$" ***FATAL ERROR***" ;;
+      -h)   [ "$CEN_VERB" -lt 2 ] && _sind="$CEN_AUTOIND" ;;
       -i)   _sind=1 ;;
       -l)   _verb=1 ;;
       -m)   ;;                                      # implicit

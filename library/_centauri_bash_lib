@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2025
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.60:6:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.59:5:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -631,6 +631,7 @@ _cen_message() {
       -d)   shift ;; # ignored here
       -e)   _verb=1 ; _stat="$CEN_EXIT" ; _deco="$CEN_DECO_EROR" ; _serr=$" ***ERROR***" ;;
       -f)   _verb=1 ; _stat="$CEN_EXIT" ; _deco="$CEN_DECO_EROR" ; _serr=$" ***FATAL ERROR***" ;;
+      -h)   [ "$CEN_VERB" -lt 2 ] && _sind="$CEN_AUTOIND" ;;
       -i)   _sind=1 ;;
       -l)   _verb=1 ;;
       -m)   _smul=1 ; _sfmt=2 ;;
@@ -1736,7 +1737,7 @@ folder() {
 # Form (3) prints a '1st argument must be' error message and form (4) prints
 # 'Not yet implemented'. Form (5) trims any previous actions from CEN_CMDARGS.
 #
-# Options:  -a  report '1st argument must be:', see option -e
+# Options:  -a  report 'Argument must be:', see option -e
 #           -c  rerun script in a console if necessary, see [[context()]]
 #           -e  error message for action (like message -e -p ...)
 #           -i  report 'Not yet implemented', see option -e
@@ -1753,7 +1754,8 @@ folder() {
 #
 #           <anum>     argument number to be printed
 #           <frmt>     a printf format string (containing one or more "%s")
-#           <text>     error message text or arguments for printf)
+#                      or "-" to use "Invalid Argument: %s"
+#           <text>     error message text or arguments for printf
 #
 #+The function is usually called from [[actions()]] to dispatch action verbs.
 # The content of array CEN_ACTARR is passed to an action function. For a
@@ -1804,6 +1806,18 @@ folder() {
 #.          invoke - worker                 # current args, current CEN_ACTION
 #.          invoke happy worker             # current args, CEN_ACTION='happy'
 #.          invoke - worker - - same game   # sets CEN_ARCTARR, current CEN_ACTION
+#
+#           (4) report error while running an action
+#.          actionExample() {
+#.              while [ "${1::1}" = '-' ] ; do
+#.                 case "$1" in
+#.                 -)    break ;;
+#.                 col*) # ...              # error: Argument #2 must be: ...
+#.                       invoke -a 2 "red|green|blue"
+#.                 *)    invoke -e - "$1"   # error: Invalid argument: ...
+#.              }
+#.              # ...
+#.          }
 # ------------------------------------------------------------------------------
 invoke() {
     local _copt
@@ -1818,8 +1832,9 @@ invoke() {
             set x -e $"Argument%s must be: %s" "$_anum" "$@" ;;
       -e|-w)
             local _eflg _pmsg=$"Action '%s': "
-            [ "$1" = '-w' ] && _eflg='warning' || _eflg='error'
-            shift ; _pmsg+="$1" ; [ "${1/\%s/}" = "$1" ] && _pmsg+=' %s'; shift
+            [ "$1" = '-w' ] && _eflg='warning' || _eflg='error' ; shift
+            [ "${1:--}" = '-' ] && _pmsg+=$"Invalid argument"':' || _pmsg+="$1"
+            [ "${1/\%s/}" = "$1" ] && _pmsg+=' %s'; shift
             $_eflg -p "$_pmsg" "$CEN_ACTION" "$@" ; CEN_ARGS='X' ; return 0 ;;
       -i)   shift ; set x -e $"Not yet implemented""${1:+:}" "$@" ;;
 
@@ -2425,7 +2440,7 @@ sysfind() {
 #           path. and bash builtins (see option -b) are run as "builtin°<cmd>".
 #
 #+          Unless option -q is used, the execution takes place in a subshell
-#           via "$(<cmd> <args>)". The command output is captured (see -a and -s)
+#           via "$(<cmd>°<args>)". The command output is captured (see -a and -s)
 #           and on error pretty formatted messages can be printed (see -e and -p).
 #           Subshells can be avoided using [[sysrun()]].
 #
@@ -2459,6 +2474,10 @@ sysfind() {
 #,          - system -e -p  [-a|-s <var>] # capture stdout and stderr, error message
 #,          - system -e -p -z             # capture only stderr, error message
 #
+#+Dryrun:   Without option -r being set the command line option --dryrun will cause the
+#           command execution to be skipped. The return status will be 1 unless option
+#           **-g°0** is used.
+#
 #.Examples: system mycmd                            # no error/output handling
 #.          system -e -p -s rslt -- mycmd arg1      # formatted msg on error
 #.          system -q -a data -- mycmd arg1         # no error output
@@ -2488,7 +2507,7 @@ _cen_sudo() {
 system() {
     $CEN_NOTRACE set +x
     local _ferr _mind _nout _val_ _vset _vdel _xcmd _sudo _cpro _rdry _bflg _xflg _zflg _temp
-    local _good=0 _stat=0 _ecmd="$CEN_TRACE" _earg
+    local _good _stat=0 _ecmd="$CEN_TRACE" _earg
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -2551,7 +2570,7 @@ system() {
     [ -n "$_sudo" ] && _xcmd=("${_sudo[@]}" "${_xcmd[@]}")
     [ -n "$_xflg" ] && _xcmd=(exec "${_xcmd[@]}")
     if dryrun $_rdry -- "${_xcmd[@]}"; then
-        $CEN_NOTRACE set -x ; return 1
+        $CEN_NOTRACE set -x ; [ "$_good" = 0 ] ; return # return status
     fi
 
     if [ -n "$_vset" -o "$_nout" = 2 ] ; then
@@ -2581,7 +2600,7 @@ system() {
         "${_xcmd[@]}" || _stat=$?
     fi
 
-    if [ "$_stat" -le "$_good" ] ; then             # do not treat as error...
+    if [ "$_stat" -le "${_good:-0}" ] ; then        # do not treat as error...
         $CEN_NOTRACE set -x ; return $_stat
     fi
 

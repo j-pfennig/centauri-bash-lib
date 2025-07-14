@@ -1905,12 +1905,12 @@ run_browse() {
             while : ; do
                 printf -v text "<b>%-90s" $"Multiple search results, please select one ..."
                 windialog -s item -- "${text// /\&nbsp;}" 1 "${mlis[@]}" || quit
-                embed -v 'centaurilauncher' --mode=0 'viewer' "$elem/$item"
+                embed -v centaurilauncher --mode=0 viewer "$elem/$item"
             done
         fi
     fi || :
     suffixpath -d -s item 'html' "$item"
-    embed -x -v 'centaurilauncher' --mode=2 'viewer' "$elem/index.html" "$elem/$item"
+    embed -x -v centaurilauncher --mode=2 viewer "$elem/index.html" "$elem/$item"
     quit
 }
 

@@ -653,6 +653,7 @@ _cen_con_mesg() {
       -c)   _scal=1 ;;
       -e)   _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ;;
       -f)   _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ; _fatl=1 ;;
+      -h)   [ "$CEN_VERB" -lt 2 -a -n "$CEN_AUTOIND" ] && { _hasi=1 ; _args+=('-i') ; }  ;;
       -i|-r)
             _args+=("$1") ;;
       -l)   _args+=("$1") ; _hasi=1 ; _verb=1 ;;
