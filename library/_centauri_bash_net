@@ -14,14 +14,14 @@
 #           see [[netfile()]], [[netlink()]] and [[nettemp()]]. These functions also
 #           handle the settings of CEN_NET_OUTPUT for output redirection.
 #
-# Storage:  CEN_NET_DIR_LIB="$CEN_ROOT/persistent"      # for cached things
-#           CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
-#           CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centaurifilter"
-#           CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centauriswitch"
+# Storage:  # for cached things
+#           CEN_NET_FILE_CONF="$CEN_PERSISTENT/centaurinetcfg"
+#           CEN_NET_FILE_FILT="$CEN_PERSISTENT/centaurifilter"
+#           CEN_NET_FILE_FILT="$CEN_PERSISTENT/centauriswitch"
 #
-#           CEN_NET_DIR_RUN="$CEN_ROOT/transient"       # for temporary things
-#           CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
-#           CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
+#           # for temporary things
+#           CEN_NET_FILE_STAT="$CEN_TRANSIENT/network_status"
+#           CEN_NET_FILE_PROX="$CEN_TRANSIENT/network_proxy"
 #
 #+Variables: Many functions in this module return results in static variables.
 #           These variable names start with prefix '**_net**'. This differs from
@@ -29,21 +29,35 @@
 #           Do not expect result variables to stay valid after the next call of
 #           a function in this module.
 #
+#+          The setting of CEN_NET_OUTPUT affects some functions that read/write
+#           files. If CEN_NET_OUTPUT is empty, it is set to CEN_PATHS[7], see
+#           [[setsetup()]]. For more details see [[netpath()]].
+#
 # Copyright Dr. J. Pfennig (c) 2013-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.44:4'
+CEN_MODULES['_centauri_bash_net']='0.46:6'
 
-# IMPORTED: CEN_NET_OUTPUT                              # see netfile()
+# IMPORTED: CEN_NET_OUTPUT                          # see netfile()
 
-CEN_NET_DIR_LIB="$CEN_ROOT/persistent"                  # for cached things
-CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
-CEN_NET_FILE_FILT="$CEN_NET_DIR_LIB/centaurifilter"     # used as prefix
-CEN_NET_FILE_SWIT="$CEN_NET_DIR_LIB/centauriswitch"
-
-CEN_NET_DIR_RUN="$CEN_ROOT/transient"                   # for temporary things
-CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
-CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
+# called by module load and netconfig()
+_cen_net_files() {
+    [ "$1" = ':' -a -n "${CEN_PATHS[7]}" ] && set -- "${CEN_PATHS[7]}"
+    if [ "$1" = ':' ] ; then
+        [ -z "$CEN_NET_FILE_CONF" ] &&
+            $CEN_TRACE2 -a -c 'CEN_NET_OUTPUT' -- "${CEN_NET_OUTPUT:-<none>}"
+    elif [ "$CEN_NET_OUTPUT" != "$1" ] ; then
+        CEN_NET_OUTPUT="$1"
+        $CEN_TRACE2 -a -c 'CEN_NET_OUTPUT' -- "${1:-<none>}"
+    fi
+    netpath -p                                   # get CEN_PERSISTENT
+    CEN_NET_FILE_CONF="$_netpath/centaurinetcfg"
+    CEN_NET_FILE_FILT="$_netpath/centaurifilter"    # used as prefix
+    CEN_NET_FILE_SWIT="$_netpath/centauriswitch"
+    netpath -t                                   # get CEN_TRANSIENT
+    CEN_NET_FILE_STAT="$_netpath/network_status"
+    CEN_NET_FILE_PROX="$_netpath/network_proxy"
+}
 
 CEN_NET_PREFIX_IP6_DFLT='fc01::/96'
 
@@ -55,6 +69,7 @@ CEN_NET_IFKCMD=                 # flag for net.ifnames
 CEN_NET_IFIEN=0                 # ethernet index
 CEN_NET_IFIWL=0                 # wlan ...
 CEN_NET_IFIUS=0                 # usb ...
+CEN_NET_IFMAIN='br0 eth0 wlan0' # used for generic host address
 
 # ------------------------------------------------------------------------------
 # Interface Naming + About BIOS, systemd and internal interface names
@@ -93,32 +108,44 @@ CEN_NET_IFIUS=0                 # usb ...
 # ------------------------------------------------------------------------------
 # netconfig - Load network configuration from status file
 #
-# Call:     netconfig [-e|-f] [-r|-u] [<file>]
+# Call:     netconfig [-e|-f] [-r|-u] [-o <outp>] [<file>]
 #
 # Options:  -e  error if config file not found
 #           -f  fatal error if config file not found
+#           -o  output override, see [[netpath()]]
 #           -r  re-read even if CEN_NET_HOSTS is set
 #           -u  unset configuration variables
 #
+# Arguments:<file>  serialized configuration, see [[centaurinetcfg]]
+#           <outp>  output path
+#
 # Return:   **false** if configuration cannot be read
 #
-# Storage:  CEN_NET_FILE_CONF="$CEN_NET_DIR_LIB/centaurinetcfg"
+#+Storage:  A number of CEN_NET_FILE_xxxx variables get initialized (or
+#           re-initialized when -o or -r or used), see module documentation
+#           overview.
 #
 #+By default the function does nothing if CEN_NET_DOMAIN is set, e.g. the
 # configuration is only read once.
+#
+#+Without option -o the function checks the setting made via [[syssetup()]] and
+# adjusts CEN_OPT_OUTPUT accordingly. Use "-o ''" to disable this behaviour.
 # ------------------------------------------------------------------------------
 netconfig() {
-    local _frea _oerr=:
+    local _frea _oerr=: _oout=':'
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -e)   _oerr=error ;;
       -f)   _oerr=fatal ;;
+      -o)   shift ; _oout="$1" ;;
       -r)   _frea=1 ;;
       -u)   _frea=0 ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
+
+    [ -n "$_oout" -o -n "$_frea" ] && _cen_net_files "$_oout"
     [ -n "$CEN_NET_HOSTS" -a -z "$_frea" ] && return 0
     local _file="${1:-$CEN_NET_FILE_CONF}"
 
@@ -161,10 +188,7 @@ netconfig() {
     CEN_NET_PORT_HTTPS=         # port for https proxy
 
     [ "$_frea" = 0 ] && return 0
-
-    local _file="$CEN_NET_FILE_CONF"
-    [ "$CEN_NET_OUTPUT" = '.' ] && _cen_source ".$CEN_NET_FILE_CONF"
-    _cen_source "${1:-$_file}" && return 0
+    _cen_source "$_file" && return 0
     $_oerr $"No network config:" "$_file" ; return 1
 }
 
@@ -454,21 +478,24 @@ nethost() {
 # Call:    (1) netiface [-s <vnam>] [-c|-d|-i|-k] [-e|-w] [-x] <name>|-
 #          (2) netiface -p          # persist mappings
 #          (3) netiface [-k]        # initialize, set CEN_NET_IFNAMES
-#          (4) netiface -n          # no init, get kernel 'net.ifnames'
+#          (4) netiface -m <list>   # set CEN_NET_IFMAIN
+#          (5) netiface -n          # no init, get kernel 'net.ifnames'
 #
 # Options:  -c  return a class path (like "/sys/class/net/eth0")
 #           -d  return a device path (like "/dev/eth0")
 #           -e  generate error messages
 #           -i  return an internal device name (like "wlan0" or "eth0")
 #           -k  return a systemd/kernel device name or check/init mode
-#           -n  get kernel 'net.ifnames', no init
+#           -m  set CEN_NET_IFMAIN, can be combined with all other options
+#           -n  get kernel command line setting from "net.ifnames", no init
 #           -p  persist current mappings in a temporary file
 #           -s  save to variable (default is _netiface)
 #           -w  generate warnings
 #           -x  return **false** if interface does not exist
 #
 # Arguments:<name>  interface name or path (path gets stripped). Use '-' to
-#                   check "br0" first, then "eth0" and finally "wlan0"
+#                   check interfaces in CEN_NET_IFMAIN, 1st hit wins. Default
+#                   settings are: "br0 eth0 wlan0". Name "none" gets ignored
 #           <vnam>  name of a variable to receive the result
 #
 # Variable: CEN_NET_IFNAMES     0:=kernel uses BIOS naming  1:=systemd naming
@@ -547,6 +574,7 @@ netiface() {
       -e)   _oerr='error' ;;
       -i)   _mapm='i' ;;
       -k)   _mapm='k' ;;
+      -m)   shift ; CEN_NET_IFMAIN="$1" ;;
       -n)   _ncmd=1 ;;
       -p)   _pers=1 ;;
       -s)   shift ; _vnam="$1" ;;
@@ -573,19 +601,22 @@ netiface() {
     _cen_netiface_name="${1##*/}"
     case "$_cen_netiface_name" in
     '')         [ "$CEN_NET_IFNAMES" = 1 ] && return 0
-                [ "$_mapm" != 'k' ] ; return ;;
-    -)          if [ -e '/sys/class/net/br0' ] ; then
-                    _cen_netiface_name='br0'
-                else
-                    for _cen_netiface_name in 'eth0' 'wlan0' - ; do
-                        if [ "$_cen_netiface_name" = '-' ] ; then
-                            $_oerr $"No such interface:" 'br0|eth0|wlan0' ; return 1
-                        fi
-                        _cen_net_mapping -s
-                        [ -e "/sys/class/net/$_cen_netiface_kern" ] && break
-                    done
-                    _bios=1
-                fi ;;
+                [ "$_mapm" != 'k' ] ; return
+                ;;
+    -)          for _cen_netiface_name in $CEN_NET_IFMAIN - ; do
+                    if [ "$_cen_netiface_name" = '-' ] ; then
+                        $_oerr $"No such interface:" "${_rslt:1}"
+                        return 1
+                    elif [ "$_cen_netiface_name" = 'none' ] ; then
+                        continue
+                    elif [ -e "/sys/class/net/$_cen_netiface_name" ] ; then
+                        break
+                    fi
+                    _cen_net_mapping -s ; _rslt+="|$_cen_netiface_name"
+                    [ -c "/sys/class/net/$_cen_netiface_kern" ] || continue
+                    _bios=1 ; break
+                done
+                ;;
     eth[0-9])   _bios=1 ;;
     en*)        _bios=0 ;;
     usb[0-9])   _bios=1 ;;
@@ -1226,21 +1257,15 @@ _cen_net_addrget() {
 #
 #           The **_nettemp** variable is set on success or cleared on failure.
 #
-# Storage:  CEN_NET_DIR_RUN contains the base path for all operations.
+# Storage:  CEN_TRANSIENT contains the base path for all operations.
 #
 # The function tries to create a missing transient data folder.
 # ------------------------------------------------------------------------------
 _nettemp=
 nettemp() {
-    # create/check temp dir
-    local _lopt _base="$CEN_NET_DIR_RUN" ; _nettemp=
-    if [ -n "$CEN_NET_OUTPUT" ] ; then
-        netpath -- "$_base" || return 1 ; _base="$_netpath"
-    fi
-    if [ ! -d "$_base" ] ; then
-        [ -h "$_base" ] && system -f -p -b -s _base realpath "$_base"
-        folder -m -f "$_base"
-    fi
+    # get/check temp dir
+    local _lopt _base ; _nettemp=
+    netpath -t -s _base
 
     # option and arguments
     while [ "${1::1}" = '-' ] ; do
@@ -1258,7 +1283,7 @@ nettemp() {
     '') [ -e "$_argp" ] ;;                          # make name, return status
     -c) create -w "$_argp" 664 ;;                   # create file, warn on failure
     -l) [ "$_arg2" = '-' ] && _arg2="$_base/${CEN_NAME:-$0}" || _arg2="$_base/$_arg2"
-        netpath -- "$_arg2" ; _nettemp="$_netpath"
+        netpath -r -s _nettemp -- "$_arg2"
         _cen_net_symlink "$_arg1" "$_netpath" ;;    # create link
     -r) _cen_net_remove "$_argp" ;;                 # remove file
     -s) _cen_source "$_argp" ;;                     # source file
@@ -1283,9 +1308,10 @@ _cen_net_remove() {
 # ------------------------------------------------------------------------------
 # netlink - Make a symlink to a config file or folder
 #
-# Call:     netlink [-k|-m|-n|-s]... <link> <sepa> <suff>...
+# Call:     netlink [-a] [-k|-m|-n|-s]... <link> <sepa> <suff>...
 #
-# Options:  -k  keep current link if no destination found
+# Options:  -a  absolute path, do not use CEN_OPT_OUTPUT
+#           -k  keep current link if no destination found
 #           -m  if link is a file move it to <link>.$CEN_NAME
 #           -n  no operation, just get matching suffix
 #           -s  do not generate messages
@@ -1305,10 +1331,11 @@ _cen_net_remove() {
 _netlink=                       # set only if link is updated
 _netlink_suff=                  # set if suffix was found
 netlink() {
-    local keep move noop slnt
+    local keep move noop slnt _outp="$CEN_NET_OUTPUT"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
+      -a)   _outp= ;;
       -k)   keep=1 ;;
       -m)   move=1 ;;
       -n)   noop=1 ;;
@@ -1316,57 +1343,62 @@ netlink() {
       *)    _cen_abort - "$1"
       esac ; shift
     done
-    [ -n "$CEN_NET_OUTPUT" ] && fatal $"Alternate output not supported:" 'netlink'
 
-    local suff dest link="$1" sepa="${2:-.}"
+    local suff dest _link sepa="${2:-.}"
+    case "$_outp" in
+    '') _link="$1" ;;
+    .)  [ "${1::2}" = './' ] &&  _link="$1" || _link="./${1#/}" ;;
+    *)  $CEN_TRACE -c ' ' $"Alternate output not supported:" "$*" ; return 1 ;;
+    esac
     shift ; shift
     _netlink= ; _netlink_suff=
 
-    # <link> exists and is not a link
-    if [ -e "$link" -a ! -h "$link" -a -z "$noop" ] ; then
+    # <link> exists and is not a symlink
+    if [ -e "$_link" -a ! -h "$_link" -a -z "$noop" ] ; then
         if [ -z "$move" ] ; then
-            [ -z "$slnt" ] && error $"Not a symlink:" "$link"
+            [ -z "$slnt" ] && error $"Not a symlink:" "$_link"
             return 2
         fi
-        dest="$link$sepa$CEN_NAME"
-        system -e -p -- mv -f "$link" "$dest"
-        [ -n "$keep" ] && _cen_net_symlink "$dest" "$link"
-        [ -z "$slnt" ] && warning -a $"Renamed file:" "$link => $dest"
+        dest="$_link$sepa$CEN_NAME"
+        system -e -p -- mv -f "$_link" "$dest"
+        [ -n "$keep" ] && _cen_net_symlink "$dest" "$_link"
+        [ -z "$slnt" ] && warning -a $"Renamed file:" "$_link => $dest"
     fi
-    [ $# = 0 ] && return 0              # moveaway or check only
+    [ $# = 0 ] && return 0                          # move away or check only
 
     # search suffix and link
     for suff in "$@" ; do
         [ -n "$suff" ] || continue
-        _netlink_suff="$suff" ; dest="$link$sepa$suff"
+        _netlink_suff="$suff" ; dest="$_link$sepa$suff"
         [ -e "$dest" ] || continue
         [ -n "$noop" ] && return 0
-        if [ "$link" -ef "$dest" ] ; then
-            [ -z "$slnt" ] && $CEN_TRACE -a -c $"Link current" "$link => $dest"
+        if [ "$_link" -ef "$dest" ] ; then
+            [ -z "$slnt" ] && $CEN_TRACE -a -c $"Link current" "$_link => $dest"
             return 0
         fi
-        [ -z "$slnt" ] && $CEN_TRACE -a -c $"Link updated" "$link => $dest"
+        [ -z "$slnt" ] && $CEN_TRACE -a -c $"Link updated" "$_link => $dest"
         _netlink="$dest"
-        if [ -d "$dest" ] && [ -h "$link" ] ; then      # linking a folder
-            _cen_net_remove "$link"                     # ... no symlink!
+        if [ -d "$dest" ] && [ -h "$_link" ] ; then # linking a folder
+            _cen_net_remove "$_link"                # ... no sym_link!
         fi
-        _cen_net_symlink "${dest##*/}" "$link" ; return 0
+        _cen_net_symlink "${dest##*/}" "$_link" ; return 0
     done
 
     [ -n "$noop" ] && return 1
-    [ -z "$slnt" ] && $CEN_TRACE -a -c $"Found no target" "$link"
-    [ -n "$keep" ] || _cen_net_remove "$link"
+    [ -z "$slnt" ] && $CEN_TRACE -a -c $"Found no target" "$_link"
+    [ -n "$keep" ] || _cen_net_remove "$_link"
     return 1
 }
 
 # ------------------------------------------------------------------------------
 # netfile - Write a config file (respecting CEN_NET_OUTPUT rules)
 #
-# Call:     netfile [-h] [-v <vari>] [--] <path> [<mode>]
+# Call:     netfile [-a] [-h] [-v <vari>] [--] <path> [<mode>]
 #
 #           The function uses [[netpath()]] internally, see CEN_NET_OUTPUT.
 #
-# Options:  -h       write a header
+# Options:  -a       absolute <path>, do not use CEN_OPT_OUTPUT
+#           -h       write a header
 #           -v       data from variable (or array) instead of stdin
 #
 # Arguments:<path>   § (relative) file path, see below
@@ -1385,43 +1417,53 @@ netlink() {
 #           CEN_NET_OUTPUT=<folder>   # (debug) create files in <folder>
 # ------------------------------------------------------------------------------
 netfile() {
-    local _opts= _cflg=' -c'
+    local _opts= _cflg=' -c' _outp="$CEN_NET_OUTPUT"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
-      --)    shift ; break ;;
-      -h)    _opts+=' -h -' ; _cflg= ;;
-      -v)    shift ; _opts+=" -v $1" ; _cflg= ;;
-      *)     _cen_abort - "$1"
+      --)   shift ; break ;;
+      -a)   _outp= ;;
+      -h)   _opts+=' -h -' ; _cflg= ;;
+      -v)   shift ; _opts+=" -v $1" ; _cflg= ;;
+      *)    _cen_abort - "$1"
       esac ; shift
     done
     _opts+="$_cflg"
 
-    if ! netpath "$1" ; then                    # write to /dev/stdout
-        create $_opts -o -w -- "$1" ; return
-    fi
+    local _hout _hmod="${2:-664}"
+    case "$_outp" in
+    '') _hout="$1" ;;
+    -)  create $_opts -o -w -- "$1" ; return ;; # write to /dev/stdout
+    .)  [ "${1::2}" = './' ] &&  _hout="$1" || _hout="./${1#/}" ;;
+    *)  _hout="${1#/}"                          # mangle path
+        _hout="$CEN_NET_OUTPUT/${_hout//\//.}" ;;
+    esac
 
     # we must have a valid base folder to create a file
-    local _hout="$_netpath" _hmod="${2:-664}"
     if [ "${_hout/\//}" != "$_hout" ] && [ ! -d "${_hout%/*}" ] ; then
         $CEN_TRACE -c $"No base folder" -- "$_hout"
+        _cen_abort - "$CEN_NET_OUTPUT"
         return 1
     fi
-
     create $_opts -t -w -- "$_hout" "$_hmod"    # create, warning on failure
 }
 
 # ------------------------------------------------------------------------------
-# netpath - Get a path (respecting CEN_NET_OUTPUT rules)
+# netpath - Get a folder path (respecting CEN_NET_OUTPUT rules)
 #
-# Call:     (1) netpath [-r] [--] <path>            # get file path
-#           (2) netpath -d [--] <base> [<suffix>]   # get folder path
+# Call:     (1) netpath [-s <vnam>>] -r [--] <path>              # get input folder path
+#           (2) netpath [-s <vnam>>] [-d] [--] <base> [<suffix>] # get folder path
+#           (3) netpath [-s <vnam>>] -p|-t [--] [<path>]         # get persistent/transient
 #
-# Options:  -d       check if <base> exists
-#           -r       read only, ignore CEN_NET_OUTPUT='-'
+# Options:  -d       check if <base> is a folder
+#           -p       get path in/of CEN_PERSISTENT, see below
+#           -r       read only, only interpret CEN_NET_OUTPUT='.'
+#           -s       save result to <vnam> (default is '_netpath')
+#           -t       get path in/of CEN_TRANSIENT, see below
 #
 # Arguments:<path>   (relative) file path, see below
 #           <base>   (relative) folder path, see below
 #           <suffix> optional folder suffix (only used if folder exists)
+#           <vnam>   variable name
 #
 # Return:   **true** for file output or **false** for output to /dev/stdout
 #
@@ -1432,34 +1474,48 @@ netfile() {
 #           CEN_NET_OUTPUT='-'        # write to stdout
 #           CEN_NET_OUTPUT="."        # use ./<path>
 #           CEN_NET_OUTPUT=<folder>   # (debug) create files in <folder>
+#
+# The CEN_PERSISTENT and CEN_TRANSIENT variables may already be overridden
+# be syssetup(). Use option -p resp. -t to get correct paths.
 # ------------------------------------------------------------------------------
 _netpath=
 netpath() {
-    local _optd _outp="$CEN_NET_OUTPUT"
+    local _optd _optr _outp="$CEN_NET_OUTPUT" _opts='_netpath' _optt _stat _path
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
-      --)    shift ; break ;;
-      -d)    _optd=1 ;;
-      -r)    [ "$_outp" = '-' ] && _outp= ;;
-      *)     _cen_abort - "$1"
+      --)   shift ; break ;;
+      -d)   _optd=1 ;;
+      -p)   _optt="$CEN_PERSISTENT" ;;
+      -r)   _optr=1 ;;
+      -s)   shift ; _opts="$1" ;;
+      -t)   _optt="$CEN_TRANSIENT" ;;
+      *)    _cen_abort - "$1"
       esac ; shift
     done
+    if [ -n "$_optt" ] ; then
+      [ -n "${CEN_PATHS[7]}" ] && _outp=        # see syssetup -o
+      set -- "$_optt${1:+/}$1" ; _optr=1
+    fi
+    [ -n "$_optr" -a "$_outp" != '.' ] && _outp=
 
     case "$_outp" in
-    '') _netpath="$1" ;;
-    -)  _netpath=
-        [ -n "$_optd" ] ; return ;;             # return status
-    .)  _netpath="./${1#/}"
-        _netpath="${_netpath//\/.\//\/}" ;;     # prettify /./ => /
-    *)  _netpath="${CEN_NET_OUTPUT%/}/${1##*/}"
-        [ -n "$_optd" ] && return 0
+    '') _path="$1" ;;
+    -)  _path= ; _optd=1 ;;
+    .)  _path="./${1#/}"
+        _path="${_path//\/.\//\/}" ;;           # prettify /./ => /
+    *)  _path="${CEN_NET_OUTPUT%/}/${1##*/}"
     esac
-    [ -z "$_optd" ] && return 0                 # no folder check
 
-    [ -d "$_netpath" ] || return 1              # folder not found
-    [ -z "$2" ] && return 0                     # no suffix
-    [ -d "$_netpath$2" ] || return 0            # no suffixed folder
-    _netpath+="$2" ; return 0
+    if [ -z "$2" ] && [ -z "$_optd" ] ; then    # no folder check
+        _stat=0
+    elif [ -n "$_optd" ] && [ ! -d "$_path" ] ; then
+        _stat=1                                 # no base folder
+    elif [ -z "$2" ] || [ ! -d "$_path$2" ] ; then
+        _stat=0                                 # no suffixed folder
+    else
+        _path+="$2" ; _stat=0                   # got a valid suffix
+    fi
+    printf -v "$_opts" '%s' "$_path" ; return "$_stat"
 }
 
 # ------------------------------------------------------------------------------
@@ -1493,7 +1549,7 @@ netpath() {
 #           configuration for tinyproxy will be generated. This includes the
 #           current 'upstream' definitions for the active MASTER server.
 #
-# Storage:  CEN_NET_FILE_PROX="$CEN_NET_DIR_RUN/network_proxy"
+# Storage:  CEN_NET_FILE_PROX="$CEN_TRANSIENT/network_proxy"
 #
 #+          This file contains variables describing the current proxy and should
 #           be sourced by login-shells:
@@ -1668,11 +1724,11 @@ netproxy() {
         fi
         netfile -v _wpad "$_opad"
     fi
-    trace -a -c -p ' ' $"Local proxy: %s   upstream: %s" "${_serv:--}" "$_owrt"
+    $CEN_TRACE -a -c -p ' ' $"Local proxy: %s   upstream: %s" "${_serv:--}" "$_owrt"
 
     if [ -n "$_orel" ] ; then
         if readline -s _orel -i '/var/run/tinyproxy/tinyproxy.pid' && [ -n "$_orel" ] ; then
-            trace -a -p -c 'tinyproxy' $"Configuration reload, PID=%s" "$_orel"
+            $CEN_TRACE -a -p -c 'tinyproxy' $"Configuration reload, PID=%s" "$_orel"
             sysrun -q kill -SIGUSR1 "$_orel"
         fi
     fi
@@ -2044,7 +2100,7 @@ $sdom$ssvr
 #
 # Return:   **true** if an entry was found or **false** on failure
 #
-# Storage:  CEN_NET_FILE_STAT="$CEN_NET_DIR_RUN/network_status"
+# Storage:  CEN_NET_FILE_STAT="$CEN_TRANSIENT/network_status"
 #
 # Variables:The functions reads or stores the current values:
 #
@@ -2056,15 +2112,14 @@ $sdom$ssvr
 netserver() {
     # read the file
     if [ "$1" != '-w' ] ; then
-        netpath -r -- "$CEN_NET_FILE_STAT"
-        _cen_source "$_netpath" ; return            # return status
+        _cen_source "$CEN_NET_FILE_STAT" ; return   # return status
     fi
 
     # remove the status files
     shift
     if [ "$1" = '-' -a "$#" = 1 ] ; then
         _cen_net_remove "$CEN_NET_FILE_STAT" "$CEN_NET_FILE_PROX"
-        return
+        return                                      # return status
     fi
 
     # role (imply WORKSTATION for CLIENT)
@@ -2290,7 +2345,11 @@ nettool() {
 # Startup - read config unless '-n' is used: [-n]
 # ------------------------------------------------------------------------------
 
-[ "$1" = '-n' -o "$1" = '-A' ] || netconfig
+if [ "$1" = '-n' -o "$1" = '-A' ] ; then
+    _cen_net_files ':'
+else
+    netconfig
+fi
 :
 
 # end
