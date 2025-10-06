@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 # ------------------------------------------------------------------------------
-CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2024; BSD License"
+CEN_LEGAL="Copyright Dr. J. Pfennig (c) 2019-2025; BSD License"
 CEN_TITLE=$"Documentation generator for centauri-bash-lib and centauritools"
 
 # Import the bash library, set name and version
-PATH+=":${0%/*}" . _centauri_bash_lib -a -d -f -i -r -t -y - '0.21:2' 0 || exit 2
+PATH+=":${0%/*}" . _centauri_bash_lib -a -d -f -i -r -t -y - '0.22:6' 0 || exit 2
 
 # Data
 CEN_OPT_ALL=                    # see --all
@@ -404,7 +404,7 @@ parser_full() {
     [[ "$1" == *\<\<*\>\>* ]]  && [[ "$1" =~ $REX_ital ]] && return 2  # ital
     [[ "$1" == *\<\>* ]]       && [[ "$1" =~ $REX_void ]] && return 5
 
-    [ "$DAT_FMT_MODE" = "0" ] && return 0       # simple text formatting
+    [ "$DAT_FMT_MODE" = 0 ] && return 0         # simple text formatting
 
     [[ "$1" == *-[a-zA-Z-]* ]]       && [[ "$1" =~ $REX_sopt ]] && return 3  # bold
     [[ "$1" == *--[a-zA-Z]* ]]       && [[ "$1" =~ $REX_lopt ]] && return 3  # bold
@@ -423,7 +423,7 @@ parser_mini() {
     [[ "$1" == *\*\** ]]       && [[ "$1" =~ $REX_bold ]] && return 3  # bold ???
     [[ "$1" == *\"*\"* ]]      && [[ "$1" =~ $REX_quot ]] && return 3  # bold
 
-    [ "$DAT_FMT_MODE" = "0" ] && return 0       # simple text formatting
+    [ "$DAT_FMT_MODE" = 0 ] && return 0         # simple text formatting
 
     [[ "$1" == *-[a-zA-Z-]* ]]       && [[ "$1" =~ $REX_sopt ]] && return 3  # bold
     [[ "$1" == *--[a-zA-Z]* ]]       && [[ "$1" =~ $REX_lopt ]] && return 3  # bold
@@ -585,7 +585,7 @@ formatter() {
         _varg="$_tmp1$_tmp2" ; DAT_AUTOLIST= ; DAT_AUTOTRIM=
 
     # auto list mode - after normal output line only - if line is indented
-    elif [ "$DAT_FMT_MODE" != "0" -a -n "$DAT_AUTOLIST" ] &&
+    elif [ "$DAT_FMT_MODE" != 0 -a -n "$DAT_AUTOLIST" ] &&
          [ "${#_varg}" -gt 4 -a "${_varg::4}" = "    " ] ; then
         if [ -z "$DAT_AUTOTRIM" ] ; then            # not a follow-up line
             local _len1="${_varg%%[! ]*}" ; _len1="${#_len1}"
@@ -627,10 +627,13 @@ definition() {
       case "$1" in
       --)   shift ; break ;;
       -b)   oflg='-' ;;
-      -o)   oflg="+" ;;
+      -o)   oflg='+' ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
+
+    local symb='┃' symd='•'
+    [ -n "$CEN_NOUTF8" ] && { symb='|' ; symd='*' ; }
 
     DAT_AUTOLIST=
     if [ "$#" = 0 ] ; then
@@ -727,9 +730,9 @@ definition_plain() {
         fi
 
         case "$DAT_DEF_MODE" in
-        .)  mesg="┃ $mesg" ;;                   # box mode
+        .)  mesg="$symb $mesg" ;;               # box mode
         ,)  if [ "${mesg::2}" = "- " ] ; then   # list mode
-                mesg="• ${mesg:2}"
+                mesg="$symd ${mesg:2}"
             else
                 mesg="  ${mesg#"${mesg%%[![:space:]]*}"}"
             fi ;;
@@ -757,7 +760,7 @@ definition_html() {
 
     if [ "$idnt" = '-' ] ; then
         sepa=" " ; mtxt="def-block"
-    elif [ "$idnt" = "+" ] ; then
+    elif [ "$idnt" = '+' ] ; then
         DAT_DEF_OPEN=
     fi
 
@@ -783,20 +786,20 @@ definition_html() {
         if [ -n "$DAT_DEF_MODE" ] ; then        # display in box
             if [ -z "$fbox" ] ; then
                 sepa=$'\n'
-                if [ "$DAT_DEF_MODE" = "." ] ; then
+                if [ "$DAT_DEF_MODE" = '.' ] ; then
                     mout+="<pre>" ; fbox=1
                 elif [ "$DAT_DEF_MODE" = '-' ] ; then
                     mout+="<pre>" ; fbox=2
-                elif [ "$DAT_DEF_MODE" = "," ] ; then
+                elif [ "$DAT_DEF_MODE" = ',' ] ; then
                     mtxt="def-text" ; fbox=3
-                elif [ "$DAT_DEF_MODE" = "+" ] ; then
+                elif [ "$DAT_DEF_MODE" = '+' ] ; then
                     mtxt="def-block" ; sepa=" "
                 fi
             fi
         fi
 
         [ "$sepa" = " " ] && mesg="${mesg#"${mesg%%[![:space:]]*}"}"
-        [ "$fbox" = "3" -a "${mesg::2}" = '- ' ] && mesg="•${mesg:1}"
+        [ "$fbox" = 3 -a "${mesg::2}" = '- ' ] && mesg="$symd${mesg:1}"
         formatter mesg                          # format right side
 
         if [ -n "$mout" ] ; then                # continuation line
@@ -815,7 +818,7 @@ definition_html() {
             fi
         fi
     done
-    [ -n "$fbox" -a "$DAT_DEF_MODE" = "." ] && mout+="</pre>" ; fbox=
+    [ -n "$fbox" -a "$DAT_DEF_MODE" = '.' ] && mout+="</pre>" ; fbox=
 
     xml_element 'div' -b -n -i -c "def-row"
     if [ -n "$lout" ] ; then
@@ -1160,7 +1163,7 @@ content_foot_plain() {
 }
 
 content_begin_plain() {
-    [ "$DAT_CNT_ITEM" != "0" ] && output -l -x "$CEN_COLS" . -d one -- "$DAT_SEP_ITEM"
+    [ "$DAT_CNT_ITEM" != 0 ] && output -l -x "$CEN_COLS" . -d one -- "$DAT_SEP_ITEM"
 }
 
 content_end_plain() { : ; }

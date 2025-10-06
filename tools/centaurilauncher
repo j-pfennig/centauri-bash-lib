@@ -351,7 +351,7 @@ context -e 0 -v 3
 # Config callback for httpd
 # ------------------------------------------------------------------------------
 launcher_lighttpd() {
-$CEN_DEBUG -c -- "$@"
+    $CEN_DEBUG -c -- "$@"
     local oerr orun
     while [ $# -gt 0 ] ; do
         case "$1" in
@@ -445,7 +445,7 @@ server.modules += ( "mod_cgi" )
 # Config callback for qmlweb
 # ------------------------------------------------------------------------------
 launcher_qmlweb() {
-$CEN_DEBUG -c -- "$@"
+    $CEN_DEBUG -c -- "$@"
     local oerr orun _mode _ainf _titl
     while [ $# -gt 0 ] ; do
         case "$1" in
@@ -460,9 +460,8 @@ $CEN_DEBUG -c -- "$@"
         esac ; shift
     done
 
-    $CEN_DEBUG -c -- "$*"
     local _pqml="$1" _titl _full ; shift
-    local _file _resx="${1:--}" _resy="${2:--}" _zoom="${3:--}"
+    local _resx="${1:--}" _resy="${2:--}" _zoom="${3:--}"
     shift ; shift ; shift
 
     ### TODO check qt installation
@@ -504,8 +503,95 @@ $CEN_DEBUG -c -- "$@"
         [ -n "$CEN_EMBED" ] && _titl="$CEN_EMBED ⸺ $CEN_NAME"
     fi
 
-    local _qvar='Q''t' _pipe                        # hide Qt to avoid mime type qml
+    local _qvar='Q''t' _pipe _file _wrap    # hide Qt to avoid mime type qml
     tmpfile -n -s _file -- 'launcher.qml' || return 1
+   # tmpfile -n -s _wrap -- 'wrapper.html' || return 1
+
+    # script helper: <file> <url>
+    ___qml_script() {
+        create -r -t -c -- "$1" 400 <<!EOF || return 1
+import ${_qvar}Quick 2.2
+import ${_qvar}Quick.Window 2.2
+import ${_qvar}WebEngine 1.2
+Window {
+    id: mainWindow
+    function cen_posx() { return (Screen.desktopAvailableWidth - $_resx) / 2; }
+    function cen_posy() { return (Screen.desktopAvailableHeight - $_resy) / 2; }
+    x: cen_posx() ; y: cen_posy()
+    width: $_resx ; height: $_resy
+    visible: true $_full
+    title: "$_titl"
+
+    WebEngineView {
+        anchors.fill: parent
+        url: "$2"
+        focus: true
+        zoomFactor: $_zoom
+        onJavaScriptConsoleMessage: {
+            switch(message) {
+                case 'EXIT':
+                    Qt.exit(1); break;
+                case 'QUIT':
+                    Qt.quit(); break;
+                case 'FULL':
+                    mainWindow.showFullScreen(); break;
+                case 'WIND':
+                    mainWindow.showNormal(); break;
+                default:
+                    console.log(message);
+            }
+        }
+        settings.localContentCanAccessFileUrls: true
+        settings.localContentCanAccessRemoteUrls: true
+   }
+}
+!EOF
+    }
+
+    # iframe helper: <file> <url>
+    ___qml_iframe() {
+    create -c -- "$1" 400 <<!EOF || return 1
+<!DOCTYPE html>
+<html>
+<style>
+  body {
+    margin: 0;
+  }
+  iframe {
+    height:calc(100vh - 4px);
+    width:calc(100vw - 4px);
+    box-sizing: border-box;
+  }
+</style>
+
+<script>
+  var cen_document
+
+  // keys q/Escape and touch are handled in qml code via console logging
+  function keydown(event) {
+    switch(event.key) {
+     //case 'b':  alert(window.frames[0].history);
+     //   window.frames[0].history.back(); break;
+      case 'f': console.log("FULL"); break;
+      case 'w': console.log("WIND"); break;
+      case 'q':
+      case 'Escape': console.log("QUIT"); break;
+    }
+  }
+
+  function loaded() {
+    var iframe = document.getElementById('centauriIFrame');
+    cen_document=iframe.contentDocument
+    cen_document.body.addEventListener('keydown', keydown);
+  }
+</script>
+
+<body onload="loaded()">
+  <iframe id="centauriIFrame" src="$2" frameborder="0" allowfullscreen></iframe>
+</body>
+</html>
+!EOF
+    }
 
     # wait for synchronization pipe - see 'launcher_webapp'
     if [ -n "$DAT_SYNCPIPE" ] ; then
@@ -516,33 +602,14 @@ $CEN_DEBUG -c -- "$@"
         [ "$_flag" = 'OK' ] || return 1
     fi
 
-    create -r -t -c -- "$_file" 400 <<!EOF || return 1
-import ${_qvar}Quick 2.2
-import ${_qvar}Quick.Window 2.2
-import ${_qvar}WebEngine 1.2
-Window {
-    function cen_posx() { return (Screen.desktopAvailableWidth - $_resx) / 2; }
-    function cen_posy() { return (Screen.desktopAvailableHeight - $_resy) / 2; }
-    x: cen_posx() ; y: cen_posy()
-    width: $_resx ; height: $_resy
-    visible: true $_full
-    title: "$_titl"
+    # create qml script
+    if [ -z "$_wrap" ] ; then
+        ___qml_script "$_file" "$DAT_URL"
+    else
+        ___qml_iframe "$_wrap" "$DAT_URL"
+        ___qml_script "$_file" "file:$_wrap"
+    fi
 
-    WebEngineView {
-        anchors.fill: parent
-        url: "$DAT_URL"
-        focus: true
-        zoomFactor: $_zoom
-        onJavaScriptConsoleMessage: {
-            if (message == 'EXIT') Qt.exit(1);
-            if (message == 'QUIT') Qt.quit();
-            console.log(message);
-        }
-        settings.localContentCanAccessFileUrls: true
-        settings.localContentCanAccessRemoteUrls: true
-   }
-}
-!EOF
     case "$_mode" in
     # mode 1 makes no sense with qml, use mode=0
     0|1)

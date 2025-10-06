@@ -18,10 +18,10 @@
 # Example:  Add command line option --mount for automount (and unmount):
 #.          . _centauri_bash_mnt -m
 #
-# Copyright Dr. J. Pfennig (c) 2020-2024
+# Copyright Dr. J. Pfennig (c) 2020-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_mnt']='0.13:4'
+CEN_MODULES['_centauri_bash_mnt']='0.16:6'
 
 embed -c '_centauri_bash_utl'   # import on demand, see timer()
 
@@ -37,14 +37,29 @@ CEN_MOUNT_EXC=(cgroup cgroup2 proc \
                autofs binfmt_misc configfs bpf debugfs devpts devtmpfs efivarfs fusectl \
                hugetlbfs mqueue nfsd pstore ramfs rpc_pipefs securityfs sysfs tmpfs tracefs)
 
-# used by automount
+# used by automount()
 
 CEN_MNT_OPT_D=                  # automount options ...
 CEN_MNT_OPT_M=
 
-CEN_MNT_OLVL=                   # unmount flag, output mode
-
 declare -g -A CEN_MNT_AMAP      # automount map
+
+# used by usermount()
+
+CEN_MNT_USER_QDIR=              # mount folder for quit hook
+CEN_MNT_USER_QOPT=              # options for quit hook
+
+# used by location()
+
+CEN_MNT_LOC_NAME=               # name array of well known locations
+CEN_MNT_LOC_PATH=               # results ...
+CEN_MNT_LOC_BASE=               # last base
+CEN_MNT_LOC_DIST=               # last distribution
+
+CEN_MNT_ERROR=                  # set by _cen_mnt_automount
+CEN_MNT_MESSAGE=
+CEN_MNT_PROGRESS=
+CEN_MNT_OUT_MODE=               # output mode: quiet trace progress message
 
 # ------------------------------------------------------------------------------
 # automount - Automatic volume mount and unmount
@@ -87,7 +102,7 @@ declare -g -A CEN_MNT_AMAP      # automount map
 # root priviledges but does not allow to pass most mount options.
 # ------------------------------------------------------------------------------
 automount() {
-    local _fbtr _fchk _fnun _freg _fwai _olvl _umnt _labl _lmsg _desc
+    local _fbtr _fchk _fnun _freg _fwai _olvl _umnt
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -97,36 +112,16 @@ automount() {
         -m)   _fnun=1 ;;
         -o)   shift ; _olvl="$1" ;;
         -q)   _umnt=2 ;;
-        -r)   _umnt=3 ;; ####   _freg=1 ;;
+        -r)   _umnt=3 ;;
         -u)   _umnt=1 ;;
         -w)   _fwai=1 ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
+    _cen_mnt_output -o "$_olvl"                     # set output method
     [ -z "$_kind" ] && _kind=$"storage"
-    _desc="$1"
 
-    # output method
-    if [ "${_olvl:-auto}" = 'auto' ] ; then
-        _olvl='message'
-        if [ -n "$CEN_OPT_SILENT" ] ; then
-            _olvl="$CEN_TRACE"
-        elif isfunction -c windows ; then
-            _olvl="$CEN_TRACE"
-        fi
-    fi
-
-    local _ofun="$CEN_TRACE" _efun='error' _emsg _pfun _wmsg
-    case "$_olvl" in
-    qui*)      _ofun=':' ; _efun=':' ;;
-    mes*|msg)  _ofun='message'  ;;
-    pro*)      if isfunction -c console || isfunction -c windows ; then
-                    _pfun='progress'
-               else
-                    _ofun='message'
-               fi ;;
-    err*)      _ofun=':' ;;
-    esac
+    local _desc="$1" _emsg _wmsg _labl _lmsg
 
     # is mount argument a label?
     if [ "${_desc::5}" = '/dev/' ] ; then
@@ -134,7 +129,7 @@ automount() {
     elif [ "${_desc::1}" = '/' ] ; then
         _labl= ; _lmsg=$"path"
     else
-        _labl="-c -l"; _lmsg=$"label"
+        _labl='-c -l'; _lmsg=$"label"
     fi
 
     # -------
@@ -146,7 +141,7 @@ automount() {
         folder -c '/'                           # may work in some cases
         for _mkey in "${!CEN_MNT_AMAP[@]}" ; do
             _mtyp="${_mkey%%:*}" ; [ "$_mtyp" = "$_mkey" ] && _mtyp=
-            automount -k "$_mtyp" -o "$CEN_MNT_OLVL" -u "${CEN_MNT_AMAP["$_mkey"]}"
+            automount -k "$_mtyp" -u "${CEN_MNT_AMAP["$_mkey"]}"
         done
         folder -q -c "$_mdir"
         return 0
@@ -253,19 +248,19 @@ automount() {
 #
 _cen_automount_mesg() {
     # _kind _desc _lmsg
-    [ "$_efun" = ':' ] && return 0              # quiet mode
-    local _fout="$_ofun -a" _fcon _fpro _long
+    [ "$CEN_MNT_ERROR" = ':' ] && return 0              # quiet mode
+    local _fout="$CEN_MNT_MESSAGE -a" _fcon _fpro _long
 
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
         -d)   _fpro=3 ; isfunction -c windows || _fcon=1 ;;
-        -e)   _fout="$_efun" ;;
+        -e)   _fout="$CEN_MNT_ERROR" ;;
         -f)   _long=2 ;;
         -i)   _fpro=1 ;;
         -l)   _long=1 ;;
-        -m)   [ -n "$_pfun" ] && _fout='message -a' ;;
-        -p)   [ -n "$_pfun" ] && _fout='message -a -d +3' ;;
+        -m)   [ -n "$CEN_MNT_PROGRESS" ] && _fout='message -a' ;;
+        -p)   [ -n "$CEN_MNT_PROGRESS" ] && _fout='message -a -d +3' ;;
         -w)   _fpro=2 ;;
         *)    _cen_abort - "$1"
         esac ; shift
@@ -274,10 +269,10 @@ _cen_automount_mesg() {
 
     # handle -w
     if [ "$_fpro" = 2 ] ; then
-        if [ -n "$_pfun" ] ; then
-            $_pfun "."
+        if [ -n "$CEN_MNT_PROGRESS" ] ; then
+            $CEN_MNT_PROGRESS '.'
         elif [ -z "$_wmsg" ] ; then
-            $_ofun -a $"... waiting for" "$_kind" ; _wmsg=1
+            $CEN_MNT_MESSAGE -a $"... waiting for" "$_kind" ; _wmsg=1
         fi
         return 0
     fi
@@ -285,12 +280,13 @@ _cen_automount_mesg() {
     # find output function for progress
     if [ -n "$_fpro" ] ; then
         _long=1 ; _msg1+=" #K "
-        if [ -n "$_pfun" -o -n "$_fcon" ] ; then
+        if [ -n "$CEN_MNT_PROGRESS" -o -n "$_fcon" ] ; then
             if [ -n "$_fcon" ] ; then
-                [ "$_ofun" = 'message' -o "$_ofun" = 'trace' ] && _fout='message -a'
+                [ "$CEN_MNT_MESSAGE" = 'message' -o \
+                  "$CEN_MNT_MESSAGE" = 'trace' ] && _fout='message -a'
             else
                 _long= ; _msg1+=$"by #L '#A' "
-                _fout="$_pfun -a"
+                _fout="$CEN_MNT_PROGRESS -a"
                 [ "$_fpro" = 1 ] && _fout+=' -c 0 -t'
             fi
         fi
@@ -313,8 +309,8 @@ _cen_automount_mesg() {
 
 # register for quit hook: <kind> <dev> <desc> <levl>
 _cen_automount_register() {
-    CEN_MNT_AMAP["$1:$2"]="$3" ; CEN_MNT_OLVL="$4"
-    $CEN_TRACE -a "Registered for unmount quit hook: $1 $2"
+    CEN_MNT_AMAP["$1:$2"]="$3"
+    $CEN_TRACE -a $"Registered for unmount:" "$1 $2"
 }
 
 # ------------------------------------------------------------------------------
@@ -355,6 +351,7 @@ _cen_automount_register() {
 #
 #.          # check if name is a partition that is allowed to be mounted
 #.          blkdevice -p -m -e "nvme0n1p1"
+#.          [ "${CEN_BLKDEVICE[0]:--}" = '-' ] || message "Device is  ${CEN_BLKDEVICE[0]}"
 #.          [ "${CEN_BLKDEVICE[3]:--}" = '-' ] || message "Mounted at ${CEN_BLKDEVICE[3]}"
 #
 #.          # check if a partition exists (allowed to be mounted)
@@ -388,39 +385,39 @@ blkdevice() {
         *)    _cen_abort - "$1"
         esac ; shift
     done
-    if [ -z "$_fblk$_fpar$_fimg" ] ; then       # set default options
+    if [ -z "$_fblk$_fpar$_fimg" ] ; then           # set default options
         _fblk=1 ; _fpar=1 ; _fimp=1
     fi
-    [ -n "$_npar" ] && _fpar=                   # disallow partition
+    [ "${_npar:-0}" = 0 ] || _fpar=                 # disallow partition
 
-    local -n _varr="$_anam"
+    local -n _cen_blkdevice_varr="$_anam"
     local _path="$1" _name="${1##*/}" _pref
-    if [ "$_name" = "$_path" ] ; then           # no slash, make path
+    if [ "$_name" = "$_path" ] ; then               # no slash, make path
         if [ -e "$_path" ] ; then
             _path="$PWD/$_path"
         elif [ -e "/dev/$_path" ] ; then
             _path="/dev/$_path"
         fi
     fi
-    _varr=("$_path" '-' '-' '-')                # default return values
+    _cen_blkdevice_varr=("$_path" '-' '-' '-')      # default return values
 
     # check for file or block device
-    if [ -b "$_path" ] ; then
+    if [ -b "$_path" -o -n "$_npar" ] ; then
          :
     elif [ -n "$_fimg" ] && [ "${_path::5}" != '/dev/' ] ; then
         if [ -d "$_path" -o ! -e "$_path" ] ; then
             $_oerr $"No such image file:" "$_path" ; return 1
         fi
         system -e -p -r -s _path -- readlink -e "$_path" || return 1
-        _varr[0]="$_path"
+        _cen_blkdevice_varr[0]="$_path"
     else
         $_oerr $"Not a block device:" "$_path" ; return 1
     fi
 
     # partition prefix char: <name> := <base><pref><partition>
     case "$_name" in
-        mmcblk*)    _pref='p' ;;
-        nvme*)      _pref='p' ;;
+        [sh]d[a-z]*)    ;;
+        *)              _pref='p'
     esac
 
     # check if mounted
@@ -428,39 +425,43 @@ blkdevice() {
     [ -n "$_npar" ] && _mchk="$_path$_pref$_npar" || _mchk="$_path"
 
     while read -r _item _pmnt _ptyp _xxxx ; do
-        [ "$_ptyp" = 'autofs' ] && continue             # ignore these!
+        [ "$_ptyp" = 'autofs' ] && continue         # ignore these!
         [ "${_item::_leng}" = "$_path" ] || continue
-        printf -v _item "${_item//%/$'\n'}"             # handle escapes, protect %
+        printf -v _item "${_item//%/$'\n'}"         # handle escapes, protect %
         printf -v _pmnt "${_pmnt//%/$'\n'}"
-        _item="${_item//$'\n'/%}"                       # restore %
+        _item="${_item//$'\n'/%}"                   # restore %
         _pmnt="${_pmnt//$'\n'/%}"
-        _merr=1                                         # device is mounted
-        [ "$_item" = "$_mchk" ] || continue             # this partititon?
-        _varr[3]="$_pmnt" ; break
-    done < "/proc/mounts"
+        _merr=1                                     # device is mounted
+        [ "$_item" = "$_mchk" ] || continue         # this partititon?
+        _cen_blkdevice_varr[3]="$_pmnt" ; break
+    done < '/proc/mounts'
     if [ -z "$_fmnt" -a -n "$_merr" ] ; then
-        $_oerr $"Device is mounted:" "$_path (${_varr[3]})" ; return 1
+        $_oerr $"Device is mounted:" "$_path (${_cen_blkdevice_varr[3]})" ; return 1
     fi
 
     # validate device type
     _item="/sys/class/block/$_name"
     if [ -e "$_item/partition" ] ; then
-        _xxxx=$(<"$_item/partition")
-        _varr[0]="${_path%$_pref$_xxxx}"
-        _varr[1]="$_path"
-        _varr[2]="$_xxxx"
+        read _xxxx <"$_item/partition"               # read partition number
+        _cen_blkdevice_varr[0]="${_path%$_pref$_xxxx}"
+        _cen_blkdevice_varr[1]="$_path"
+        _cen_blkdevice_varr[2]="$_xxxx"
         if [ -z "$_fpar" ] ; then
             $_oerr $"Cannot use a partition:" "$_path" ; return 1
         fi
         $_otra $"Using partition:" "$_path"
     elif [ -e "$_item" ] ; then
-        _varr[1]=
-        _varr[2]=0
+        _cen_blkdevice_varr[1]=
+        _cen_blkdevice_varr[2]=0
         if [ -z "$_fblk" ] ; then
             $_oerr $"Cannot use a block device:" "$_path" ; return 1
         fi
         $_otra $"Using block device:" "$_path"
-    else
+    elif [ "$_npar" = 0 ] ; then
+        _cen_blkdevice_varr[0]="${_path%$_pref[1-9]*}"
+        _cen_blkdevice_varr[1]="$_path"
+        _cen_blkdevice_varr[2]="${_path:${#_cen_blkdevice_varr[0]}}"
+    elif [ -z "$_npar" ] ; then
         if [ -z "$_fimg" ] ; then
             $_oerr $"Cannot use a file:" "$_path" ; return 1
         fi
@@ -468,15 +469,15 @@ blkdevice() {
     fi
 
     # check if existing, generate a partition name
-    if [ "${_npar:-0}" = 0 ] ; then
-        _item="${_varr[0]}"                 # device
-    else
-        _varr[1]="$_path$_pref$_npar"
-        _varr[2]="$_npar"
-        _item="${_varr[1]}"                 # partition
+    if [ "${_npar:-0}" = 0 ] ; then                 # device or partition
+        _item="${_cen_blkdevice_varr[0]}"
+    else                                            # add partition
+        _cen_blkdevice_varr[1]="$_path$_pref$_npar"
+        _cen_blkdevice_varr[2]="$_npar"
+        _item="${_cen_blkdevice_varr[1]}"           # partition
     fi
-    [ -z "$_fexi" ] && return 0             # don't check
-    [ -b "$_item" ] && return 0             # existing
+    [ -z "$_fexi" ] && return 0                     # don't check
+    [ -b "$_item" ] && return 0                     # existing
     $_oerr $"Not a block device:" "$_item" ; return 1
 }
 
@@ -496,7 +497,7 @@ blkdevice() {
 #           -d  return **true** if device is found but not mounted
 #           -i  get CEN_MOUNT_FS even if not mounted
 #           -l  find by label
-#           -r  get identifier for device into CEN_MOUNT_DIR
+#           -r  get identifier for device into CEN_MOUNT_LBL
 #           -t  find by type (returns CEN_MOUNT_ARR array)
 #
 # Arguments:<device>     device to find, example '/dev/sdc1'
@@ -595,7 +596,9 @@ findmount() {
         [ "${_mdev::1}" = '/' ] || return 1                    # cannot have a label
         for _mxxx in "/dev/disk/by-$_fknd/"* ; do
             [ "$_mdev" -ef "$_mxxx" ] || continue
-            CEN_MOUNT_DIR="${_mxxx##*/}" ; return 0
+            CEN_MOUNT_DEV="$_mdev"
+            CEN_MOUNT_DIR="$_mxxx"
+            CEN_MOUNT_LBL="${_mxxx##*/}" ; return 0
         done
         return 1
 
@@ -622,12 +625,12 @@ findmount() {
              [ "$_mdev" = '*' -o "$_mdev" = "$CEN_MOUNT_DEV" ] || continue
              [ "$_mdir" = "$_mdev" ] && return 0
         elif [ "$_mdev" -ef "$CEN_MOUNT_DEV" ] ; then           # a device
-            [ "${_mdev::5}" = "/dev/" ] && return 0
+            [ "${_mdev::5}" = '/dev/' ] && return 0
         fi
         if [ "$_mdir" -ef "$CEN_MOUNT_DIR" ] ; then
-            [ "${_mdir::5}" = "/dev/" ] || return 0
+            [ "${_mdir::5}" = '/dev/' ] || return 0
         fi
-    done < "/proc/mounts"
+    done < '/proc/mounts'
 
     # not mounted
     [ "$_fdev" = 2 ] && system -e -p -r -s CEN_MOUNT_FS -- lsblk -n -b -d -o FSTYPE "$_mdev"
@@ -655,6 +658,320 @@ _cen_findmount_type() {
 }
 
 # ------------------------------------------------------------------------------
+# usermount - Mount using sudo create mountpoint unmount on quit
+#
+# Call:     usermount [-e|-f|-w] [-r] [-p] [-o <func>] ...
+#           usermount ... [-m <mpnt>] [-s <vnam>] [-n] [--] <dev> <opt>...
+#           usermount ... [-m <mpnt>] [-s <vnam>] -l [-n] [--] <labl> <opt>...
+#           usermount ... -u [--] <dev>|<mpnt>
+#
+# Options:  -b  btrfs check: add 'subvol=/' mount option
+#           -e  report errors
+#           -f  make errors fatal
+#           -l  mount by label
+#           -m  specify a mount-point
+#           -n  no unmount on quit
+#           -o  output function: trace|message|quiet|progress  (default: auto)
+#           -p  try sudo to get root privileges
+#           -r  ignore dryrun
+#           -s  save mount-point to variable (default is: CEN_USERMOUNT)
+#           -u  unmount now
+#           -w  report errors as warning
+#
+# Arguments:<dev>   block device to be mounted
+#           <labl>  device label
+#           <mpnt>  mount-point
+#           <opt>   mount options
+#           <vnam>  variable name
+#
+#.Examples: usermount -f -p -- "/dev/sda" subvol=/
+#.          message "Mounted at:" "$CEN_USERMOUNT"
+#
+#.          usermount -e -p -m "myfolder" -- "/dev/sda"
+#
+#.          usermount -e -b -l -p -- "my_disk"
+#
+#+unmount: If not using -n (quit does unmount) this function handles only one
+# mount at a time. Mounting another device without -n automatically unmounts
+# the previous mount. This is intentionally be used to switch between devices.
+#
+#+         If the current working folder is equal to the active mount-point the
+# current folder is set to '/'.
+# ------------------------------------------------------------------------------
+CEN_USERMOUNT=
+usermount() {
+    local _mesg='trace -a -c " "' _vnam='CEN_USERMOUNT'
+    local _oerr='-q' _olbl _obtr _olvl _mpnt _nunm _rdry _priv _devi _devu _stat
+    while [ "${1::1}" = '-' ] ; do
+        case "$1" in
+        --) shift ; break ;;
+        -b) _obtr=1 ;;
+        -e|-f|-w)
+            _oerr="$1 -p" ; _mesg="error $1" ;;
+        -l) _olbl='-L' ;;
+        -m) shift ; _mpnt="$1" ;;
+        -n) _nunm=1 ;;
+        -o) shift ; _olvl="$1" ;;
+        -p) _priv='-u -' ;;
+        -r) _rdry='-r' ;;
+        -s) shift ; _vnam="$1" ;;
+        -u) _devu=1 ;;
+        *)  _cen_abort - "$1"
+        esac ; shift
+    done
+    _devi="$1" ; shift
+    _cen_mnt_output -o "$_olvl"                     # set output method
+
+    if [ -n "$_devu" ] ; then
+        [ "$#" = 0 ] || _cen_abort '@'              # too many arguments
+        _devu="$_devi" ; _devi=
+    elif [ "${CEN_MNT_USER_QDIR:--}" != '-' ] ; then
+        _devu="$CEN_MNT_USER_QDIR"
+    fi
+
+    # --- unmount ---
+
+    if [ -n "$_devu" ] ; then
+        if ! findmount -- "$_devu" ; then
+            $CEN_TRACE -c ' ' $"Not mounted:" "$_devu" ; return 0
+        fi
+        _devu="$CEN_MOUNT_DEV" ; _mpnt="$CEN_MOUNT_DIR"
+        _cen_mnt_output -p -l $"Unmounting '$_devu' ..."
+        [ "$PWD" -ef "$_mpnt" ] && folder -c '/'
+        system $_oerr $_rdry $_priv -- umount "$_devu" ; _stat="$?"
+        _cen_mnt_output -a -p $"Unmounted '%s' from '%s'" "$_devu" "$_mpnt"
+        [ "$CEN_MNT_USER_QDIR" = "$_mpnt" ] && CEN_MNT_USER_QDIR='-'
+        [ -z "$_devi" ] && _mpnt=
+    fi
+
+    # --- mount ---
+
+    if [ -n "$_devi" ] ; then
+        _cen_mnt_output -p -l "Mounting '$_devi' ..."
+        if [ "${_mpnt:--}" = '-' ] ; then           # temporary mount-point
+            tmpfile -n -s _mpnt ; folder -f -m $_rdry -- "$_mpnt"
+        fi
+        if [ -n "$_obtr" ] ; then                   # btrfs check
+            local _temp='--'
+            [ -n "$_olbl" ] && _temp='-l'
+            findmount -i $_temp "$_devi"
+            [ "$CEN_MOUNT_FS" = 'btrfs' ] && set -- 'subvol=/' "$@"
+        fi
+        system $_oerr $_rdry $_priv -g 0 -- mount $_olbl "$_devi" "$_mpnt" ${1:+-o} "$@"
+        _stat="$?"
+        if [ "$_stat" = 0 ] ; then
+            _cen_mnt_output -a "Mounted '$_devi' at '$_mpnt'"
+            if [ -z "$_nunm" ] ; then
+                CEN_MNT_USER_QDIR="$_mpnt"
+                CEN_MNT_USER_QOPT="${_priv:+-p }$_rdry"
+            fi
+        fi
+    fi
+    printf -v "$_vnam" '%s' "$_mpnt" ; return "$_stat"
+}
+
+# ------------------------------------------------------------------------------
+# location - Find sub-volume or partition of standard locations
+#
+# Call:     location [-e|-f|-w ] [-b <base>] [-d <dist>] [-a|-s <vnam>] [-m] [-n] [--] <name>
+#
+# Options:  -a  result array: path label device
+#           -b  mount point or device (default is '/')
+#           -d  override current distribution
+#           -e  report no-finds as error
+#           -f  make errors fatal
+#           -m  ''location'' must be a mount-point
+#           -n  do not trigger mounts for automount volumes
+#           -s  save path in variable (default is CEN_LOCATION)
+#           -w  report no-finds as warning
+#
+# Arguments:<base>  a base folder (default is '/')
+#           <dist>  linux distribution nick name
+#           <vnam>  variable to return a result
+#           <name>  location name (volume or folder)
+#
+#+Volume names are case sensitive (<name> argument) but mountpoint folder names are
+# always lower case.
+#
+#+Special <name> values are:
+#
+#, "[linux]"    for the linux UKI image folder
+#, "[boot]"   "*/efi" or "*/EFI" for EFI boot
+#, °            "*/grub            for GRUB boot
+#, °            "*/firmware" or "*/overlay" otherwise (Raspberry Pi)
+#, "[swap]"     for the swap partion
+#
+# Returns:  **true** on success -or- **false** for no match
+#
+#+Cache: The ''location'' search results are cached until a different base is set.
+# This makes the location function quite fast if called repeatedly for cached locations.
+# Use a dummy base like '.' to flush the cache explicitly.
+#
+#.Examples: # check if 'export' is a mounted sub-volume
+#.          location -m 'exports' && message -c 'export is' "$CEN_LOCATION"
+#
+#.          # get swap the partion of a device
+#.          if location -b '/dev/sdb' 'swap' ; then
+#.              message -p "Device '%s' swap partition is '%s'" '/dev/sdb' $CEN_LOCATION'
+#.          else
+#.              message -p "Device '%s' has no swap partition" '/dev/sdb'
+#.          fi
+# ------------------------------------------------------------------------------
+location() {
+    local base dist vnam='CEN_LOCATION' omnt mesg='trace -a' indx nmnt stat=0
+    while [ "${1::1}" = '-' ] ; do
+        case "$1" in
+        --) shift ; break ;;
+        -e|-f|-w)
+            mesg="error $1" ;;
+        -a) shift ; vnam= ; local -n _cen_location_varr="$1" ;;
+        -b) shift ; base="${1%/}" ;;
+        -d) shift ; dist="$1" ;;
+        -m) omnt=1 ;;
+        -n) nmnt=1 ;;
+        -s) shift ; vnam="${1:--}" ;;
+        *)  _cen_abort - "$1"
+        esac ; shift
+    done
+
+    # get distribution, check base
+    if [ "${dist:--}" = '-' ] ; then
+        [ -z "$CEN_SYS_NICKNAME" ] && sysversion -o -u
+        dist="$CEN_SYS_NICKNAME"
+    elif [ -n "${dist//[a-z]/}" ] ; then
+        error $"Invalid distribution name:" "$dist" ; return 2
+    fi
+    if [ -n "$base" -a "$base" != "$CEN_MNT_LOC_BASE" ] ; then
+        folder -- "$base" || return 2
+    fi
+
+    # initialize, drop cache
+    if [ "$base" != "$CEN_MNT_LOC_BASE" -o "$dist" != "$CEN_MNT_LOC_DIST" ] ; then
+        CEN_MNT_LOC_NAME=() ; CEN_MNT_LOC_PATH=()
+        CEN_MNT_LOC_DIST="$dist" ; CEN_MNT_LOC_BASE="$base"
+        trace -a -c -p -- - 'base=%s  distribution=%s' "${base:-/}" "$dist"
+    fi
+    if [ -z "$CEN_MNT_LOC_NAME" ] ; then
+        CEN_MNT_LOC_NAME=('swap' 'root')
+        CEN_MNT_LOC_PATH=(''     '')
+    fi
+
+    # get index from cache
+    listsearch -c -i CEN_MNT_LOC_NAME -n indx -- "$1"
+    if [ -z "$indx" ] ; then
+        indx="${#CEN_MNT_LOC_NAME[@]}"
+        CEN_MNT_LOC_NAME[indx]="$1" ; CEN_MNT_LOC_PATH[indx]=''
+    fi
+
+    # search if not in cache
+    if [ -z "${CEN_MNT_LOC_PATH[indx]}" ] ; then
+        _cen_mnt_loc_find "$indx" "$1"
+        [ -z "${CEN_MNT_LOC_PATH[indx]}" ] && CEN_MNT_LOC_PATH[indx]='-'
+    fi
+    if [ "${CEN_MNT_LOC_PATH[indx]}" = '-' ] ; then
+        $mesg -p $"Location '%s' not found: %s" "$1" "${base:-/}" ; stat=1
+    fi
+
+    if [ -n "$vnam" ] ; then                        # return path string
+        printf -v "$vnam" '%s' "${CEN_MNT_LOC_PATH[indx]}"
+    else                                            # return info array
+        local idev iloc="${CEN_MNT_LOC_PATH[indx]}"
+        case "$1" in
+        '[linux]'|'[boot]')
+                    findmount "${iloc%/*}" || findmount "$iloc" ;;
+        '[swap]')   CEN_MOUNT_DEV="$iloc" ; iloc='-' ;;
+        *)          findmount "$iloc"
+        esac
+        local idev="$CEN_MOUNT_DEV" ; findmount -r label "$idev"
+        _cen_location_varr=("$iloc" "${CEN_MOUNT_LBL:--}" "${idev:--}")
+    fi
+    return "$stat"
+}
+
+_cen_mnt_loc_find() {
+    local volu voll item
+    if [ "$2" = '[linux]' ] ; then
+        matchpath -s CEN_MNT_LOC_PATH[$1] -d -o -- \
+                  "$base/mnt/boot"/[Ee][Ff][Ii]/image-$dist "$base/boot"/[Ee][Ff][Ii]/image-$dist \
+                  "$base/mnt/boot"/[Ee][Ff][Ii]/image       "$base/boot"/[Ee][Ff][Ii]/image \
+                  "$base/image-$dist"                       "$base/image"
+        return
+    elif [ "$2" = '[boot]' ] ; then
+        matchpath -s CEN_MNT_LOC_PATH[$1] -d -o -- \
+                  "$base/mnt/boot"/[Ee][Ff][Ii]  "$base/boot"/[Ee][Ff][Ii]  "$base"/[Ee][Ff][Ii] \
+                  "$base/mnt/boot/grub"          "$base/boot/grub"          "$base/grub" \
+                  "$base/mnt/boot/firmware"      "$base/boot/firmware"      "$base/overlays"
+        [ "${CEN_MNT_LOC_PATH[$1]}" = "$base/overlays" ] && CEN_MNT_LOC_PATH[$1]="$base"
+        return
+    elif [ "$2" = '[swap]' ] ; then
+        findmount - "${base:-/}"                    # get device for lsblk
+        case "$CEN_MOUNT_DEV" in                    # glob for partions ...
+        *p[0-9])   volu="${CEN_MOUNT_DEV%p?}p?" ;;
+        *[0-9])    volu="${CEN_MOUNT_DEV%?}?" ;;
+        *)         return                           # no device found
+        esac
+        system -q -a volu -- lsblk -o NAME,FSTYPE -l -n $volu || return
+        listsearch -c -g -i volu -m item -- '* swap*' || return
+        item="/dev/${item%% *}"
+        [ -b "$item" ] && CEN_MNT_LOC_PATH[$1]="$item"
+        return
+    fi
+
+    # Volume name may be uppercase, mountpoints are always lower case
+    volu="$2" ; voll="${2,,}"
+
+    for item in "$base"/mnt/vol?/Volumes "$base/Volumes" ; do
+        [ -d "$item" ] || continue
+
+        if [ "$item" = "$base/Volumes" ] ; then
+            if [ -d "$item/$volu-$dist" ] ; then
+                CEN_MNT_LOC_PATH[$1]="$item/$volu-$dist"
+            elif [ -d "$item/$volu" ] ; then
+                CEN_MNT_LOC_PATH[$1]="$item/$volu"
+            else
+                continue
+            fi
+
+        elif [ "$volu" = 'Root' ] ; then            # should always be mounted
+            if [ -d "$item/Root-$dist" ] ; then
+                CEN_MNT_LOC_PATH[$1]="$item/Root-$dist"
+            elif [ "$item/$volu" -ef "$base/" ] ; then
+                CEN_MNT_LOC_PATH[$1]="$item/Root"
+            else
+                continue
+            fi
+
+        elif [ -d "$item/$volu-$dist" ] ; then
+            CEN_MNT_LOC_PATH[$1]="$item/$volu-$dist"
+        elif [ "$item/$volu" -ef "$base/$voll" ] ; then
+            CEN_MNT_LOC_PATH[$1]="$item/$volu"
+
+        else
+            [ -s "$base/mnt/$voll/xxx" ]            # trigger automount
+            if [ "$item/$volu" -ef "$base/mnt/$voll" ] ; then
+                CEN_MNT_LOC_PATH[$1]="$item/$volu"
+            else
+                continue
+            fi
+        fi
+        trace -a -c -p "sub-volume" '%-9s %s' "$volu" "$item/$volu"
+        return
+    done
+
+    if [ "$voll" = 'root' ] && [ -d "$base/dev" ] ; then
+        CEN_MNT_LOC_PATH[$1]="${base:-/}"
+    elif [ -n "$omnt" ] ; then
+        :
+    elif [ -d "$base/mnt/$voll" ] ; then
+        trace -a -c -p "mountpoint" '%-9s %s' "$volu" "$base/mnt/$voll"
+        CEN_MNT_LOC_PATH[$1]="$base/mnt/$voll"
+    elif [ -d "$base/$voll" ] ; then
+        trace -a -c -p "folder" '%-9s %s' "$volu" "${base%/}/$voll"
+        CEN_MNT_LOC_PATH[$1]="${base%/}/$voll"
+    fi
+}
+
+# ------------------------------------------------------------------------------
 # options() hook: <option> <argument>
 # ------------------------------------------------------------------------------
 _cen_mnt_option() {
@@ -662,7 +979,7 @@ _cen_mnt_option() {
 
     # handle automount
 
-    "")
+    '')
         [ -n "$CEN_MNT_OPT_D" -a -n "$CEN_OPT_DEVICE" ] &&
             automount -k $"disk" -o progress -w -- "$CEN_OPT_DEVICE"
         [ -n "$CEN_MNT_OPT_M" -a -n "$CEN_OPT_MOUNT" ] &&
@@ -687,19 +1004,67 @@ _cen_mnt_option() {
 
 # helper for _cen_mnt_options
 _cen_mnt_add_opts() {
-    [ -n "$CEN_MNT_OPT_D" ] && _cen_use_option "-c" "--device  <disk>" $"Automount disk by path or label"
-    [ -n "$CEN_MNT_OPT_M" ] && _cen_use_option "-m" "--mount   <strg>" $"Automount storage by path or label"
+    [ -n "$CEN_MNT_OPT_D" ] && _cen_use_option '-c' '--device  <disk>' $"Automount disk by path or label"
+    [ -n "$CEN_MNT_OPT_M" ] && _cen_use_option '-m' '--mount   <strg>' $"Automount storage by path or label"
+}
+
+# ------------------------------------------------------------------------------
+# Configure output: <mode>
+# ------------------------------------------------------------------------------
+_cen_mnt_output() {
+    case "$1" in
+    -o)   shift ; CEN_MNT_OUT_MODE="$1" ;;
+    -a)   shift
+          if [ "$CEN_MNT_PROGRESS" = ':' ] ; then
+            $CEN_MNT_MESSAGE "$@"
+          else
+            $CEN_MNT_PROGRESS "$@"
+          fi
+          return ;;
+    -m)   shift ; $CEN_MNT_MESSAGE "$@" ; return ;;
+    -p)   shift ; $CEN_MNT_PROGRESS "$@" ; return ;;
+    *)    _cen_abort - "$1"
+    esac
+
+    # output method
+    if [ "${CEN_MNT_OUT_MODE:-auto}" = 'auto' ] ; then
+        [ -n "$CEN_MNT_ERROR" ] && return
+        CEN_MNT_OUT_MODE='message -a'
+        if [ -n "$CEN_OPT_SILENT" ] ; then
+            CEN_MNT_OUT_MODE='trace -a'
+        elif isfunction -c windows ; then
+            CEN_MNT_OUT_MODE='trace -a'
+        fi
+    fi
+
+    CEN_MNT_ERROR='error' ; CEN_MNT_MESSAGE="$CEN_TRACE" ; CEN_MNT_PROGRESS=':'
+    case "$CEN_MNT_OUT_MODE" in
+    qui*)      CEN_MNT_MESSAGE=':' ; CEN_MNT_ERROR=':' ;;
+    mes*|msg)  CEN_MNT_MESSAGE='message -a'  ;;
+    pro*)      if isfunction -c console || isfunction -c windows ; then
+                    CEN_MNT_PROGRESS='progress -a -l'
+               else
+                    CEN_MNT_MESSAGE='message -a'
+               fi ;;
+    err*)      CEN_MNT_MESSAGE=':' ;;
+    esac
 }
 
 # ------------------------------------------------------------------------------
 # Startup
 # ------------------------------------------------------------------------------
 
-# called from quit() to unmount devices
+# called from _quit() to unmount devices
 _cen_mnt_quit() {
-    [ -z "$CEN_MNT_OLVL" ] && return
-    $CEN_TRACE -a "Running 'automount' quit hook ("${#CEN_MNT_AMAP[@]}" mounts)"
-    automount -q
+    if [ "${CEN_MNT_USER_QDIR:--}" != '-' ] ; then
+        $CEN_TRACE -a -c 'usermount' $"Running quit function:" "$CEN_MNT_USER_QDIR"
+        usermount $CEN_MNT_USER_QOPT -u -- "$CEN_MNT_USER_QDIR"
+    fi
+
+    if [ "${#CEN_MNT_AMAP[@]}" != 0 ] ; then
+        $CEN_TRACE -a -c 'automount' $"Running quit function:" "${#CEN_MNT_AMAP[@]} mounts"
+        automount -q
+    fi
 }
 
 while [ "${1::1}" = '-' ] ; do

@@ -50,23 +50,23 @@ msgid "Empty fields are invalid"
 msgstr "Leere Felder sind nicht erlaubt"
 
 #: /var/centauri/library/_centauri_bash_run:803
-#: /var/centauri/library/_centauri_bash_run:1139
+#: /var/centauri/library/_centauri_bash_run:1141
 msgid "Error(s) in [%s] configuration: %s"
 msgstr "Fehler in [%s] configuration: %s"
 
-#: /var/centauri/library/_centauri_bash_run:870
+#: /var/centauri/library/_centauri_bash_run:872
 msgid "No folder for shortcut:"
 msgstr "Kein Verzeichnis für Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:893
-#: /var/centauri/library/_centauri_bash_run:903
+#: /var/centauri/library/_centauri_bash_run:895
+#: /var/centauri/library/_centauri_bash_run:905
 msgid "Not a valid shortcut:"
 msgstr "Keine gültige Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:1147
+#: /var/centauri/library/_centauri_bash_run:1149
 msgid "No terminal configuration, see:"
 msgstr "Keine 'terminal' Konfiguration, siehe:"
 
-#: /var/centauri/library/_centauri_bash_run:1152
+#: /var/centauri/library/_centauri_bash_run:1154
 msgid "No desktop running, see $DISPLAY or $XDG_CURRENT_DESKTOP"
 msgstr "Kein Desktop aktiv, siehe $DISPLAY oder $XDG_CURRENT_DESKTOP"

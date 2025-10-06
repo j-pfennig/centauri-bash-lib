@@ -678,7 +678,7 @@ _cen_run_tools() {
 # ------------------------------------------------------------------------------
 # shortpath - Resolve short alias names for file system paths
 #
-# Call:     shortpath [-q] [-f] [-e] [-g] [-a <rslt>] [-n <ndir>]
+# Call:     shortpath [-q] [-f] [-e] [-g] [-a <rslt>] [-n <ndir>] ...
 #           shortpath ... [-r] -m <part>                # get matching data
 #           shortpath ... [-r] <name>...                # get exact matches
 #
@@ -753,7 +753,7 @@ _cen_run_tools() {
 CEN_SHORTPATH=
 shortpath() {
     local _vres='CEN_SHORTPATH' _emsg='error -z' _stat=0 _fqui _ferr
-    local _pref _plen _fgra _fraw _item _name _ndir _isok _full _ndef
+    local _pref _plen _suff _fgra _fraw _item _name _ndir _isok _full _ndef
     local _oerr='-e' _warn='_cen_run_config -m shortpath'
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
@@ -816,9 +816,11 @@ shortpath() {
 
     # loop over arguments and data
     while : ; do
-        _isok=
+        _isok= ; _suff=
         if [ -n "$1" ] ; then                           # match an argument
-            _plen="${#1}" ; _pref="$1"
+            _pref="${1%%/*}" ; [ -z "$_pref" ] && _pref='/'
+            [ "$_pref" != "$1" ] && _suff="/${1#*/}"
+            _cen_strlen _plen "$_pref"
         fi
 
         for _item in "${CEN_SHORTPATH_LIB[@]}" "${CEN_SHORTPATH_DAT[@]}" ; do
@@ -830,7 +832,7 @@ shortpath() {
             _name="${_item%%:*}"
             if [ -n "$_plen" ] ; then                   # partial match (prefix)
                 [ "${_name::_plen}" = "$_pref" ] || continue
-            elif [ "$_name" = "$1" ] ; then             # full match
+            elif [ "$_name" = "$_pref" ] ; then         # full match
                  _full=1
             elif [ -z "$_fraw" ] ; then                 # ignore if not raw mode
                 continue
@@ -878,7 +880,7 @@ shortpath() {
             if [ "$_plen" = 0 ] ; then                  # match all (list)
                 _vvar+=("${_item% }")
             elif [ -n "$_plen" ] ; then                 # prefix match
-                [ -n "$_item" -o -z "$_ndef" ] && _vvar+=("${_item% }")
+                [ -n "$_item" -o -z "$_ndef" ] && _vvar+=("${_item% }$_suff")
             else                                        # exact match
                 [ -n "$_item" ] && break
             fi

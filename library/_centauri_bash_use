@@ -25,7 +25,7 @@
 # Copyright Dr. J. Pfennig (c) 2016-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_use"]="0.25:4"
+CEN_MODULES['_centauri_bash_use']='0.26:4'
 
 CEN_USE_USAGE=          # flag that _cen_usage was called
 
@@ -83,7 +83,7 @@ usageparser() {
     _cen_use_reformat() {
         isfunction -e labelsplit || return 1
         local _ause _text _left _temp _leng _frem _frag _ltmp _mode
-        if [ "$_file" = "/dev/stdin" ] ; then       # get from stdin
+        if [ "$_file" = '/dev/stdin' ] ; then       # get from stdin
             splitjoin -s _ause -i - -n
         else                                        # get help text from tool
             LANG=C embed -a _ause -d '--' -- "$1" --help --verbose
@@ -198,7 +198,7 @@ usageparser() {
     local _name _ause=() _body=()
 
     # get header information
-    if [ "$_file" != "/dev/stdin" ] ; then
+    if [ "$_file" != '/dev/stdin' ] ; then
         # get info array: [0] title, [1] version, [2] license
         CEN_EXIT=0
         LANG=C embed -v -d $'\n' -a _ause -- "$_file" --info detailed
@@ -348,7 +348,7 @@ _cen_completion() {
     done
 
     # extra actions or options
-    if [ "$1" = "actions" ] ; then
+    if [ "$1" = 'actions' ] ; then
         [ -n "$CEN_USE_ADDVERB" ] && _cen_use_writeln "$CEN_USE_ADDVERB"
     elif [ "$1" = 'options' ] ; then
         [ -n "$CEN_FEATURE_D" ] && echo '--dryrun'
@@ -365,6 +365,9 @@ _cen_completion() {
 
 # ------------------------------------------------------------------------------
 # helper to call usage(), never returns: [<exit_code>]
+#
+#   Arg:    0   output to stdout
+#           1   output to stderr
 # ------------------------------------------------------------------------------
 _cen_usage() {
     CEN_USE_USAGE=1                             # flag initialization
@@ -375,13 +378,13 @@ _cen_usage() {
     # support for bash completion using CEN_COMPLETION env variable ...
     local cmpl="${CEN_COMPLETION%%:*}" ctxt
     [ "$cmpl" != "$CEN_COMPLETION" ] && ctxt="${CEN_COMPLETION#*:}"
-    if [ "$cmpl" = "verb" ] ; then
-        $CEN_HOOK_OPTIONS "--help" "verb" "$ctxt"
+    if [ "$cmpl" = 'verb' ] ; then
+        $CEN_HOOK_OPTIONS '--help' 'verb' "$ctxt"
         _cen_completion actions invoke
         exit 0
-    elif [ "$cmpl" = "opts" ] ; then
-        $CEN_HOOK_OPTIONS "--help" "opts" "$ctxt"
-        _cen_completion options optarg "--"
+    elif [ "$cmpl" = 'opts' ] ; then
+        $CEN_HOOK_OPTIONS '--help' 'opts' "$ctxt"
+        _cen_completion options optarg '--'
         exit 0
     fi
 
@@ -394,7 +397,7 @@ _cen_usage() {
         CEN_USE_HEADER="[<action> <argument>... [--]]..."
         if [ -n "$CEN_FEATURE_R" ] ; then
             CEN_USE_HEADER="<argument>"
-            [ "$CEN_RUN_MAX_ARGS" = 1 ] || CEN_USE_HEADER+="..."
+            [ "$CEN_RUN_MAX_ARGS" = 1 ] || CEN_USE_HEADER+='...'
             [ "$CEN_RUN_MAX_ARGS" = 0 ] && CEN_USE_HEADER=
         fi
         CEN_USE_HEADER=$"usage:"" $CEN_NAME <option>... $CEN_USE_HEADER"$'\n'
@@ -404,18 +407,18 @@ _cen_usage() {
     [ "$CEN_TITLE" ] && CEN_USE_HEADER+=$'\n'"       $CEN_TITLE."
 
     local orun omsg ogrp olin=$'\n'
-    CEN_USE_OMAP["d"]="-d --dryrun          "$"show what would be done, make no changes"
-    CEN_USE_OMAP["f"]="-f --force           "$"override prudent default behaviours"
-    CEN_USE_OMAP["g"]="-g --gui     <mode>  "$"gui mode (0:=off  1:=windows  2:=terminal)"
-    CEN_USE_OMAP["i"]="-i --include <expr>  "$"include only items matching the expression"
-    CEN_USE_OMAP["h"]="-h --help            "$"show this text"
-    CEN_USE_OMAP["n"]="-n --no              "$"do not prompt for confirmation, assume 'no'"
-    CEN_USE_OMAP["s"]="-s --silent          "$"generate less output or warnings"
-    CEN_USE_OMAP["q"]="-q --quiet           "$"report errors only"
-    CEN_USE_OMAP["v"]="-v --verbose         "$"be verbose (use twice for debug)"
-    CEN_USE_OMAP["x"]="-x --exclude <expr>  "$"exclude the items matching the expression"
-    CEN_USE_OMAP["y"]="-y --yes             "$"do not prompt for confirmation, assume 'yes'"
-    CEN_USE_OMAP["z"]="-z --zombie          "$"next action(s) even after error"
+    CEN_USE_OMAP['d']='-d --dryrun          '$"show what would be done, make no changes"
+    CEN_USE_OMAP['f']='-f --force           '$"override prudent default behaviours"
+    CEN_USE_OMAP['g']='-g --gui     <mode>  '$"gui mode (0:=off  1:=windows  2:=terminal)"
+    CEN_USE_OMAP['i']='-i --include <expr>  '$"include only items matching the expression"
+    CEN_USE_OMAP['h']='-h --help            '$"show this text"
+    CEN_USE_OMAP['n']='-n --no              '$"do not prompt for confirmation, assume 'no'"
+    CEN_USE_OMAP['s']='-s --silent          '$"generate less output or warnings"
+    CEN_USE_OMAP['q']='-q --quiet           '$"report errors only"
+    CEN_USE_OMAP['v']='-v --verbose         '$"be verbose (use twice for debug)"
+    CEN_USE_OMAP['x']='-x --exclude <expr>  '$"exclude the items matching the expression"
+    CEN_USE_OMAP['y']='-y --yes             '$"do not prompt for confirmation, assume 'yes'"
+    CEN_USE_OMAP['z']='-z --zombie          '$"next action(s) even after error"
 
     if [ "$CEN_USE_USAGE" -gt 1 ] ; then
         CEN_USE_OMAP['z0']=' '
@@ -785,7 +788,7 @@ usageopt() {
 }
 
 # ------------------------------------------------------------------------------
-# module init
+# module init       [-h|-u]
 # ------------------------------------------------------------------------------
 
 # check for utf-8 encoding
@@ -794,8 +797,8 @@ case "${LANG,,}" in
 *.utf-8)    CEN_USE_UTF8=1 ;;
 esac
 
-[ "$1" = '-h' ] && _cen_usage 0
-[ "$1" = '-u' ] && _cen_usage 1
+[ "$1" = '-h' ] && _cen_usage 0     # output to stdout
+[ "$1" = '-u' ] && _cen_usage 1     # ...       stderr
 
 :
 

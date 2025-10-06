@@ -4,10 +4,10 @@
 #
 # Call:     . _centauri_bash_cfm
 #
-# Copyright Dr. J. Pfennig (c) 2024
+# Copyright Dr. J. Pfennig (c) 2024-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_cfm']='0.01:4'
+CEN_MODULES['_centauri_bash_cfm']='0.02:4'
 
 CEN_CONFIRM=            # result of confirm()
 
@@ -122,13 +122,14 @@ confirm() {
     [ "$_vali$_dflt$_prom$_imod" = 0 ] && _imod=2   # -n is default
     if [ "$_imod" != 0 ] ; then
         if [ -n "$CEN_YESNO" ] ; then               # --yes/--no handling ...
+            local _mesg _stat
+            [ -z "$_ifmt" ] && _mesg="$*" || printf -v _mesg "$@"
             if [ "$CEN_YESNO" = 'y' ] ; then
-                _varg="${_ival%% *}"
-                $CEN_TRACE -a -c " $_varg" "$@" ; return 0
+                _varg="${_ival%% *}" ; _stat=0
             else
-                _varg="${_ival#* }"
-                $CEN_TRACE -a -c " $_varg" "$@" ; return 1
+                _varg="${_ival#* }" ; _stat=1
             fi
+            $CEN_TRACE -a -c " $_varg" "$_mesg" ; return "$_stat"
         fi
         _yeno=2 ; _idef=0                           # 2 buttons
         case "$_imod" in

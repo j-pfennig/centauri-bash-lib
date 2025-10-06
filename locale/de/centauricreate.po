@@ -9,221 +9,224 @@ msgstr "Skript, Modul oder Konfiguration aus Vorlage erstellen"
 msgid "Using centauri-bash-lib without main()"
 msgstr "centauri-bash-lib ohne 'main()' benutzen"
 
-#: /var/centauri/tools/centauricreate:60
+#: /var/centauri/tools/centauricreate:57
 msgid "stand-alone script using mini-bash-lib"
 msgstr "Unabhängiges Skript das 'mini-bash-lib' benutzt"
 
-#: /var/centauri/tools/centauricreate:67
-msgid "a custom library module"
-msgstr "Erstelle ein Anwender-Bibliotheksmodul"
-
-#: /var/centauri/tools/centauricreate:74
-msgid "a simple centauri-bash-lib setup script"
-msgstr "Ein einfaches centauri-bash-lib Setup Skript"
-
-#: /var/centauri/tools/centauricreate:81
+#: /var/centauri/tools/centauricreate:58
 msgid "configuration"
 msgstr "Konfiguration"
 
-#: /var/centauri/tools/centauricreate:158
+#: /var/centauri/tools/centauricreate:59
+msgid "a simple centauri-bash-lib setup script"
+msgstr "Ein einfaches centauri-bash-lib Setup Skript"
+
+#: /var/centauri/tools/centauricreate:60
+msgid "minimal grub.cfg for centauri boot menu"
+msgstr "Minimale 'grub.cfg' für Centauri Startmenü"
+
+#: /var/centauri/tools/centauricreate:61
+msgid "a custom library module"
+msgstr "Erstelle ein Anwender-Bibliotheksmodul"
+
+#: /var/centauri/tools/centauricreate:144
 msgid "path not executable"
 msgstr "Pfad nich ausführbar"
 
-#: /var/centauri/tools/centauricreate:159
+#: /var/centauri/tools/centauricreate:145
 msgid "must be '-', '+' or absolute path"
 msgstr "braucht '-', '+' oder absoluten Path"
 
-#: /var/centauri/tools/centauricreate:170
+#: /var/centauri/tools/centauricreate:156
 msgid "skipping symlink"
 msgstr "Symlink auslassen"
 
-#: /var/centauri/tools/centauricreate:179
+#: /var/centauri/tools/centauricreate:165
 msgid "Check and replace shebang for %s %s"
 msgstr "Shebang für %s %s prüfen und ersetzen"
 
-#: /var/centauri/tools/centauricreate:185
+#: /var/centauri/tools/centauricreate:171
 msgid "shell is current"
 msgstr "Shell is aktuell"
 
-#: /var/centauri/tools/centauricreate:187
+#: /var/centauri/tools/centauricreate:173
 msgid "no bash script"
 msgstr "kein 'bash' Skript"
 
-#: /var/centauri/tools/centauricreate:189
-#: /var/centauri/tools/centauricreate:190
-#: /var/centauri/tools/centauricreate:307
+#: /var/centauri/tools/centauricreate:175
+#: /var/centauri/tools/centauricreate:176
+#: /var/centauri/tools/centauricreate:292
 msgid "replace shebang"
 msgstr "Shebang ersetzen"
 
-#: /var/centauri/tools/centauricreate:198
+#: /var/centauri/tools/centauricreate:184
 msgid "Replaced shebang"
 msgstr "Shebang ersetzt"
 
-#: /var/centauri/tools/centauricreate:201
+#: /var/centauri/tools/centauricreate:187
 msgid "Replaced shebang of %s %s"
 msgstr "Shebang für %s %s ersetzt"
 
-#: /var/centauri/tools/centauricreate:212
+#: /var/centauri/tools/centauricreate:198
 msgid "Script"
 msgstr "Skript"
 
-#: /var/centauri/tools/centauricreate:217
+#: /var/centauri/tools/centauricreate:203
 msgid "Configuration"
 msgstr "Konfiguration"
 
-#: /var/centauri/tools/centauricreate:224
+#: /var/centauri/tools/centauricreate:210
 msgid "Saving new config to:"
 msgstr "Speichere neue Konfiguration in:"
 
-#: /var/centauri/tools/centauricreate:229
+#: /var/centauri/tools/centauricreate:215
 msgid "Module"
 msgstr "Modul"
 
-#: /var/centauri/tools/centauricreate:238
+#: /var/centauri/tools/centauricreate:224
 msgid "anonymous"
 msgstr "anonym"
 
-#: /var/centauri/tools/centauricreate:240
+#: /var/centauri/tools/centauricreate:226
 msgid "all rights reserved"
 msgstr "Alle Rechte vorbehalten"
 
-#: /var/centauri/tools/centauricreate:244
+#: /var/centauri/tools/centauricreate:230
 msgid "<copy from input>"
 msgstr "<Eingabe übernehmen>"
 
-#: /var/centauri/tools/centauricreate:246
+#: /var/centauri/tools/centauricreate:232
 msgid "Selected template:"
 msgstr "Benutzte Vorlage:"
 
-#: /var/centauri/tools/centauricreate:247
+#: /var/centauri/tools/centauricreate:233
 msgid "Short description:"
 msgstr "Kurzbeschreibung:"
 
-#: /var/centauri/tools/centauricreate:248
+#: /var/centauri/tools/centauricreate:234
 msgid "Author           :"
 msgstr "Autor(in)       :"
 
-#: /var/centauri/tools/centauricreate:249
+#: /var/centauri/tools/centauricreate:235
 msgid "License          :"
 msgstr "Lizenz          :"
 
-#: /var/centauri/tools/centauricreate:250
+#: /var/centauri/tools/centauricreate:236
 msgid "Interpreter      :"
 msgstr "Interpreter     :"
 
-#: /var/centauri/tools/centauricreate:251
+#: /var/centauri/tools/centauricreate:237
 msgid "Output path      :"
 msgstr "Ausgabe Datei   :"
 
-#: /var/centauri/tools/centauricreate:252
+#: /var/centauri/tools/centauricreate:238
 msgid "Do you want to continue"
 msgstr "Ausführung fortsetzen"
 
-#: /var/centauri/tools/centauricreate:263
+#: /var/centauri/tools/centauricreate:249
 msgid "created"
 msgstr "erstellt"
 
-#: /var/centauri/tools/centauricreate:304
+#: /var/centauri/tools/centauricreate:289
 msgid "create a script"
 msgstr "Ein Skript erstellen"
 
-#: /var/centauri/tools/centauricreate:305
+#: /var/centauri/tools/centauricreate:290
 msgid "show cached options"
 msgstr "Zeige Optionscache"
 
-#: /var/centauri/tools/centauricreate:306
+#: /var/centauri/tools/centauricreate:291
 msgid "run shellcheck"
 msgstr "Das 'shellcheck' Programm ausführen"
 
-#: /var/centauri/tools/centauricreate:312
+#: /var/centauri/tools/centauricreate:297
 msgid "set script author"
 msgstr "Setze den Skript Author"
 
-#: /var/centauri/tools/centauricreate:313
+#: /var/centauri/tools/centauricreate:298
 msgid "run 'shellcheck' tool"
 msgstr "Das 'spellcheck' Programm ausführen"
 
-#: /var/centauri/tools/centauricreate:314
+#: /var/centauri/tools/centauricreate:299
 msgid "short description of script"
 msgstr "Kurzbeschreibung des Skripts"
 
-#: /var/centauri/tools/centauricreate:315
+#: /var/centauri/tools/centauricreate:300
 msgid "set script license"
 msgstr "Setze die Skipt Lizenz"
 
-#: /var/centauri/tools/centauricreate:316
+#: /var/centauri/tools/centauricreate:301
 msgid "don't modify config file"
 msgstr "Konfigurationsdatei nicht ändern"
 
-#: /var/centauri/tools/centauricreate:317
+#: /var/centauri/tools/centauricreate:302
 msgid "select template option (repeatable)"
 msgstr "Setze Option in Vorlage (wiederholbar)"
 
-#: /var/centauri/tools/centauricreate:318
+#: /var/centauri/tools/centauricreate:303
 msgid "override interpreter path (shebang)"
 msgstr "Interpreter überschreiben (shebang)"
 
-#: /var/centauri/tools/centauricreate:319
+#: /var/centauri/tools/centauricreate:304
 msgid "choose template (default: $DAT_NAME_DEF)"
 msgstr "Vorlage wählen (Voreinstellung: $DAT_NAME_DEF)"
 
-#: /var/centauri/tools/centauricreate:321
+#: /var/centauri/tools/centauricreate:306
 msgid "The values of --author and --license are cached."
 msgstr "Die Werte von --author und --license werden gecached."
 
-#: /var/centauri/tools/centauricreate:323
+#: /var/centauri/tools/centauricreate:308
 msgid "arguments"
 msgstr "Argumente"
 
-#: /var/centauri/tools/centauricreate:324
+#: /var/centauri/tools/centauricreate:309
 msgid "\\\"+\\\" for '/usr/bin/env bash', \\\"-\\\" for '$BASH' or a path"
 msgstr "\\\"+\\\" für '/usr/bin/env bash', \\\"-\\\" für '$BASH' oder ein Pfad"
 
-#: /var/centauri/tools/centauricreate:325
+#: /var/centauri/tools/centauricreate:310
 msgid "option name, gets converted to uppercase"
 msgstr "Optionsname, wird in Grosschreibung konvertiert"
 
-#: /var/centauri/tools/centauricreate:326
+#: /var/centauri/tools/centauricreate:311
 msgid "any text not containing \\\";\\\" or \\\"-\\\" to reset"
 msgstr "Text der kein Semikolon enthält, \\\"-\\\" für Vorgabe"
 
-#: /var/centauri/tools/centauricreate:327
+#: /var/centauri/tools/centauricreate:312
 msgid "name of a template, see below"
 msgstr "Name einer Vorlage, siehe unten"
 
-#: /var/centauri/tools/centauricreate:329
+#: /var/centauri/tools/centauricreate:314
 msgid "templates"
 msgstr "Vorlagen"
 
-#: /var/centauri/tools/centauricreate:331
+#: /var/centauri/tools/centauricreate:316
 msgid "examples"
 msgstr "Beispiele"
 
-#: /var/centauri/tools/centauricreate:332
+#: /var/centauri/tools/centauricreate:317
 msgid "create script without 'main()' from centauriHello template"
 msgstr "Von Vorlage 'centauriHello' Skript ohne 'main()' erstellen"
 
-#: /var/centauri/tools/centauricreate:335
+#: /var/centauri/tools/centauricreate:320
 msgid "create script with 'action' syntax"
 msgstr "Erstelle Skript mit 'action' Syntax"
 
-#: /var/centauri/tools/centauricreate:338
+#: /var/centauri/tools/centauricreate:323
 msgid "create script without demo code"
 msgstr "Erstelle Skript ohne Demo Code"
 
-#: /var/centauri/tools/centauricreate:341
+#: /var/centauri/tools/centauricreate:326
 msgid "create a custom library module"
 msgstr "Erstelle ein Anwender-Bibliotheksmodul"
 
-#: /var/centauri/tools/centauricreate:344
+#: /var/centauri/tools/centauricreate:329
 msgid "create centauri-bash-lib configuration file"
 msgstr "Erstelle eine centauri-bash-lib Konfigurationsdatei"
 
-#: /var/centauri/tools/centauricreate:347
+#: /var/centauri/tools/centauricreate:332
 msgid "run the 'shellcheck' tool (a bash lint)"
 msgstr "Programm 'spellcheck' ausführen (ein 'lint' für Bash)"
 
-#: /var/centauri/tools/centauricreate:351
+#: /var/centauri/tools/centauricreate:336
 msgid "replace shebang for bash scripts in a folder"
 msgstr "Shebang für 'bash' Skripte eines Verzeichnisses ersetzen"
-

@@ -36,7 +36,7 @@ declare -A DAT_NAME_MAP
 # Get template information: [-h]
 # ------------------------------------------------------------------------------
 get_templates() {
-    local _item _name
+    local _item _name _flds
     for _item in "$DAT_TEMPLATE/centauri"[A-Z]* ; do
         [ -x "$_item" ] || continue
         _name="${_item##*centauri}" ; _name="${_name,,}"
@@ -53,33 +53,19 @@ get_templates() {
         fi
     done
 
-    if [ -e "$DAT_TEMPLATE/mini-bash-lib" ] ; then
+    [ -n "$1" ] && usageset -t
+    for _item in 'mini-bash-lib:minilib:'$"stand-alone script using mini-bash-lib" \
+                 'centauri-bash-lib:config:'"$CEN_DEFAULT/centauri-bash-lib "$"configuration" \
+                 'setup:setup:'$"a simple centauri-bash-lib setup script" \
+                 'grub-minimal-cfg:grub:'$"minimal grub.cfg for centauri boot menu" \
+                 '_custom_module_usr:module:'$"a custom library module" ; do
+        splitjoin -s _flds -d ':' -- "$_item"
+        [ -e "$DAT_TEMPLATE/$_flds" ] || continue
         [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
-        DAT_NAME_REG+='minilib'
-        DAT_NAME_MAP['minilib']='mini-bash-lib'
-        [ -n "$1" ] && usageset -t '' -t 'minilib       '$"stand-alone script using mini-bash-lib"
-    fi
-
-    if [ -e "$DAT_TEMPLATE/_custom_module_usr" ] ; then
-        [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
-        DAT_NAME_REG+='module'
-        DAT_NAME_MAP['module']='_custom_module_usr'
-        [ -n "$1" ] && usageset -t 'module        '$"a custom library module"
-    fi
-
-    if [ -e "$DAT_TEMPLATE/setup" ] ; then
-        [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
-        DAT_NAME_REG+='setup'
-        DAT_NAME_MAP['setup']='setup'
-        [ -n "$1" ] && usageset -t "setup         "$"a simple centauri-bash-lib setup script"
-    fi
-
-    if [ -e "$DAT_TEMPLATE/centauri-bash-lib" ] ; then
-        [ -n "$DAT_NAME_REG" ] && DAT_NAME_REG+='|'
-        DAT_NAME_REG+='config'
-        DAT_NAME_MAP['config']='centauri-bash-lib'
-        [ -n "$1" ] && usageset -t '' -t "config        '$CEN_DEFAULT/centauri-bash-lib' "$"configuration"
-    fi
+        DAT_NAME_REG+="${_flds[1]}"
+        DAT_NAME_MAP["${_flds[1]}"]="$_flds"
+        [ -n "$1" ] && usageset -t "${_flds[1]}" "  ${_flds[2]}"
+    done
 }
 
 # ------------------------------------------------------------------------------
@@ -269,13 +255,12 @@ run() {
 options() {
     case "$1" in
 
-    '')         if [ -n "$CEN_OPT_CHECK" ] ; then
-                    CEN_RUN_MAX_ARGS=+
-                    [ -n "$CEN_OPT_NOCONF$CEN_OPT_OPTION$CEN_OPT_SHELL$CEN_OPT_TEMPLATE" ] &&
-                        optarg - - -m "--check --noconf|--option|--shell|--template"
-                fi
-                [ -n "$CEN_OPT_SHELL" ] && do_shell
-                ;;
+    '') if [ -n "$CEN_OPT_CHECK" ] ; then
+            CEN_RUN_MAX_ARGS='+'
+            [ -n "$CEN_OPT_NOCONF$CEN_OPT_OPTION$CEN_OPT_SHELL$CEN_OPT_TEMPLATE" ] &&
+                optarg - - -m '--check --noconf|--option|--shell|--template'
+        fi
+        [ -n "$CEN_OPT_SHELL" ] && do_shell ;;
 
     -A|--aut*)
         optarg 'author'   - -t ;;   # any text

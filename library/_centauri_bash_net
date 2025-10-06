@@ -31,7 +31,7 @@
 #
 #+          The setting of CEN_NET_OUTPUT affects some functions that read/write
 #           files. If CEN_NET_OUTPUT is empty, it is set to CEN_PATHS[7], see
-#           [[setsetup()]]. For more details see [[netpath()]].
+#           [[syssetup()]]. For more details see [[netpath()]].
 #
 # Copyright Dr. J. Pfennig (c) 2013-2025
 # ------------------------------------------------------------------------------

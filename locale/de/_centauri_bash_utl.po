@@ -1,115 +1,119 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_utl:67
+#: /var/centauri/library/_centauri_bash_utl:74
 msgid "Name"
 msgstr "Name"
 
-#: /var/centauri/library/_centauri_bash_utl:73
+#: /var/centauri/library/_centauri_bash_utl:81
 msgid "Hostname"
 msgstr "Rechnername"
 
-#: /var/centauri/library/_centauri_bash_utl:75
+#: /var/centauri/library/_centauri_bash_utl:84
 msgid "Variable name"
 msgstr "Variablenname"
 
-#: /var/centauri/library/_centauri_bash_utl:81
+#: /var/centauri/library/_centauri_bash_utl:93
 msgid "%s missing"
 msgstr "%s fehlt"
 
-#: /var/centauri/library/_centauri_bash_utl:83
+#: /var/centauri/library/_centauri_bash_utl:96
+msgid "%s too long"
+msgstr "%s zu lang"
+
+#: /var/centauri/library/_centauri_bash_utl:98
 msgid "%s contains space characters"
 msgstr "%s enthält Leerzeichen"
 
-#: /var/centauri/library/_centauri_bash_utl:86
+#: /var/centauri/library/_centauri_bash_utl:101
 msgid "%s contains invalid characters"
 msgstr "%s enthält ungültige Zeichen"
 
-#: /var/centauri/library/_centauri_bash_utl:88
+#: /var/centauri/library/_centauri_bash_utl:103
 msgid "%s 1st char must be a letter or '_'"
 msgstr "%s muss mit Buchstabe oder '-' anfangen"
 
-#: /var/centauri/library/_centauri_bash_utl:90
+#: /var/centauri/library/_centauri_bash_utl:105
 msgid "%s must be lower case"
 msgstr "%s erlaubt nur Kleinschreibung"
 
-#: /var/centauri/library/_centauri_bash_utl:148
+#: /var/centauri/library/_centauri_bash_utl:163
 msgid "Not a decimal integer number"
 msgstr "Keine Dezimalzahl"
 
-#: /var/centauri/library/_centauri_bash_utl:150
+#: /var/centauri/library/_centauri_bash_utl:165
 msgid "Not an unsigned decimal number"
 msgstr "Keine vorzeichenlose Dezimalzahl"
 
-#: /var/centauri/library/_centauri_bash_utl:159
+#: /var/centauri/library/_centauri_bash_utl:174
 msgid "Unexpected text data, not a number"
 msgstr "Unpassende Zeichen, keine Zahl"
 
-#: /var/centauri/library/_centauri_bash_utl:163
+#: /var/centauri/library/_centauri_bash_utl:178
 msgid "Value to small (min is %s)"
 msgstr "Wert zu klein (Min. ist %s)"
 
-#: /var/centauri/library/_centauri_bash_utl:165
+#: /var/centauri/library/_centauri_bash_utl:180
 msgid "Value to large (max is %s)"
 msgstr "Wert zu gross (Max. ist %s)"
 
-#: /var/centauri/library/_centauri_bash_utl:357
+#: /var/centauri/library/_centauri_bash_utl:372
 msgid "unknown option:"
 msgstr "Unbekannte Option:"
 
-#: /var/centauri/library/_centauri_bash_utl:481
+#: /var/centauri/library/_centauri_bash_utl:496
 msgid "zero"
 msgstr "kein|keine"
 
-#: /var/centauri/library/_centauri_bash_utl:486
+#: /var/centauri/library/_centauri_bash_utl:501
 msgid "one"
 msgstr "ein|eine"
 
-#: /var/centauri/library/_centauri_bash_utl:493
+#: /var/centauri/library/_centauri_bash_utl:508
 msgid "s"
 msgstr "n"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "line"
 msgstr "Zeile|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "lines"
 msgstr "Zeilen|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "file"
 msgstr "Datei"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "files"
 msgstr "Dateien|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "folder"
 msgstr "Verzeichnis"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "folders"
 msgstr "Verzeichnisse|-g"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "error"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_utl:498
+#: /var/centauri/library/_centauri_bash_utl:513
 msgid "errors"
 msgstr "Fehler"
 
-#: /var/centauri/library/_centauri_bash_utl:610
+#: /var/centauri/library/_centauri_bash_utl:625
 msgid "No '@' in arguments array:"
 msgstr "Kein '@' im Argumentfeld:"
 
-#: /var/centauri/library/_centauri_bash_utl:632
+#: /var/centauri/library/_centauri_bash_utl:647
 msgid "invalid 'wait' result"
 msgstr "Ungültiges 'wait' Ergebnis"
 
-#: /var/centauri/library/_centauri_bash_utl:874
+#: /var/centauri/library/_centauri_bash_utl:889
 msgid "Elapsed time: %s [ms]"
 msgstr "Vergangene Zeit: %s [ms]"
 

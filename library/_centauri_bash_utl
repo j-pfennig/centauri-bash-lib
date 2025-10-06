@@ -40,49 +40,64 @@ _cen_optarg_utl() {
 # ------------------------------------------------------------------------------
 # isname - check name syntax
 #
-# Call:     isname [-e|-f|-m <evar>] [-h|-v] [--] <name>
+# Call:     isname [-e|-f|-m <evar>] [-c <glob>] [-l <mlen>] [-h|-v] [--] <name>
 #
-# Options:  -e  generate error messages
+# Options:  -c  sets allowed characters
+#           -e  generate error messages
 #           -f  make errors fatal
 #           -h  must be an internet host name (not qualified)
+#           -l  maximum name length (default is 63)
 #           -m  save error message to variable
 #           -v  generic variable
 #
 # Arguments:<name>  text to be checked
 #           <evar>  name of a variable
+#           <gloc>  a bash glob expression like "[a-z_-]"
+#           <mlen>  maximum name length
 #
-# Checks:   -       must not be empty and must not be '-'
-#           -       printable+nonspace chars only
-#           - (-h)  only [a-z0-9_-] are allowed
-#           - (-v)  only [a-zA-Z0-9_-] are allowed, 1st char [!0-9-]
+#,Checks:   -       must not be empty or too long and must not be '-'
+#,          -       printable+nonspace chars only
+#,          - (-h)  only [a-z0-9] are allowed
+#,          - (-v)  only [a-zA-Z0-9_] are allowed, 1st char letter or '_'
 #
 # Return:   0       name is valid
-#           1       empty
+#           1       empty or '-' or too long
 #           2       contains spaces or control chars
 #           3       invalid chars
 #           4       starts with digit or '-'
 #           5       is not lower case
+#
+#+For systems using centauritools hostnames must not contain "-" chars. A
+# trailing "-[0-9]" sequence is used to select a per-interface IP address.
 # ------------------------------------------------------------------------------
 isname() {
-    local _oerr=(':') _ovar _omeg=$"Name"
+    local _oerr=(':') _ovar _omeg=$"Name" _cset= _mlen=63 _leng
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
+      -c)   shift ; _ovar=3 ; _cset="$1" ;;
       -e)   _oerr=(_cen_utl_err -e) ;;
       -f)   _oerr=(_cen_utl_err -f) ;;
       -h)   _ovar=2 ; _omeg=$"Hostname" ;;
+      -l)   shift ; _mlen="$1" ;;
       -m)   shift ; printf -v "$1" '' ; _oerr=(_cen_utl_err "$1") ;;
       -v)   _ovar=1 ; _omeg=$"Variable name" ;;
       *)    _cen_abort - "$1"
       esac ; shift
     done
+    if [ -z "$_cset" ] ; then
+        [ "$_ovar" = 2 ] && _cset='[a-zA-Z0-9]' || _cset='[a-zA-Z0-9_]'
+    fi
     _oerr+=("$1")
 
     [ "${1:--}" = '-' ] && { "${_oerr[@]}" $"%s missing" "$_omeg" ; return 1 ; }
+    _cen_strlen _leng "$1"
+    [ "$_leng" -gt "$_mlen" ] &&
+                   { "${_oerr[@]}" $"%s too long" "$_omeg" ; return 1 ; }
     [ "$1" != "${1/[[:cntrl:][:space:]]/}" ] &&
                    { "${_oerr[@]}" $"%s contains space characters" "$_omeg" ; return 2 ; }
     [ -z "$_ovar" ] && return 0
-    [ -n "${1//[a-zA-Z0-9_-]/}" ] &&
+    [ -n "${1//$_cset/}" ] &&
                    { "${_oerr[@]}" $"%s contains invalid characters" "$_omeg" ; return 3 ; }
     [ "$_ovar" = 1 ] && [ "$1" = "${1#[a-zA-Z_]}" ] &&
                    { "${_oerr[@]}" $"%s 1st char must be a letter or '_'" "$_omeg" ; return 4 ; }

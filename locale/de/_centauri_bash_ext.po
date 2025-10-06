@@ -190,6 +190,6 @@ msgstr " aktualisieren"
 msgid " remove"
 msgstr " löschen"
 
-#: /var/centauri/library/_centauri_bash_ext:1996
+#: /var/centauri/library/_centauri_bash_ext:2003
 msgid "Cannot create"
 msgstr "Nicht erstellbar"

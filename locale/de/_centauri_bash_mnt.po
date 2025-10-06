@@ -1,132 +1,161 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_mnt:106
-#: /var/centauri/library/_centauri_bash_mnt:669
+#: /var/centauri/library/_centauri_bash_mnt:122
+#: /var/centauri/library/_centauri_bash_mnt:986
 msgid "storage"
 msgstr "Datenträger"
 
-#: /var/centauri/library/_centauri_bash_mnt:133
+#: /var/centauri/library/_centauri_bash_mnt:128
 msgid "device"
 msgstr "Gerät"
 
-#: /var/centauri/library/_centauri_bash_mnt:135
+#: /var/centauri/library/_centauri_bash_mnt:130
 msgid "path"
 msgstr "Pfad"
 
-#: /var/centauri/library/_centauri_bash_mnt:137
+#: /var/centauri/library/_centauri_bash_mnt:132
 msgid "label"
 msgstr "Bezeichnung"
 
-#: /var/centauri/library/_centauri_bash_mnt:168
+#: /var/centauri/library/_centauri_bash_mnt:163
 msgid "Cannot unmount #K"
 msgstr "Kann #K nicht aushängen"
 
-#: /var/centauri/library/_centauri_bash_mnt:169
+#: /var/centauri/library/_centauri_bash_mnt:164
 msgid "Current working directory is mountpoint"
 msgstr "Altuelles Verzeichnis ist Einhängepunkt"
 
-#: /var/centauri/library/_centauri_bash_mnt:174
+#: /var/centauri/library/_centauri_bash_mnt:169
 msgid "Unmount:  "
 msgstr "Aushängen: "
 
-#: /var/centauri/library/_centauri_bash_mnt:178
+#: /var/centauri/library/_centauri_bash_mnt:173
 msgid "Failed to unmount #K"
 msgstr "Aushängen von #K fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_mnt:184
+#: /var/centauri/library/_centauri_bash_mnt:179
 msgid "Unmounted:"
 msgstr "Ausgehängt:"
 
-#: /var/centauri/library/_centauri_bash_mnt:196
+#: /var/centauri/library/_centauri_bash_mnt:191
 msgid "Found #K by #L '#A' at mountpoint '#F'"
 msgstr "#K mit #L '#A' an Einhängepunkt '#F' gefunden"
 
-#: /var/centauri/library/_centauri_bash_mnt:204
+#: /var/centauri/library/_centauri_bash_mnt:199
 msgid "Waiting for"
 msgstr "Warten auf"
 
-#: /var/centauri/library/_centauri_bash_mnt:209
+#: /var/centauri/library/_centauri_bash_mnt:204
 msgid "Cannot find #K by #L '#A'"
 msgstr "Kann #K mit #L '#A' nicht finden"
 
-#: /var/centauri/library/_centauri_bash_mnt:216
+#: /var/centauri/library/_centauri_bash_mnt:211
 msgid "Mounting:"
 msgstr "Einhängen: "
 
-#: /var/centauri/library/_centauri_bash_mnt:230
+#: /var/centauri/library/_centauri_bash_mnt:225
 msgid "Cannot find #K mountpoint"
 msgstr "Kann #K Einhängepunkt nicht finden"
 
-#: /var/centauri/library/_centauri_bash_mnt:236
+#: /var/centauri/library/_centauri_bash_mnt:231
 msgid "Mounted: "
 msgstr "Eingehängt:"
 
-#: /var/centauri/library/_centauri_bash_mnt:240
+#: /var/centauri/library/_centauri_bash_mnt:235
 msgid "Mounting #K failed"
 msgstr "#K Einhängen fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_mnt:280
+#: /var/centauri/library/_centauri_bash_mnt:275
 msgid "... waiting for"
 msgstr "... warten auf"
 
-#: /var/centauri/library/_centauri_bash_mnt:292
+#: /var/centauri/library/_centauri_bash_mnt:288
 msgid "by #L '#A' "
 msgstr "mit #L '#A' "
 
-#: /var/centauri/library/_centauri_bash_mnt:302
+#: /var/centauri/library/_centauri_bash_mnt:298
 msgid " (#L '#A' device '#D')"
 msgstr " (#L '#A' Gerät '#D')"
 
-#: /var/centauri/library/_centauri_bash_mnt:303
+#: /var/centauri/library/_centauri_bash_mnt:299
 msgid " (#L '#A' folder '#F')"
 msgstr " (#L '#A' Ordner '#F')"
 
-#: /var/centauri/library/_centauri_bash_mnt:412
+#: /var/centauri/library/_centauri_bash_mnt:313
+msgid "Registered for unmount:"
+msgstr "Zum Aushängen vorgemerkt:"
+
+#: /var/centauri/library/_centauri_bash_mnt:409
 msgid "No such image file:"
 msgstr "Abbild-Datei nicht gefunden:"
 
-#: /var/centauri/library/_centauri_bash_mnt:417
-#: /var/centauri/library/_centauri_bash_mnt:480
+#: /var/centauri/library/_centauri_bash_mnt:414
+#: /var/centauri/library/_centauri_bash_mnt:481
 msgid "Not a block device:"
 msgstr "Kein Block-Gerät:"
 
-#: /var/centauri/library/_centauri_bash_mnt:442
+#: /var/centauri/library/_centauri_bash_mnt:439
 msgid "Device is mounted:"
 msgstr "Gerät ist eingehängt:"
 
-#: /var/centauri/library/_centauri_bash_mnt:453
+#: /var/centauri/library/_centauri_bash_mnt:450
 msgid "Cannot use a partition:"
 msgstr "Kann keine Partition verwenden:"
 
-#: /var/centauri/library/_centauri_bash_mnt:455
+#: /var/centauri/library/_centauri_bash_mnt:452
 msgid "Using partition:"
 msgstr "Verwende Partition:"
 
-#: /var/centauri/library/_centauri_bash_mnt:460
+#: /var/centauri/library/_centauri_bash_mnt:457
 msgid "Cannot use a block device:"
 msgstr "Kann kein Block-Gerät verwenden:"
 
-#: /var/centauri/library/_centauri_bash_mnt:462
+#: /var/centauri/library/_centauri_bash_mnt:459
 msgid "Using block device:"
 msgstr "Verwende Block-Gerät:"
 
-#: /var/centauri/library/_centauri_bash_mnt:465
+#: /var/centauri/library/_centauri_bash_mnt:466
 msgid "Cannot use a file:"
 msgstr "Kann keine Datei verwenden:"
 
-#: /var/centauri/library/_centauri_bash_mnt:467
+#: /var/centauri/library/_centauri_bash_mnt:468
 msgid "Using an image file:"
 msgstr "Verwende Abbild-Datei:"
 
-#: /var/centauri/library/_centauri_bash_mnt:667
+#: /var/centauri/library/_centauri_bash_mnt:736
+msgid "Not mounted:"
+msgstr "Nicht eingehängt:"
+
+#: /var/centauri/library/_centauri_bash_mnt:739
+msgid "Unmounting '$_devu' ..."
+msgstr "Auhängen von '$_devu' ..."
+
+#: /var/centauri/library/_centauri_bash_mnt:742
+msgid "Unmounted '%s' from '%s'"
+msgstr "'%s' ausgehängt von '%s'"
+
+#: /var/centauri/library/_centauri_bash_mnt:842
+msgid "Invalid distribution name:"
+msgstr "Distributionsname ungültig:"
+
+#: /var/centauri/library/_centauri_bash_mnt:872
+msgid "Location '%s' not found: %s"
+msgstr "Bestimmungsort '%s' nicht gefunden: %s"
+
+#: /var/centauri/library/_centauri_bash_mnt:984
 msgid "disk"
 msgstr "Festplatte"
 
-#: /var/centauri/library/_centauri_bash_mnt:690
+#: /var/centauri/library/_centauri_bash_mnt:1007
 msgid "Automount disk by path or label"
 msgstr "Festplatte nach Pfad oder Label automatisch einhängen"
 
-#: /var/centauri/library/_centauri_bash_mnt:691
+#: /var/centauri/library/_centauri_bash_mnt:1008
 msgid "Automount storage by path or label"
 msgstr "Datenträger nach Pfad oder Label automatisch einhängen"
+
+#: /var/centauri/library/_centauri_bash_mnt:1060
+#: /var/centauri/library/_centauri_bash_mnt:1065
+msgid "Running quit function:"
+msgstr "Aufräumfunktion ausführen:"

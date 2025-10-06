@@ -24,7 +24,7 @@
 # Copyright Dr. J. Pfennig (c) 2015-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_con']='0.26:6'
+CEN_MODULES['_centauri_bash_con']='0.27:6'
 
 CEN_ROWS=               # console rows
 CEN_COLS=               #         columns
@@ -47,6 +47,7 @@ CEN_CONS_DISABLED=
 
 CEN_CONSOLE=            # 0: stdout not tty, 1: console ok, 2: unknown device
 
+CEN_CONS_NOWIN=         # flag for dummy windows() function
 CEN_CONS_HOOK_MESSAGE=
 
 # ------------------------------------------------------------------------------
@@ -145,11 +146,7 @@ console() {
     fi
 
     # check for utf-8 encoding
-    case "${LANG,,}" in
-    *.utf8)     ;;
-    *.utf-8)    ;;
-    *)          CEN_CONS_UTF8='-=°'
-    esac
+    [ -n "$CEN_NOUTF8" ] && CEN_CONS_UTF8='-=*'
 
     # set variables
     if [ -n "$_fmod" ] ; then
@@ -524,7 +521,7 @@ _cen_con_break() {
         fi
     fi
 
-    local _balg="${_offs#*:}" _idnt _ftrm _fwrd _fhyp _mlen
+    local _balg="${_offs#*:}" _idnt _ftrm _fwrd _fhyp _mlen _slen
     if [ "$_balg" != "$_offs" ] ; then
         ((_balg & 1)) && _ftrm=1
         ((_balg & 2)) && _fwrd=1
@@ -549,7 +546,8 @@ _cen_con_break() {
     fi
 
     # check if line must be split
-    if [ "${#_sinp}" -le "$_cols" -o "$_cols" -lt 8 ] ; then
+    _cen_strlen _slen "$_sinp"                      # this is unicode aware
+    if [ "$_slen" -le "$_cols" -o "$_cols" -lt 8 ] ; then
         printf -v CEN_CON_BREAK_RES "%${_offs}s%s$_suff" '' "$_sinp"
         CEN_CON_BREAK_END=2
         return 0
@@ -565,27 +563,27 @@ _cen_con_break() {
 
     # word breaking
     local _clen _curr="${_sinp::_cols}"
-    if [ "${_sinp:_cols:1}" = ' ' ] ; then      # next is a space
+    if [ "${_sinp:_cols:1}" = ' ' ] ; then          # next is a space
         _clen="$_cols"
-    else                                        # stop at last space
+    else                                            # stop at last space
         _curr="${_curr% *}" ; _clen="${#_curr}"
-        if [ "$_clen" -le "$_mlen" ] ; then     # match in offset
-            _curr="${_sinp::_cols}"             # chopped line
-            if _cen_con_more ; then             # try to split at hypen
+        if [ "$_clen" -le "$_mlen" ] ; then         # match in offset
+            _curr="${_sinp::_cols}"                 # chopped line
+            if _cen_con_more ; then                 # try to split at hypen
                 printf -v CEN_CON_BREAK_RES "%${_offs}s%s\n" '' "$_curr"
                 CEN_CON_BREAK_MSG="${_sinp}" ; return 0
             fi
             _clen=$((_cols - 1))
-        elif [ "$_clen" -ge "$_cols" ] ; then   # got no space ...
-            if _cen_con_more ; then             # try to split at hypen
+        elif [ "$_clen" -ge "$_cols" ] ; then       # got no space ...
+            if _cen_con_more ; then                 # try to split at hypen
                 printf -v CEN_CON_BREAK_RES "%${_offs}s%s\n" '' "$_curr"
                 CEN_CON_BREAK_MSG="${_sinp}" ; return 0
             fi
-            ((--_clen))                         # must chop
+            ((--_clen))                             # must chop
         fi
     fi
     _sinp="${_sinp:_clen+1}"
-    _cen_con_more $((_cols - _clen - 1))        # try to get more
+    _cen_con_more $((_cols - _clen - 1))            # try to get more
 
     printf -v CEN_CON_BREAK_RES "%${_offs}s%s\n" '' "$_curr"
     CEN_CON_BREAK_MSG="${_sinp}" ; return 0
@@ -637,7 +635,7 @@ _cen_con_mesg() {
     if [ -n "$CEN_CONS_DISABLED" ] ; then
         $CEN_CONS_HOOK_MESSAGE "$@" ; return    # next in chain, return status
     fi
-    local _eopt _hasi _fatl _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _scal _args=() _deco
+    local _eopt _hasi _fbrk _ffmt _fmul _fnnl _fxnl=$'\n' _scal _args=() _deco
     local _ecfy _verb="$CEN_VERB" _stat=0 _recu
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
@@ -650,8 +648,8 @@ _cen_con_mesg() {
       # standard options
       -a)   [ -n "$CEN_AUTOIND" ] && { _hasi=1 ; _args+=('-i') ; } ;;
       -c)   _scal=1 ;;
-      -e)   _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ;;
-      -f)   _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ; _fatl=1 ;;
+      -e|-f)
+            _eopt="$1" ; _stat="$CEN_EXIT" ; _verb=1 ;;
       -h)   [ "$CEN_VERB" -lt 2 -a -n "$CEN_AUTOIND" ] && { _hasi=1 ; _args+=('-i') ; }  ;;
       -i|-r)
             _args+=("$1") ;;
@@ -662,8 +660,7 @@ _cen_con_mesg() {
       -s)   _args+=("$1") ; _fnnl=1 ; _fxnl= ;;
       -t)   _eopt="$1" ;;
       -w)   _eopt="$1" ;;
-      -y) #  _args+=("$1") ;
-      _ecfy="$1" ;;
+      -y)   _ecfy="$1" ;;
       -R)   _recu=1 ;;                      # flag that indicates recursing
       *)    _cen_abort -2 - "$1"
       esac ; shift
@@ -672,14 +669,13 @@ _cen_con_mesg() {
     CEN_AUTOIND=1
 
     # must handle printf here because of padding
-    local _mesg _mlen _mret=:
+    local _mesg _mlen _mret
 
     # must handle printf here
     if [ -n "$_scal" ] ; then               # option -c
         _cen_shortfmt _scal - "$1" ; shift
         [ "$1" == '--' ] && shift           # backward compatibility
     fi
-
     if [ "$_ffmt" = 1 ] ; then
         printf -v _mesg "$@"
     elif [ -n "$_fnnl" ] ; then
@@ -692,19 +688,20 @@ _cen_con_mesg() {
         _mesg="$*"
         [ -n "$_scal" ] && _mesg="${_scal:1} $_mesg"
         [ -n "$_ecfy" ] && _cen_compactify _mesg
-        [ -n "$_deco" ] && decorate $_deco -s _mesg -- "$_mesg"
-        _cen_message $_eopt "${_args[@]}" -- "$_mesg" ; return $_stat
+        _cen_con_outp "$_mesg" $_deco $_eopt "${_args[@]}" ;  return $_stat
     fi
 
     # run on non-recursive call only
     if [ -z "$_recu" ] ; then
 
         # simplified handling of -b for fatal/error/warning/trace
-        if [ -n "$_eopt" ] ; then
+        if [ "$_eopt" = '-t' ] ; then
+            _deco='-d 10'
+        elif [ -n "$_eopt" ] ; then
             [ -n "$_fbrk" ] && _args+=('-b' "$_fbrk")
             case "$_fmul" in
-            1)  _cen_message $_eopt $_ecfy -n "${_args[@]}" -- "$_mesg" ;;
-            *)  _cen_message $_eopt $_ecfy -m "${_args[@]}" -- "$_mesg"
+            1)  _cen_con_outp "$_mesg" $_eopt $_ecfy -n "${_args[@]}" ;;
+            *)  _cen_con_outp "$_mesg" $_eopt $_ecfy -m "${_args[@]}"
             esac
             return
         fi
@@ -736,41 +733,44 @@ _cen_con_mesg() {
     # handle line breaking (full implementation)
     if [ -n "$_fbrk" ] ; then
         local _snam="${CEN_EMBED:-$CEN_NAME}"
-        local _obrk="$((CEN_COLS - ${#_snam} - 2))"     # BUG: not aware of -r
+        local _obrk="$((CEN_COLS - ${#_snam} - 2))"
         while _cen_con_break "$_obrk" "$_fbrk" "$_mesg" "$_fxnl" ; do
             [ "$CEN_CON_BREAK_RES" = "$_fxnl" ] && return "$_stat"
-            _cen_con_mesg -R $_deco -s "${_args[@]}" -- "$CEN_CON_BREAK_RES"
+            # remove '\n' appended by _cen_con_break
+            _cen_con_outp "${CEN_CON_BREAK_RES%?}" $_deco "${_args[@]}"
             [ -z "$_hasi" ] && _args+=('-i') ; _hasi=1
         done ; return "$_stat"
     fi
 
     # handle '\r' and padding
+    [ -z "$CEN_CONS_MSGLEN" -o "$1" = '-f' ] && _fnnl=
+    _cen_con_outp "$_mesg" $_deco "${_args[@]}"
+    [ -n "$_fnnl" ] && echo -en '\r' 1>&2           # line wise progress -> \r
+    return "$_stat"
+}
+
+# send padded text to _cen_message: <text> <deco> <eopt> ...
+_cen_con_outp() {
+    local _deco _mlen _mesg="$1" ; shift
+    if [ "$1" = '-d' ] ; then                       # deco mode
+        shift ; _deco="-d $1" ; shift
+    fi
     if [ -n "$CEN_CONS_MSGLEN" ] ; then
-        if [ -n "$_fatl" ] ; then               # keep last progress msg
+        if [ "$1" = '-f' ] ; then                   # keep last progress msg
             echo
         else
-            _mret='echo -n -e \r'
-            # don't try to replace a multi-line progress message
             if [ "$CEN_CONS_MSGLEN" -gt "${COLUMNS:-200}" ] ; then
                 CEN_CONS_MSGLEN=0 ; echo 1>&2
             else
-                $_mret 1>&2
+                _cen_strlen _mlen "$_mesg"          # this is unicode aware
+                [ "$CEN_CONS_MSGLEN" -gt "$_mlen" ] &&
+                    printf -v _mesg "%s%$((CEN_CONS_MSGLEN-_mlen))s" "$_mesg"
+                echo -en '\r' 1>&2 ; CEN_CONS_MSGLEN=
             fi
-            _mlen="${#_mesg}"
-            [ "$CEN_CONS_MSGLEN" -gt "$_mlen" ] && printf -v _mesg "%s%$((CEN_CONS_MSGLEN-_mlen))s" "$_mesg"
         fi
-        CEN_CONS_MSGLEN=
-        [ -z "$_fnnl" ] && _mret=:              # message does \n
     fi
-
-    # do the output
-    if [ -n "$_deco" ] ; then
-        decorate $_deco -s _mesg -- "$_mesg"
-        _cen_message -s "${_args[@]}" -- "$_mesg$_fxnl"
-    else
-        _cen_message "${_args[@]}" -- "$_mesg"
-    fi
-    $_mret 1>&2 ; return "$_stat"               # line wise progress -> \r
+    [ -n "$_deco" ] && decorate $_deco -s _mesg -- "$_mesg"
+    _cen_message "$@" -- "$_mesg"
 }
 
 # ------------------------------------------------------------------------------
@@ -869,8 +869,11 @@ _cen_con_prog() {
     fatal $"module conflict:" '_centauri_bash_con/svc'
 
 # dummies (indent to hide from _centauri_bash_dyn generator)
-    windows()   { return 1 ; }
-    windialog() { error $"windialog: not available with _centauri_bash_con" ; }
+    windows()   { [ -n "$CEN_CONS_NOWIN" ] && return 1
+                  $CEN_TRACE -c '()' $"Not available with _centauri_bash_con"
+                  CEN_CONS_NOWIN=0 ; return 1
+                }
+    windialog() { error -c 'windialog()' $"Not available with _centauri_bash_con" ; }
 
 if [ "$1" = '-i' ] ; then
     console

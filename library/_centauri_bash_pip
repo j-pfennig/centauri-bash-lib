@@ -20,6 +20,7 @@ CEN_MODULES['_centauri_bash_pip']='0.03:4'
 CEN_PIP_WAIT=
 CEN_PIP_BUSY=                   # coproc recursion protection
 CEN_PIP_BMAP=                   # dictionary of sysbind instances
+CEN_PIP_STAT=                   # flag error in _cen_pip_error
 
 embed -c '_centauri_bash_ext'           # import on demand
 
@@ -468,7 +469,7 @@ syspipe() {
     elif [ -z "$_osrc$_ocon" ] ; then
         _cen_abort + '-i|-o|-d|-a|-s'
     fi
-    CEN_SYSPIPE=                                # reset state
+    CEN_SYSPIPE= ; CEN_PIP_STAT=                    # reset state
     local _stat=0 _verb="$CEN_VERB" _acmd=("$@") _cen_pip_temp
     if [ "$_oout" = 0 -a -z "$_acmd" ] ; then
         eval _acmd=("$_ocon") ; _oout= ; _ocon=
@@ -491,10 +492,13 @@ syspipe() {
     _cen_pip_error() {
         IFS=$' \n\t'                                    # repair IFS
         if [ "$1" = 'STATUS' ] ; then
-            [ "$2" -gt "${_ogra:-0}" ] &&
+            if [ "$2" -gt "${_ogra:-0}" ] ; then
                 $_omsg -p $"command failed (status %s): %s" "$2" "$3"
+                CEN_PIP_STAT="$2"
+            fi
         else
             $_omsg -p $"command failed (%s): %s" "$1" "$3"
+            CEN_PIP_STAT=1
         fi
         CEN_SYSPIPE=                                    # info for producer
     }
@@ -629,7 +633,7 @@ syspipe() {
         [ "$_stat" != 0 ] && $_ocal 'STATUS' "$_stat" "$_acmd"
     esac
     [ -n "$_ftra" ] && context -t -
-    return $_stat
+    return "${CEN_PIP_STAT:-$_stat}"
 }
 
 # called by quit handler, wait for pipe reader or kill pipe reader

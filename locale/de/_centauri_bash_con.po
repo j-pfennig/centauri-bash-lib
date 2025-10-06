@@ -1,9 +1,9 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
+#: /var/centauri/library/_centauri_bash_con:447
 #: /var/centauri/library/_centauri_bash_con:450
-#: /var/centauri/library/_centauri_bash_con:453
-#: /var/centauri/library/_centauri_bash_con:454
+#: /var/centauri/library/_centauri_bash_con:451
 msgid "Not implemented"
 msgstr "Nicht implementiert"
 
@@ -13,5 +13,6 @@ msgid "module conflict:"
 msgstr "Modulkonflikt:"
 
 #: /var/centauri/library/_centauri_bash_con:873
-msgid "windialog: not available with _centauri_bash_con"
-msgstr "windialog: nicht mit _centauri_bash_con verfügbar"
+#: /var/centauri/library/_centauri_bash_con:876
+msgid "Not available with _centauri_bash_con"
+msgstr "Nicht mit '_centauri_bash_con' verfügbar"

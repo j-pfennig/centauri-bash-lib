@@ -21,7 +21,7 @@
 # Copyright Dr. J. Pfennig (c) 2016-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_ext']='0.31:4'
+CEN_MODULES['_centauri_bash_ext']='0.32:6'
 
 CEN_EXT_TEMP=               # temp file base path, see tmpfile
 CEN_EXT_TIDX=               # ... auto index
@@ -1967,12 +1967,19 @@ tmpfile() {
 
     if [ -n "$_odel" ] ; then
         [ -z "$_base" ] && return 0                     # not initialized
-        $CEN_TRACE2 -c $" remove" -- "$_base$_ssuf*"
+        $CEN_TRACE2 -a -c $" remove" -- "$_base$_ssuf*"
         CEN_EXT_TEMP= ; CEN_TMPFILE=
         [ -d "$_base" ] && return 0                     # do not remove folder
+
         set +f ; set -- "$_base$_ssuf"*                 # make sure glob is on
         [ "$1" = "$_base$_ssuf*" ] && return 0          # nothing to remove
-        sysrun $_orun -q -b -- rm -f -r -- "$@" ; return   # return status
+        sysrun $_orun -q -b -- rm "$@" && return 0      # do not remove folders
+
+        # folders can be mount-points, need --one-file-system, rm builtin cannot do so
+        set -- "$_base$_ssuf"*                          # anything left?
+        [ "$1" = "$_base$_ssuf*" ] && return 0          # nothing to remove
+        sysrun $_orun -q -i -- rm -f -r --one-file-system -- "$@"
+        return                                          # return status
     fi
 
     # create folder / file

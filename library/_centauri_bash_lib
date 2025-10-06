@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2025
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.62:6:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.64:6:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -59,13 +59,14 @@ CEN_CMDCURR=0           # index in CEN_CMDARGS[] for current action
 CEN_CMDINDX=0           # index in CEN_CMDARGS[] for remaining actions
 CEN_CMDOPTS=            # array of script options
 CEN_DEFAULT=            # system wide defaults
-CEN_DISPLAY=            # empty, 'x11' or 'wayland'
+CEN_DISPLAY=            # empty, 'x11' or 'wayland', see XDG_SESSION_TYPE
 CEN_DEBUG=:             # call debug(), see _centauri_bash_dbg
 CEN_DONE=1              # 0:ignore error  1:quit on error  2:quit now
 CEN_EMBED=              # see --embed option
 CEN_EXIT=0              # exit code
 CEN_FOLDER=             # see folder
 CEN_NOTRACE=:           # empty when tracing, see --trace
+CEN_NOUTF8=             # LANG if not UTF-8 suffixed
 CEN_PAGER=              # set at 1st call to syspager if paging is on
 CEN_QUIT_SANE=          # run 'stty sane' in quit
 CEN_QUIT_TRAP=49        # default signal to enter 'quit -s 4'
@@ -108,6 +109,9 @@ CEN_OPT_ZOMBIE=         # see --zombie
 # CEN_IS_SOURCED        # app is sourced, do not run main/quit
 # CEN_NOBREAK           # 0: no compactify, 1: no line break, 2: compactify
 
+# CEN_CONSOLE           # see module 'con'
+# CEN_WINDOWS           # see module 'win'
+
 # CEN_MONITOR_MASK      # enable monitoring
 # CEN_MONITOR_CALL      # callback into user code
 # CEN_MONITOR_FILE      # log file
@@ -139,6 +143,7 @@ CEN_HOOK_MAIN=:
 CEN_HOOK_MESSAGE='_cen_message'
 CEN_HOOK_MONITOR=:
 CEN_HOOK_QUIT='_cen_quit'
+CEN_HOOK_RUN='invoke run run'
 
 CEN_TRANSIENT="$CEN_ROOT/transient"     # temp folder (root write access only)
 CEN_PERSISTENT="$CEN_ROOT/persistent"   # cache folder (root write access only)
@@ -150,6 +155,8 @@ CEN_PERSISTENT="$CEN_ROOT/persistent"   # cache folder (root write access only)
 # CEN_NAME=             # script name
 # CEN_VERSION=          # versions: <script> <lib> <api-curr> <api-min>
 # CEN_SHORTFMT=         # format for _cen_shortfmt
+
+[ "${LANG%UTF-8}" = "$LANG" ] && CEN_NOUTF8="${LANG:-C}"
 
 # optional features
 while [ "${1::1}" = '-' ] ; do
@@ -200,10 +207,10 @@ fi
 # message - output a message
 # warning - output a warning message
 #
-# Call:     <msg_function> [<cls>] [-a|-i] [-l] [-r] [-m|-n|y] [--] <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-r] [-m|-y] -p [--] <fmt> <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-r] -c    [-y] [--] <pre> <arg>...
-#           <msg_function> [<cls>] [-a|-i] [-l] [-r] -c -p [-y] [--] <pre> <fmt> <arg>...
+# Call:     <msg_function> [<cls>] [-a|-h|-i] [-l] [-r] [-m|-n|y] [--] <arg>...
+#           <msg_function> [<cls>] [-a|-h|-i] [-l] [-r] [-m|-y] -p [--] <fmt> <arg>...
+#           <msg_function> [<cls>] [-a|-h|-i] [-l] [-r] -c    [-y] [--] <pre> <arg>...
+#           <msg_function> [<cls>] [-a|-h|-i] [-l] [-r] -c -p [-y] [--] <pre> <fmt> <arg>...
 #
 #           <msg_function> := trace | message | warning | error | fatal
 #
@@ -211,6 +218,7 @@ fi
 #           -b  used by console module, simplified here, see [[output()]]
 #           -c  output fixed size text prefix/function-name (intended for trace)
 #           -d  modules only, ignored here, see [[decorate()]] and [[_centauri_bash_win]]
+#           -h  like -a but only if trace output is off
 #           -i  indent (no program name)
 #           -l  be loud, overrides main's --quiet option
 #           -m  multiple lines, one <arg> per line (short for '-p "%s\n"')
@@ -549,8 +557,8 @@ _cen_quit() {
 _cen_exit() {
     $CEN_NOTRACE set +x                         # do not trace exit code
     [ "${1:--}" != '-' ] && CEN_EXIT="$1"
-    isfunction -c '_cen_pro_quit' || :          # remove progress output
-    isfunction -c '_cen_ext_quit' || :          # run quit tmpfile late
+    isfunction -c '_cen_pro_quit'               # remove progress output
+    isfunction -c '_cen_ext_quit'               # run quit tmpfile late
     [ "$1" = '-' ] && return 0                  # see quit -h
     $CEN_TRACE2 -r -c $"Exit status" -- "${CEN_EXIT:-0}"
     [ -n "$CEN_QUIT_SANE" ] && system -r -q -- stty sane
@@ -661,9 +669,6 @@ _cen_message() {
       esac ; shift
     done
 
-    if [ -n "$CEN_CONS_MSGLEN" ] ; then         # see progress(), ignore -q
-        echo 1>&2 ; CEN_CONS_MSGLEN=            #     needed for trace()
-    fi
     [ "$_verb" -gt 0 ] || return $_stat         # global -q option
 
     [ "$CEN_AUTOIND" = 2 ] && _sind=1 ; CEN_AUTOIND=1
@@ -711,10 +716,11 @@ _cen_message() {
     return $_stat                               # error/fatal return CEN_EXIT
 }
 
-# format short message: <vnam> <orig>|- <mesg>|-
+# format short message: <vnam> <orig>|-|+ <mesg>|-
 _cen_shortfmt() {
     local _temp="$2" _asci _ugly
     [ "$3" = '-' ] && set -- "$1" "$2" ' '
+    [ "$3" = '+' ] && set -- "$1" "$2" "${CEN_ACTION:--}"
     [ "${3::1}" = ' ' ] || _temp=
     [ "${3::2}" = '()' ] && _temp='-'
     [ "$_temp" = '-' ] &&
@@ -727,15 +733,29 @@ _cen_shortfmt() {
             *)          break
             esac
         done
+
     # printf %s does not handle utf-8 correctly
     _temp+="$3"
     if [ -z "${_temp//[[:ascii:]]/}" ] ; then
         printf -v "$1" "$CEN_SHORTFMT" "$_temp"         # is pure ascii
     else
+        [ -n "$CEN_NOUTF8" ] && LANG='C.UTF-8'
         _asci="${_temp//[[:alpha:]]/.}"                 # this is unicode aware
+        [ -n "$CEN_NOUTF8" ] && LANG="$CEN_NOUTF8"
         printf -v _ugly "$CEN_SHORTFMT" "$_asci"        # get correct padding
         printf -v "$1" '%s' "${_ugly/$_asci/$_temp}"    # back to unicode
     fi
+}
+
+# ------------------------------------------------------------------------------
+# _cen_strlen - Unicode aware strlen: <vnam> <text>
+# ------------------------------------------------------------------------------
+_cen_strlen() {
+    if [ -z "$CEN_NOUTF8" ] ; then                      # utf-8 is set
+        printf -v "$1" "${#2}" ; return
+    fi
+    LANG='C.UTF-8' printf -v "$1" "${#2}"               # temporarily use utf-8
+    LANG="$CEN_NOUTF8" ; return
 }
 
 # ------------------------------------------------------------------------------
@@ -1088,7 +1108,7 @@ context() {
         [ "$CEN_WINDOWS" = 1 ] && CEN_OPT_GUI=1
         [ "$CEN_CONSOLE" = 1 ] && CEN_OPT_GUI=2
         isfunction -z windows ; isfunction -z console ; isfunction -y progress
-    fi || :
+    fi
 
     # add a hook function
     if [ -n "$_hooc" ] ; then
@@ -1350,13 +1370,6 @@ dryrun() {
     return $_rsta
 }
 
-# get length in chars of a unicode string: <vnam> <text>
-_cen_stringlen() {
-    [ -n "${2//[[:ascii:]]/}" ] &&
-        set -- "$1" "${2//[[:alpha:]]/.}"       # this is unicode aware
-    printf -v "$1" '%s' "${#2}"                 # is pure ascii
-}
-
 # compactify a long string: <vnam> [<lmax>|-|+]  (see trimjoin)
 _cen_compactify() {
     [ "${CEN_NOBREAK:-2}" = 2 ] || return 0         # COLUMNS=0 or disabled
@@ -1366,7 +1379,7 @@ _cen_compactify() {
     local _leng _deco=$'\033'"\\[[0-9]m"
     _vcmp="${_vcmp//$_deco/}" ; _vcmp="${_vcmp//[[:cntrl:]]/ }"
     _vcmp="${_vcmp%"${_vcmp##*[![:space:]]}"}"
-    _cen_stringlen _leng "$_vcmp"
+    _cen_strlen _leng "$_vcmp"
 
     if [ "${2:--}" = '-' ] ; then                   # use with indent
         local _cols="${COLUMNS:-100}" _snam="${CEN_EMBED:-$CEN_NAME}"
@@ -1734,7 +1747,9 @@ folder() {
         _vval= ; return 1
     fi
     [ -n "$_onor" ] && _vval="$PWD"
-    $CEN_TRACE -a -c $" current" "$_vval"
+    $CEN_NOTRACE return 0
+    [ "$_vval" = "$PWD" ] && $CEN_TRACE -a -c $" current" "$PWD" ||
+                             $CEN_TRACE -a -c $" current" "$PWD ($_vval)"
     return 0
 }
 
@@ -2811,7 +2826,7 @@ main() {
     if [ "$CEN_RUN_MIN_ARGS" != '-' ] ; then
         [ "$CEN_RUN_MIN_ARGS" = '+' ] && CEN_RUN_MIN_ARGS=0
         if [ "${#CEN_CMDARGS[@]}" = 0 -a "$CEN_RUN_MIN_ARGS" != 0 ] ; then
-            embed -m '_centauri_bash_use' '-u'
+            embed -m '_centauri_bash_use' -u
         fi
     fi
 
@@ -2838,7 +2853,7 @@ main() {
                 fi
                 _rarg+=("$_curr")
             done
-            invoke 'run' run "$CEN_RUN_MIN_ARGS" "$CEN_RUN_MAX_ARGS" "${_rarg[@]}"
+            $CEN_HOOK_RUN "$CEN_RUN_MIN_ARGS" "$CEN_RUN_MAX_ARGS" "${CEN_CMDARGS[@]}"
             return 0
         fi
         CEN_STAGE='actions'

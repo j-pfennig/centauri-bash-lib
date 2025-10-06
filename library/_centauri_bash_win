@@ -38,7 +38,7 @@
 # Copyright Dr. J. Pfennig (c) 2015-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_win']='0.49:5'
+CEN_MODULES['_centauri_bash_win']='0.50:6'
 
 embed -c '_centauri_bash_ext'       # reference modules ...
 embed -c '_centauri_bash_txt'
@@ -60,12 +60,14 @@ CEN_WIN_PATH=           # dialog tool path, see _cen_windcheck
 CEN_WIN_NAME=           # dialog tool name
 CEN_WIN_GUISTAT=        # ...
 
-CEN_WIN_USE_TITLE=      # option for window title
-CEN_WIN_DLG_TITLE=      # option for dialog title
-CEN_WIN_DLG_CAPTION=    # use "--caption <title>'"
+CEN_WIN_USE_TITLE=      # KDE only - option for window title
+CEN_WIN_DLG_TITLE=      # ...        option for dialog title
+CEN_WIN_DLG_CAPTION=    # ...        use "--caption <title>'"
 
 CEN_WIN_HOOK_GETLINE=   # hook and flag for initialization
 CEN_WIN_HOOK_MESSAGE=
+
+CEN_WIN_NOCON=          # flag for dummy console() function
 
 _cen_win_input=         # used by input dialog
 
@@ -198,6 +200,7 @@ windows() {
             [ -z "$CEN_WIN_HOOK_GETLINE" ] &&
                 _cen_win_hook                           # register hooks for in/out/quit
         else
+            [ -n "$CEN_WIN_PATH" ] && _cen_win_hook     # fallback for xmessage
             CEN_WINDOWS=0                               # GUI not installed
             CEN_WIN_NAME='-' ; return 1
         fi
@@ -670,9 +673,14 @@ _cen_win_dialog() {
     ### xmessage ###
 
     else
+        local xgeo=6 xfnt="$CEN_DISPLAY_DPI0"
+        [ -z "$xfnt" ] && _cen_source -- "$CEN_PERSISTENT/centauridisplay"
+        [ "${xfnt:--}" = '-' ] && xfnt=132
+        ((xgeo *= xfnt))
+        xfnt="-adobe-*-*-r-*--0-$xfnt-*-*-p-*-*-*"
         [ "$_text" = '-' ] && _text="$1"
         [ "$_titl" != '-' ] && _text="*** $_titl ***  $_text"
-        sysrun -q -r xmessage -geometry 640 -font -adobe-*-*-r-*--0-100-*-*-p-*-*-* -default okay -center "$_text"
+        sysrun -q -r xmessage -geometry "$xgeo" -font "$xfnt" -default okay -center "$_text"
     fi
 
     if [ "$_varg" = '-' ] ; then
@@ -779,9 +787,9 @@ _cen_windmesg() {
       -b)   shift ;; # ignored here
       -c)   _argx+=("$1" "$2") ; shift ; _scal="$1" ;;
       -d)   shift
-            [ "$1" = "?" ] && _ftwo=1
+            [ "$1" = '?' ] && _ftwo=1
             [ "$1" = '-' ] && _flib=1
-            [ "${1::1}" = "+" ] && _popw="${1:1}" ;;
+            [ "${1::1}" = '+' ] && _popw="${1:1}" ;;
       -h)   [ "$CEN_VERB" -lt 2 ] && _argx+=('-i') ;;
       -i)   _argx+=("$1") ;;
       -l)   _argx+=("$1") ; _verb=1 ;;
@@ -801,11 +809,13 @@ _cen_windmesg() {
 
     # implicitly init window mode or call /dev/stdout implementation
     if [ -z "$_flib" ] ; then
-        _cen_windcheck || _flib=1
+        if ! _cen_windcheck ; then
+            [ -z "$CEN_WIN_PATH" ] && _flib=1 || _flib=2
+        fi
     fi
     if [ -z "$_flib" ] ; then               # close progress window
         [ -n "$CEN_WIN_PROGRESS" ] && _cen_win_pdlg -c
-    else
+    elif [ "$_flib" = 1 ] ; then
         _cen_message "${_args[@]}" "${_argx[@]}" -- "$@"
         return "$_stat"
     fi
@@ -825,6 +835,9 @@ _cen_windmesg() {
     fi
 
     [ -z "${_sfmt//$'\n'/}" ] && return 0   # discard empty dialog
+    if [ -n "$_flib" ] ; then               # fallback to xmessage
+        _cen_win_dialog - - - - - "$_sfmt" ; return 0
+    fi
 
     case "$_sfmt" in
         *:$'\n'*)                           # colon at end-of-line
@@ -839,8 +852,8 @@ _cen_windmesg() {
             ;;
     esac
 
-    [ -n "$_popw" ] && _args+=("-u" "$_popw")
-    _args+=("--")
+    [ -n "$_popw" ] && _args+=('-u' "$_popw")
+    _args+=('--')
 
     if [ -n "$_ftwo" -o -n "$_fqui" ] ; then    # 2nd button ...
         windialog -2 $"stop continue" "${_args[@]}" "$_sfmt" || return 1
@@ -936,7 +949,7 @@ _cen_windcheck() {
     CEN_WIN_NAME='-'
     if sysfind -c -o -s CEN_WIN_PATH -- 'kdialog' 'zenity' 'xmessage' ; then
         CEN_WIN_NAME="${CEN_WIN_PATH##*/}"
-        if [ "${1:-+}" != '+' ] ; then              # check minimum requirement
+        if [ "${1:-+}" != '+' ] ; then            # check minimum requirement
             windialog -c 'inputbox' || CEN_WIN_NAME='-'
         fi
     else
@@ -946,26 +959,28 @@ _cen_windcheck() {
     [ -n "$CEN_WIN_GUISTAT" ] && return "$CEN_WIN_GUISTAT"  # do not reread version info
     [ "$CEN_WIN_NAME" = '-' ] && CEN_WIN_GUISTAT=1 || CEN_WIN_GUISTAT=0
 
-    # get system and kde verssion
-    embed -q '_centauri_bash_sys' || :              # just to get version
-    CEN_WIN_DLG_TITLE=1
-    CEN_WIN_DLG_CAPTION=1
-    CEN_WIN_USE_TITLE=1
-    case "$CEN_SYS_PLASMA" in
-        004.*)      CEN_WIN_USE_TITLE= ;;
-        005.00*)    ;;
-        *)          CEN_WIN_DLG_TITLE=1
-                    CEN_WIN_DLG_CAPTION= ;;
-    esac
-    CEN_KDE_VERSION="${CEN_SYS_KDEVERS%%.*}"
-    CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
-    CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
- ### TODO no kde installed
-    [ "${CEN_KDE_VERSION:--}" = '-' ] && CEN_KDE_VERSION=5
-    [ "$CEN_KDE_VERSION" -gt 4 ] && export KDE_FULL_SESSION=true
-    $CEN_TRACE -a -c "KDE-version" -- "$CEN_KDE_VERSION"
-    $CEN_TRACE -a -c "Dialog-title" -- "$CEN_WIN_DLG_TITLE"
-    $CEN_TRACE -a -c "Dialog-caption" -- "$CEN_WIN_DLG_CAPTION"
+    if [ "$CEN_WIN_NAME" != 'kdialog' ] ; then
+        $CEN_TRACE -a -c "Dialog tool" -- "$CEN_WIN_NAME"
+    else                                            # get system and kde version
+        embed -q '_centauri_bash_sys'
+        CEN_WIN_DLG_TITLE=1
+        CEN_WIN_DLG_CAPTION=1
+        CEN_WIN_USE_TITLE=1
+        case "$CEN_SYS_PLASMA" in
+            004.*)      CEN_WIN_USE_TITLE= ;;
+            005.00*)    ;;
+            *)          CEN_WIN_DLG_CAPTION= ;;
+        esac
+        CEN_KDE_VERSION="${CEN_SYS_KDEVERS%%.*}"
+        CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
+        CEN_KDE_VERSION="${CEN_KDE_VERSION#0}"
+
+        [ "${CEN_KDE_VERSION:--}" = '-' ] && CEN_KDE_VERSION=5
+        [ "$CEN_KDE_VERSION" -gt 4 ] && export KDE_FULL_SESSION=true
+        $CEN_TRACE -a -c "KDE-version" -- "$CEN_KDE_VERSION"
+        $CEN_TRACE -a -c "Dialog-title" -- "$CEN_WIN_DLG_TITLE"
+        $CEN_TRACE -a -c "Dialog-caption" -- "$CEN_WIN_DLG_CAPTION"
+    fi
     return "$CEN_WIN_GUISTAT"
 }
 
@@ -1023,8 +1038,10 @@ _cen_win_launch() {
 # Hooks to override input / output
 # ------------------------------------------------------------------------------
 _cen_win_hook() {
-    CEN_WIN_HOOK_GETLINE="$CEN_HOOK_GETLINE"
-    CEN_HOOK_GETLINE="_cen_windread"
+    if [ "$CEN_WIN_NAME" != '-' ] ; then
+        CEN_WIN_HOOK_GETLINE="$CEN_HOOK_GETLINE"
+        CEN_HOOK_GETLINE='_cen_windread'
+    fi
     CEN_WIN_HOOK_MESSAGE="$CEN_HOOK_MESSAGE"
     CEN_HOOK_MESSAGE='_cen_windmesg'
 }
@@ -1036,11 +1053,13 @@ _cen_win_hook() {
 # Startup: [-n|-s]
 # ------------------------------------------------------------------------------
 
-[ -n "$CEN_WINDOWS" ] && return 0       # already loaded
-
-[ -n "${CEN_MODULES[_centauri_bash_con]}" ] &&
+if [ -n "$CEN_WINDOWS" ] ; then         # already loaded
+    return 0
+elif [ -n "${CEN_MODULES[_centauri_bash_con]}" ] ; then
     console -d
     $CEN_TRACE -c $"window module load" $"Disabled 'console' module"
+fi
+
 [ -n "${CEN_MODULES[_centauri_bash_svc]}" ] &&
     fatal $"module conflict:" "_centauri_bash_win/svc"
 
@@ -1048,16 +1067,19 @@ _cen_win_hook() {
 
 # register option hook
 CEN_WIN_HOOK_OPTIONS="$CEN_HOOK_OPTIONS"
-CEN_HOOK_OPTIONS="_cen_win_option"
+CEN_HOOK_OPTIONS='_cen_win_option'
 
 #CEN_CONS_MSGLEN=                       # flags open progress dialog
 
 # dummies (indent to hide from _centauri_bash_dyn generator)
-    console() { return 1 ; }
-    output()  { error $"output: not available with _centauri_bash_win" ; }
+    console() {  [ -n "$CEN_WIN_NOCON" ] && return 1
+                    $CEN_TRACE -c '()' $"Not available with _centauri_bash_win"
+                    CEN_WIN_NOCON=0 ; return 1
+              }
+    output()  {  error -c '()' $"Not available with _centauri_bash_win" ; }
 
 # initialize
-if [ "$1" = "-s" ] ; then
+if [ "$1" = '-s' ] ; then
     windows -m
 else
     _cen_win_hook

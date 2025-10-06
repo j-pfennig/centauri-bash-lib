@@ -11,7 +11,7 @@
 # enable loadable bash builtins.
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_dyn']="0.26:4"
+CEN_MODULES['_centauri_bash_dyn']="0.27:4"
 
 # ------------------------------------------------------------------------------
 # Dynamic loading + Dynamic loading of centauri-bash-lib modules
@@ -226,6 +226,8 @@ spliteval() { _cen_dyn_load iom "$@" ; }
 automount() { _cen_dyn_load mnt "$@" ; }
 blkdevice() { _cen_dyn_load mnt "$@" ; }
 findmount() { _cen_dyn_load mnt "$@" ; }
+usermount() { _cen_dyn_load mnt "$@" ; }
+location() { _cen_dyn_load mnt "$@" ; }
 
 netconfig() { _cen_dyn_load net "$@" ; }
 netconv() { _cen_dyn_load net "$@" ; }
