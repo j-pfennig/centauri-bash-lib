@@ -37,6 +37,11 @@ enable_extension() {
 
     # run compatibility tests
     case "$1" in
+    mkdir)  # check for termux bad implementation of '-p -m nnn', see man page
+            if [ -n "${CEN_PATHS[0]}" ] ; then      # see '/data/data/com.termux'
+                builtin mkdir -m 700 -p "${CEN_PATHS[4]}/.$CEN_NAME-$$" || return 1
+                rm -f "${CEN_PATHS[4]}/.$CEN_NAME-$$"
+            fi ;;
     realpath)
             builtin realpath -q -a _path -s '/tmp' || return 1
             [ "$_path" -ef '/tmp' ] || return 1 ;;

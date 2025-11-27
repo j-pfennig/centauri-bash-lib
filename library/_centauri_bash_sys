@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2019-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_sys']='0.32:6'
+CEN_MODULES['_centauri_bash_sys']='0.33:6'
 
 CEN_SYS_STATE_FILE=             # sysversion
 
@@ -292,7 +292,7 @@ sysversion() {
 #
 # Options:  -i  initialize         (sysinfo install)
 #           -n  copy library files (sysinfo refresh/setup)
-#           -o  override some paths
+#           -o  override some paths, see 'Prefix' below
 #           -p  setup paths only   (bootstrap used for repository)
 #           -r  remove, uninstall  (sysinfo uninstall)
 #           -s  update services    (always needs root rights)
@@ -343,8 +343,9 @@ sysversion() {
 #,          '/*'    use this path (does not match '/')
 #,          '*'     reset paths to CEN_INSTALL default
 #
-#+          Variable CEN_PATHS[7] is set to <pref>, see module [[_cen_bash_net]].
-#           No other library module takes note of CEN_PATHS[7].
+#+          Variable CEN_PATHS[6] is set to <pref>, but currently no other library
+#           module takes note of CEN_PATHS[6]. Also CEN_NET_OUTPUT, which is
+#           imported by [[_cen_bash_net]], is set to <pref>.
 # ------------------------------------------------------------------------------
 syssetup() {
     $CEN_DEBUG -c -- "$*"
@@ -370,7 +371,7 @@ syssetup() {
         /*) _base="$_outp" ;;
         .)  _base="$PWD$_base"
         esac
-        CEN_PATHS[7]="$_outp"
+        CEN_PATHS[6]="$_outp" ; CEN_NET_OUTPUT="$_outp"
         [ -d "$_base" ] || _cen_abort + "$_base"
 
         for _item in 'transient' 'persistent' 'default' ; do

@@ -36,19 +36,15 @@
 # Copyright Dr. J. Pfennig (c) 2013-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.46:6'
+CEN_MODULES['_centauri_bash_net']='0.50:6'
 
 # IMPORTED: CEN_NET_OUTPUT                          # see netfile()
 
 # called by module load and netconfig()
 _cen_net_files() {
-    [ "$1" = ':' -a -n "${CEN_PATHS[7]}" ] && set -- "${CEN_PATHS[7]}"
-    if [ "$1" = ':' ] ; then
-        [ -z "$CEN_NET_FILE_CONF" ] &&
-            $CEN_TRACE2 -a -c 'CEN_NET_OUTPUT' -- "${CEN_NET_OUTPUT:-<none>}"
-    elif [ "$CEN_NET_OUTPUT" != "$1" ] ; then
-        CEN_NET_OUTPUT="$1"
-        $CEN_TRACE2 -a -c 'CEN_NET_OUTPUT' -- "${1:-<none>}"
+    if [ -n "$1" -a "$CEN_NET_OUTPUT" != "$1" ] ; then
+        [ "$1" = '-' ] && CEN_NET_OUTPUT= || CEN_NET_OUTPUT="$1"
+        $CEN_TRACE2 -a -c 'CEN_NET_OUTPUT' -- "${CEN_NET_OUTPUT:-<none>}" "$PWD"
     fi
     netpath -p                                   # get CEN_PERSISTENT
     CEN_NET_FILE_CONF="$_netpath/centaurinetcfg"
@@ -63,13 +59,15 @@ CEN_NET_PREFIX_IP6_DFLT='fc01::/96'
 
 # data for netiface ...
 
-CEN_NET_IFNAMES=                # 0:=no mapping  1:=systemd names
-CEN_NET_IFMAP=                  # list of interface mappings
-CEN_NET_IFKCMD=                 # flag for net.ifnames
-CEN_NET_IFIEN=0                 # ethernet index
-CEN_NET_IFIWL=0                 # wlan ...
-CEN_NET_IFIUS=0                 # usb ...
-CEN_NET_IFMAIN='br0 eth0 wlan0' # used for generic host address
+_cen_net_iface() {
+    CEN_NET_IFNAMES=                # 0:=no mapping  1:=systemd names
+    CEN_NET_IFMAP=()                # list of interface mappings
+    CEN_NET_IFKCMD=                 # flag for net.ifnames
+    CEN_NET_IFIEN=0                 # ethernet index
+    CEN_NET_IFIWL=0                 # wlan ...
+    CEN_NET_IFIUS=0                 # usb ...
+    CEN_NET_IFMAIN='br0 eth0 wlan0' # used for generic host address
+}
 
 # ------------------------------------------------------------------------------
 # Interface Naming + About BIOS, systemd and internal interface names
@@ -132,7 +130,7 @@ CEN_NET_IFMAIN='br0 eth0 wlan0' # used for generic host address
 # adjusts CEN_OPT_OUTPUT accordingly. Use "-o ''" to disable this behaviour.
 # ------------------------------------------------------------------------------
 netconfig() {
-    local _frea _oerr=: _oout=':'
+    local _frea _oerr=: _oout
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -145,7 +143,7 @@ netconfig() {
       esac ; shift
     done
 
-    [ -n "$_oout" -o -n "$_frea" ] && _cen_net_files "$_oout"
+    [ -n "$_oout" -o -n "$_frea" -o -z "$CEN_NET_FILE_CONF" ] && _cen_net_files "$_oout"
     [ -n "$CEN_NET_HOSTS" -a -z "$_frea" ] && return 0
     local _file="${1:-$CEN_NET_FILE_CONF}"
 
@@ -187,6 +185,7 @@ netconfig() {
     CEN_NET_PORT_HTTP=          # port for http proxy
     CEN_NET_PORT_HTTPS=         # port for https proxy
 
+    _cen_net_iface              # init netiface() data
     [ "$_frea" = 0 ] && return 0
     _cen_source "$_file" && return 0
     $_oerr $"No network config:" "$_file" ; return 1
@@ -488,7 +487,7 @@ nethost() {
 #           -k  return a systemd/kernel device name or check/init mode
 #           -m  set CEN_NET_IFMAIN, can be combined with all other options
 #           -n  get kernel command line setting from "net.ifnames", no init
-#           -p  persist current mappings in a temporary file
+#           -p  re-init and persist current mappings in a temporary file
 #           -s  save to variable (default is _netiface)
 #           -w  generate warnings
 #           -x  return **false** if interface does not exist
@@ -576,7 +575,7 @@ netiface() {
       -k)   _mapm='k' ;;
       -m)   shift ; CEN_NET_IFMAIN="$1" ;;
       -n)   _ncmd=1 ;;
-      -p)   _pers=1 ;;
+      -p)   _cen_net_mappers -i ; _pers=1 ;;
       -s)   shift ; _vnam="$1" ;;
       -w)   _oerr='warning' ;;
       -x)   _exst=1 ;;
@@ -686,7 +685,7 @@ _cen_net_mapinit()  {
     # check for kernel net.ifnames, then try some heuristics
     if _cen_net_getkcmd ; then                      # this is mandatory
         CEN_NET_IFNAMES=0
-    elif _cen_net_maptest "/sys/class/net/"[ew]* ; then
+    elif _cen_net_maptest /sys/class/net/[ew]* ; then
         CEN_NET_IFNAMES=0
     else
         CEN_NET_IFNAMES=1
@@ -699,10 +698,11 @@ _cen_net_mapinit()  {
 
         local _item _more=()
         for _item in /sys/class/net/en* ; do
+            [ -e "$_item" ] || continue
             case "${_item##*/}" in
-            en*u*)  [ -e "$_item" ] && _cen_net_mapiadd 'usb' "${_item##*/}" ;;
-            end*)   [ -e "$_item" ] && _cen_net_mapiadd 'eth' "${_item##*/}" ;;
-            *)      [ -e "$_item" ] && _more+=("$_item")
+            en*u*)  _cen_net_mapiadd 'usb' "${_item##*/}" ;;
+            end*)   _cen_net_mapiadd 'eth' "${_item##*/}" ;;
+            *)      _more+=("$_item")
             esac
         done
         for _item in "${_more[@]}" ; do
@@ -716,25 +716,29 @@ _cen_net_mapinit()  {
     fi
 }
 
-# handle persistancy: -r|-w
+# handle persistancy: -i|-r|-w
 _cen_net_mappers()  {
-    if [ "$1" = '-w' ] ; then
-        if [ "$EUID" != 0 ] ; then
+    case "$1" in
+    -i) nettemp -r 'network_ifnames'                # remove file
+        _cen_net_iface                              # init data
+        ;;
+    -r) nettemp -s 'network_ifnames'                # load from file
+        ;;
+    -w) if [ "$EUID" != 0 ] ; then
             $CEN_TRACE2 "ifnames not persisted for non-root user"
-            return 0
-        fi
-        local _imap="${CEN_NET_IFMAP[@]@A}" ; _imap="${_imap#declare -* }"
-        nettemp -w 'network_ifnames' <<!EOF
+        else
+            nettemp -w 'network_ifnames' <<!EOF
 ${CEN_NET_IFKCMD@A}
 ${CEN_NET_IFNAMES@A}
-$_imap
+CEN_NET_IFMAP=(${CEN_NET_IFMAP[@]@Q})
 ${CEN_NET_IFIEN@A}
 ${CEN_NET_IFIWL@A}
 ${CEN_NET_IFIUS@A}
 !EOF
-    else
-        nettemp -s 'network_ifnames' ; return
-    fi
+        fi
+        ;;
+    *)  _cen_abort - "$1"
+    esac
 }
 
 # name mapping: -b|-s <vnam> <name>
@@ -1012,7 +1016,8 @@ netmask() {
 #
 # Arguments:<option>   name of the config option to be searched
 #           <host>     a local host name (NOT fully qualified), matching supports
-#                      bash globbing unless option -n is used
+#                      bash globbing unless option -n is used. If <host> starts
+#                      with **!** the evaluation stops and **false** is returned.
 #
 # Return:  **true** if an entry was found or **false** on failure
 #
@@ -1025,6 +1030,9 @@ netmask() {
 #.         # single option check
 #.         netoption "ipv6" "alpha1" &&
 #.             message "Option 'ipv6' applies for 'alpha1'"
+#
+#.         # using a negative match (!)
+#.         netoption "proxy" raspi[34] !raspi* *
 #
 #.         # find multiple options for host, using a default
 #.         local nopt nmod="tracking"
@@ -1050,7 +1058,7 @@ netoption() {
     done
     [ -z "$1" ] && return 1
 
-    local _name="${2:--}"
+    local _name="${2:--}" _rval
     if [ "$_netoption_last" != "$1" ] ; then
         _netoption_last= ; _netoption=()
         for _opts in "${CEN_NET_OPTIONS[@]}" ; do   # loop over options
@@ -1062,10 +1070,15 @@ netoption() {
         [ "$_name" = '-' ] && return 0
     fi
     for _opts in "${_netoption[@]}" ; do            # loop over hosts list
+        if [ "${_opts::1}" = '!' ] ; then
+            _rval=1 ; _opts="${_opts:1}"
+        else
+            _rval=0
+        fi
         [ "$_opts" = "$_dflt" ] && continue
-        [ "$_opts" = "$_name" ] && return 0         # literal match
+        [ "$_opts" = "$_name" ] && return $_rval    # literal match
         [ "${_opts/$_glob/}" = "$_opts" ] && continue
-        [[ "$_name" == $_opts ]] && return 0        # glob match
+        [[ "$_name" == $_opts ]] && return $_rval   # glob match
     done
     return 1
 }
@@ -1284,7 +1297,7 @@ nettemp() {
     -c) create -w "$_argp" 664 ;;                   # create file, warn on failure
     -l) [ "$_arg2" = '-' ] && _arg2="$_base/${CEN_NAME:-$0}" || _arg2="$_base/$_arg2"
         netpath -r -s _nettemp -- "$_arg2"
-        _cen_net_symlink "$_arg1" "$_netpath" ;;    # create link
+        _cen_net_symlink "$_arg1" "$_nettemp" ;;    # create link
     -r) _cen_net_remove "$_argp" ;;                 # remove file
     -s) _cen_source "$_argp" ;;                     # source file
     -w) create -t -h - "$_argp" ;;                  # write file
@@ -1433,15 +1446,15 @@ netfile() {
     case "$_outp" in
     '') _hout="$1" ;;
     -)  create $_opts -o -w -- "$1" ; return ;; # write to /dev/stdout
-    .)  [ "${1::2}" = './' ] &&  _hout="$1" || _hout="./${1#/}" ;;
+    .)  [ "${1::2}" = './' ] && _hout="$1" || _hout="./${1#/}" ;;
     *)  _hout="${1#/}"                          # mangle path
         _hout="$CEN_NET_OUTPUT/${_hout//\//.}" ;;
     esac
 
     # we must have a valid base folder to create a file
     if [ "${_hout/\//}" != "$_hout" ] && [ ! -d "${_hout%/*}" ] ; then
-        $CEN_TRACE -c $"No base folder" -- "$_hout"
-        _cen_abort - "$CEN_NET_OUTPUT"
+        error -- $"No base folder:" -- "$_hout"
+        # _cen_abort - "$CEN_NET_OUTPUT"
         return 1
     fi
     create $_opts -t -w -- "$_hout" "$_hmod"    # create, warning on failure
@@ -1493,7 +1506,7 @@ netpath() {
       esac ; shift
     done
     if [ -n "$_optt" ] ; then
-      [ -n "${CEN_PATHS[7]}" ] && _outp=        # see syssetup -o
+      [ -n "${CEN_PATHS[6]}" ] && _outp=        # see syssetup -o
       set -- "$_optt${1:+/}$1" ; _optr=1
     fi
     [ -n "$_optr" -a "$_outp" != '.' ] && _outp=
@@ -2346,7 +2359,7 @@ nettool() {
 # ------------------------------------------------------------------------------
 
 if [ "$1" = '-n' -o "$1" = '-A' ] ; then
-    _cen_net_files ':'
+    _cen_net_files ; _cen_net_iface
 else
     netconfig
 fi

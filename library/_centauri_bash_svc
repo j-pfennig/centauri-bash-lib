@@ -44,6 +44,7 @@
 # Variables:CEN_SVC_SHORT    should be set to a very short description ot the
 #                            service (default is CEN_TITLE)
 #           CEN_SVC_NOROOT   user defined actions do not check for user root
+#           CEN_SVC_PID      type oneshot only: save this pid in pid file
 #           CEN_SVC_xxx      **systemd** related variables, see below
 #           CEN_OPT_SYSLOG   controls where the output goes:
 #                            **0**: no output,  **1**: stderr and syslog,  **2**: syslog only
@@ -119,7 +120,7 @@
 # Copyright Dr. J. Pfennig (c) 2015-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_svc']='0.39:6'
+CEN_MODULES['_centauri_bash_svc']='0.41:6'
 
 CEN_IS_SERVICE=                 # used by _cen_svc_action (internal)
 
@@ -151,6 +152,7 @@ CEN_SVC_SYSX=("${CEN_PATHS[2]}/systemd" "$CEN_PATHS/run/systemd"
 # CEN_SVC_WANTS=                # After= and Wants= argument
 # CEN_SVC_WANTED_BY=            # WantedBy target list
 # CEN_SVC_TYPE=                 # one of: once, oneshot, simple, daemon, auto
+# CEN_SVC_PID=                  # oneshot only: use this pid in pid file
 # CEN_SVC_PRESET=               # make a preset file
 # CEN_SYC_SCOPE=                # systemd scope: system user private
 # ------------------------------------------------------------------------------
@@ -351,7 +353,7 @@ inhibit() {
 # Arguments:<file>    overrides the automatically generated PID file path
 #           <prog>    executable file name (default is $CEN_NAME)
 #           <path>    executable path (absolute path enables validation)
-#           <pid>     PID of main process or "0" for oneshot
+#           <pid>     PID of main process "-" for current or "0" for oneshot
 #           <signal>  signal name/number to be sent (default is SIGTERM)
 #           <vnam>    variable name
 #
@@ -372,7 +374,7 @@ inhibit() {
 # paths will match.
 #
 #.Examples: system -f -p -- some_tool &
-#.          pidfile -w $? -- some_tool      # create some_tool.pid file
+#.          pidfile -w $$ -- some_tool      # create some_tool.pid file
 #.          ...
 #.          pidfile -d -k HUP -- some_tool  # send signal, delete pid file
 #
@@ -426,7 +428,7 @@ pidfile() {
     if ! [ -e "$_file" ] ; then                         # no PID file
         $CEN_TRACE "pidfile: no file:" "$_file"
         return 1
-    elif [ -z "$_flgd" -o -n "$_flgs" ] ; then            # read PID file
+    elif [ -z "$_flgd" -o -n "$_flgs" ] ; then          # read PID file
         if ! read _kpid 2>/dev/null <"$_file" ; then
             $CEN_TRACE "pidfile: cannot read:" "$_file"
             return 1
@@ -605,8 +607,12 @@ isservice() {
     *)          fatal -p $"Invalid 'CEN_SVC_SCOPE=%s', expecting: %s" \
                          "$CEN_SVC_SCOPE" 'system|user|private' ;;
     esac
-    [ "$CEN_SVC_SCOPE" = 'system' ] ||
+    if [ "$CEN_SVC_SCOPE" != 'system' ] ; then
         fatal -p $"Not yet implemented: CEN_SYC_SCOPE=%s" "$CEN_SVC_SCOPE"
+    else
+        # switch temp file creation to /var/tmp, see tempfile()
+        XDG_RUNTIME_DIR=
+    fi
 
     [ -n "$_flgn" ] && return 0                 # was just a query
     CEN_IS_SERVICE=1                            # becoming svc or daemon
@@ -1204,7 +1210,7 @@ _cen_svc_action() {
         local _styp="$CEN_SVC_TYPE"                     # needed for daemon restart
         CEN_ACTION='stop'
         _cen_svc_state 'stop' || return                 # check/update state
-        _cen_svc_user "$@"                              # fwd to user code
+        _cen_svc_user 'stop'                            # fwd to user code
         [ "$CEN_SVC_RUNNING" = 'restart' ] && CEN_SVC_TYPE="$_styp"
     fi
 
@@ -1212,7 +1218,7 @@ _cen_svc_action() {
         CEN_ACTION='start'
         _cen_svc_state 'start' || return                # check/update state
         _cen_svc_forking                                # fork simple service
-        if ! _cen_svc_user "$@" ; then                  # fwd to user code
+        if ! _cen_svc_user 'start' ; then               # fwd to user code
             if [ "$CEN_SVC_TYPE" != 'oneshot' ] ; then  # catch signal, call run()
                 CEN_SVC_RUNNING='running'
                 context -t _cen_svc_sigterm             # set trap handler
@@ -1279,7 +1285,12 @@ _cen_svc_state() {
         if [ "$1" = 'start' ] ; then
             pidfile -w $$ -- "$CEN_NAME" ; return
         elif [ "$1" = 'quit' ] ; then           # pid=0 flags 'dead' state
-            pidfile -w 0 -- "$CEN_NAME" ; return
+            if [ "$CEN_ACTION" = 'stop' ] ; then
+                pidfile -d -- "$CEN_NAME"
+            else
+                pidfile -w "${CEN_SVC_PID:-0}" -- "$CEN_NAME"
+            fi
+            return
         fi ;;
     daemon|simple)
         if [ "$CEN_OPT_DAEMON" = 1 ] && [ "$1" = 'start' ] ; then
@@ -1315,7 +1326,7 @@ _cen_svc_state() {
     fi
 
     if [ "$1" = 'start' ] ; then                    # --- check start conflict
-        [ -n "$_fact" ] && _cen_svc_state error "$1" "$_fact"
+        [ -n "$_fact" ] && _cen_svc_state 'error' "$1" "$_fact"
         [ "$_fpid" != '-' ] && pidfile $_frun -w $_fpid -- "$CEN_NAME"
 
     elif [ "$1" = 'kill' ] ; then                   # --- kill and remove pid file
@@ -1332,7 +1343,7 @@ _cen_svc_state() {
 
     else                                            # --- check stop conflict
         if [ -z "$_fact" ] ; then                   # no pid file
-            _cen_svc_state error "$1" ; return 0
+            _cen_svc_state 'error' "$1" ; return 0
         elif [ -z "$_frun" ] ; then                 # service, want .pid
             [ "$_fact" = 1 ] || quit -p \
                 $"Service '%s' is running as daemon, cannot stop" "$CEN_NAME"
@@ -1483,9 +1494,6 @@ if [ -n "$CEN_FEATURE_V" ] ; then
     CEN_SVC_AUTO_INIT=1
     [ -z "$CEN_SVC_TYPE" ] && CEN_SVC_TYPE='auto'
 fi
-
-# switch temp file creation to /var/tmp, see tempfile()
-XDG_RUNTIME_DIR=
 
 # no initialization at all - init needs call to isservice()
 [ "$1" = '-n' ] && return 0

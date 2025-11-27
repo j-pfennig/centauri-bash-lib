@@ -20,7 +20,7 @@ msgid "Copy destination is not writable"
 msgstr "Kopierziel ist nicht schreibbar"
 
 #: /var/centauri/library/_centauri_bash_ext:252
-msgid "Copying %d item to '%s'"
+msgid "Copying %d items to '%s'"
 msgstr "Kopiere %s Dinge nach '%s'"
 
 #: /var/centauri/library/_centauri_bash_ext:254

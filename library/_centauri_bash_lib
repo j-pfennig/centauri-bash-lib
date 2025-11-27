@@ -46,7 +46,7 @@
 # Copyright Dr. J. Pfennig (c) 2007-2025
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.64:6:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.65:6:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -1242,7 +1242,7 @@ create() {
     [ -z "$_fout" ] && _fout="${1:--}"
     if [ "$_fout" = '-' ] ; then
         _fout='/dev/stdout' ; _ftru=
-        set -- "<stdout> $1"                        # remove user/mode
+        set -- '<stdout>'                           # remove user/mode
     elif [ "${1::5}" = '/dev/' ] ; then
         set -- "$1" ; _ftru=                        # remove user/mode
     elif [ -z "$_fapp" -a -z "$_ftru" ] && [ -e "$_fout" ] ; then
@@ -1272,9 +1272,10 @@ create() {
 
         {   [ -n "$_fbsh" ] && echo "#!$BASH"
             [ -n "$_fhdr" ] && echo -e "# ${1##*/} - created by '$_fhdr' - do not edit!\n"
-            [ -n "$_fvar" ] && { splitjoin -d "\n" -j - -l -i "$_fvar" ; _fcpy= ; }
-            [ -n "$_fcpy" ] && while IFS= read -r _temp ; do printf "%s\n" "$_temp" ; done
-            [ -n "$_fhdr" ] && echo -e "\n# end" ; true
+            [ -n "$_fvar" ] && { splitjoin -d '\n' -j - -l -i "$_fvar" ; _fcpy= ; }
+            [ -n "$_fcpy" ] && while IFS= read -r _temp ; do printf '%s\n' "$_temp"
+                               done 2>>/dev/null
+            [ -n "$_fhdr" ] && echo -e '\n# end' ; true
         } 2>/dev/null >>"$_fout" || _stat=$?
 
         # setting special bits must use chmod

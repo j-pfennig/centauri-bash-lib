@@ -63,7 +63,7 @@ CEN_REP_HOOK_ACTIONS=
 # °     <epochseconds> <ppid> <pid> <user> <text>...
 #
 #+The predefined <kind> values are implemented by the library itself. Additional
-# log entries can be generated calling [[monitor()]] directly of via CEN_HOOK_MONITOR.
+# log entries can be generated calling [[monitor()]] directly or via CEN_HOOK_MONITOR.
 #
 #+After initialization CEN_MONITOR_MASK can be modified to select <kind> or to
 # suspend monitoring.

@@ -462,11 +462,11 @@ windialog() {
         --)   shift ; break ;;
         -)    break ;;
         -c)   shift ; _kopt="$1" ; _kflg=2 ;;
-        -e)   _kopt="error" ; _stit=$"Error" ;;
-        -f)   _kopt="error" ; _stit=$"Fatal" ;;
+        -e)   _kopt='error' ; _stit=$"Error" ;;
+        -f)   _kopt='error' ; _stit=$"Fatal" ;;
         -i)   shift ; _inam="$1"
               if [ -z "$_kopt" ] ; then
-                _kopt="inputbox" ; _stit=$"Input"
+                _kopt='inputbox' ; _stit=$"Input"
               fi ;;
         -k)   shift ; _kopt="$1" ; _kflg=1 ;
               [ -z "$_inam" ] && _inam='-' ;;
@@ -477,8 +477,8 @@ windialog() {
         -r)   [ -n "$CEN_EMBED" ] && _snam="$CEN_EMBED[$CEN_NAME]" ;;
         -s)   shift ; _inam="$1" ; _kopt="menu" ; _klst=1 ; _stit=$"Selection" ;;
         -t)   shift ; _stit="$1" ;;
-        -u)   shift ; _popw="$1" ; _kopt="passivepopup" ;;
-        -w)   _kopt="sorry" ; _stit=$"Warning" ;;
+        -u)   shift ; _popw="$1" ; _kopt='passivepopup' ;;
+        -w)   _kopt='sorry' ; _stit=$"Warning" ;;
         -2)   shift ; _labl="$1" ; _sbtn="yesno" ;;
         -3)   shift ; _labl="$1" ; _sbtn="yesnocancel" ;;
         *)    _cen_abort - "$1"
@@ -645,7 +645,7 @@ _cen_win_dialog() {
             [ -n "$_text" ] && _text="<b>$_text</b><br/>"
             _opts+=("--$_kind" "$_text$1" "${2:-3}")    # has timeout parameter
         else
-            _text="${_text// /\&nbsp;}"
+            _text="<span>${_text// /\&nbsp;}</span>"
             _opts+=("--$_kind" "$_text" "$@")           # must have text argument
         fi
 
@@ -887,14 +887,14 @@ _cen_windread() {
     splitjoin -j _body -d "\n" -- "$@"
     [ -z "$_body" ] && { _body="$_head" ; _head='-' ; }
 
-    [ "${_mode::1}" = "w" ] && _warn="-w"       # w prefix shows warning
+    [ "${_mode::1}" = 'w' ] && _warn='-w'       # w prefix shows warning
     case "${_mode#w}" in
     3)  windialog $_warn -3 "$_labl" "$_head" "$_body" ; _rslt="$?"
         ;;
     1|2)
         windialog $_warn -2 "$_labl" "$_head" "$_body" ; _rslt="$?"
         ;;
-    *)  if [ "$_prom" = "+" ] ; then
+    *)  if [ "$_prom" = '+' ] ; then
             windialog $_warn -p "$_vnam" "$_head" "$_body" ; _rslt="$?"
         else
             windialog $_warn -i "$_vnam" "$_head" "$_body" ; _rslt="$?"

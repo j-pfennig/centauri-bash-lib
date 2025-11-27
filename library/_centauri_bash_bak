@@ -351,7 +351,7 @@ _cen_backup_parse() {
     local safe="${1// /-}"                      # remove spaces
     local path="${safe%/*}" name="${safe##*/}"
     [ "$path" = "$name" ] && path=
-    local fext="${name#*.}" ; name="${name%%.*}"
+    local fext="${name##*.}" ; name="${name%.*}"
     [ "$fext" = "$name" ] && fext=
 
     CEN_BAK_PARSE[0]="${path:--}"
@@ -364,6 +364,7 @@ _cen_backup_parse() {
             date="${name#*_}"   # <tag>_<date>
             ftag="${date%%_*}"
             date="${date#*_}"
+            #date="${date%%_*}"
             ;;
     *_[12][09][0-9][0-9]*)
             date="${name#*_}"

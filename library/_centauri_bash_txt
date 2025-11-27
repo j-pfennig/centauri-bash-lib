@@ -32,6 +32,7 @@ CEN_MODULES["_centauri_bash_txt"]='0.10:5'
 CEN_TXT_SORT=                   # paths of tools
 CEN_TXT_UNIQ=
 CEN_TXT_GREP=
+CEN_TXT_EDIT=
 
 # ------------------------------------------------------------------------------
 # regexp - Helper to simplify parsing using regular expressions

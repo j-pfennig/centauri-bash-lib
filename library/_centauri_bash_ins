@@ -1365,6 +1365,8 @@ _cen_ins_version() {
         sysrun -a _aver  -q -- "$1" --version || return 1
         for _alin in "${_aver[@]}" ; do
             case "$_alin" in
+                kded6*)     ___cen_vers_set CEN_SYS_KDEVERS "${_alin##* }"
+                            ___cen_vers_set CEN_SYS_QTVERS  '6.0.0' ;;
                 plasmash*)  ___cen_vers_set CEN_SYS_PLASMA  "${_alin##* }" ;;
                 Qt*)        ___cen_vers_set CEN_SYS_QTVERS  "${_alin##* }" ;;
                 KDE*)       ___cen_vers_set CEN_SYS_KDEVERS "${_alin##* }" ;;
@@ -1475,14 +1477,18 @@ _cen_ins_version() {
 
     ___cen_vers_kde() {
         local _kini
-        if ! sysfind -c -o -s _kini -- kdeinit6 kdeinit5 ; then
+        if ! sysfind -c -o -s _kini -- kded6 kdeinit6 kdeinit5 ; then
             CEN_SYS_KDEVERS='-' ; CEN_SYS_PLASMA='-' ; CEN_SYS_QTVERS=
             return 0
         fi
         CEN_SYS_KDEVERS= ; CEN_SYS_PLASMA= ; CEN_SYS_QTVERS=
 
+        # since kde6 'plasmashell --version' would disturb dbus
+        if [ "${_kini##*/}" = 'kded6' ] ; then
+            CEN_SYS_KDEVERS='006.000.000'
+            CEN_SYS_PLASMA='006.000.000'
         # since kde5 (plasmashell crashes for missing display and sudo)
-        if [ "${CEN_DISPLAY:-tty}" != 'tty' ] ; then
+        elif [ "${CEN_DISPLAY:-tty}" != 'tty' ] ; then
             sysfind -c -- plasmashell || CEN_SYS_PLASMA='-'
             [ "$CEN_SYS_PLASMA" = '-' ] || ___cen_vers_try 'plasmashell'
         fi

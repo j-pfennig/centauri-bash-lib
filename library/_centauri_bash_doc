@@ -1352,6 +1352,7 @@ _cen_doc_citem() {
 #         CEN_PATHS[3]       system var folder    (usually **/var**)
 #         CEN_PATHS[4]       system temporary     (usually **/tmp**)
 #         CEN_PATHS[5]       system library       (usually **/usr/lib**)
+#         CEN_PATHS[6]       path override        (see: **syssetup -o**)
 #
 #         CEN_ACTARR         action argument array
 #         CEN_ACTION         current action, see [[actions()]]

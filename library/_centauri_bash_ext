@@ -217,8 +217,8 @@ copy() {
       --)   shift ; break ;;
       -a)   _oarc='-a' ;;
       -f)   _oerr='fatal' ; _oflg='-f -p' ;;
-      -n)   _ocow="--reflink=never" ;;
-      -o)   _ocow="--reflink=auto" ;;
+      -n)   _ocow='--reflink=never' ;;
+      -o)   _ocow='--reflink=auto' ;;
       -q)   _oerr="$CEN_TRACE" ; _oflg='-q' ;;
       -r)   _orun='-r' ;;
       -s)   _omsg=: ;;
@@ -249,7 +249,7 @@ copy() {
     fi
 
     if [ $# -gt 2 ] ; then
-        $_omsg -a -p $"Copying %d item to '%s'" "${#_olis[*]}" "$_odes"
+        $_omsg -a -p $"Copying %d items to '%s'" "${#_olis[*]}" "$_odes"
     else
         $_omsg -a -p $"Copying '%s' to '%s'" "${_olis[*]}" "$_odes"
     fi
