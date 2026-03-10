@@ -22,7 +22,7 @@
 # popup notification with a timeout of 3 seconds. The following examples work
 # in windows and in console mode:
 #
-#.          [ "$1" = "42" ] || quit "This is not the answer"
+#.          [ "$1" = 42 ] || quit "This is not the answer"
 #.          message -d bold "Now, what was the question?"
 #
 #.          confirm -a -d "$USER" -p " [default: $USER] > " -u \
@@ -35,10 +35,10 @@
 #,          -d -        # force a text message, don't display a message box
 #,          -d +<time>  # show notification popup window for <time> seconds
 #
-# Copyright Dr. J. Pfennig (c) 2015-2025
+# Copyright Dr. J. Pfennig (c) 2015-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_win']='0.50:6'
+CEN_MODULES['_centauri_bash_win']='0.51:7'
 
 embed -c '_centauri_bash_ext'       # reference modules ...
 embed -c '_centauri_bash_txt'
@@ -165,7 +165,8 @@ windows() {
                 case $? in
                 1)  CEN_WINDOWS=1 ;;
                 2)  CEN_WINDOWS=1                       # x11 start, no xroot win?
-                    sysrun -q -- xsetroot -gray ;;      # just try, dont worry on error
+                    # just try, dont worry on error
+                    sysrun -q -- xsetroot -cursor_name watch -solid black ;;
                 esac
         esac
     fi
@@ -470,12 +471,12 @@ windialog() {
               fi ;;
         -k)   shift ; _kopt="$1" ; _kflg=1 ;
               [ -z "$_inam" ] && _inam='-' ;;
-        -l)   shift ;_inam="$1" ; _kopt="progressbar" ; _stit=$"Progress" ;;
-        -m)   shift ; _inam="$1" ; _kopt="checklist" ; _klst=2 ; _stit=$"Options" ;;
+        -l)   shift ;_inam="$1" ; _kopt='progressbar' ; _stit=$"Progress" ;;
+        -m)   shift ; _inam="$1" ; _kopt='checklist' ; _klst=2 ; _stit=$"Options" ;;
         -n)   shift ; _icon="$1" ;;
-        -p)   shift ; _inam="$1" ; _kopt="password" ; _stit=$"Password" ;;
+        -p)   shift ; _inam="$1" ; _kopt='password' ; _stit=$"Password" ;;
         -r)   [ -n "$CEN_EMBED" ] && _snam="$CEN_EMBED[$CEN_NAME]" ;;
-        -s)   shift ; _inam="$1" ; _kopt="menu" ; _klst=1 ; _stit=$"Selection" ;;
+        -s)   shift ; _inam="$1" ; _kopt='menu' ; _klst=1 ; _stit=$"Selection" ;;
         -t)   shift ; _stit="$1" ;;
         -u)   shift ; _popw="$1" ; _kopt='passivepopup' ;;
         -w)   _kopt='sorry' ; _stit=$"Warning" ;;
@@ -502,6 +503,9 @@ windialog() {
         listsearch -c -- "${_sbtn:-$_kopt}" 'msgbox' 'sorry' 'error' || _good=1
     fi
     [ "$_kflg" = 2 ] && return $_good               # minimum check
+    if [ -n "$SSH_TTY" -a "$_kopt" = 'passivepopup' ] ; then
+        _kopt='msgbox' ; [ -z "$_stit" ] && _stit=$"Message"
+    fi
 
     if [ "$_good" != 0 ]  ; then
         _good="($_kopt) '$CEN_WIN_NAME' "$"not supported, please install 'kdialog'"
@@ -673,14 +677,15 @@ _cen_win_dialog() {
     ### xmessage ###
 
     else
-        local xgeo=6 xfnt="$CEN_DISPLAY_DPI0"
-        [ -z "$xfnt" ] && _cen_source -- "$CEN_PERSISTENT/centauridisplay"
-        [ "${xfnt:--}" = '-' ] && xfnt=132
-        ((xgeo *= xfnt))
-        xfnt="-adobe-*-*-r-*--0-$xfnt-*-*-p-*-*-*"
+        [ -z "$CEN_DISPLAY_DPI0" ] && _cen_source -- "$CEN_PERSISTENT/centauridisplay"
+        local _font _xgeo _xfnt="$CEN_DISPLAY_DPI0"
+        [ "${_xfnt:--}" = '-' ] && _xfnt=132
+        _font="-adobe-*-*-r-*--0-$_xfnt-*-*-p-*-*-*"
         [ "$_text" = '-' ] && _text="$1"
         [ "$_titl" != '-' ] && _text="*** $_titl ***  $_text"
-        sysrun -q -r xmessage -geometry "$xgeo" -font "$xfnt" -default okay -center "$_text"
+        _xgeo=$(((3 + ${#_text}) * (_xfnt / 13)))
+        sysrun -q -r xmessage -geometry "$_xgeo" -font "$_font" -default okay -center "$_text"
+        return                                      # return status
     fi
 
     if [ "$_varg" = '-' ] ; then
@@ -829,6 +834,7 @@ _cen_windmesg() {
     fi
     if [ -n "$_scal" ] ; then               # option -c
         _cen_shortfmt _scal - "$_scal"
+        [ -n "${_scal[1]}" ] && _sfmt="${_scal[1]} $_sfmt"
         _scal="${_scal//   / }" ; _scal="${_scal//  / }"
         _scal="${_scal//  / }"  ; _scal="${_scal/ :/:}"
         _sfmt="${_scal:1} $_sfmt"
@@ -1044,9 +1050,10 @@ _cen_win_hook() {
     fi
     CEN_WIN_HOOK_MESSAGE="$CEN_HOOK_MESSAGE"
     CEN_HOOK_MESSAGE='_cen_windmesg'
+    $CEN_JOURNAL "windows" "hooked"
 }
 
-# _cen_win_quit() is disabled in _centauri_bash_lib, progress dialogs will
+# _cen_win_quit() is disabled in _centauri_bash_lib, progress dialogs will be
 #                 closed via _cen_pro_quit
 
 # ------------------------------------------------------------------------------

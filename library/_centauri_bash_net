@@ -33,10 +33,10 @@
 #           files. If CEN_NET_OUTPUT is empty, it is set to CEN_PATHS[7], see
 #           [[syssetup()]]. For more details see [[netpath()]].
 #
-# Copyright Dr. J. Pfennig (c) 2013-2025
+# Copyright Dr. J. Pfennig (c) 2013-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_net']='0.50:6'
+CEN_MODULES['_centauri_bash_net']='0.51:7'
 
 # IMPORTED: CEN_NET_OUTPUT                          # see netfile()
 
@@ -70,7 +70,49 @@ _cen_net_iface() {
 }
 
 # ------------------------------------------------------------------------------
+# Network States + State variables used in Centauri Networking
+#
+#+Server:   Centauri implementes a network having a primary AD/DC domain server
+#           and an optional secondary server. The secondary server replicates
+#           the AD and other server data and can replace the primary server in
+#           case of a server failure. The current (primary) server is said to be
+#           the 'master' whereas a second server is the 'slave'.
+#
+#+Clients:  The network cients (workstations or appliances)
+#           can auto-detect the active DC server (the master) and switch between
+#           the servers when connecting to the network.
+#
+#+File: **$CEN_TRANSIENT/network_status** contains the current status of a host.
+#           The [[netserver()]] function can be used to load or write status data.
+#
+#+CEN_NET_ROLE:°Per host attribute describing the role of a host in the network:
+#
+#,          - **PRIMARY**       the primary server
+#,          - **SECONDARY**     the secondary server
+#,          - **WORKSTATION**   host is a workstation or appliance
+#,          - **UNKNOWN**       state not yet known
+#,
+#+CEN_NET_MODE:°Per host attribute describing the current state of a host:
+#
+#,          - **MASTER**        domain master server (usually the primary server)
+#,          - **SLAVE**         domain slave server (usually the secondary server)
+#,          - **CLIENT**        being a AD domain network client
+#,          - **GUEST**         connected to a known network (not the AD domain)
+#,          - **SINGLE**        not connected or unknown network
+#
+#+CEN_NET_SERVER:°Generic server name that applies to the current master
+#
+#+CEN_NET_MASTER:°Host name of current master
+#
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 # Interface Naming + About BIOS, systemd and internal interface names
+#
+#+Centauri networking does not explicitly use the kernel naming scheme for interface
+# names. Instead it internally uses traditional BIOS names which are easier to
+# handle in configuration data. The [[netiface()]] function implements translations
+# between internal and kernel names.
 #
 #+Kernel:   Names of network interfaces as used by the linux kernel can be:
 #
@@ -149,6 +191,7 @@ netconfig() {
 
     CEN_NET_CONFIG=             # configuration name
     CEN_NET_DOMAIN=             # domain name of the network
+    CEN_NET_ALONE='not-at-home' # dummy config/domain if stand-alone
     CEN_NET_WIRELESS=           # client and AP WLAN ssids
     CEN_NET_PUBLIC=             # our public dns name
     CEN_NET_REJECT_HOST=        # to set reject route for server nick
@@ -474,7 +517,7 @@ nethost() {
 # ------------------------------------------------------------------------------
 # netiface - translate an interface name between internal and kernel naming
 #
-# Call:    (1) netiface [-s <vnam>] [-c|-d|-i|-k] [-e|-w] [-x] <name>|-
+# Call:    (1) netiface [-s <vnam>] [-c|-d|-i|-k] [-e|-w] [-x] [--] <name>|-
 #          (2) netiface -p          # persist mappings
 #          (3) netiface [-k]        # initialize, set CEN_NET_IFNAMES
 #          (4) netiface -m <list>   # set CEN_NET_IFMAIN
@@ -490,7 +533,7 @@ nethost() {
 #           -p  re-init and persist current mappings in a temporary file
 #           -s  save to variable (default is _netiface)
 #           -w  generate warnings
-#           -x  return **false** if interface does not exist
+#           -x  interface must exist, return **false** if not (also see -e|-w)
 #
 # Arguments:<name>  interface name or path (path gets stripped). Use '-' to
 #                   check interfaces in CEN_NET_IFMAIN, 1st hit wins. Default
@@ -1069,6 +1112,7 @@ netoption() {
         done
         [ "$_name" = '-' ] && return 0
     fi
+    _name="${_name%-[0-9]}"
     for _opts in "${_netoption[@]}" ; do            # loop over hosts list
         if [ "${_opts::1}" = '!' ] ; then
             _rval=1 ; _opts="${_opts:1}"
@@ -1531,6 +1575,40 @@ netpath() {
     printf -v "$_opts" '%s' "$_path" ; return "$_stat"
 }
 
+
+# ------------------------------------------------------------------------------
+# netping - check IPv4/IPv6 connectivity
+#
+# Call:     (1) netping [-4|-6] [-r <retr>] [-w <wait>] [--] <host>
+#
+#           Form (1) uses 'ping' to contact <host>.
+#
+# Options:  -4  use IPv4 only
+#           -6  use IPv6 only
+#           -r  number of retries
+#           -w  max wait time
+# ------------------------------------------------------------------------------
+netping() {
+    local _prot _retr=1 _wait=3 _mesg='IP' _host
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -4|-6)    _prot="$1" ; _mesg="IP${1/-/v}" ;;
+      -r)       shift ; _retr="$1" ;;
+      -w)       shift ; _wait="$1" ;;
+      *)        _cen_abort - "$1"
+      esac ; shift
+    done
+    _host="$1"
+
+    while [ "$_retr" -gt 0 ] ; do
+        trace -a -c $"$_mesg check" "$_host"
+        sysrun -q -r -- ping $_prot -W"$_wait" -c1 -q -- "$_host" && return
+        ((_retr -= 1))
+    done
+    trace -a -c $"$_mesg failed" "$_host" ; return 1
+}
+
 # ------------------------------------------------------------------------------
 # netproxy - Save/load proxy status (http_proxy and no_proxy variables)
 #
@@ -1790,9 +1868,10 @@ _cen_net_homedns() {
 # Arguments:<keyword>     select information to be returned, see below
 #           <vnam>        save a hostname to this variable
 #
-# Keywords: PRIMARY       get PRIMARY server name, return true if on PRIMARY
+# Keywords: PRIMARY       get PRIMARY server name, return **true** if on PRIMARY
 #           SECONDARY     get SECONDARY ...
-#           WORKSTATION   get MASTER's name, return true if role is WORKSTATION
+#           WORKSTATION   get MASTER's name, return **true** if role is WORKSTATION
+#           MEMBER        get MASTER's name, return **true** if part of a domain
 #
 #           MASTER        get current MASTER's name, return true if on MASTER
 #           SLAVE         get current SLAVE's name, return true if on SLAVE
@@ -1814,6 +1893,8 @@ _cen_net_homedns() {
 #           class         [*] get device class
 #           server        [*] get generic server name, return true if on a server
 #
+#           trust         return the network trust level
+#
 #           [*] Form (2) calls can have a <host> argument. If missing HOSTNAME is used.
 #
 #+The result for uppercase keywords is based on the dynamic CEN_NET_ROLE, and
@@ -1824,33 +1905,35 @@ _cen_net_homedns() {
 # calls [[netconfig()]]. So after a call to [[netquery()]] all CEN_NET_XXX state
 # and configuration variables are set.
 #
-#+trust:    the network trust level can be 'public', 'private' or 'managed'
-#
-#           trust         return the network trust level
-#
 #+connect:  depending on centaurinetcfg option settings one of the following is returned:
 #
-#           auto          uses 'smart' if nm is installed or 'simple' otherwise
-#           manual        not managed by centaurinetcfg/centauriswitch
-#           nm            uses NetworkManager
-#           simple        uses DHCP
-#           static        uses neither NetworkManager, nor DHCP
+#,        - auto        uses 'smart' if nm is installed or 'simple' otherwise
+#,        - manual      not managed by centaurinetcfg/centauriswitch
+#,        - nm          uses NetworkManager
+#,        - simple      uses DHCP
+#,        - static      uses neither NetworkManager, nor DHCP
 #
 #           without option -s the CEN_NET_ADDR_METHOD variable is set:
 #
-#           dhcp          for 'simple' -or- for 'auto'|'nm' without nm installed
-#           manual        for 'manual'
-#           nm            for 'auto'|'nm' with nm installed
-#           static        for 'static'
+#,        - dhcp        for 'simple' -or- for 'auto'|'nm' without nm installed
+#,        - manual      for 'manual'
+#,        - nm          for 'auto'|'nm' with nm installed
+#,        - static      for 'static'
 #
-#+class:    depending on centaurinet option settings one of the following is returned.
+#+class:    depending on centaurinetcfg option settings one of the following is returned.
 #           Option checks are made in the listed order, 1st match wins:
 #
-#           server        host is a server
-#           mobile        has 'option mobile'
-#           phone         has 'option phone' (used also for tablets)
-#           generic       has 'option generic' or is not a configured host
-#           client        is a configured host
+#,        - server      host is a server (automatically assigned)
+#,        - client      has 'option client'
+#,        - mobile      has 'option mobile'
+#,        - phone       has 'option phone' (used also for tablets)
+#,        - generic     configured host  (automatically assigned)
+#
+#+trust:    the network trust level can be 'public', 'private' or 'managed'
+#
+#,        - public      in the wild, [[centaurifilter]] is restrictive
+#,        - private     secure network, [[centaurifilter]] is permissive
+#,        - managed     network is configured via [[centaurinetcfg]]
 #
 #.Examples: # set all state and config variables ...
 #.          netquery
@@ -1902,6 +1985,9 @@ netquery() {
     SLAVE)          [ "$CEN_NET_MASTER" = "$CEN_NET_SERVERS" ] &&
                         _valu="${CEN_NET_SERVERS[1]}" || _valu="$CEN_NET_SERVERS"
                     [ "$CEN_NET_MODE" = 'SLAVE' ] && _stat=0
+                    ;;
+    MEMBER)         _valu="$CEN_NET_MASTER"
+                    [ "$CEN_NET_CONFIG" != "$CEN_NET_ALONE" ] && _stat=0
                     ;;
     MASTER|CLIENT|GUEST|SINGLE|UNKNOWN)
                     _valu="$CEN_NET_MASTER"
@@ -1981,11 +2067,11 @@ netquery() {
                          "$2" = "${CEN_NET_SERVERS[1]}" -o \
                          "$2" = "$CEN_NET_SERVER_GEN" ]
                     then                                    _valu='server'
+                    elif netoption 'client'  "$2" ; then    _valu='client'
                     elif netoption 'mobile'  "$2" ; then    _valu='mobile'
                     elif netoption 'phone'   "$2" ; then    _valu='phone'
-                    elif netoption 'generic' "$2" ; then    _valu='generic'
-                    elif nethost "$2" ; then                _valu='client'
-                    else                                    _valu='generic'
+                    elif nethost "$2" ; then                _valu='generic'
+                    else                                    _valu=
                     fi
                     _qual= ; _stat=0
                     ;;
@@ -2138,7 +2224,7 @@ netserver() {
     # role (imply WORKSTATION for CLIENT)
     local role="$1"
     if [ "${1:--}" = '-' ] ; then
-        role='UNKNOWN' ; [ "$2" = 'CLIENT' ] && role="WORKSTATION"
+        role='UNKNOWN' ; [ "$2" = 'CLIENT' ] && role='WORKSTATION'
     fi
 
     # find name of server
@@ -2339,7 +2425,14 @@ nettool() {
     if [ -n "$_what" ] ; then
         _acmd+=("$_what" "$1") ; shift
         [ -n "$_ifce" ] && _acmd+=('dev' "$_ifce")
-        [ -n "$_labl" ] && _acmd+=('label' "$_ifce:$_labl")
+        if [ -n "$_labl" ] ; then
+            _labl="$_ifce:$_labl"
+            if [ ${#_labl} -gt 16 ] ; then
+                [ "$_oerr" != ':' ] && warning $"Cannot set label (max size 16):" "$_labl"
+            else
+                _acmd+=('label' "$_labl")
+            fi
+        fi
     fi
     _acmd+=("$@")
 

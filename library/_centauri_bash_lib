@@ -43,10 +43,10 @@
 # coreutils bash builtins can be enabled. For more details see [[_centauri_bash_ext]]
 # and [[builtin]].
 #
-# Copyright Dr. J. Pfennig (c) 2007-2025
+# Copyright Dr. J. Pfennig (c) 2007-2026
 # ------------------------------------------------------------------------------
 
-declare -g -A CEN_MODULES['_centauri_bash_lib']='1.65:6:1'
+declare -g -A CEN_MODULES['_centauri_bash_lib']='1.71:7:1'
 
 CEN_ACTARR=             # action argument array
 CEN_ACTION=             # action name, see invoke()
@@ -65,6 +65,7 @@ CEN_DONE=1              # 0:ignore error  1:quit on error  2:quit now
 CEN_EMBED=              # see --embed option
 CEN_EXIT=0              # exit code
 CEN_FOLDER=             # see folder
+CEN_JOURNAL=:           # log to systemd journal (see _cen_bash_dbg)
 CEN_NOTRACE=:           # empty when tracing, see --trace
 CEN_NOUTF8=             # LANG if not UTF-8 suffixed
 CEN_PAGER=              # set at 1st call to syspager if paging is on
@@ -641,8 +642,8 @@ _cen_abort() {
 
 # implementation of output functions (see also: _centauri_bash_con|_svc|_win)
 _cen_message() {
-    local _scal _sfmt _smul _serr _sind _snam="${CEN_EMBED:-$CEN_NAME}:" _verb="$CEN_VERB" _stat=0
-    local _bofs _btrm _deco _norm _oesc _ocfy
+    local _scal _sfmt _smul _serr _sind _verb="$CEN_VERB" _stat=0
+    local _bofs _btrm _deco _norm _oesc _ocfy _snam="${CEN_EMBED:-$CEN_NAME}:"
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
@@ -676,6 +677,7 @@ _cen_message() {
     if [ -n "$_scal" ] ; then                   # option '-c', tabular
         _cen_shortfmt _scal - "$1" ; _serr+="$_scal" ; shift
         [ "$1" = '--' ] && shift                # backward compatibility
+        [ -n "${_scal[1]}" ] && set -- "${_scal[1]}" "$@"
     fi
 
     if [ -n "$_ocfy" ] ; then                   # option -y, compactify
@@ -689,8 +691,10 @@ _cen_message() {
         printf -v _sfmt -- "$@"
     elif [ "$_sfmt" = 2 ] ; then                # -m multiline
         printf -v _sfmt '\a%s\n' "$@"
-    elif [ -n "$_btrm$_smul" ] ; then           # simple case, no -p or -m
+    elif [ -n "$_smul" ] ; then                 # simple case, with -n
         _sfmt="$*" ; _sfmt="${_sfmt// \\n /$'\n'}" ; _sfmt="${_sfmt//\\n/$'\n'}"
+    elif [ -n "$_btrm" ] ; then                 # simple case, no -p or -m
+        _sfmt="$*"
     else                                        # simplify C-style '\n'
         _sfmt="$_snam$_serr $*"                 # can be all spaces, see progress
         echo $_oesc "$_deco$_sfmt$_norm" 1>&2
@@ -713,38 +717,45 @@ _cen_message() {
             echo "$_deco$_sfmt$_norm"
         fi
     done 1>&2
-    return $_stat                               # error/fatal return CEN_EXIT
+    return $_stat                                   # error/fatal return CEN_EXIT
 }
 
+# ------------------------------------------------------------------------------
 # format short message: <vnam> <orig>|-|+ <mesg>|-
+# ------------------------------------------------------------------------------
 _cen_shortfmt() {
-    local _temp="$2" _asci _ugly
-    [ "$3" = '-' ] && set -- "$1" "$2" ' '
-    [ "$3" = '+' ] && set -- "$1" "$2" "${CEN_ACTION:--}"
-    [ "${3::1}" = ' ' ] || _temp=
-    [ "${3::2}" = '()' ] && _temp='-'
+    local _temp="$2" _rcal="${3%%:*}" _rarg="${3#*:}" _asci _ugly
+    [ "$_rarg" = "$3" ] && _rarg= || _rarg="${_rarg/# }"
+
+    [ "$_rcal" = '-' ] && _rcal=' '
+    [ "$_rcal" = '+' ] && _rcal="${CEN_ACTION:--}"
+    [ "${_rcal::1}" = ' ' ] || _temp=
+    [ "${_rcal::2}" = '()' ] && _temp='-'
+
     [ "$_temp" = '-' ] &&
         for _temp in "${FUNCNAME[@]}" ; do
             case "$_temp" in
-            _cen_*)     continue ;;             # private function
-            ___cen_*)   continue ;;             # inline function
+            _cen_*)     continue ;;                 # private function
+            ___cen_*)   continue ;;                 # inline function
             trace|isfunction|message|warning|error)
                         continue ;;
             *)          break
             esac
         done
+    _temp+="$_rcal"
 
     # printf %s does not handle utf-8 correctly
-    _temp+="$3"
-    if [ -z "${_temp//[[:ascii:]]/}" ] ; then
-        printf -v "$1" "$CEN_SHORTFMT" "$_temp"         # is pure ascii
+    if [ -z "${_temp//[[:ascii:]]/}" ] ; then       # is pure ascii
+        printf -v _temp "$CEN_SHORTFMT" "$_temp"
     else
         [ -n "$CEN_NOUTF8" ] && LANG='C.UTF-8'
-        _asci="${_temp//[[:alpha:]]/.}"                 # this is unicode aware
+        _asci="${_temp//[[:alpha:]]/.}"             # this is unicode aware
         [ -n "$CEN_NOUTF8" ] && LANG="$CEN_NOUTF8"
-        printf -v _ugly "$CEN_SHORTFMT" "$_asci"        # get correct padding
-        printf -v "$1" '%s' "${_ugly/$_asci/$_temp}"    # back to unicode
+        printf -v _ugly "$CEN_SHORTFMT" "$_asci"    # get correct padding
+                                                    # convert back to unicode
+        printf -v _temp '%s' "${_ugly/$_asci/$_temp}"
     fi
+    local -n _vfmt="$1" ; _vfmt=("$_temp" "$_rarg")
 }
 
 # ------------------------------------------------------------------------------
@@ -1089,7 +1100,7 @@ context() {
                 _mgui=2
             else                                        # windows or terminal
                 embed -r -q '_centauri_bash_run' && terminal -c
-                if [ "${CEN_IS_DESKTOP:0}" = 0 ] ; then # in console mode ...
+                if [ "${CEN_IS_DESKTOP:-0}" = 0 ] ; then    # in console mode ...
                     _mgui=2
                 elif embed -r -m '_centauri_bash_win' && windows -i 2 ; then
                     _mgui=0                             # windows mode ok
@@ -1491,7 +1502,7 @@ embed() {
         _cen_source $_terr -- "$@" ; return
     fi
     local _sexi=0 _enam="${CEN_EMBED:-$CEN_NAME}" _snam="${1##*/}" _srun="$1" ; shift
-    if ! [ "${_srun::1}" = '/' -o "${_srun::2}" = './' ] ; then
+    if ! [ "${_srun::1}" = '/' -o "${1::2}" = './' ] ; then
         [ -n "$_modu" ] && _srun="$CEN_LIBRARY/$_srun" || _srun="$CEN_TOOLS/$_srun"
     fi
 
@@ -1507,7 +1518,7 @@ embed() {
             fi
         elif [ -x "$_srun" -o -e "$_srun.p" ] ; then
             [ -n "$CEN_FEATURE_A" -a "$_modu" = 3 ] && return 0
-            $CEN_TRACE2 -a -c $" module" "$_snam" "$@"
+            $CEN_TRACE2 -a -c ' module' "$_snam" "$@"
             [ -n "$TEXTDOMAIN" ] && TEXTDOMAIN="$_snam"
             if [ "$_srun.p" -nt "$_srun" ] ; then
                 source "$_srun.p" "$@" || _sexi=$?
@@ -1519,7 +1530,7 @@ embed() {
         fi
         [ -n "$TEXTDOMAIN" ] && TEXTDOMAIN="$CEN_NAME"
         [ "$_sexi" = 0 -o "$_modu" -ge 2 -o -n "$_terr" ] && return $_sexi
-        _cen_abort $"Failed to load module:" "$_snam"
+        fatal $"Failed to load module:" "$_srun"
     elif ! [ -x "$_srun" -a ! -d "$_srun" ] ; then
         [ -n "$_terr" ] && return 127
         fatal $"Failed to execute script:" "$_srun"
@@ -1546,7 +1557,7 @@ embed() {
 # ------------------------------------------------------------------------------
 # filter - implement --include and --exclude for filtering
 #
-# Call:    filter [-f|-s] <value_to_check>
+# Call:    filter [-f|-s] [-i] [--] <value_to_check>
 #
 # Options: -f  return **false** if no expression was matched
 #          -i  case invariant matching
@@ -1749,8 +1760,8 @@ folder() {
     fi
     [ -n "$_onor" ] && _vval="$PWD"
     $CEN_NOTRACE return 0
-    [ "$_vval" = "$PWD" ] && $CEN_TRACE -a -c $" current" "$PWD" ||
-                             $CEN_TRACE -a -c $" current" "$PWD ($_vval)"
+    [ "$_vval" = "$PWD" ] && $CEN_TRACE -a -c " current:$PWD" ||
+                             $CEN_TRACE -a -c " current:$PWD ($_vval)"
     return 0
 }
 

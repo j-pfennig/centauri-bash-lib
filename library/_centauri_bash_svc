@@ -117,10 +117,10 @@
 #.          myservice setup status
 #.          myservice setup uninstall
 #
-# Copyright Dr. J. Pfennig (c) 2015-2025
+# Copyright Dr. J. Pfennig (c) 2015-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_svc']='0.41:6'
+CEN_MODULES['_centauri_bash_svc']='0.43:7'
 
 CEN_IS_SERVICE=                 # used by _cen_svc_action (internal)
 
@@ -790,7 +790,7 @@ runsysddir() {
 #+          For existing and unmasked service(s) CEN_RUNSERVICE is set to localized
 #           description depending on the command verb (but not for **test**).
 #
-#           Status bits:    64  no valid service to found
+#           Status bits:    64  no valid service was found
 #                            8  service not enabled
 #                            4  got start/stop error or not active
 #                            2  got masked service
@@ -844,8 +844,8 @@ runservice() {
       esac ; shift
     done
 
-    [ -z "$_oslt" ] && _oslt="$_oerr"
     [ "$_verb" = 'message' -a "$_oerr" = 'trace' ] && _oerr='message'
+    [ -z "$_oslt" ] && _oslt="$_oerr"
     [ "$_oerr" != 'trace' ] && _verb='message'
     local _stmp _scmd="$1" _ssys ; shift
 
@@ -875,7 +875,7 @@ runservice() {
     # test if services exist and are not masked
 
     local _curr _suff _serr=0 _sarg _slst=()
-    [ $# -gt 1 ] && _sarg="$*"
+    [ $# -gt 0 ] && _sarg="$*"
     while [ $# -gt 0 ] ; do
         local _name="$1" ; _suff="${_name##*.}"
         [ "$_suff" = "$_name" ] && _suff= || _name="${_name%.*}"
@@ -975,7 +975,7 @@ runservice() {
                 _kind=$"Service (SysV)"
             fi
             CEN_RUNSERVICE="${_info:-unknown}"
-            $_verb -a "$_kind" "$_slst" "$CEN_RUNSERVICE" ; return $_serr ;;
+            $_verb -a "$_kind" "'$_slst'" "$CEN_RUNSERVICE" ; return $_serr ;;
 
     *)      CEN_RUNSERVICE="$_scmd"
     esac
@@ -1072,10 +1072,12 @@ _cen_svc_message() {
     [ "$_verb" -gt 0 ] || return "$CEN_EXIT"        # global -q option
     CEN_AUTOIND=1
 
-    if [ -n "$_scal" ] ; then                       # option '-c'
+    if [ -n "$_scal" ] ; then                       # option '-c', tabular
         _cen_shortfmt _scal - "$1" ; _serr+="$_scal" ; shift
         [ "$1" = '--' ] && shift                    # backward compatibility
+        [ -n "${_scal[1]}" ] && set -- "${_scal[1]}" "$@"
     fi
+
     if [ -n "$_sfmt" ] ; then                       # build output string
         _sfmt="$1" ; shift
         printf -v _sfmt "$_sfmt" "$@"

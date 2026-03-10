@@ -31,7 +31,14 @@ Install:   You may clone the centauri-bash-lib git repository:
                <links>       # symlink for tools folder  (/opt/centauritools)
                <repo>        # an optional repository
 
+Verify:    To check if it works and to get an introduction please run:
+
+                $ <inst>/centaurihelp help    
+
+           Depending on your installation <inst> should be '~/centauritools' 
+           or '/var/centauri/tools'.
+
 Uninstall: Simply run any centauri-bash-lib tool with '--info uninstall':
 
-               $ centauricreate --info uninstall
+               $ <inst>/centauricreate --info uninstall
 

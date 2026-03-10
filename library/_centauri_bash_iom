@@ -909,7 +909,7 @@ configfile() {
       -p)   _priv=1 ;;
       -q)   _orep="$CEN_TRACE" ; _oqui='-q' ;;
       -r)   shift ; _read="$1" ;;
-      -s)   _sopt="$1" ; _otra=":" ;;
+      -s)   _sopt="$1" ; _otra=':' ;;
       -v)   _ovar=1 ;;
       -x)   _ocom=2 ;;
       -w)   _oerr='warning' ; shift ; _rlin="$1" ;;
@@ -1156,7 +1156,7 @@ configfile() {
 serialize() {
     $CEN_DEBUG -c -- "$*"
     local _fdel _fdec _fmod _fref _fzer _fqui _mode
-    local _ffil="$CEN_NAME.dat" _oerr='error -z' _otra="$CEN_TRACE -a"
+    local _ffil="$CEN_NAME.dat" _oerr='error -z' _otra="$CEN_TRACE"
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -1167,7 +1167,7 @@ serialize() {
         -q)   _oerr="$CEN_TRACE" ; _fqui='-q' ;;
         -r|-w)
               _fmod="$1" ;;
-        -s)   _otra=":" ;;
+        -s)   _otra=':' ;;
         -t)   shift ; _fref="$1" ;;
         -z)   _fzer=1 ;;
         -x)   _fdec=1 ;;
@@ -1209,7 +1209,7 @@ serialize() {
 
         dryrun -s "serialize: $_ffil" && return
         create $_fqui -v _sout -h - -s -t -- "$_ffil" $_mode || return 1
-        $_otra -c $" write" -- "$_ffil"
+        $_otra -a -c $" write" -- "$_ffil"
 
     # --- read ---
 
@@ -1219,7 +1219,7 @@ serialize() {
             source "$_ffil" &>/dev/null
             CEN_QUIT_TRAP="$_trap"
             if [ $? = 0 ] ; then
-                $_otra -c $" read" -- "$_ffil"
+                $_otra -a -c $" read" -- "$_ffil"
             else
                 $_oerr $"Failed to deserialize data from:" "$_ffil"
                 return 1

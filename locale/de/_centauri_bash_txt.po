@@ -1,6 +1,14 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_txt:186
-msgid "failed (error"
-msgstr "Fehlgeschlagen (Fehler"
+#: /var/centauri/library/_centauri_bash_txt:656
+msgid "Cannot read file:"
+msgstr "Kann Datei nicht lesen:"
+
+#: /var/centauri/library/_centauri_bash_txt:658
+msgid "Read input file:"
+msgstr "Eigabedatei lesen:"
+
+#: /var/centauri/library/_centauri_bash_txt:666
+msgid "Read %s line(s)"
+msgstr "%s Zeile(n) gelesen"

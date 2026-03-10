@@ -25,11 +25,3 @@ msgstr "Kommando fehlgeschlagen (%s): %s"
 msgid "coproc already in use"
 msgstr "coproc läuft bereits"
 
-#~ msgid "server already initialized"
-#~ msgstr "Server schon initialisiert"
-
-#~ msgid "server not initialized"
-#~ msgstr "Server nicht initialisiert"
-
-#~ msgid "not allowed in subshell"
-#~ msgstr "In Sub-Shell nicht erlaubt"

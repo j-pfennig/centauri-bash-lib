@@ -4,7 +4,7 @@
 #
 # Call:     . _centauri_bash_txt
 #
-#+General:  Four of the functions in this module internally share the same logic, as
+#+General:  Most of the functions in this module internally share the same logic, as
 #           they transform an input array to an output array. The input array can
 #           be passed by the caller, generated from arguments or from stdin (useful
 #           to read files). The output array can be passed to the caller, converted
@@ -14,6 +14,9 @@
 #,          - [[extsort()]] - Run external sort/uniq to sort lines of text
 #,          - [[txtgrep()]] - Lightweight internal text filter (like grep)
 #,          - [[extgrep()]] - Extended text filter (using external grep)
+#,          - [[txtread()]] - load and filter data from file, stdin or array
+#,
+#,          - [[txtfold()]] - folding of long text lines, fetch limited text size
 #
 #+          The functions extsort and extgrep will load the [[_centauri_bash_pip]]
 #           module (on demand) to run the external command via [[syspipe()]].
@@ -24,10 +27,10 @@
 #.          # grep an array to a file (via stdout redirection)
 #.          txtgrep -i data -s - -x "^([A-M]|[a-m])" > "$my_file"
 #
-# Copyright Dr. J. Pfennig (c) 2021-2025
+# Copyright Dr. J. Pfennig (c) 2021-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES["_centauri_bash_txt"]='0.10:5'
+CEN_MODULES["_centauri_bash_txt"]='0.12:7'
 
 CEN_TXT_SORT=                   # paths of tools
 CEN_TXT_UNIQ=
@@ -47,7 +50,7 @@ CEN_TXT_EDIT=
 #           <data>  data to be matchd
 #           <emsg>  message for no match (calls [[error()]] by default)
 #           <gmsg>  message for garbage (calls [[warning()]] by default)
-#           <vmat>  name of variable to be set tp a match
+#           <vmat>  name of variable to be set to a match
 #
 # Return:   0   matched all data
 #           1   found garbage
@@ -102,7 +105,11 @@ regexp() {
     if [[ "$2" =~ $1 ]] ; then
         $_odeb BASH_REMATCH
         if [ -z "$_ogok" ] && [ "$2" != "$BASH_REMATCH" ] ; then
-            [ "${3:--}" != '-' ] && $_owrn -- "$3" "'${2/$BASH_REMATCH/ ... }'"
+            if [ "${3:--}" = '-' ] ; then
+                [ "${4:--}" != '-' ] && $_oerr -- "$4"
+            else
+                $_owrn -- "$3" "'${2/$BASH_REMATCH/ ... }'"
+            fi
             _osta=1
         fi
         [ $# -le 4 ] && return "$_osta"
@@ -113,7 +120,7 @@ regexp() {
         done
         return "$_osta"
     fi
-    [ "${3:--}" != '-' ] && $_oerr -- "$4"
+    [ "${4:--}" != '-' ] && $_oerr -- "$4"
     return 2
 }
 
@@ -316,14 +323,15 @@ extsort() {
 # ------------------------------------------------------------------------------
 # txtgrep - Lightweight internal text filter (like grep)
 #
-# Calls:    (1) txtgrep [-a|-s <var>] -i <var> [-m] [-n] -x|-y <expr>
+# Calls:    (1) txtgrep [-a|-s <var>] -i <input> [-m] [-n] -x|-y <expr>
 #           (2) txtgrep [-a|-s <var>] [-m] [-n] -x|-y <expr> [--] <line>...
 #
 # Options:  -a  save result to array <var>
-#           -i  input from <var> (**-** for stdin), can be array or string
+#           -i  input from <var> or <file> (**-** for stdin), array or string
 #           -m  stop after 1st match
 #           -n  invert condition
 #           -s  save result to <var> (**-** for stdout)
+#           -u  convert input data to lower-case
 #           -x  use regular expression
 #           -y  use bash glob pattern
 #
@@ -348,15 +356,19 @@ extsort() {
 # ------------------------------------------------------------------------------
 txtgrep() {
     #$CEN_DEBUG -c -- "$*"
-    local _fnam _fnot _fexp _expr _vinp _vout _stop
+    _cen_txt_common -r _cen_txt_grep "$@"
+}
+
+_cen_txt_grep() {
+    local _fign _fnam _fnot _fexp _expr _vout _stop
     while [ "${1::1}" = '-' ] ; do
       case "$1" in
       --)   shift ; break ;;
       -a)   shift ; _vout="$1" ;;
-      -i)   shift ; _vinp="$1" ;;
       -m)   _stop='break' ;;
       -n)   _fnot=1 ;;
       -s)   shift ; _fnam="$1" ;;
+      -u)   _fign=1 ;;
       -x)   shift ; _expr="$1" ; _fexp=1 ;;
       -y)   shift ; _expr="$1" ; _fexp=2 ;;
       *)    _cen_abort - "$1"
@@ -364,28 +376,16 @@ txtgrep() {
     done
     [ -z "$_fexp" ] && _cen_abort + '-x|-y'
     [ -n "$_fnot" ] && ((_fexp += 2))
+    [ -z "$_inpargv" ] && _inpdata=("$@")
     [ -z "$_vout" -a -z "$_fnam" ] && _stop='break'
 
     # implementation uses input and output arrays
-    local -n _varr _rslt
-    local _cen_grep_aarg _txtgrep_rarg _line
-
-    # get input, set _varr
-    if [ -z "$_vinp" ] ; then               # grep call arguments
-        _cen_grep_aarg=("$@") ; _varr='_cen_grep_aarg'
-    elif [ "$_vinp" = '-' ] ; then          # grep stdin
-        IFS=$'\n' read -r -d '' -a _cen_grep_aarg ; _varr='_cen_grep_aarg'
-    else                                    # grep string/array
-        _varr="$_vinp"
-        if [ "${#_varr[@]}" = 1 ] ; then    # could be string
-            local -n _varr='_cen_grep_aarg' # redefine (no unset needed)
-            splitjoin -s _cen_grep_aarg -n -i "$_vinp"
-        fi
-    fi || :
+    local -n _rslt
+    local _txtgrep_rarg _line
 
     # get output, set _rslt
-    if [ "$_vinp" = "$_vout" ] ||           # in-place, copy temp output
-       [ "${_vout:--}" = '-' ] ; then       # grep to stdout or string
+    if [ "$_inpargv" = "$_vout" ] ||                # in-place, copy temp output
+       [ "${_vout:--}" = '-' ] ; then               # grep to stdout or string
         _txtgrep_rarg=() ; _rslt='_txtgrep_rarg'
     else
         _rslt="$_vout"
@@ -394,22 +394,26 @@ txtgrep() {
 
     # do the grep
     if [ "$_fexp" = 1 ] ; then
-        for _line in "${_varr[@]}" ; do
+        for _line in "${_inpdata[@]}" ; do
+            [ -n "$_fign" ] && _line="${_line,,}"
             [[ "$_line" =~ $_expr ]] || continue
             _rslt+=("$_line") ; $_stop
         done
     elif [ "$_fexp" = 2 ] ; then
-        for _line in "${_varr[@]}" ; do
+        for _line in "${_inpdata[@]}" ; do
+            [ -n "$_fign" ] && _line="${_line,,}"
             [[ "$_line" == $_expr ]] || continue
             _rslt+=("$_line") ; $_stop
         done
     elif [ "$_fexp" = 3 ] ; then
-        for _line in "${_varr[@]}" ; do
+        for _line in "${_inpdata[@]}" ; do
+            [ -n "$_fign" ] && _line="${_line,,}"
             [[ "$_line" =~ $_expr ]] && continue
             _rslt+=("$_line") ; $_stop
         done
     else
-        for _line in "${_varr[@]}" ; do
+        for _line in "${_inpdata[@]}" ; do
+            [ -n "$_fign" ] && _line="${_line,,}"
             [[ "$_line" == $_expr ]] && continue
             _rslt+=("$_line") ; $_stop
         done
@@ -423,7 +427,7 @@ txtgrep() {
     # output to stdout or string
     if [ "${_vout:--}" = '-' ] ; then
         splitjoin -j "${_fnam:--}" -n -l -i _rslt
-    elif [ "$_vinp" = "$_vout" ] ; then         # in-place, copy temp output
+    elif [ "$_inpargv" = "$_vout" ] ; then         # in-place, copy temp output
         local -n _vslt="$_vout" ; _vslt=("${_rslt[@]}")
     fi || :
     return 0
@@ -516,6 +520,244 @@ extgrep() {
     # additional error reporting
     if [ -n "$_fnam" -o "$_ferr" != '-q' ] ; then
         splitjoin -d '\n' -i "$_fnam" -j _sout
+        message -a -n -- "$_sout"
+    fi
+    return $_stat
+}
+
+# ------------------------------------------------------------------------------
+# common body [-e] [-i|-r] [-o|-w] <worker> <args>
+# ------------------------------------------------------------------------------
+# The function calls <worker> after parsing some argument options. It optionally
+# can read input or write output.
+#
+# Option:   -e      error handling  (arg: -f -q)
+#           -i      input handling  (arg: -i)    see _inpdata and _inpfile
+#           -o      output handling (arg: -a -s) see _outdata and _outfile
+#           -r      like -i and read input file into _inpdata
+#           -w      like -o and write output to file _outdata
+#
+# worker:   _inpargv    input argument value from '-i'
+#           _inpdata    array of input data   -or- empty when _inpfile is set
+#           _inpfile    emtpy to use _inpdata -or- file path (_inpdata is empty)
+#           _outargs    output options like '-s <vnam>' or '-a <vnam>'
+#           _outdata    takes output data (ignored whan _outfile is set)
+#           _outfile    empty to use _outdata -or- file path for output
+#           _errmode    empty (default) -or- -f (fatal) -or- -q (quiet)
+#
+# examples: (1) let common handle file in/out
+#           worker1() {
+#               local _item
+#               for _item in "${_inpdata[@]}" ; do
+#                   [ -z "$_item" -o "$item" = '#' ] || continue
+#                   trimjoin -c -w -s _item -- "$_item"
+#                   [ -z "$_item" -o "$item" = '#' ] || continue
+#                   _outdata+=("$_item")
+#               done
+#           }
+#           _cen_txt_common -e -r -w worker1 "$@" ; return
+#
+#           (2) worker handles in/out
+#           worker2() {
+#               [ -n "$_inpfile" ] && fatal "Input must not be a file:" "$_inpfile"
+#               [ -n "$_outfile" ] && fatal "Output must not be a file:" "$_outfile"
+#               _outdata=("${_inpdata[@]//otto/emil}")
+#           }
+#           _cen_txt_common -e -r -w worker1 "$@" ; return
+# ------------------------------------------------------------------------------
+_cen_txt_common() {
+    local _inpargv _inpdata=() _inpfile _outdata=() _outfile _outargs _errflag
+    local _opte _opti _opto _work _stat _inpf _outf _stat=0 _args=()
+
+    # handle meta options
+    while [ $# -gt 0 ] ; do
+        case "$1" in
+        -e)     _opte="$1" ;;
+        -i|-r)  _opti="$1" ;;
+        -o|-w)  _opto="$1" ;;
+        -*)     _cen_abort - "$1" ;;
+        *)      isfunction -a -- "$1" ; break
+        esac ; shift
+    done
+    _work="$1" ; shift
+
+    # handle main options
+    while [ $# -gt 0 ] ; do
+        case "$1" in
+        --)     _args+=("$@") ; break ;;
+        -i)     if [ -n "$_opti" ] ; then
+                    shift ; _inpargv="$1" ; shift ; continue
+                fi ;;
+        -a|-s)  if [ -n "$_opto" ] ; then
+                    _outargs="$1 $2" ; shift ; shift ; continue
+                fi ;;
+        -f|-q)  if [ -n "$_opte" ] ; then
+                    _errmode="$1" ; shift ; continue
+                fi ;;
+        esac
+        _args+=("$1") ; shift
+    done
+
+    # processing input
+    case "$_inpargv" in
+        '')         ;;
+        -)          _cen_txt_input "$_errmode" '_inpdata' || return 1 ;;
+        *[./:]*)    _inpf="$_inpargv"
+                    if [ "$_opti" = '-r' ] ; then
+                        _cen_txt_input "$_errmode" '_inpdata' "$_inpargv" || return 1
+                    else
+                        _inpfile="$_inpargv"
+                    fi ;;
+        *)          splitjoin -s _inpdata -n -i "$_inpargv"
+    esac
+
+    # check for output file and run worker
+    case "${_outargs:3}" in
+    *[./]*) [ "$_opto" = '-w' ] || _outfile="$_outf"    # have output file?
+    esac
+    $_work "${_args[@]}" ; _stat=$?
+
+    # the worker might updated _outargs ...
+    case "${_outargs:3}" in
+    ''|-)   _outf='-' ;;
+    *[./]*) _outf="${_outargs:3}"
+            [ "$_opto" = '-w' ] || _outfile="$_outf"
+    esac
+
+    # create output
+    if [ -z "$_opto" ] ; then
+        :
+    elif [ -z "$_outf" ] ; then
+        local -n _cen_txt_vnam="${_outargs:3}"
+        if [ "${_outargs::2}" = '-a' ] ; then
+            _cen_txt_vnam=("${_outdata[@]}")        # simply clone output
+        else
+            local _sifs="$IFS" ; IFS=$'\n'
+            _cen_txt_vnam="${_outdata[*]}" ; IFS="$_sifs"
+        fi
+    elif [ "$_outf" = '-' -o "${_outf::5}" = '/dev/' ] ; then
+        create -r -v _outdata "$_outf" || stat=1
+    elif [ -z "$_outfile" ] ; then                  # (re)write output file
+        if [ -n "$_inpf" ] && [ "$_inpf" = "$_outf" ] ; then
+            if ! create $_errmode -t -v _outdata -- "$_outf.$$" ; then
+                remove $_errmode -- "$_outf.$$" ; _stat=1
+            else
+                move $_errmode -- "$_outf.$$" "$_outf" || _stat=1
+            fi
+        else
+            create $_errmode -t -v _outdata -- "$_outf" || _stat=1
+        fi
+    fi
+    return $_stat
+}
+
+# file input helper: <ferr> <vnam> <file>|- [<mesg>]
+_cen_txt_input() {
+    local _stat=1 _rnam="${3:-.}" _mesg="${4:-$"Cannot read file:"}"
+    [ "$_rnam" = '-' ] && _rnam='(stdin)'
+    $CEN_TRACE2 -a -c '()' $"Read input file:" "$_rnam"
+    if [ -z "$3" ] ; then
+        mapfile -t "$2" && _stat=0 || _stat=2
+    elif [ -r "$3" ] ; then
+        mapfile -t "$2" < "$3" && _stat=0 || _stat=2
+    fi 2>/dev/null
+    if [ "$_stat" = 0 ] ; then
+        eval _mesg="\${#$2[@]}"
+        $CEN_TRACE -a -p -c '()' $"Read %s line(s)" "$_mesg"
+    elif [ "$1" = '-q' ] ; then
+        $CEN_TRACE -a -c '()' "$_mesg" "$_rnam"
+    else
+        error $1 "$_mesg" "$_rnam"
+    fi
+    return "$_stat"
+}
+
+# ------------------------------------------------------------------------------
+# txtedit - Extended batch text editor (using external sed)
+#
+# Calls:    (1) txtedit [-f|-q] -i <input> [-a|-s <output>] [-n]
+#           (2) txtedit [-f|-q] -i <input> [-a|-s <output>] [-n] -x -- <rexp>...
+#           (3) txtedit [-f|-q] -i <input> [-a|-s <output>] [-n] -y -- <glob>...
+#
+# Options:  -a  save result to array <var>
+#           -f  make errors fatal
+#           -i  input from <var> or <file> (**-** for stdin), array or string
+#           -n  normalize (trim, remove empty lines or comments)
+#           -q  do not report errors
+#           -s  save result to <var> or <file> (**-** for stdout)
+#           -x  use regular expression (running the 'sed' tool)
+#           -y  use bash glob pattern
+#
+# Return:   **true** at success or **false** otherwise.
+#
+#.Examples: # Using bash globs (no external tool is run)
+#.          txtedit -i /etc/fstab -s - -y '/LABEL=trix/LABEL=hugo' '/-trixie/'
+# ------------------------------------------------------------------------------
+txtedit() {
+    #$CEN_DEBUG -c -- "$*"
+    _cen_txt_common -e -r -w _cen_txt_edit "$@"
+}
+
+_cen_txt_edit() {
+    local _mode _norm _item _expr
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   shift ; break ;;
+      -n)   _norm=1 ;;                              # normalize
+      -x)   _mode=2 ;;                              # use sed
+      -y)   _mode=1 ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
+    # normalize input
+    if [ -z "$_mode" -o -n "$_norm" ] ; then
+        for _item in "${_inpdata[@]}" ; do
+            [ -z "$_item" -o "${_item::1}" = '#' ] && continue
+            trimjoin -c -s _item -- "$_item"
+            [ -z "$_item" -o "${_item::1}" = '#' ] && continue
+            _outdata+=("$_item")
+        done
+        [ -z "$_mode" ] && return 0
+        _inpdata=("${_outdata[@]}") ; _outdata=()
+
+    # no expressions - just copy
+    elif [ $# = 0 ] ; then
+        _outdata=("${_inpdata[@]}")
+        return 0
+    fi
+
+    # bash glob expressions
+    if [ "$_mode" = 1 ] ; then
+        for _item in "${_inpdata[@]}" ; do
+            for _expr in "$@" ; do
+                eval _item="\${_item$_expr}"
+            done
+            _outdata+=("$_item")
+        done
+        return 0
+    fi
+
+    # using sed for regular expressions
+    if [ -z "$CEN_TXT_EDIT" ] ; then                # install check...
+        sysfind ${_errflag/-q/} -s CEN_TXT_EDIT -c sed || return 1
+        embed -m '_centauri_bash_pip'
+    fi
+
+    local _sout _stat=0 _copr _acmd=("$CEN_TXT_EDIT" '-E')
+    dryrun -r "extedit: ${_acmd[0]} $# expression(s)" || true
+    while [ $# -gt 0 ] ; do
+        _acmd+=('-e' "$1") ; shift
+    done
+
+    [ "$CEN_PIP_BUSY" = "$BASHPID" ] || _copr='-x'  # can use bash coproc
+    [ -z "$_outargs" ] && _outargs='-s -'
+    syspipe -r $_errmode -g $_copr -n -y -i _inpdata -a _outdata -- "${_acmd[@]}" || _stat=$?
+    [ "$_stat" = 0 ] && return 0
+
+    # additional error reporting
+    if [ -n "$_outargs" -a "$_errmode" != '-q' ] ; then
+        splitjoin -d '\n' -i "$_outdata" -j _sout
         message -a -n -- "$_sout"
     fi
     return $_stat
@@ -669,5 +911,74 @@ _cen_txt_fold() {
     _vout="${_vout%"${_vout##*[! ]}"}"
     return 0
 }
+
+# ------------------------------------------------------------------------------
+# txtread - read a text file into an array
+#
+# Call:      txtread [-e|-f|-w] [-a <varr>] [-i <glob>] [-m <mesg>] [-n] [-t] [--] <file>
+#
+# Options:  -a  output array                (default is CEN_TXTREAD)
+#           -i  ignore line glob pattern    (example: '#*')
+#           -m  file not readable message   (default: 'Cannot read file: %s')
+#           -n  skip empty lines
+#           -t  trim trailing spaces
+#
+# Arguments:<file>  file path
+#           <glob>  bash glob pattern
+#           <mesg>  printf format string for errors
+#           <varr>  variable name
+#
+# Return:   0   success
+#           1   error when reading
+#           2   not a readable file
+# ------------------------------------------------------------------------------
+CEN_TXTREAD=
+txtread() {
+    $CEN_DEBUG -c -- "$*"
+    local _opts=() _args=()
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)       shift ; break ;;
+      -e|-f|-w) _opts+=("$1") ;;
+      -a)       _opts+=("$1" "$2") ; shift ;;
+      -n|-t)    _args+=("$1") ;;
+      -i|-m)    _args+=("$1" "$2") ; shift ;;
+      *)        _cen_abort - "$1"
+      esac ; shift
+    done
+    _cen_txt_common -e -r -o _cen_txt_read -i "$1" "${_opts[@]}" -- "${_args[@]}"
+}
+
+_cen_txt_read() {
+    local _fnon _ftrm _glob _mesg _line
+    while [ "${1::1}" = '-' ] ; do
+      case "$1" in
+      --)   ;;
+      -i)   shift ; _glob="$1" ;;
+      -m)   shift ; _mesg="$1" ;;       ### TODO
+      -n)   _fnon=1 ;;
+      -t)   _ftrm=1 ;;
+      *)    _cen_abort - "$1"
+      esac ; shift
+    done
+
+    [ -z "$_outargs" ] && _outargs='-a CEN_TXTREAD'
+
+    for _line in "${_inpdata[@]}" ; do
+        [ -n "$_ftrm" ] && _line="${_line%"${_line##*[![:space:]]}"}"
+#       [ -n "$_ftrm" ] && _line="${_line#"${_line%%[![:space:]]*}"}"
+        [ -n "$_fnon" ] && [ -z "$_line" ] && continue
+        [ -n "$_glob" ] && [[ "$_line" == $_glob ]] && continue
+        _outdata+=("$_line")
+    done
+}
+
+
+
+
+### TODO CEN_TRACE -c -p  -->  CEN_TRACE -p -c
+### TODO fix usermount() _mesg and translations
+### TODO fix -e|-f|-w readline()
+### BUG -c should eat arg
 
 # end

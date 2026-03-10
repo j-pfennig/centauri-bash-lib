@@ -491,6 +491,7 @@ blkdevice() {
 #           findmount -r <kind> <device>
 #           findmount -t <type> [-t <type>]...              # lists ...
 #           findmount -a [-t <type>]...
+#           findmount -v <vnam> <label>                     # vfat label
 #
 # Options:  -a  get all (real) mount infos into CEN_MOUNT_ARR
 #           -c  also try upper/lower case label
@@ -499,6 +500,7 @@ blkdevice() {
 #           -l  find by label
 #           -r  get identifier for device into CEN_MOUNT_LBL
 #           -t  find by type (returns CEN_MOUNT_ARR array)
+#           -v  convert label to be vfat compatible
 #
 # Arguments:<device>     device to find, example '/dev/sdc1'
 #           <mountpoint> mount location, example '/mnt/xxx'
@@ -508,6 +510,9 @@ blkdevice() {
 #                        get all types and '-' for types not in CEN_MOUNT_EXC.
 #
 # Return: **true** at success or **false** otherwise. Also some variables are set.
+#
+#+        For option -v returning **false** is not an error but indicates that the
+#         output label is hash based to become VFAT compatible.
 #
 # Variables:The following variables are set if option -a or -t are not used:
 #
@@ -553,7 +558,7 @@ blkdevice() {
 # ------------------------------------------------------------------------------
 findmount() {
     CEN_MOUNT_DEV= ; CEN_MOUNT_DIR= ; CEN_MOUNT_LBL= ; CEN_MOUNT_FS= ; CEN_MOUNT_ARR=()
-    local _labl _fall _fknd _fcas _fdev _ftyp=()
+    local _labl _fall _fknd _fcas _fdev _ftyp=() _vfat
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -565,9 +570,14 @@ findmount() {
         -l)   shift ; _labl="$1" ;;
         -r)   shift ; _fknd="$1" ;;
         -t)   shift ; _ftyp+=("$1") ;;
+        -v)   shift ; _vfat="$1" ;;
         *)    _cen_abort - "$1"
         esac ; shift
     done
+
+    if [ -n "$_vfat" ] ; then
+        _cen_vfat_label "$_vfat" "$1" ; return      # convert and return status
+    fi
 
     local _mxxx _mdev="${1:--}" _mdir="$2"
     [ -z "$_mdir" ] && _mdir="$_mdev"
@@ -604,14 +614,16 @@ findmount() {
 
     # find device by label
     elif [ -n "$_labl" ] ; then
-        for _labl in "$_labl" "${_labl,,}" "${_labl^^}" "" ; do
-            [ "$_mxxx" = "$_labl" ] && continue                 # same as initial case
-            [ -h "/dev/disk/by-label/$_labl" ] && break         # found!
-            [ -z "$_fcas" -o -z "$_labl" ] && return 1          # last try, not found
-            [ -z "$_mxxx" ] && _mxxx="$_labl"
+        local _lesc
+        for _lesc in "$_labl" "${_labl,,}" "${_labl^^}" "" ; do
+            _lesc="${_lesc//%/\\x25}"                           # we use % in vfat labels
+            [ "$_mxxx" = "$_lesc" ] && continue                 # same as initial case
+            [ -h "/dev/disk/by-label/$_lesc" ] && break         # found!
+            [ -z "$_fcas" -o -z "$_lesc" ] && return 1          # last try, not found
+            [ -z "$_mxxx" ] && _mxxx="$_lesc"
         done
         CEN_MOUNT_LBL="$_labl"
-        system -r -q -s _mdev -- readlink -f "/dev/disk/by-label/$_labl"
+        system -r -q -s _mdev -- readlink -f "/dev/disk/by-label/$_lesc"
         $CEN_TRACE -a -r -b 0 "${FUNCNAME[0]}: '$_labl' => '$_mdev'"
     fi
 
@@ -655,6 +667,27 @@ _cen_findmount_type() {
         shift
     done
     return 1
+}
+
+# fix label to be vfat compatible: <vres> <labl>
+_cen_vfat_label() {
+    system -c -e md5sum base64 || return            # missing tools
+    local _rlab="$2" _rsuf _cen_temp_mnt
+    if [ "${#_rlab}" -ge 12 ] ; then
+        _rsuf="${_rlab##*_}" ; _rsuf="${_rsuf::4}"
+        _rlab="${_rlab%_*}"
+        sysrun -e -r -s _cen_temp_mnt -- md5sum <<<$_rlab
+        _rlab="$_cen_temp_mnt"                      # we get hex data
+        _cen_temp_mnt="\x${_rlab:0:2}\x${_rlab:2:2}\x${_rlab:4:2}"
+        _cen_temp_mnt+="\x${_rlab:6:2}\x${_rlab:8:2}\x${_rlab:10:2}"
+        printf -v _cen_temp_mnt "$_cen_temp_mnt"    # hex to binary
+        sysrun -e -r -s _cen_temp_mnt -- base64 <<<$_cen_temp_mnt
+        _rlab="${_cen_temp_mnt//[\/+]/%}"
+        _rlab="${_rlab::6}_$_rsuf"
+
+    fi
+    printf -v "$1" '%s' "$_rlab"
+    [ -z "$_cen_temp_mnt" ]                         # false after conversion
 }
 
 # ------------------------------------------------------------------------------
@@ -791,12 +824,13 @@ usermount() {
 #           <name>  location name (volume or folder)
 #
 #+Volume names are case sensitive (<name> argument) but mountpoint folder names are
-# always lower case.
+# always lower case. When a name does not match a volume a mountpoint can match, so
+# 'Root' works like 'root' in absence of 'Volumes/Root'.
 #
 #+Special <name> values are:
 #
 #, "[linux]"    for the linux UKI image folder
-#, "[boot]"   "*/efi" or "*/EFI" for EFI boot
+#, "[boot]"     "*/efi" or "*/EFI" for EFI boot
 #, °            "*/grub            for GRUB boot
 #, °            "*/firmware" or "*/overlay" otherwise (Raspberry Pi)
 #, "[swap]"     for the swap partion
@@ -806,6 +840,8 @@ usermount() {
 #+Cache: The ''location'' search results are cached until a different base is set.
 # This makes the location function quite fast if called repeatedly for cached locations.
 # Use a dummy base like '.' to flush the cache explicitly.
+#
+#+root: To match 'root' (root mountpoint) the base folder must contain a 'dev' folder.
 #
 #.Examples: # check if 'export' is a mounted sub-volume
 #.          location -m 'exports' && message -c 'export is' "$CEN_LOCATION"
@@ -954,7 +990,7 @@ _cen_mnt_loc_find() {
                 continue
             fi
         fi
-        trace -a -c -p "sub-volume" '%-9s %s' "$volu" "$item/$volu"
+        $CEN_TRACE -a -c -p "sub-volume" '%-9s %s' "$volu" "$item/$volu"
         return
     done
 
@@ -963,10 +999,10 @@ _cen_mnt_loc_find() {
     elif [ -n "$omnt" ] ; then
         :
     elif [ -d "$base/mnt/$voll" ] ; then
-        trace -a -c -p "mountpoint" '%-9s %s' "$volu" "$base/mnt/$voll"
+        $CEN_TRACE -a -c -p "mountpoint" '%-9s %s' "$volu" "$base/mnt/$voll"
         CEN_MNT_LOC_PATH[$1]="$base/mnt/$voll"
     elif [ -d "$base/$voll" ] ; then
-        trace -a -c -p "folder" '%-9s %s' "$volu" "${base%/}/$voll"
+        $CEN_TRACE -a -c -p "folder" '%-9s %s' "$volu" "${base%/}/$voll"
         CEN_MNT_LOC_PATH[$1]="${base%/}/$voll"
     fi
 }

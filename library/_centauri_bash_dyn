@@ -11,7 +11,7 @@
 # enable loadable bash builtins.
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_dyn']="0.27:4"
+CEN_MODULES['_centauri_bash_dyn']="0.28:7"
 
 # ------------------------------------------------------------------------------
 # Dynamic loading + Dynamic loading of centauri-bash-lib modules
@@ -242,6 +242,7 @@ nettemp() { _cen_dyn_load net "$@" ; }
 netlink() { _cen_dyn_load net "$@" ; }
 netfile() { _cen_dyn_load net "$@" ; }
 netpath() { _cen_dyn_load net "$@" ; }
+netping() { _cen_dyn_load net "$@" ; }
 netproxy() { _cen_dyn_load net "$@" ; }
 netquery() { _cen_dyn_load net "$@" ; }
 netresolv() { _cen_dyn_load net "$@" ; }
@@ -283,7 +284,9 @@ txtsort() { _cen_dyn_load txt "$@" ; }
 extsort() { _cen_dyn_load txt "$@" ; }
 txtgrep() { _cen_dyn_load txt "$@" ; }
 extgrep() { _cen_dyn_load txt "$@" ; }
+txtedit() { _cen_dyn_load txt "$@" ; }
 txtfold() { _cen_dyn_load txt "$@" ; }
+txtread() { _cen_dyn_load txt "$@" ; }
 
 usageparser() { _cen_dyn_load use "$@" ; }
 usagecat() { _cen_dyn_load use "$@" ; }

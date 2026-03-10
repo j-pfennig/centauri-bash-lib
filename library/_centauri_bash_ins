@@ -29,11 +29,11 @@
 #           _cen_ins_tools      § get list of (centauri)tools
 #           _cen_ins_version    § get OS and KDE versions
 #
-# Copyright Dr. J. Pfennig (c) 2019-2025
+# Copyright Dr. J. Pfennig (c) 2019-2026
 # ------------------------------------------------------------------------------
 
 # do not demand an api-version, we get loaded by centauriconfig
-CEN_MODULES['_centauri_bash_ins']='0.20:4'
+CEN_MODULES['_centauri_bash_ins']='0.22:7'
 
 embed -c '_centauri_bash_ext'               # dependency
 embed -c '_centauri_bash_cfm'               # ... confirm()
@@ -421,7 +421,7 @@ _cen_ins_sysvhdr() {
 # ------------------------------------------------------------------------------
 _cen_ins_saferm() {
     local file sysv item unit="$1" name="${1%.*}"
-    [ "$name" == "$unit" ] && unit+=".service"  # got a name
+    [ "$name" == "$unit" ] && unit+='.service'  # got a name
 
     sysv="$CEN_INS_SYSVINI/$name"
     if [ -e "$sysv" -a ! -h "$sysv" ] ; then
@@ -705,10 +705,10 @@ WantedBy=$CEN_SVC_WANTED_BY
     # --------------------------------------------------------------------------
     # main
     # --------------------------------------------------------------------------
-    local scmd="$1" fsvc falt sysd styp salt isin aerr="warning -a"
+    local scmd="$1" fsvc falt sysd styp salt isin aerr='warning -a'
 
     # warnings become errors when installing
-    [ "$scmd" == "install" ] && aerr="error"
+    [ "$scmd" == 'install' ] && aerr='error'
 
     # check if systemd is installed. If not, a lsb-header is needed
     if ! _cen_ins_canrun -q -s ; then
@@ -729,12 +729,12 @@ WantedBy=$CEN_SVC_WANTED_BY
 
     # set defaults and destination
     if [ -n "$sysd" ] ; then
-        styp="systemd" ; salt="SysV"
+        styp='systemd' ; salt='SysV'
         CEN_SVC_WANTED_BY="${CEN_SVC_WANTED_BY:-multi-user.target}"
         fsvc="$CEN_INS_SYSDDIR/$CEN_NAME.service"
         falt="$CEN_INS_SYSVINI/$CEN_NAME"
     else
-        styp="SysV" ; salt="systemd"
+        styp='SysV' ; salt='systemd'
         fsvc="$CEN_INS_SYSVINI/$CEN_NAME"
         falt="$CEN_INS_SYSDDIR/$CEN_NAME.service"
     fi
@@ -1053,7 +1053,7 @@ _cen_ins_library() {
     ___cen_libr_desktop
 
     if [ "$EUID" = 0 ] ; then
-        if [ "${#CEN_SYS_SERVICE[@]}" ] || [ -d "$CEN_ROOT/systemd" ] ; then
+        if [ -n "$CEN_SYS_SERVICE" ] || [ -d "$CEN_ROOT/systemd" ] ; then
             if [ -n "$_updsrv" ] ; then
                 _cen_ins_systemd -n
             elif [ -z "$_update" ] ; then           # full setup only ...
@@ -1193,7 +1193,7 @@ _cen_ins_paths() {
 # Generate library proxy: <prox>
 # ------------------------------------------------------------------------------
 _cen_ins_proxy() {
-    $CEN_TRACE -a -c " proxy" -- "$CEN_ROOT"
+    $CEN_TRACE -a -c ' proxy' -- "$CEN_ROOT"
     local _repo _rexp _prox="$1"
 
    _rexp="CEN_PATH_REXP=(${CEN_PATH_REXP[*]@Q})"
@@ -1211,15 +1211,16 @@ if [ "\${CEN_ROOT:-.}" = '.' ] ; then
     export CEN_TOOLS="\$CEN_ROOT/tools"
     if [ ! "\$CEN_TOOLS/_centauri_bash_lib" -ef "\$BASH_SOURCE" ] ; then
         CEN_TOOLS=\$(readlink -f "\$(type -p _centauri_bash_lib)")
-        CEN_TOOLS="\${CEN_TOOLS%/*}" ; CEN_ROOT="\${CEN_TOOLS%/*}"
+        CEN_TOOLS="\${CEN_TOOLS%/*}" ; CEN_ROOT="\${CEN_TOOLS%/*/*}"
     fi
-elif [ "\${CEN_TOOLS:--}" = '-' ] ; then
-    export CEN_TOOLS="\$CEN_ROOT/tools"
+    export CEN_LIBRARY="\${CEN_TOOLS%/*}/library"
+else
+    [ "\${CEN_TOOLS:--}" = '-' ] && export CEN_TOOLS="\$CEN_ROOT/tools"
+    [ "\${CEN_LIBRARY:--}" = '-' ] && export CEN_LIBRARY="\$CEN_ROOT/library"
 fi
-export CEN_LIBRARY="\$CEN_ROOT/library"
 
 # paths that can be installation dependent
-CEN_PATHS=('$CEN_PATHS'      '${CEN_PATHS[1]}' '${CEN_PATHS[2]}' '${CEN_PATHS[3]}' '${CEN_PATHS[4]}' '${CEN_PATHS[5]}')
+CEN_PATHS=('$CEN_PATHS' '${CEN_PATHS[1]}' '${CEN_PATHS[2]}' '${CEN_PATHS[3]}' '${CEN_PATHS[4]}' '${CEN_PATHS[5]}')
 $_rexp$_prox
 
 # sanitize environment (bash needs TMPDIR)

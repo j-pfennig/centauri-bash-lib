@@ -35,71 +35,71 @@ msgstr "KDE Version nicht gefuden"
 msgid "Missing argument:"
 msgstr "Fehlendes Argument:"
 
-#: /var/centauri/library/_centauri_bash_sys:405
+#: /var/centauri/library/_centauri_bash_sys:408
 msgid "Installation configuration:"
 msgstr "Installationskonfiguration:"
 
-#: /var/centauri/library/_centauri_bash_sys:466
+#: /var/centauri/library/_centauri_bash_sys:469
 msgid "Bad '--info' argument. Valid arguments are:"
 msgstr "Falsches '--info' Argument. Gültig sind:"
 
-#: /var/centauri/library/_centauri_bash_sys:468
+#: /var/centauri/library/_centauri_bash_sys:471
 msgid "show detailed version info"
 msgstr "Detaillierte Versionsinformation ausgeben"
 
-#: /var/centauri/library/_centauri_bash_sys:469
+#: /var/centauri/library/_centauri_bash_sys:472
 msgid "show this message"
 msgstr "Diesen Text ausgeben"
 
-#: /var/centauri/library/_centauri_bash_sys:470
+#: /var/centauri/library/_centauri_bash_sys:473
 msgid "create or update an installation"
 msgstr "Erstellen oder Aktualisieren einer Installation"
 
-#: /var/centauri/library/_centauri_bash_sys:471
+#: /var/centauri/library/_centauri_bash_sys:474
 msgid "show centauri-bash-lib paths"
 msgstr "Pfade von 'centauri-bash-lib' ausgeben"
 
-#: /var/centauri/library/_centauri_bash_sys:472
-#: /var/centauri/library/_centauri_bash_sys:473
+#: /var/centauri/library/_centauri_bash_sys:475
+#: /var/centauri/library/_centauri_bash_sys:476
 msgid "for setup tools: "
 msgstr "Für 'setup' Werkzeuge: "
 
-#: /var/centauri/library/_centauri_bash_sys:472
+#: /var/centauri/library/_centauri_bash_sys:475
 msgid "copy updated files"
 msgstr "Kopiere neuere Dateien"
 
-#: /var/centauri/library/_centauri_bash_sys:473
+#: /var/centauri/library/_centauri_bash_sys:476
 msgid "copy files"
 msgstr "Kopiere Dateien"
 
-#: /var/centauri/library/_centauri_bash_sys:474
+#: /var/centauri/library/_centauri_bash_sys:477
 msgid "undo an installation"
 msgstr "Ein Installation rückgängig machen"
 
-#: /var/centauri/library/_centauri_bash_sys:475
+#: /var/centauri/library/_centauri_bash_sys:478
 msgid "silently update"
 msgstr "Stille Aktualisierung"
 
-#: /var/centauri/library/_centauri_bash_sys:476
+#: /var/centauri/library/_centauri_bash_sys:479
 msgid "show version info"
 msgstr "Versionsinformation ausgeben"
 
-#: /var/centauri/library/_centauri_bash_sys:483
+#: /var/centauri/library/_centauri_bash_sys:486
 msgid "Valid --info arguments are:"
 msgstr "Gültige '--info' Argumente sind:"
 
-#: /var/centauri/library/_centauri_bash_sys:515
+#: /var/centauri/library/_centauri_bash_sys:518
 msgid "succeeded"
 msgstr "erfolgreich"
 
-#: /var/centauri/library/_centauri_bash_sys:517
+#: /var/centauri/library/_centauri_bash_sys:520
 msgid "failed"
 msgstr "fehlgeschlagen"
 
-#: /var/centauri/library/_centauri_bash_sys:521
+#: /var/centauri/library/_centauri_bash_sys:524
 msgid "<unknown author/license>"
 msgstr "<unbekannter Autor/Lizenz>"
 
-#: /var/centauri/library/_centauri_bash_sys:615
+#: /var/centauri/library/_centauri_bash_sys:618
 msgid "You are not allowed to alter this installation"
 msgstr "Sie sind nicht berechtigt diese Installation zu verändern"

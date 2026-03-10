@@ -1,11 +1,13 @@
 # centauri-bash-lib
-A versatile library to simplify the writing of Bash scripts
+A versatile modularized library to simplify the writing of Bash scripts
 
-**Currently not yet released**
+The library was written with excecution speed in mind. It minimizes the use of
+subshells and external tools.
 
-- CGI support not yet finished
-- webapp in an early state
-- zenity support incomplete. Try kdialog
+Modern bash shells provide string handling, arrays and dictionaries. Also a large
+collection of bash-builtins exist. As a result scripts need to make little use
+of external tools like sed, grep or cat. For many little tools `centauri-bash-lib`
+will execute faster than a python script.
 
 **Features**
 
@@ -17,8 +19,8 @@ run fast and show GNU-coreutils-like command line behaviour.
 - is self-contained, no tools except bash >= 4.1 and some GNU-coreutils are needed
 - no system-wide installation required, needs no installer tools
 - built-in documentation and a documentation system
-- built-in debug support and bash 'set -eE' and 'set -x' support
-- roughly 100 library functions
+- built-in debug support
+- roughly 120 library functions
 - minimizing the use of external tools and sub-shells
 - the library is divided into modules
 - provides automatic module loading
@@ -36,8 +38,9 @@ run fast and show GNU-coreutils-like command line behaviour.
 - various templates including services and CGI
 - stand-alone scripts that can be distributed as a single file
 
-Modern bash shells provide string handling, arrays and dictionaries. Also a large
-collection of bash-builtins exist. As a result scripts need to make little use
-of external tools like sed, grep or cat. For many little tools `centauri-bash-lib`
-will execute faster than a python script.
+**Bugs**
+
+- CGI support not yet finished
+- webapp in an early state
+- zenity support incomplete. Try kdialog
 

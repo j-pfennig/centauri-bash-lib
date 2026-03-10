@@ -43,10 +43,10 @@
 #,      [[syssetup()]]
 #,      °  └── [[_centauri_bash_ext]]
 #
-# Copyright Dr. J. Pfennig (c) 2019-2025
+# Copyright Dr. J. Pfennig (c) 2019-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_sys']='0.33:6'
+CEN_MODULES['_centauri_bash_sys']='0.34:7'
 
 CEN_SYS_STATE_FILE=             # sysversion
 
@@ -372,7 +372,7 @@ syssetup() {
         .)  _base="$PWD$_base"
         esac
         CEN_PATHS[6]="$_outp" ; CEN_NET_OUTPUT="$_outp"
-        [ -d "$_base" ] || _cen_abort + "$_base"
+        [ -d "$_base" ] || _cen_abort - "$_base"
 
         for _item in 'transient' 'persistent' 'default' ; do
             printf -v _name 'CEN_%s' "${_item^^}"
@@ -398,7 +398,10 @@ syssetup() {
         [ -z "$_remv" -a "$_updt" != '-t' ] && return 1
     fi
 
+    # during library installation paths may become invalid, save and restore ...
     local _root="$CEN_ROOT" _base="$CEN_TOOLS" _libr="$CEN_LIBRARY"
+    # must load required module as long as CEN_LIBRARY is valid
+    embed -m '_centauri_bash_cfm'
     CEN_ROOT="$CEN_PATHS$CEN_ROOTDEFS"
     CEN_TOOLS="$CEN_ROOT/tools" ; CEN_LIBRARY="$CEN_ROOT/library"
     splitjoin -j CEN_INSTALL -d ':' -i CEN_ROOTDEFS

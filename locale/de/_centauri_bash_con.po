@@ -7,12 +7,12 @@ msgstr "Content-Type: text/plain; charset=UTF-8\n"
 msgid "Not implemented"
 msgstr "Nicht implementiert"
 
-#: /var/centauri/library/_centauri_bash_con:867
-#: /var/centauri/library/_centauri_bash_con:869
+#: /var/centauri/library/_centauri_bash_con:868
+#: /var/centauri/library/_centauri_bash_con:870
 msgid "module conflict:"
 msgstr "Modulkonflikt:"
 
-#: /var/centauri/library/_centauri_bash_con:873
-#: /var/centauri/library/_centauri_bash_con:876
+#: /var/centauri/library/_centauri_bash_con:874
+#: /var/centauri/library/_centauri_bash_con:877
 msgid "Not available with _centauri_bash_con"
 msgstr "Nicht mit '_centauri_bash_con' verfügbar"

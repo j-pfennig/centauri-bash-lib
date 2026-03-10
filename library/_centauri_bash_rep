@@ -12,10 +12,10 @@
 #,  [[override()]]
 #,  [[repository()]]
 #
-# Copyright Dr. J. Pfennig (c) 2024-2025
+# Copyright Dr. J. Pfennig (c) 2024-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_rep']='0.03:6'
+CEN_MODULES['_centauri_bash_rep']='0.05:7'
 
 embed -c '_centauri_bash_ext'               # dependency
 
@@ -69,6 +69,8 @@ CEN_REP_HOOK_ACTIONS=
 # suspend monitoring.
 # ------------------------------------------------------------------------------
 monitor() {
+    set +x ; local _snot="$CEN_NOTRACE"
+
     # initialization: for security resons hook only a funtion ...
     if [ "$CEN_HOOK_MONITOR" = ':' ] ; then
         if [ -n "$CEN_MONITOR_CALL" ] ; then
@@ -79,7 +81,11 @@ monitor() {
         [ -z "$CEN_MONITOR_FILE" ] && CEN_MONITOR_FILE="$CEN_PERSISTENT/monitor"
         if ! [ -w  "$CEN_MONITOR_FILE" ] ; then
             warning -c $" disabled" "Cannot write:" "$CEN_MONITOR_FILE"
-            CEN_MONITOR_MASK= ; return 1
+            CEN_MONITOR_MASK=
+            if [ -z "$_snot" ] ; then
+                CEN_NOTRACE= ; set -x
+            fi
+            return 1
         fi
 
         if ((CEN_MONITOR_MASK & 1)) ; then
@@ -99,19 +105,27 @@ monitor() {
             context -h CEN_HOOK_QUIT CEN_REP_HOOK_QUIT 'cen_monitor_quit'
         fi
     elif [ "${CEN_HOOK_MONITOR:--}" = '-' ] ; then
+        if [ -z "$_snot" ] ; then
+            CEN_NOTRACE= ; set -x
+        fi
         return 1
     fi
+
     $CEN_HOOK_MONITOR "$@"
+    if [ -z "$_snot" ] ; then
+        CEN_NOTRACE= ; set -x
+    fi
+    return 0
 }
 
 cen_monitor_call() {
     # default implementation
     [ -z "$CEN_MONITOR_MASK" ] && return 1
+    [ -w "$CEN_MONITOR_FILE" ] || return 1
     local name="${USER:-${LOGNAME:-$EUID}}"
     [ "$name" = 0 ] && name='root'
     echo "$EPOCHSECONDS" "$PPID" "$$" "${name:--}" "$CEN_NAME" "${@@Q}" >> "$CEN_MONITOR_FILE"
     return 0
-
 }
 
 # ------------------------------------------------------------------------------

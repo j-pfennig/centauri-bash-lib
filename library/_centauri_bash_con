@@ -21,10 +21,10 @@
 #  [[_centauri_bash_con]] and [[_centauri_bash_win]] at script start (this also
 #  adds option --gui).
 #
-# Copyright Dr. J. Pfennig (c) 2015-2025
+# Copyright Dr. J. Pfennig (c) 2015-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_con']='0.27:6'
+CEN_MODULES['_centauri_bash_con']='0.29:7'
 
 CEN_ROWS=               # console rows
 CEN_COLS=               #         columns
@@ -358,7 +358,7 @@ output() {
     if [ -n "$_aopt" ] ; then
         _aopt="${CEN_EMBED:-$CEN_NAME}: "
         [ "$CEN_AUTOIND" = 2 ] && _sind=1 ; CEN_AUTOIND=1
-        [ -n "$_sind" ] && _aopt="${_snam//?/ }"    # no program name
+        [ -n "$_sind" ] && _aopt="${_aopt//?/ }"    # no program name
     fi
 
     # set argument array, handle printf and split
@@ -673,8 +673,9 @@ _cen_con_mesg() {
 
     # must handle printf here
     if [ -n "$_scal" ] ; then               # option -c
-        _cen_shortfmt _scal - "$1" ; shift
-        [ "$1" == '--' ] && shift           # backward compatibility
+        _cen_shortfmt _scal - "$1" ; _serr+="$_scal" ; shift
+        [ "$1" = '--' ] && shift            # backward compatibility
+        [ -n "${_scal[1]}" ] && set -- "${_scal[1]}" "$@"
     fi
     if [ "$_ffmt" = 1 ] ; then
         printf -v _mesg "$@"

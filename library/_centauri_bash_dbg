@@ -42,10 +42,10 @@
 #,   [[actions()]]  -  verb dispatching
 #,   [[run()]]      -  non-verb script execution
 #
-# Copyright Dr. J. Pfennig (c) 2017-2024
+# Copyright Dr. J. Pfennig (c) 2017-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_dbg']="0.04:4"
+CEN_MODULES['_centauri_bash_dbg']='0.05:6'
 
 CEN_OPT_DEBUG=0                 # see --debug
 
@@ -377,6 +377,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #           (3) debug ... -c|-f -- <text>...        # call tracing
 #           (4) debug -s -- <text>...               # print call stack
 #           (5) debug -t on|off                     # bash trace on/off
+#           (6) debug -j on|off                     # journal logging on/off
 #
 #+          Form (1) supports the same options that can be used at module load.
 #           Form (2) generates variable dump output. Using form (3) as the 1st
@@ -389,6 +390,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #           -o  "set -x" trace of options()
 #           -q  "set -x" trace of quit()
 #
+#           -j  enable $CEN_JOURNAL logging
 #           -l  set a logfile
 #           -n  do nothing if seen in option list (kill switch)
 #
@@ -405,6 +407,7 @@ CEN_OPT_DEBUG=0                 # see --debug
 #,              Bit 1: enable module reporting (main, quit, actions, options)
 #,              Bit 2: enable function call reporting and variable dumps
 #,              Bit 4: enable tracing
+#,              Bit 8: enable $CEN_JOURNAL logging
 #
 #           When [[_centauri_bash_dbg]] is loaded dynamically, "CEN_OPT_DEBUG=7"
 #           is the default.
@@ -451,7 +454,7 @@ debug() {
     fi
 
     # normal option handling
-    local _item _sout _fopt _ilog _iopt _stra
+    local _item _sout _fopt _ilog _iopt _jopt _stra
     while [ "${1::1}" = '-' ] ; do
         case "$1" in
         --)   shift ; break ;;
@@ -459,6 +462,7 @@ debug() {
         -c)   _fopt=0 ;;
         -f)   _fopt=1 ;;
         -i)   _iopt='-i' ;;
+        -j)   shift ; _jopt="$1" ;;
         -l)   shift ; _ilog="${1:--}" ;;
         -m)   CEN_DBG_OMAI=1 ; CEN_DBG_TRACE+="$1 " ; _item=1 ;;
         -n)   return 0 ;;
@@ -469,6 +473,13 @@ debug() {
         *)    _cen_abort - "$1"
         esac ; shift
     done || :
+
+    # logging to journal
+    if [ "$_jopt" = 'on' ] || [ $((CEN_OPT_DEBUG & 8)) != 0 ] ; then
+        sysfind -s CEN_JOURNAL -- logger && CEN_JOURNAL+=' -t "centauri_bash_lib"'
+    elif [ -n "$_jopt" ] ; then
+        CEN_JOURNAL=':'
+    fi
 
     # set logfile
     if [ -n "$_ilog" ] ; then                       # no path, create in tmp folder

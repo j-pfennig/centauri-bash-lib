@@ -1,72 +1,84 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-#: /var/centauri/library/_centauri_bash_run:50
+#: /var/centauri/library/_centauri_bash_run:44
 msgid "installation root"
 msgstr "Installation Wurzelverzeichnis"
 
-#: /var/centauri/library/_centauri_bash_run:51
+#: /var/centauri/library/_centauri_bash_run:45
 msgid "files"
 msgstr "Dateien"
 
-#: /var/centauri/library/_centauri_bash_run:52
+#: /var/centauri/library/_centauri_bash_run:46
 msgid "applications"
 msgstr "Anwendungen"
 
-#: /var/centauri/library/_centauri_bash_run:53
+#: /var/centauri/library/_centauri_bash_run:47
 msgid "translations"
 msgstr "Übersetzungen"
 
-#: /var/centauri/library/_centauri_bash_run:54
+#: /var/centauri/library/_centauri_bash_run:48
 msgid "configuration files"
 msgstr "Konfigurationsdateien"
 
-#: /var/centauri/library/_centauri_bash_run:55
+#: /var/centauri/library/_centauri_bash_run:49
 msgid "persistent cache"
 msgstr "dauerhafter Cache"
 
-#: /var/centauri/library/_centauri_bash_run:56
+#: /var/centauri/library/_centauri_bash_run:50
 msgid "volatile cache"
 msgstr "flüchtiger Cache"
 
-#: /var/centauri/library/_centauri_bash_run:58
+#: /var/centauri/library/_centauri_bash_run:52
 msgid "the userʼs temporary folder"
 msgstr "temporärer Ordner des Benutzers"
 
-#: /var/centauri/library/_centauri_bash_run:559
+#: /var/centauri/library/_centauri_bash_run:553
 msgid "Syntax error:"
 msgstr "Syntaxfehler:"
 
-#: /var/centauri/library/_centauri_bash_run:780
+#: /var/centauri/library/_centauri_bash_run:776
 msgid "Failed to load 'shortpath' configuration"
 msgstr "Fehler bei Laden der 'shotpath' Konfiguration"
 
-#: /var/centauri/library/_centauri_bash_run:786
+#: /var/centauri/library/_centauri_bash_run:782
 msgid "1st argument must be 'path'"
 msgstr "Erstes Argument muss 'path' sein"
 
-#: /var/centauri/library/_centauri_bash_run:792
+#: /var/centauri/library/_centauri_bash_run:788
 msgid "Empty fields are invalid"
 msgstr "Leere Felder sind nicht erlaubt"
 
-#: /var/centauri/library/_centauri_bash_run:803
-#: /var/centauri/library/_centauri_bash_run:1141
+#: /var/centauri/library/_centauri_bash_run:799
+#: /var/centauri/library/_centauri_bash_run:1159
 msgid "Error(s) in [%s] configuration: %s"
 msgstr "Fehler in [%s] configuration: %s"
 
-#: /var/centauri/library/_centauri_bash_run:872
+#: /var/centauri/library/_centauri_bash_run:821
+msgid "Path specification not allowed:"
+msgstr "Pfadangabe nicht zulässig:"
+
+#: /var/centauri/library/_centauri_bash_run:831
+msgid "No such folder:"
+msgstr "Kein solches Verzeichnis:"
+
+#: /var/centauri/library/_centauri_bash_run:889
 msgid "No folder for shortcut:"
 msgstr "Kein Verzeichnis für Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:895
-#: /var/centauri/library/_centauri_bash_run:905
+#: /var/centauri/library/_centauri_bash_run:912
+#: /var/centauri/library/_centauri_bash_run:922
 msgid "Not a valid shortcut:"
 msgstr "Keine gültige Kurzbezeichnung:"
 
-#: /var/centauri/library/_centauri_bash_run:1149
+#: /var/centauri/library/_centauri_bash_run:1167
 msgid "No terminal configuration, see:"
 msgstr "Keine 'terminal' Konfiguration, siehe:"
 
-#: /var/centauri/library/_centauri_bash_run:1154
+#: /var/centauri/library/_centauri_bash_run:1172
 msgid "No desktop running, see $DISPLAY or $XDG_CURRENT_DESKTOP"
 msgstr "Kein Desktop aktiv, siehe $DISPLAY oder $XDG_CURRENT_DESKTOP"
+
+#: /var/centauri/library/_centauri_bash_run:1387
+msgid "Missing configuration file:"
+msgstr "Fehlende Konfigurationsdatei:"

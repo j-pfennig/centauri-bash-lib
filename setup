@@ -33,9 +33,16 @@
 #               <links>     # symlink for tools folder  (/opt/centauritools)
 #               <repo>      # an optional repository
 #
+# Verify: To check if it works and to get an introduction please run:
+#
+#               $ <inst>/centaurihelp help    
+#
+#       Depending on your installation <inst> should be '~/centauritools' 
+#       or '/var/centauri/tools'.
+#
 # Uninstall: Simply run any centauri-bash-lib tool with '--info uninstall':
 #
-#               $ centauricreate --info uninstall 
+#               $ <inst>/centauricreate --info uninstall
 # ------------------------------------------------------------------------------
 
 # if installing from a repository folder (not copying, make symlinks) ...
@@ -53,6 +60,11 @@ fi
 # ------------------------------------------------------------------------------
 # Run installation (no configuration parameters in this part)
 # ------------------------------------------------------------------------------
+
+# exactly one optional argument, no options
+if [ $# -gt 1 -o "${1::1}" = '-' ] ; then
+    echo "Invalid 'setup' argument(s)" ; exit 1
+fi
 
 # do not use predefined centauri-bash-lib root, get destination path
 CEN_ROOT= 

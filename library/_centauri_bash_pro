@@ -14,10 +14,10 @@
 # Some functions implicitly load one of these modules. So the [[progress()]] function
 # will load [[_centauri_bash_con]] implicitly if not yet in windows mode.
 #
-# Copyright Dr. J. Pfennig (c) 2022-2024
+# Copyright Dr. J. Pfennig (c) 2022-2025
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_pro']='0.03:2'
+CEN_MODULES['_centauri_bash_pro']='0.04:6'
 
 embed -c '_centauri_bash_utl'                       # import on demand, see timer()
 
@@ -68,7 +68,7 @@ CEN_PROGRESS=           # 0:disabled  1:enabled  2:active
 #           -w  progress iterator
 #
 # Arguments:<delay> --dryrun only: delay in [s] (example 0.3)
-#           <done>  final text, use "-" for no text and no delay
+#           <done>  final text, use '-' for no text and no delay
 #           <fmt>   a printf format string (example: "%s of %s")
 #           <labl>  label text to show
 #           <prog>  progress in percent
@@ -156,15 +156,15 @@ progress() {
 
     # parse options
     local _prog _fdel _fend _flin _find _ftxt _step _work _stat=0 _aind="$CEN_AUTOIND"
-    while [ "${1::1}" = "-" ] ; do
+    while [ "${1::1}" = '-' ] ; do
       case "$1" in
       -)    break ;;
       --)   shift ; break ;;
-      -a)   _find="-a" ;;
+      -a)   _find='-a' ;;
       -c)   shift ; _prog="$1" ;;
       -d)   shift ; [ -n "$CEN_OPT_DRYRUN" ] && _fdel="$1" ;;
       -e)   _fend=1 ;;
-      -i)   _find="-i" ;;
+      -i)   _find='-i' ;;
       -l)   _flin=1 ;;
       -p)   _ftxt=2 ;;
       -s)   shift ; _step="$1" ;;
@@ -203,7 +203,8 @@ progress() {
     [ "$_fend" = 0 ] && _fend=
 
     if [ -z "$_ftxt" ] && [ "${CEN_NOBREAK:-2}" = 2 ] && [ -z "$CEN_WINDOWS" ] ; then
-        local _text="$*" ; _cen_compactify _text ; set -- "$_text"
+        local _text="$1" ; [ "${2:--}" = '-' ] || _text+=" $2"
+        _cen_compactify _text ; set -- "$_text"
     fi
 
     # run worker (always) or progress implementation
@@ -246,12 +247,12 @@ _cen_pro_work() {
     local _perc _mesg _epoc _curr=0 _plst=0 _stat=0
     [ "$_totl" -le "$_mini" -o "$_mini" = 0 ] && _plst=
 
-    [ -n "$CEN_CONSOLE" ] && context -t +       # register trap handler
+    [ -n "$CEN_CONSOLE" ] && context -t +           # register trap handler
 
     while [ "$_curr" -lt "$_totl" ] ; do
         _perc=$((_curr++ * 100 / _totl))
-        if [ -n "$_plst" -a "$_curr" -ge "$_mini" ] ; then               # only if progress is enabled ...
-            [ "$_perc" -gt "99" ] && _perc=99   # maximum 99%, see windows mode
+        if [ -n "$_plst" -a "$_curr" -ge "$_mini" ] ; then  # only if progress is enabled ...
+            [ "$_perc" -gt 99 ] && _perc=99         # maximum 99%, see windows mode
 
             # report if % value changed or once per second
             if [ "$_perc" -gt "$_plst" -o "$EPOCHSECONDS" != "$_epoc" ] ; then
@@ -261,8 +262,8 @@ _cen_pro_work() {
             fi
         fi
 
-        $_work "$_curr" || _stat=$?             # call worker
-        [ "$_stat" = 0 ] || break               # error stop
+        $_work "$_curr" || _stat=$?                 # call worker
+        [ "$_stat" = 0 ] || break                   # error stop
         [ -n "$_fdel" ] && timer -w "$_fdel"
     done
 
@@ -275,9 +276,9 @@ _cen_pro_work() {
             progress -a -c 100
         fi
     fi
-    $_work 0 || _stat=$?                        # flush worker
+    $_work 0 || _stat=$?                            # flush worker
     [ -n "$_fdel" ] && timer -w "$_fdel"
-    [ -n "$CEN_CONSOLE" ] && context -t -       # reset trap handler
+    [ -n "$CEN_CONSOLE" ] && context -t -           # reset trap handler
     return "$_stat"
 }
 
@@ -285,7 +286,7 @@ _cen_pro_work() {
 # quit callback to cancel progress()
 # ------------------------------------------------------------------------------
 _cen_pro_quit() {
-    [ "${CEN_PROGRESS:-0}" -gt 1 ] && progress  # remove progress message/window
+    [ "${CEN_PROGRESS:-0}" -gt 1 ] && progress      # remove progress message/window
 }
 
 :

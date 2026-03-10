@@ -2,7 +2,7 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
 #: /var/centauri/library/_centauri_bash_mnt:122
-#: /var/centauri/library/_centauri_bash_mnt:986
+#: /var/centauri/library/_centauri_bash_mnt:1022
 msgid "storage"
 msgstr "Datenträger"
 
@@ -123,39 +123,39 @@ msgstr "Kann keine Datei verwenden:"
 msgid "Using an image file:"
 msgstr "Verwende Abbild-Datei:"
 
-#: /var/centauri/library/_centauri_bash_mnt:736
+#: /var/centauri/library/_centauri_bash_mnt:769
 msgid "Not mounted:"
 msgstr "Nicht eingehängt:"
 
-#: /var/centauri/library/_centauri_bash_mnt:739
+#: /var/centauri/library/_centauri_bash_mnt:772
 msgid "Unmounting '$_devu' ..."
 msgstr "Auhängen von '$_devu' ..."
 
-#: /var/centauri/library/_centauri_bash_mnt:742
+#: /var/centauri/library/_centauri_bash_mnt:775
 msgid "Unmounted '%s' from '%s'"
 msgstr "'%s' ausgehängt von '%s'"
 
-#: /var/centauri/library/_centauri_bash_mnt:842
+#: /var/centauri/library/_centauri_bash_mnt:878
 msgid "Invalid distribution name:"
 msgstr "Distributionsname ungültig:"
 
-#: /var/centauri/library/_centauri_bash_mnt:872
+#: /var/centauri/library/_centauri_bash_mnt:908
 msgid "Location '%s' not found: %s"
 msgstr "Bestimmungsort '%s' nicht gefunden: %s"
 
-#: /var/centauri/library/_centauri_bash_mnt:984
+#: /var/centauri/library/_centauri_bash_mnt:1020
 msgid "disk"
 msgstr "Festplatte"
 
-#: /var/centauri/library/_centauri_bash_mnt:1007
+#: /var/centauri/library/_centauri_bash_mnt:1043
 msgid "Automount disk by path or label"
 msgstr "Festplatte nach Pfad oder Label automatisch einhängen"
 
-#: /var/centauri/library/_centauri_bash_mnt:1008
+#: /var/centauri/library/_centauri_bash_mnt:1044
 msgid "Automount storage by path or label"
 msgstr "Datenträger nach Pfad oder Label automatisch einhängen"
 
-#: /var/centauri/library/_centauri_bash_mnt:1060
-#: /var/centauri/library/_centauri_bash_mnt:1065
+#: /var/centauri/library/_centauri_bash_mnt:1096
+#: /var/centauri/library/_centauri_bash_mnt:1101
 msgid "Running quit function:"
 msgstr "Aufräumfunktion ausführen:"

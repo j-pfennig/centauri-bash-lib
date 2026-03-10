@@ -33,10 +33,10 @@
 # used by 'centauribackup' and 'centauriarchive'. The -f (find) call should not
 # be used in new code, the [[walk()]] function is more efficient.
 #
-# Copyright Dr. J. Pfennig (c) 2015-2024
+# Copyright Dr. J. Pfennig (c) 2015-2026
 # ------------------------------------------------------------------------------
 
-CEN_MODULES['_centauri_bash_bak']='0.20:1'
+CEN_MODULES['_centauri_bash_bak']='0.22:1'
 
 # options for find/tree
 CEN_BAK_FILTER=                         # filter callback (list/tree)
@@ -211,11 +211,11 @@ _cen_backup_find() {
     _cen_backup_sort() {
         local file indx=-1
         for file in "$@" ; do
-            indx=$((indx + 1))
+            ((indx += 1))
             _cen_backup_parse "$file" || continue
             # <path> <name>  <tag>  <year> <month> <day>  <ext>  <indx>
             echo "${CEN_BAK_PARSE[@]} $indx"
-        done | sort -k 1,2 -k 4,6$CEN_BAK_REVERSE -k 3,3 -k 7,7
+        done | sort -k 1,2 -k 4,6$CEN_BAK_REVERSE -k 7,7 -k 3,3
     }
 
     # globber, call 'filter' and make full path
@@ -290,13 +290,11 @@ _cen_backup_tree() {
     local cdir dirs
 
     # use find to get tree
-    local sifs="$IFS" ; IFS=$'\n'
     if   [ "$CEN_BAK_MAXLVL" -lt 0 ] ; then
-        system -r -a dirs -p -f find -type d -printf "%p/\n"
+        system -a dirs -d '\n' -p -f -r -- find -type d -printf "%p/\n"
     elif [ "$CEN_BAK_MAXLVL" -gt 0 ] ; then
-        system -r -a dirs -p -f find -maxdepth "$CEN_BAK_MAXLVL" -type d -printf "%p/\n"
+        system -a dirs -d '\n' -p -f -r -- find -maxdepth "$CEN_BAK_MAXLVL" -type d -printf "%p/\n"
     fi
-    IFS="$sifs"
 
     # found no sub folders
     if [ -z "${dirs[1]}" ] ; then
@@ -351,9 +349,8 @@ _cen_backup_parse() {
     local safe="${1// /-}"                      # remove spaces
     local path="${safe%/*}" name="${safe##*/}"
     [ "$path" = "$name" ] && path=
-    local fext="${name##*.}" ; name="${name%.*}"
+    local fext="${name#*.}" ; name="${name%%.*}"
     [ "$fext" = "$name" ] && fext=
-
     CEN_BAK_PARSE[0]="${path:--}"
     CEN_BAK_PARSE[6]="${fext:--}"
 
@@ -364,7 +361,6 @@ _cen_backup_parse() {
             date="${name#*_}"   # <tag>_<date>
             ftag="${date%%_*}"
             date="${date#*_}"
-            #date="${date%%_*}"
             ;;
     *_[12][09][0-9][0-9]*)
             date="${name#*_}"
@@ -391,7 +387,7 @@ _cen_backup_parse() {
     *)  return 1
     esac
     CEN_BAK_PARSE[3]="${date::4}"
-    return 0
+    [ "${CEN_BAK_PARSE[6]/_/}" = "${CEN_BAK_PARSE[6]}" ]    # return status
 }
 
 # ------------------------------------------------------------------------------
